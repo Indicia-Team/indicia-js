@@ -1,5 +1,7 @@
 Provides general use Indicia targeted mobile app recording libraries.
 
+Install using Bower: `bower install 'NERC-CEH/morel'`
+
 ## Requirements
 
 Only requirement is [jQuery Mobile](https://github.com/jquery/jquery-mobile).
