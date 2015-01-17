@@ -1,5 +1,5 @@
 {
-  "name": "iform_mobile",
+  "name": "morel",
   "version": "0.0.0",
   "dependencies": {
     "latlon": "chrisveness/geodesy",
