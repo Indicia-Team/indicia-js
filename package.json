@@ -1,20 +1,20 @@
 {
-	"name": "iform-mobile",
-	"title": "IForm Mobile",
-	"description": "Biological recording mobile application functionality",
-	"version": "0.1.5",
-	"homepage": "http://www.indicia.org.uk/",
+	"name": "morel",
+	"title": "morel",
+	"description": "Mobile Recording Library for biological data collection.",
+	"version": "1.0.0",
+	"homepage": "https://github.com/NERC-CEH/morel",
 	"author": {
 		"name": "Karols Kazlauskis",
 		"email": "karkaz@ceh.ac.uk",
 		"url": "http://brc.ac.uk"
 	},
 	"repository": {
-		"type": "svn",
-		"url": "https://code.google.com/p/indicia/"
+		"type": "git",
+		"url": "https://github.com/NERC-CEH/morel"
 	},
 	"bugs": {
-		"url": "https://code.google.com/p/indicia/issues/list"
+		"url": "https://github.com/NERC-CEH/morel/issues"
 	},
 	"licenses": [
 		{
@@ -37,7 +37,14 @@
         "grunt-text-replace": "0.3.12"
     },
 	"keywords": [
+		"morel",
 		"mobile",
+		"biological",
+		"bio"
+		"recording",
+		"rec",
+		"library", 
+		"lib",
 		"indicia",
 		"iRecord"
 	]
