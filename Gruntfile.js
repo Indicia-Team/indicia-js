@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
 
     var  banner = "/*!\n" +
-        " * Indicia Iform Mobile module's core library \n" +
+        " * Mobile Recording Library for biological data collection. \n" +
         " * Version: <%= pkg.version %>\n" +
         " *\n" +
         " * <%= pkg.homepage %>\n" +
