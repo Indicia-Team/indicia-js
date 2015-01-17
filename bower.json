@@ -1,0 +1,10 @@
+{
+  "name": "iform_mobile",
+  "version": "0.0.0",
+  "dependencies": {
+    "latlon": "chrisveness/geodesy",
+    "indexeDBShim": "axemclion/IndexedDBShim",
+    "handlebars": "~2.0.0",
+    "photoswipe": "https://github.com/downloads/codecomputerlove/PhotoSwipe/code.photoswipe-3.0.5.zip"
+  }
+}
