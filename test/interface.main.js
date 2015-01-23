@@ -212,7 +212,7 @@ describe('geoloc interface', function(){
         morel.geoloc.set(location.lat, location.lon, location.acc);
 
         //GET
-        var f_location = morel.geoloc.get();
+        var f_location = app.geoloc.get();
 
         expect(f_location).to.be.an.object;
         expect(f_location.lat).to.be.equal(location.lat);
@@ -220,16 +220,16 @@ describe('geoloc interface', function(){
         expect(f_location.acc).to.be.equal(location.acc);
 
         //VALIDATE
-        morel.geoloc.CONF.GPS_ACCURACY_LIMIT = 0;
-        var valid = morel.geoloc.valid();
-        expect(valid).to.be.equal(morel.FALSE);
+        app.geoloc.CONF.GPS_ACCURACY_LIMIT = 0;
+        var valid = app.geoloc.valid();
+        expect(valid).to.be.equal(app.FALSE);
 
         var acc = Math.random();
-        morel.geoloc.set(location.lat, location.lon, acc);
+        app.geoloc.set(location.lat, location.lon, acc);
 
-        morel.geoloc.CONF.GPS_ACCURACY_LIMIT = acc + 1;
-        valid = morel.geoloc.valid();
-        expect(valid).to.be.equal(morel.TRUE);
+        app.geoloc.CONF.GPS_ACCURACY_LIMIT = acc + 1;
+        valid = app.geoloc.valid();
+        expect(valid).to.be.equal(app.TRUE);
 
     });
 });
@@ -240,9 +240,9 @@ describe('io interface', function(){
 
     /**
      * Testing
-     -morel.io.sendSavedForm()
-     -morel.io.sendAllSavedRecords()
-     -morel.io.sendSavedRecord(savedRecordId)
+     -app.io.sendSavedForm()
+     -app.io.sendAllSavedRecords()
+     -app.io.sendSavedRecord(savedRecordId)
      */
     it('main', function(){
 
@@ -251,26 +251,26 @@ describe('io interface', function(){
 
 describe('storage interface', function(){
     beforeEach(function(){
-        morel.storage.tmpClear();
+        app.storage.tmpClear();
     });
     afterEach(function(){});
 
     /**
      * Testing:
-     morel.storage.tmpGet
-     morel.storage.tmpSet
+     app.storage.tmpGet
+     app.storage.tmpSet
      */
     it('main', function(){
         //SET
         var item = 'item';
         var item_data = Math.random();
-        morel.storage.tmpSet(item, item_data);
+        app.storage.tmpSet(item, item_data);
 
-        var exists = morel.storage.tmpIs(item);
+        var exists = app.storage.tmpIs(item);
         expect(exists).to.be.true;
 
         //GET
-        var f_item_data = morel.storage.tmpGet(item);
+        var f_item_data = app.storage.tmpGet(item);
         expect(f_item_data).to.exist;
         expect(f_item_data).to.be.equal(item_data);
     });

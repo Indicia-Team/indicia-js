@@ -8,7 +8,7 @@
  * Released under the GNU GPL v3 license.
  */
 /***********************************************************************
- * APP MODULE
+ * MAIN
  *
  * Things to work on:
  *  - Decouple the modules as much as possible

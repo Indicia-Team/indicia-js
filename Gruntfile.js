@@ -70,16 +70,42 @@ module.exports = function(grunt) {
                     'dist/<%= pkg.name %>.min.js': ['<%= concat.src.dest %>']
                 }
             }
-        }
+        },
+        karma: {
+            unit: {
+                browsers: ['Chrome'],
+                frameworks: ['mocha', 'chai'],
+                'plugins' : [
+                    'karma-mocha',
+                    'karma-chai'
+                ],
 
+                files: [
+                    { src: ['test/*.js']},
+                    { src: ['src/*.js']}
+                ],
+
+                reporters: ['progress'],
+
+                port: 9876,
+                colors: true,
+                autoWatch: false,
+                singleRun: false,
+
+                // level of logging
+                logLevel: 'ERROR'
+            }
+        }
     });
 
+    grunt.loadNpmTasks('grunt-karma');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-text-replace');
     grunt.loadNpmTasks('grunt-contrib-uglify');
 
     // the default task can be run just by typing "grunt" on the command line
     grunt.registerTask('build', ['concat', 'replace', 'uglify']);
-    grunt.registerTask('default', ['build']);
+    grunt.registerTask('test', ['karma']);
+    grunt.registerTask('default', ['build', 'karma']);
 
 };
