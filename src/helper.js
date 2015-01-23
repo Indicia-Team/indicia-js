@@ -33,22 +33,22 @@ function getParameterByName(name) {
 function _log(message, level) {
 
   //do nothing if logging turned off
-  if (app.CONF.LOG == app.LOG_NONE) {
+  if (morel.CONF.LOG == morel.LOG_NONE) {
     return;
   }
 
-  if (app.CONF.LOG >= level || level == null) {
+  if (morel.CONF.LOG >= level || level == null) {
     switch (level) {
-      case app.LOG_ERROR:
+      case morel.LOG_ERROR:
         _logError(message);
         break;
-      case app.LOG_WARNING:
+      case morel.LOG_WARNING:
         console.warn(message);
         break;
-      case app.LOG_INFO:
+      case morel.LOG_INFO:
         console.log(message);
         break;
-      case app.LOG_DEBUG:
+      case morel.LOG_DEBUG:
       default:
         //IE does not support console.debug
         if (console.debug == null) {
@@ -72,10 +72,10 @@ function _logError(error) {
 
   //prepare the message
   var message = '<b style="color: red">' + error['message'] + '</b>';
-  message += '</br><b> app.version = </b><i>"' + app.version + '"</i>';
+  message += '</br><b> morel.version = </b><i>"' + morel.version + '"</i>';
 
-  message += '</br><b> app.CONF.NAME = </b><i>"' + app.CONF.NAME + '"</i>';
-  message += '</br><b> app.CONF.VERSION = </b><i>"' + app.CONF.VERSION + '"</i></br>';
+  message += '</br><b> morel.CONF.NAME = </b><i>"' + morel.CONF.NAME + '"</i>';
+  message += '</br><b> morel.CONF.VERSION = </b><i>"' + morel.CONF.VERSION + '"</i></br>';
 
   message += '</br>' + navigator.appName;
   message += '</br>' + navigator.appVersion;
@@ -91,7 +91,7 @@ function _logError(error) {
     };
     data.append('message', message);
     data.append('url', url);
-    app.auth.appendApp(data);
+    morel.auth.appendApp(data);
 
     //removing unnecessary information
     delete data.append;
@@ -131,7 +131,7 @@ function _onerror(message, url, line) {
     'line': line || -1
   };
 
-  _log(error, app.LOG_ERROR);
+  _log(error, morel.LOG_ERROR);
 
   window.onerror = this; // turn on error handling again
   return true; // suppress normal error reporting
@@ -168,13 +168,13 @@ function startManifestDownload(id, files_no, src, callback, onError) {
       frame.contentWindow.applicationCache.update();
     } else {
       //init
-      //app.navigation.popup('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', true);
-      app.navigation.message('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', 0);
+      //morel.navigation.popup('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', true);
+      morel.navigation.message('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', 0);
       frame = document.getElementById(id);
 
       //After frame loading set up its controllers/callbacks
       frame.onload = function () {
-        _log('Manifest frame loaded', app.LOG_INFO);
+        _log('Manifest frame loaded', morel.LOG_INFO);
         if (callback != null) {
           frame.contentWindow.finished = callback;
         }

@@ -29,11 +29,23 @@ module.exports = function(grunt) {
 
                 // the files to concatenate
                 src: [
-                    'src/*.js'
+                    'src/main.js',
+                    'src/io.js',
+                    'src/db.js',
+                    'src/auth.js',
+                    'src/record.js',
+                    'src/record.db.js',
+                    'src/record.inputs.js',
+                    'src/geoloc.js',
+                    'src/storage.js',
+                    'src/navigation.js',
+                    'src/image.js',
+                    'src/helper.js',
+                    'src/appcache_back_button_fix.js'
                 ],
                 // the location of the resulting JS file
                 dest: 'dist/<%= pkg.name %>.js'
-            },
+            }
         },
         replace: {
             version: {
@@ -46,7 +58,7 @@ module.exports = function(grunt) {
                         to: '$1 \'<%= pkg.version %>\';'
                     }
                 ]
-            },
+            }
         },
         uglify: {
             options: {

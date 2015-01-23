@@ -2,8 +2,8 @@
  * IMAGE MODULE
  **********************************************************************/
 
-app = app || {};
-app.image = (function (m, $) {
+morel = morel || {};
+morel.image = (function (m, $) {
 
   //todo: move to CONF.
   m.MAX_IMG_HEIGHT = 800;
@@ -16,9 +16,9 @@ app.image = (function (m, $) {
    * @param callback function with an array parameter
    */
   m.extractAllToArray = function (elem, callback, onError) {
-    var files = app.image.findAll(elem);
+    var files = morel.image.findAll(elem);
     if (files.length > 0) {
-      app.image.toStringAll(files, callback, onError);
+      morel.image.toStringAll(files, callback, onError);
     } else {
       callback(files);
     }
@@ -34,12 +34,12 @@ app.image = (function (m, $) {
    */
   m.toString = function (file, onSaveSuccess, onError) {
     if (file != null) {
-      _log("IMAGE: working with " + file.name + ".", app.LOG_DEBUG);
+      _log("IMAGE: working with " + file.name + ".", morel.LOG_DEBUG);
 
       var reader = new FileReader();
       //#2
       reader.onload = function () {
-        _log("IMAGE: resizing file.", app.LOG_DEBUG);
+        _log("IMAGE: resizing file.", morel.LOG_DEBUG);
         var image = new Image();
         //#4
         image.onload = function (e) {
@@ -49,9 +49,9 @@ app.image = (function (m, $) {
           //resizing
           var res;
           if (width > height) {
-            res = width / app.image.MAX_IMG_WIDTH;
+            res = width / morel.image.MAX_IMG_WIDTH;
           } else {
-            res = height / app.image.MAX_IMG_HEIGHT;
+            res = height / morel.image.MAX_IMG_HEIGHT;
           }
 
           width = width / res;
@@ -67,13 +67,13 @@ app.image = (function (m, $) {
           var shrinked = canvas.toDataURL(file.type);
 
           _log("IMAGE: done shrinking file ("
-          + (shrinked.length / 1024) + "KB).", app.LOG_DEBUG);
+          + (shrinked.length / 1024) + "KB).", morel.LOG_DEBUG);
 
           onSaveSuccess(shrinked);
 
         };
         reader.onerror = function (e) {
-          _log("IMAGE: reader " + e + ".", app.LOG_ERROR);
+          _log("IMAGE: reader " + e + ".", morel.LOG_ERROR);
           e.message = e.getMessage();
           onError(e);
         };
@@ -114,7 +114,7 @@ app.image = (function (m, $) {
           });
           saveAllFilesRecursive(files, files_array, onSaveSuccess);
         };
-        app.image.toString(file, onSaveSuccess, onError);
+        morel.image.toString(file, onSaveSuccess, onError);
       } else {
         onSaveAllFilesSuccess(files_array);
       }
@@ -132,7 +132,7 @@ app.image = (function (m, $) {
     var files = [];
     $(elem).find('input').each(function (index, input) {
       if ($(input).attr('type') == "file" && input.files.length > 0) {
-        var file = app.image.find(input);
+        var file = morel.image.find(input);
         files.push(file);
       }
     });
@@ -154,5 +154,5 @@ app.image = (function (m, $) {
   };
 
   return m;
-}(app.image || {}, jQuery));
+}(morel.image || {}, jQuery));
 

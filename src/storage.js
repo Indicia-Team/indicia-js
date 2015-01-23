@@ -2,8 +2,8 @@
  * STORAGE MODULE
  **********************************************************************/
 
-app = app || {};
-app.storage = (function (m, $) {
+morel = morel || {};
+morel.storage = (function (m, $) {
   /**
    * Checks if there is enough space in the storage.
    *
@@ -20,7 +20,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.get = function (item) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     var data = localStorage.getItem(item);
     data = JSON.parse(data);
@@ -34,7 +34,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.set = function (item, data) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     data = JSON.stringify(data);
     return localStorage.setItem(item, data);
@@ -46,7 +46,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.remove = function (item) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     return localStorage.removeItem(item);
   };
@@ -70,7 +70,7 @@ app.storage = (function (m, $) {
    * Clears the storage.
    */
   m.clear = function () {
-    _log('STORAGE: clearing', app.LOG_DEBUG);
+    _log('STORAGE: clearing', morel.LOG_DEBUG);
 
     localStorage.clear();
   };
@@ -81,7 +81,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.tmpGet = function (item) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     var data = sessionStorage.getItem(item);
     data = JSON.parse(data);
@@ -94,7 +94,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.tmpSet = function (item, data) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     data = JSON.stringify(data);
     return sessionStorage.setItem(item, data);
@@ -106,7 +106,7 @@ app.storage = (function (m, $) {
    * @param item
    */
   m.tmpRemove = function (item) {
-    item = app.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '_' + item;
 
     return sessionStorage.removeItem(item);
   };
@@ -130,7 +130,7 @@ app.storage = (function (m, $) {
    * Clears the temporary storage.
    */
   m.tmpClear = function () {
-    _log('STORAGE: clearing temporary', app.LOG_DEBUG);
+    _log('STORAGE: clearing temporary', morel.LOG_DEBUG);
 
     sessionStorage.clear();
   };
@@ -148,7 +148,7 @@ app.storage = (function (m, $) {
   }
 
   return m;
-}(app.storage || {}, jQuery));
+}(morel.storage || {}, jQuery));
 
 
 

@@ -4,15 +4,15 @@
  * Takes care of the record database functionality.
  **********************************************************************/
 
-app = app || {};
-app.record = app.record || {};
+morel = morel || {};
+morel.record = morel.record || {};
 
-app.record.db = (function (m, $) {
+morel.record.db = (function (m, $) {
   //todo: move to CONF.
   m.RECORDS = "records";
 
   m.DB_VERSION = 5;
-  m.DB_MAIN = "app";
+  m.DB_MAIN = "morel";
   m.STORE_RECORDS = "records";
 
   /**
@@ -31,7 +31,7 @@ app.record.db = (function (m, $) {
      * @param e
      */
     req.onsuccess = function (e) {
-      _log("RECORD.DB: opened successfully.", app.LOG_DEBUG);
+      _log("RECORD.DB: opened successfully.", morel.LOG_DEBUG);
       var db = e.target.result;
       var transaction = db.transaction([m.STORE_RECORDS], "readwrite");
       var store = transaction.objectStore(m.STORE_RECORDS);
@@ -47,7 +47,7 @@ app.record.db = (function (m, $) {
      * @param e
      */
     req.onupgradeneeded = function (e) {
-      _log("RECORD.DB: upgrading", app.LOG_INFO);
+      _log("RECORD.DB: upgrading", morel.LOG_INFO);
       var db = e.target.result;
 
       var store = db.createObjectStore(m.STORE_RECORDS, {'keyPath': 'id'});
@@ -60,7 +60,7 @@ app.record.db = (function (m, $) {
      * @param e
      */
     req.onerror = function (e) {
-      _log("RECORD.DB: not opened successfully.", app.LOG_ERROR);
+      _log("RECORD.DB: not opened successfully.", morel.LOG_ERROR);
       // _log(e);
       e.message = "Database NOT opened successfully.";
       if (onError != null) {
@@ -74,7 +74,7 @@ app.record.db = (function (m, $) {
      * @param e
      */
     req.onblocked = function (e) {
-      _log("RECORD.DB: database blocked.", app.LOG_ERROR);
+      _log("RECORD.DB: database blocked.", morel.LOG_ERROR);
       // _log(e);
       if (onError != null) {
         onError(e);
@@ -95,7 +95,7 @@ app.record.db = (function (m, $) {
    */
   m.add = function (record, key, callback, onError) {
     m.open(function (store) {
-      _log("RECORD.DB: adding to the store.", app.LOG_DEBUG);
+      _log("RECORD.DB: adding to the store.", morel.LOG_DEBUG);
       record['id'] = key;
       var req = store.add(record);
       req.onsuccess = function (event) {
@@ -114,7 +114,7 @@ app.record.db = (function (m, $) {
    */
   m.get = function (key, callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: getting from the store.', app.LOG_DEBUG);
+      _log('RECORD.DB: getting from the store.', morel.LOG_DEBUG);
 
       var req = store.index('id').get(key);
       req.onsuccess = function (e) {
@@ -135,7 +135,7 @@ app.record.db = (function (m, $) {
    */
   m.remove = function (key, callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: removing from the store.', app.LOG_DEBUG);
+      _log('RECORD.DB: removing from the store.', morel.LOG_DEBUG);
 
       var req = store.openCursor(IDBKeyRange.only(key));
       req.onsuccess = function () {
@@ -158,7 +158,7 @@ app.record.db = (function (m, $) {
    */
   m.getAll = function (callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: getting all from the store.', app.LOG_DEBUG);
+      _log('RECORD.DB: getting all from the store.', morel.LOG_DEBUG);
 
       // Get everything in the store
       var keyRange = IDBKeyRange.lowerBound(0);
@@ -212,7 +212,7 @@ app.record.db = (function (m, $) {
    */
   m.clear = function (callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: clearing store.', app.LOG_DEBUG);
+      _log('RECORD.DB: clearing store.', morel.LOG_DEBUG);
       store.clear();
 
       if (callback != null) {
@@ -254,21 +254,21 @@ app.record.db = (function (m, $) {
    * Saves a record using dynamic inputs.
    */
   m.save = function (callback, onError) {
-    _log("RECORD.DB: saving dynamic record.", app.LOG_INFO);
+    _log("RECORD.DB: saving dynamic record.", morel.LOG_INFO);
     //get new record ID
-    var settings = app.record.getSettings();
-    var savedRecordId = ++settings[app.record.LASTID];
+    var settings = morel.record.getSettings();
+    var savedRecordId = ++settings[morel.record.LASTID];
 
     //INPUTS
     var onExtractFilesSuccess = function (files_array) {
-      var record_array = app.record.extract();
+      var record_array = morel.record.extract();
       //merge files and the rest of the inputs
       record_array = record_array.concat(files_array);
 
-      _log("RECORD.DB: saving the record into database.", app.LOG_DEBUG);
+      _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
       function onSuccess() {
         //on record save success
-        app.record.setSettings(settings);
+        morel.record.setSettings(settings);
 
         if (callback != null) {
           callback(savedRecordId);
@@ -278,41 +278,41 @@ app.record.db = (function (m, $) {
       m.add(record_array, savedRecordId, onSuccess, onError);
     };
 
-    app.image.extractAllToArray(null, onExtractFilesSuccess, onError);
-    return app.TRUE;
+    morel.image.extractAllToArray(null, onExtractFilesSuccess, onError);
+    return morel.TRUE;
   };
 
   /*
    * Saves the provided record.
-   * Returns the savedRecordId of the saved record, otherwise an app.ERROR.
+   * Returns the savedRecordId of the saved record, otherwise an morel.ERROR.
    */
   m.saveForm = function (formId, onSuccess) {
-    _log("RECORD.DB: saving a DOM record.", app.LOG_INFO);
+    _log("RECORD.DB: saving a DOM record.", morel.LOG_INFO);
     var records = this.getAll();
 
     //get new record ID
-    var settings = app.record.getSettings();
-    var savedRecordId = ++settings[app.record.LASTID];
+    var settings = morel.record.getSettings();
+    var savedRecordId = ++settings[morel.record.LASTID];
 
     //INPUTS
     //todo: refactor to $record
     var record = $(formId);
     var onSaveAllFilesSuccess = function (files_array) {
       //get all the inputs/selects/textboxes into array
-      var record_array = app.record.extractFromRecord(record);
+      var record_array = morel.record.extractFromRecord(record);
 
       //merge files and the rest of the inputs
       record_array = record_array.concat(files_array);
 
-      _log("RECORD.DB: saving the record into database.", app.LOG_DEBUG);
+      _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
       try {
         records[savedRecordId] = record_array;
         m.setAll(records);
-        app.record.setSettings(settings);
+        morel.record.setSettings(settings);
       } catch (e) {
-        _log("RECORD.DB: while saving the record.", app.LOG_ERROR);
+        _log("RECORD.DB: while saving the record.", morel.LOG_ERROR);
         //_log(e);
-        return app.ERROR;
+        return morel.ERROR;
       }
 
       if (onSuccess != null) {
@@ -320,9 +320,9 @@ app.record.db = (function (m, $) {
       }
     };
 
-    app.image.getAll(onSaveAllFilesSuccess);
-    return app.TRUE;
+    morel.image.getAll(onSaveAllFilesSuccess);
+    return morel.TRUE;
   };
 
   return m;
-}(app.record.db || {}, app.$ || jQuery));
+}(morel.record.db || {}, morel.$ || jQuery));

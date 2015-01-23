@@ -6,7 +6,7 @@ describe("Core suite", function() {
         var randNum = Math.random();
         var item = 'num';
 
-        app.storage.set(item, randNum);
-        app.storage.get(item).should.equal(randNum);
+        morel.storage.set(item, randNum);
+        morel.storage.get(item).should.equal(randNum);
     });
 });

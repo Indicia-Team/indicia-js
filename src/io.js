@@ -2,8 +2,8 @@
  * IO MODULE
  **********************************************************************/
 
-app = app || {};
-app.io = (function (m, $) {
+morel = morel || {};
+morel.io = (function (m, $) {
   //configuration should be setup in app config file
   m.CONF = {
     RECORD_URL: "" //todo: set to null and throw error if undefined
@@ -21,13 +21,13 @@ app.io = (function (m, $) {
         var key = Object.keys(records)[0]; //getting the first one of the array
         if (key != null) {
           $.mobile.loading('show');
-          _log("IO: sending record: " + key + ".", app.LOG_INFO);
+          _log("IO: sending record: " + key + ".", morel.LOG_INFO);
           var onSendSavedSuccess = function (data) {
             var recordKey = this.callback_data.recordKey;
-            _log("IO: record ajax (success): " + recordKey + ".", app.LOG_INFO);
+            _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
 
-            app.record.db.remove(recordKey);
-            app.io.sendAllSavedRecords();
+            morel.record.db.remove(recordKey);
+            morel.io.sendAllSavedRecords();
           };
           m.sendSavedRecord(key, onSendSavedSuccess);
         } else {
@@ -35,7 +35,7 @@ app.io = (function (m, $) {
         }
       }
 
-      app.record.db.getAll(onSuccess);
+      morel.record.db.getAll(onSuccess);
     } else {
       $.mobile.loading('show', {
         text: "Looks like you are offline!",
@@ -54,7 +54,7 @@ app.io = (function (m, $) {
    * Sends the saved record
    */
   m.sendSavedRecord = function (recordKey, callback, onError, onSend) {
-    _log("IO: creating the record.", app.LOG_DEBUG);
+    _log("IO: creating the record.", morel.LOG_DEBUG);
     function onSuccess(data) {
       var record = {
         'data': data,
@@ -62,7 +62,7 @@ app.io = (function (m, $) {
       };
 
       function onPostError(xhr, ajaxOptions, thrownError) {
-        _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", app.LOG_ERROR);
+        _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
         //_log(xhr.responseText);
         var err = {
           message: xhr.status + " " + thrownError + " " + xhr.responseText
@@ -74,7 +74,7 @@ app.io = (function (m, $) {
       m.postRecord(record, callback, onPostError, onSend)
     }
 
-    app.record.db.getData(recordKey, onSuccess);
+    morel.record.db.getData(recordKey, onSuccess);
 
   };
 
@@ -82,7 +82,7 @@ app.io = (function (m, $) {
    * Submits the record.
    */
   m.postRecord = function (record, onSuccess, onError, onSend) {
-    _log('IO: posting a record with AJAX.', app.LOG_INFO);
+    _log('IO: posting a record with AJAX.', morel.LOG_INFO);
     var data = {};
     if (record.data == null) {
       //extract the record data
@@ -93,7 +93,7 @@ app.io = (function (m, $) {
     }
 
     //Add authentication
-    data = app.auth.append(data);
+    data = morel.auth.append(data);
 
     $.ajax({
       url: m.getRecordURL(),
@@ -106,14 +106,14 @@ app.io = (function (m, $) {
       contentType: false,
       success: onSuccess || function (data) {
         var recordKey = this.callback_data.recordKey;
-        _log("IO: record ajax (success): " + recordKey + ".", app.LOG_INFO);
+        _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
       },
       error: onError || function (xhr, ajaxOptions, thrownError) {
-        _log("IO: record ajax (" + xhr.status + " " + thrownError + ").", app.LOG_ERROR);
+        _log("IO: record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
         //_log(xhr.responseText);
       },
       beforeSend: onSend || function () {
-        _log("IO: onSend.", app.LOG_DEBUG);
+        _log("IO: onSend.", morel.LOG_DEBUG);
       }
     });
   };
@@ -128,4 +128,4 @@ app.io = (function (m, $) {
   };
 
   return m;
-}(app.io || {}, jQuery));
+}(morel.io || {}, jQuery));

@@ -5,38 +5,38 @@
  * test the library functions/interface that the mobile apps directly call.
  */
 
-describe('app interface', function(){
+describe('morel interface', function(){
 
     /**
      * Testing:
-     app
-     app.CONF
-     app.TRUE
-     app.ERROR
-     app.LOG_*
+     morel
+     morel.CONF
+     morel.TRUE
+     morel.ERROR
+     morel.LOG_*
 
-     app.data
-     app.settings
+     morel.data
+     morel.settings
      */
     it('main', function(){
-        expect(app).to.exist;
-        expect(app.CONF).to.exist;
-        expect(app.TRUE).to.exist;
-        expect(app.ERROR).to.exist;
-        expect(app.LOG_NONE).to.exist;
-        expect(app.LOG_ERROR).to.exist;
-        expect(app.LOG_WARNING).to.exist;
-        expect(app.LOG_INFO).to.exist;
-        expect(app.LOG_DEBUG).to.exist;
-        expect(app.data).to.exist;
-        expect(app.settings).to.exist;
+        expect(morel).to.exist;
+        expect(morel.CONF).to.exist;
+        expect(morel.TRUE).to.exist;
+        expect(morel.ERROR).to.exist;
+        expect(morel.LOG_NONE).to.exist;
+        expect(morel.LOG_ERROR).to.exist;
+        expect(morel.LOG_WARNING).to.exist;
+        expect(morel.LOG_INFO).to.exist;
+        expect(morel.LOG_DEBUG).to.exist;
+        expect(morel.data).to.exist;
+        expect(morel.settings).to.exist;
     })
 });
 
 describe('record interface', function(){
     beforeEach(function(){
-        app.storage.clear();
-        app.record.clear();
+        morel.storage.clear();
+        morel.record.clear();
     });
     afterEach(function(){
 
@@ -44,23 +44,23 @@ describe('record interface', function(){
 
     /**
      * Testing:
-     -app.record.validate()
-     app.record.clear()
+     -morel.record.validate()
+     morel.record.clear()
      */
     it('main', function(){
         //CLEAR
         var input = 'input';
         var input_data = Math.random();
-        app.record.inputs.set(input, input_data);
+        morel.record.inputs.set(input, input_data);
 
-        var record = app.record.get();
+        var record = morel.record.get();
         expect(record).to.be.an.object;
         var record_keys = Object.keys(record);
         expect(record_keys.length).to.be.equal(1);
 
-        app.record.clear();
+        morel.record.clear();
 
-        record = app.record.get();
+        record = morel.record.get();
         expect(record).to.be.an.object;
         record_keys = Object.keys(record);
         expect(record_keys.length).to.be.equal(0);
@@ -69,19 +69,19 @@ describe('record interface', function(){
 
     /**
      * Testing:
-     app.record.db.remove(savedRecordId)
-     app.record.db.save(onSaveSuccess);
-     +app.record.db.getAll()
+     morel.record.db.remove(savedRecordId)
+     morel.record.db.save(onSaveSuccess);
+     +morel.record.db.getAll()
      */
     it('storage', function(){
         //SAVE
         var input = 'input';
         var input_data = Math.random();
-        app.record.inputs.set(input, input_data);
+        morel.record.inputs.set(input, input_data);
 
-        app.record.db.save(function(savedRecordId){
+        morel.record.db.save(function(savedRecordId){
             //GETALL
-            app.record.db.getAll(function(records){
+            morel.record.db.getAll(function(records){
                 expect(records).to.be.an.array;
                 expect(records.length).to.be.equal(1);
                 expect(records[0][0].value).to.be.equal(input_data);
@@ -89,8 +89,8 @@ describe('record interface', function(){
                 expect(savedRecordId).to.be.equal(1);
 
                 //REMOVE
-                app.record.db.remove(savedRecordId);
-                app.record.db.getAll(function(records){
+                morel.record.db.remove(savedRecordId);
+                morel.record.db.getAll(function(records){
                     expect(records).to.be.an.array;
                     expect(records.length).to.be.equal(0);
                 });
@@ -101,24 +101,24 @@ describe('record interface', function(){
     });
 
     /** Testing:
-     app.record.inputs.KEYS.*
-     app.record.inputs.set(input, data)
-     app.record.inputs.is(input)
+     morel.record.inputs.KEYS.*
+     morel.record.inputs.set(input, data)
+     morel.record.inputs.is(input)
      */
     it('inputs', function(){
         //KEYS
-        expect(app.record.inputs.KEYS).to.be.array;
+        expect(morel.record.inputs.KEYS).to.be.array;
 
         //SET
         var input = 'input';
         var input_data = Math.random();
 
-        app.record.inputs.set(input, input_data);
-        var f_input_data = app.record.inputs.get(input);
+        morel.record.inputs.set(input, input_data);
+        var f_input_data = morel.record.inputs.get(input);
         expect(f_input_data).to.equal(input_data);
 
         //IS
-        var exist = app.record.inputs.is(input);
+        var exist = morel.record.inputs.is(input);
         expect(exist).to.be.true;
     });
 });
@@ -126,20 +126,20 @@ describe('record interface', function(){
 
 describe('authentication interface', function(){
     beforeEach(function(){
-        app.auth.removeUser()
+        morel.auth.removeUser()
     });
     afterEach(function(){});
 
     /**
      * Testing:
-     app.auth.CONF
-     app.auth.removeUser();
-     app.auth.setUser(user);
-     app.auth.isUser();
+     morel.auth.CONF
+     morel.auth.removeUser();
+     morel.auth.setUser(user);
+     morel.auth.isUser();
      */
     it('main', function(){
         //CONF
-        expect(app.auth.CONF).to.be.object;
+        expect(morel.auth.CONF).to.be.object;
 
         //SET
         var user = {
@@ -148,25 +148,25 @@ describe('authentication interface', function(){
             'email': 'tom@jules.com',
             'usersecret': Math.random()
         };
-        app.auth.setUser(user);
-        var f_user = app.auth.getUser();
+        morel.auth.setUser(user);
+        var f_user = morel.auth.getUser();
         expect(f_user).to.be.an.object;
         expect(f_user).to.have.property('name', 'Tom');
 
         //IS
-        var exists = app.auth.isUser();
+        var exists = morel.auth.isUser();
         expect(exists).to.be.true;
 
         //REMOVE
-        app.auth.removeUser();
-        exists = app.auth.isUser();
+        morel.auth.removeUser();
+        exists = morel.auth.isUser();
         expect(exists).to.be.false;
 
-        f_user = app.auth.getUser();
+        f_user = morel.auth.getUser();
         expect(f_user).not.to.be.null;
 
         //checking if getting a user hasn't initialised one
-        exists = app.auth.isUser();
+        exists = morel.auth.isUser();
         expect(exists).to.be.false;
 
     });
@@ -179,10 +179,10 @@ describe('navigation interface', function(){
 
     /**
      * Testing
-     -app.navigation.makePopup()
-     -app.navigation.popup()
-     -app.navigation.message()
-     -app.navigation.go()
+     -morel.navigation.makePopup()
+     -morel.navigation.popup()
+     -morel.navigation.message()
+     -morel.navigation.go()
      */
     it('main', function(){
 
@@ -191,16 +191,16 @@ describe('navigation interface', function(){
 
 describe('geoloc interface', function(){
     beforeEach(function(){
-        app.geoloc.clear();
+        morel.geoloc.clear();
     });
     afterEach(function(){});
 
     /**
      * Testing
-     app.geoloc.set()
-     app.geoloc.get()
-     -app.geoloc.start()
-     -app.geoloc.validate()
+     morel.geoloc.set()
+     morel.geoloc.get()
+     -morel.geoloc.start()
+     -morel.geoloc.validate()
      */
     it('main', function(){
         //SET
@@ -209,10 +209,10 @@ describe('geoloc interface', function(){
             'lon' : Math.random(),
             'acc' : Math.random()
         };
-        app.geoloc.set(location.lat, location.lon, location.acc);
+        morel.geoloc.set(location.lat, location.lon, location.acc);
 
         //GET
-        var f_location = app.geoloc.get();
+        var f_location = morel.geoloc.get();
 
         expect(f_location).to.be.an.object;
         expect(f_location.lat).to.be.equal(location.lat);
@@ -220,16 +220,16 @@ describe('geoloc interface', function(){
         expect(f_location.acc).to.be.equal(location.acc);
 
         //VALIDATE
-        app.geoloc.CONF.GPS_ACCURACY_LIMIT = 0;
-        var valid = app.geoloc.valid();
-        expect(valid).to.be.equal(app.FALSE);
+        morel.geoloc.CONF.GPS_ACCURACY_LIMIT = 0;
+        var valid = morel.geoloc.valid();
+        expect(valid).to.be.equal(morel.FALSE);
 
         var acc = Math.random();
-        app.geoloc.set(location.lat, location.lon, acc);
+        morel.geoloc.set(location.lat, location.lon, acc);
 
-        app.geoloc.CONF.GPS_ACCURACY_LIMIT = acc + 1;
-        valid = app.geoloc.valid();
-        expect(valid).to.be.equal(app.TRUE);
+        morel.geoloc.CONF.GPS_ACCURACY_LIMIT = acc + 1;
+        valid = morel.geoloc.valid();
+        expect(valid).to.be.equal(morel.TRUE);
 
     });
 });
@@ -240,9 +240,9 @@ describe('io interface', function(){
 
     /**
      * Testing
-     -app.io.sendSavedForm()
-     -app.io.sendAllSavedRecords()
-     -app.io.sendSavedRecord(savedRecordId)
+     -morel.io.sendSavedForm()
+     -morel.io.sendAllSavedRecords()
+     -morel.io.sendSavedRecord(savedRecordId)
      */
     it('main', function(){
 
@@ -251,26 +251,26 @@ describe('io interface', function(){
 
 describe('storage interface', function(){
     beforeEach(function(){
-        app.storage.tmpClear();
+        morel.storage.tmpClear();
     });
     afterEach(function(){});
 
     /**
      * Testing:
-     app.storage.tmpGet
-     app.storage.tmpSet
+     morel.storage.tmpGet
+     morel.storage.tmpSet
      */
     it('main', function(){
         //SET
         var item = 'item';
         var item_data = Math.random();
-        app.storage.tmpSet(item, item_data);
+        morel.storage.tmpSet(item, item_data);
 
-        var exists = app.storage.tmpIs(item);
+        var exists = morel.storage.tmpIs(item);
         expect(exists).to.be.true;
 
         //GET
-        var f_item_data = app.storage.tmpGet(item);
+        var f_item_data = morel.storage.tmpGet(item);
         expect(f_item_data).to.exist;
         expect(f_item_data).to.be.equal(item_data);
     });

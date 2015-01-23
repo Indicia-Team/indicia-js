@@ -2,8 +2,8 @@
  * NAVIGATION MODULE
  **********************************************************************/
 
-app = app || {};
-app.navigation = (function (m, $) {
+morel = morel || {};
+morel.navigation = (function (m, $) {
 
   /**
    * Updates the dialog box appended to the page
@@ -22,8 +22,9 @@ app.navigation = (function (m, $) {
    */
   m.popup = function (text, addClose) {
     this.makePopup(text, addClose);
-    $('#app-popup').popup();
-    $('#app-popup').popup('open').trigger('create');
+    var popup = $('#app-popup');
+    popup.popup();
+    popup.popup('open').trigger('create');
   };
 
   /**
@@ -86,11 +87,11 @@ app.navigation = (function (m, $) {
    */
   m.message = function (text, time) {
     if (text == null) {
-      _log('NAVIGATION: no text provided to message.', app.LOG_ERROR);
+      _log('NAVIGATION: no text provided to message.', morel.LOG_ERROR);
       return;
     }
 
-    var messageId = 'appLoaderMessage';
+    var messageId = 'morelLoaderMessage';
 
     text = '<div id="' + messageId + '">' + text + '</div>';
 
@@ -112,15 +113,15 @@ app.navigation = (function (m, $) {
   };
 
   /**
-   * Opens particular app page-path.
+   * Opens particular morel page-path.
    *
    * @param delay
-   * @param path If no path supplied goes to app.PATH
+   * @param path If no path supplied goes to morel.PATH
    */
   m.go = function (delay, path) {
     setTimeout(function () {
       path = (path == undefined) ? "" : path;
-      window.location = Drupal.settings.basePath + app.CONF.HOME + path;
+      window.location = Drupal.settings.basePath + morel.CONF.HOME + path;
     }, delay);
   };
 
@@ -135,4 +136,4 @@ app.navigation = (function (m, $) {
   };
 
   return m;
-}(app.navigation || {}, app.$ || jQuery));
+}(morel.navigation || {}, morel.$ || jQuery));

@@ -1,6 +1,6 @@
 describe("Core suite", function() {
     beforeEach(function() {
-        app.record.clear();
+        morel.record.clear();
     });
     afterEach(function() { });
 
@@ -11,21 +11,21 @@ describe("Core suite", function() {
         //set up input that will not be removed
         var input = 'input';
         var input_data = Math.random();
-        app.storage.tmpSet(input, input_data);
+        morel.storage.tmpSet(input, input_data);
 
         //add record
         var record = {'recordinput': Math.random()};
-        app.record.set(record);
+        morel.record.set(record);
 
         //remove record
-        app.record.clear();
+        morel.record.clear();
 
         //check if the record is removed
-        var finalRecord = app.storage.tmpGet(app.record.RECORD);
+        var finalRecord = morel.storage.tmpGet(morel.record.RECORD);
         expect(finalRecord).to.be.null;
 
         //check if the input still exists
-        app.storage.tmpGet(input).should.equal(input_data);
+        morel.storage.tmpGet(input).should.equal(input_data);
     });
 
     /**
@@ -33,8 +33,8 @@ describe("Core suite", function() {
      */
     it('set record', function() {
         var record = {};
-        app.record.set(record);
-        var finalRecord = app.record.get();
+        morel.record.set(record);
+        var finalRecord = morel.record.get();
         expect(finalRecord)
             .to.be.an('object')
             .that.is.empty;
@@ -47,8 +47,8 @@ describe("Core suite", function() {
         //general setting up a record with an input
         var input = 'input';
         var input_data = Math.random();
-        app.record.inputs.set(input, input_data);
-        var finalRecord = app.record.get();
+        morel.record.inputs.set(input, input_data);
+        var finalRecord = morel.record.get();
         expect(finalRecord)
             .to.be.an('object')
             .that.has.property('input')
@@ -57,17 +57,17 @@ describe("Core suite", function() {
         //set another input
         var input2 = 'input2';
         var input2_data = Math.random();
-        app.record.inputs.set(input2, input2_data);
-        app.record.inputs.get(input2).should.equal(input2_data);
+        morel.record.inputs.set(input2, input2_data);
+        morel.record.inputs.get(input2).should.equal(input2_data);
 
         //changing input
         input_data = Math.random();
-        app.record.inputs.set(input2, input2_data);
-        app.record.inputs.get(input2).should.equal(input2_data);
+        morel.record.inputs.set(input2, input2_data);
+        morel.record.inputs.get(input2).should.equal(input2_data);
 
         //removing input
-        app.record.inputs.remove(input2);
-        finalRecord = app.record.get();
+        morel.record.inputs.remove(input2);
+        finalRecord = morel.record.get();
         expect(finalRecord).to.not.have.property(input2);
 
     });

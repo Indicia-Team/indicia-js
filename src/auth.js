@@ -2,8 +2,8 @@
  * AUTH MODULE
  **********************************************************************/
 
-app = app || {};
-app.auth = (function (m, $) {
+morel = morel || {};
+morel.auth = (function (m, $) {
   //module configuration should be setup in an app config file
   m.CONF = {
     APPNAME: "",
@@ -100,7 +100,7 @@ app.auth = (function (m, $) {
    * @returns {Object|*}
    */
   m.getUser = function () {
-    return app.settings(m.USER);
+    return morel.settings(m.USER);
   };
 
   /**
@@ -109,16 +109,16 @@ app.auth = (function (m, $) {
    * @param user A user object
    */
   m.setUser = function (user) {
-    app.settings(m.USER, user);
+    morel.settings(m.USER, user);
   };
 
   /**
    * Removes the current user details from the storage.
    */
   m.removeUser = function () {
-    app.settings(m.USER, {});
+    morel.settings(m.USER, {});
   };
 
   return m;
-}(app.auth || {}, jQuery));
+}(morel.auth || {}, jQuery));
 

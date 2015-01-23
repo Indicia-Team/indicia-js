@@ -4,10 +4,10 @@
  * Object responsible for record input management.
  **********************************************************************/
 
-app = app || {};
-app.record = app.record || {};
+morel = morel || {};
+morel.record = morel.record || {};
 
-app.record.inputs = (function (m, $) {
+morel.record.inputs = (function (m, $) {
   //todo: move KEYS to CONF.
   m.KEYS = {
     'SREF': 'sample:entered_sref',
@@ -24,9 +24,9 @@ app.record.inputs = (function (m, $) {
    * @param data Input value
    */
   m.set = function (item, data) {
-    var record = app.record.get();
+    var record = morel.record.get();
     record[item] = data;
-    app.record.set(record);
+    morel.record.set(record);
   };
 
   /**
@@ -36,7 +36,7 @@ app.record.inputs = (function (m, $) {
    * @returns {*} null if the item does not exist
    */
   m.get = function (item) {
-    var record = app.record.get();
+    var record = morel.record.get();
     return record[item];
   };
 
@@ -46,9 +46,9 @@ app.record.inputs = (function (m, $) {
    * @param item Input name
    */
   m.remove = function (item) {
-    var record = app.record.get();
+    var record = morel.record.get();
     delete record[item];
-    app.record.set(record);
+    morel.record.set(record);
   };
 
   /**
@@ -67,4 +67,4 @@ app.record.inputs = (function (m, $) {
   };
 
   return m;
-}(app.record.inputs || {}, app.$ || jQuery));
+}(morel.record.inputs || {}, morel.$ || jQuery));

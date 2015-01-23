@@ -5,8 +5,8 @@
  *  - Validation should be moved to the app controllers level.
  **********************************************************************/
 
-app = app || {};
-app.record = (function (m, $) {
+morel = morel || {};
+morel.record = (function (m, $) {
 
   //CONSTANTS
   //todo: add _KEY to each constant name to distinguish all KEYS
@@ -43,12 +43,12 @@ app.record = (function (m, $) {
    * Record settings. A separate DOM storage unit for storing
    * recording specific data.
    * Note: in the future, if apart of LastFormId no other uses arises
-   * should be merged with default app.settings.
+   * should be merged with default morel.settings.
    *
    * @param settings
    */
   m.setSettings = function (settings) {
-    app.storage.set(m.SETTINGS, settings);
+    morel.storage.set(m.SETTINGS, settings);
   };
 
   /**
@@ -69,7 +69,7 @@ app.record = (function (m, $) {
    * @returns {*|{}}
    */
   m.getSettings = function () {
-    var settings = app.storage.get(m.SETTINGS) || m.initSettings();
+    var settings = morel.storage.get(m.SETTINGS) || m.initSettings();
     return settings;
   };
 
@@ -79,7 +79,7 @@ app.record = (function (m, $) {
    * @returns {*}
    */
   m.get = function () {
-    return app.storage.tmpGet(m.RECORD) || {};
+    return morel.storage.tmpGet(m.RECORD) || {};
   };
 
   /**
@@ -88,14 +88,14 @@ app.record = (function (m, $) {
    * @param record The currenr record to be stored.
    */
   m.set = function (record) {
-    app.storage.tmpSet(m.RECORD, record);
+    morel.storage.tmpSet(m.RECORD, record);
   };
 
   /**
    * Clears the current record.
    */
   m.clear = function () {
-    app.storage.tmpRemove(m.RECORD);
+    morel.storage.tmpRemove(m.RECORD);
   };
 
   /**
@@ -189,13 +189,13 @@ app.record = (function (m, $) {
           //this new invalid input belongs to the same group and should
           //be ignored.
           for (var i = 0; i < invalids.length; i++) {
-            if (invalids[i].name == (app.record.MULTIPLE_GROUP_KEY + this.name)) {
+            if (invalids[i].name == (morel.record.MULTIPLE_GROUP_KEY + this.name)) {
               found = true;
               break;
             }
             if (invalids[i].name == this.name) {
               var new_id = (this.id).substr(0, this.id.lastIndexOf(':'));
-              invalids[i].name = app.record.MULTIPLE_GROUP_KEY + this.name;
+              invalids[i].name = morel.record.MULTIPLE_GROUP_KEY + this.name;
               invalids[i].id = new_id;
               found = true;
               break;
@@ -231,7 +231,7 @@ app.record = (function (m, $) {
     var record_array = [];
     var inputName, inputValue;
 
-    var record = app.record.get();
+    var record = morel.record.get();
     if (record == null) {
       return record_array;
     }
@@ -285,7 +285,7 @@ app.record = (function (m, $) {
         case "hidden":
           break;
         default:
-          _log("RECORD: unknown input type: " + type + '.', app.LOG_ERROR);
+          _log("RECORD: unknown input type: " + type + '.', morel.LOG_ERROR);
           break;
       }
 
@@ -336,4 +336,4 @@ app.record = (function (m, $) {
   };
 
   return m;
-}(app.record || {}, app.$ || jQuery));
+}(morel.record || {}, morel.$ || jQuery));
