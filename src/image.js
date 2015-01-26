@@ -16,7 +16,6 @@ morel.image = (function (m, $) {
    *
    * @param elem DOM element to look for files
    * @param callback function with an array parameter
-   * @param onError
    */
   m.extractAllToArray = function (elem, callback, onError) {
     var files = morel.image.findAll(elem);
@@ -69,7 +68,7 @@ morel.image = (function (m, $) {
 
           var shrinked = canvas.toDataURL(file.type);
 
-          _log("IMAGE: done shrinking file (" + 
+          _log("IMAGE: done shrinking file (" +
           (shrinked.length / 1024) + "KB).", morel.LOG_DEBUG);
 
           onSaveSuccess(shrinked);
@@ -127,7 +126,6 @@ morel.image = (function (m, $) {
 
   /**
    * Extracts all files from the page inputs having data-form attribute.
-   * @param elem
    */
   m.findAll = function (elem) {
     if (!elem) {
