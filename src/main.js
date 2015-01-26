@@ -7,7 +7,10 @@
  *  - Close as many global variables
  **********************************************************************/
 
-morel = (function (m, $) {
+var morel = (function (m, $) {
+  "use strict";
+  /*global _log*/
+
   m.version = '0'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
@@ -69,7 +72,7 @@ morel = (function (m, $) {
       switch (event) {
         case 'pagecreate':
         case 'pagecontainerbeforechange':
-          id = data.prevPage != null ? data.prevPage[0].id : e.target.id;
+          id = data.prevPage ? data.prevPage[0].id : e.target.id;
           break;
 
         case 'pagebeforecreate':
@@ -90,6 +93,7 @@ morel = (function (m, $) {
         case 'pagecontainerbeforeload':
         case 'pagecontainerload':
         case 'pagecontainerloadfailed':
+          /* falls through */
         default:
           break;
       }
@@ -120,16 +124,16 @@ morel = (function (m, $) {
    */
   m.settings = function (item, data) {
     var settings = morel.storage.get('settings');
-    if (settings == null) {
+    if (!settings) {
       morel.initSettings();
       settings = morel.storage.get('settings');
     }
 
-    if (data != null) {
+    if (data) {
       settings[item] = data;
       return morel.storage.set('settings', settings);
     } else {
-      return (item != undefined) ? settings[item] : settings;
+      return (item) ? settings[item] : settings;
     }
   };
 

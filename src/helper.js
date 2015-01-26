@@ -8,10 +8,11 @@
  * Gets a query parameter from the URL.
  */
 function getParameterByName(name) {
+  "use strict";
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
     results = regex.exec(location.search);
-  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+  return !results ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
 /**
@@ -31,16 +32,17 @@ function getParameterByName(name) {
  * @private
  */
 function _log(message, level) {
-
+  "use strict";
+  /* global morel */
   //do nothing if logging turned off
-  if (morel.CONF.LOG == morel.LOG_NONE) {
+  if (morel.CONF.LOG === morel.LOG_NONE) {
     return;
   }
 
-  if (morel.CONF.LOG >= level || level == null) {
+  if (morel.CONF.LOG >= level || !level ) {
     switch (level) {
       case morel.LOG_ERROR:
-        _logError(message);
+        _logError(morel.CONF.basePath, message);
         break;
       case morel.LOG_WARNING:
         console.warn(message);
@@ -49,9 +51,10 @@ function _log(message, level) {
         console.log(message);
         break;
       case morel.LOG_DEBUG:
+      /* falls through */
       default:
         //IE does not support console.debug
-        if (console.debug == null) {
+        if (!console.debug) {
           console.log(message);
           break;
         }
@@ -66,12 +69,13 @@ function _log(message, level) {
  * @param error object holding a 'message', and optionally 'url' and 'line' fields.
  * @private
  */
-function _logError(error) {
+function _logError(basePath, error) {
+  "use strict";
   //print error
-  console.error(error['message'], error['url'], error['line']);
+  console.error(error.message, error.url, error.line);
 
   //prepare the message
-  var message = '<b style="color: red">' + error['message'] + '</b>';
+  var message = '<b style="color: red">' + error.message + '</b>';
   message += '</br><b> morel.version = </b><i>"' + morel.version + '"</i>';
 
   message += '</br><b> morel.CONF.NAME = </b><i>"' + morel.CONF.NAME + '"</i>';
@@ -80,7 +84,7 @@ function _logError(error) {
   message += '</br>' + navigator.appName;
   message += '</br>' + navigator.appVersion;
 
-  var url = error['url'] + ' (' + error['line'] + ')';
+  var url = error.url + ' (' + error.line + ')';
 
   if (navigator.onLine) {
     //send to server
@@ -97,7 +101,7 @@ function _logError(error) {
     delete data.append;
 
     jQuery.ajax({
-      url: Drupal.settings.basePath + 'mobile/log',
+      url: basePath + 'mobile/log',
       type: 'post',
       dataType: 'json',
       success: function (data) {
@@ -105,12 +109,7 @@ function _logError(error) {
       },
       data: data
     });
-  } else {
-    //save
-
   }
-
-
 }
 
 /**
@@ -123,6 +122,7 @@ function _logError(error) {
  * @private
  */
 function _onerror(message, url, line) {
+  "use strict";
   window.onerror = null;
 
   var error = {
@@ -139,6 +139,7 @@ function _onerror(message, url, line) {
 
 //todo: remove if not used.
 function loadScript(src) {
+  "use strict";
   var script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = src;
@@ -149,19 +150,20 @@ function loadScript(src) {
  * Starts an Appcache Manifest Downloading.
  *
  * @param id
- * @param files_no
+ * @param filesNum
  * @param src
  * @param callback
  * @param onError
  */
-function startManifestDownload(id, files_no, src, callback, onError) {
+function startManifestDownload(id, filesNum, src, callback, onError) {
+  "use strict";
   /*todo: Add better offline handling:
    If there is a network connection, but it cannot reach any
    Internet, it will carry on loading the page, where it should stop it
    at that point.
    */
   if (navigator.onLine) {
-    src = Drupal.settings.basePath + src + '?base_path=' + Drupal.settings.basePath + '&files=' + files_no;
+    src = morel.CONF.basePath + src + '?base_path=' + morel.CONF.basePath + '&files=' + filesNum;
     var frame = document.getElementById(id);
     if (frame) {
       //update
@@ -175,14 +177,14 @@ function startManifestDownload(id, files_no, src, callback, onError) {
       //After frame loading set up its controllers/callbacks
       frame.onload = function () {
         _log('Manifest frame loaded', morel.LOG_INFO);
-        if (callback != null) {
+        if (callback) {
           frame.contentWindow.finished = callback;
         }
 
-        if (onError != null) {
+        if (onError) {
           frame.contentWindow.error = onError;
         }
-      }
+      };
     }
   } else {
     $.mobile.loading('show', {
@@ -201,17 +203,18 @@ function startManifestDownload(id, files_no, src, callback, onError) {
  * @returns {*}
  */
 function varInit(name) {
-  var name_array = name.split('.');
-  window[name_array[0]] = window[name_array[0]] || {};
-  var variable = window[name_array[0]];
+  "use strict";
+  var nameArray = name.split('.');
+  window[nameArray[0]] = window[nameArray[0]] || {};
+  var variable = window[nameArray[0]];
 
   //iterate through the namespaces
-  for (var i = 1; i < name_array.length; i++) {
-    if (variable[name_array[i]] !== 'object') {
+  for (var i = 1; i < nameArray.length; i++) {
+    if (variable[nameArray[i]] !== 'object') {
       //overwrite if it is not an object
-      variable[name_array[i]] = {};
+      variable[nameArray[i]] = {};
     }
-    variable = variable[name_array[i]];
+    variable = variable[nameArray[i]];
   }
   return variable;
 }
@@ -223,10 +226,16 @@ function varInit(name) {
  * @returns {*}
  */
 function objClone(obj) {
-  if (null == obj || "object" != typeof obj) return obj;
+  "use strict";
+
+  if (null === obj || "object" !== typeof obj) {
+    return obj;
+  }
   var copy = obj.constructor();
   for (var attr in obj) {
-    if (obj.hasOwnProperty(attr)) copy[attr] = objClone(obj[attr]);
+    if (obj.hasOwnProperty(attr)) {
+      copy[attr] = objClone(obj[attr]);
+    }
   }
   return copy;
 }
@@ -239,6 +248,8 @@ function objClone(obj) {
  * $('MyTabSelector').disableTab(1, true);  // Disables & hides the second tab
  */
 (function ($) {
+  "use strict";
+
   $.fn.disableTab = function (tabIndex, hide) {
 
     // Get the array of disabled tabs, if any

@@ -5,8 +5,10 @@
  *  - Validation should be moved to the app controllers level.
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.record = (function (m, $) {
+  "use strict";
+  /*global _log*/
 
   //CONSTANTS
   //todo: add _KEY to each constant name to distinguish all KEYS
@@ -30,7 +32,7 @@ morel.record = (function (m, $) {
    */
   m.init = function () {
     var settings = m.getSettings();
-    if (settings == null) {
+    if (!settings) {
       settings = {};
       settings[m.LASTID] = 0;
       m.setSettings(settings);
@@ -189,21 +191,22 @@ morel.record = (function (m, $) {
           //this new invalid input belongs to the same group and should
           //be ignored.
           for (var i = 0; i < invalids.length; i++) {
-            if (invalids[i].name == (morel.record.MULTIPLE_GROUP_KEY + this.name)) {
+            if (invalids[i].name === (morel.record.MULTIPLE_GROUP_KEY + this.name)) {
               found = true;
               break;
             }
-            if (invalids[i].name == this.name) {
-              var new_id = (this.id).substr(0, this.id.lastIndexOf(':'));
+            if (invalids[i].name === this.name) {
+              var newID = (this.id).substr(0, this.id.lastIndexOf(':'));
               invalids[i].name = morel.record.MULTIPLE_GROUP_KEY + this.name;
-              invalids[i].id = new_id;
+              invalids[i].id = newID;
               found = true;
               break;
             }
           }
           //save the input as a invalid
-          if (!found)
+          if (!found) {
             invalids.push({"name": this.name, "id": this.id});
+          }
         }
       });
     }
@@ -228,24 +231,24 @@ morel.record = (function (m, $) {
    */
   m.extract = function () {
     //extract record data
-    var record_array = [];
+    var recordArray = [];
     var inputName, inputValue;
 
     var record = morel.record.get();
-    if (record == null) {
-      return record_array;
+    if (!record) {
+      return recordArray;
     }
     var inputs = Object.keys(record);
     for (var inputNum = 0; inputNum < inputs.length; inputNum++) {
       inputName = inputs[inputNum];
       inputValue = record[inputName];
-      record_array.push({
+      recordArray.push({
         "name": inputName,
         "value": inputValue
       });
     }
 
-    return record_array;
+    return recordArray;
   };
 
   /**
@@ -256,7 +259,7 @@ morel.record = (function (m, $) {
    */
   m.extractFromRecord = function (record) {
     //extract record data
-    var record_array = [];
+    var recordArray = [];
     var name, value, type, id, needed;
 
     record.find('input').each(function (index, input) {
@@ -290,8 +293,8 @@ morel.record = (function (m, $) {
       }
 
       if (needed) {
-        if (value != "") {
-          record_array.push({
+        if (value !== "") {
+          recordArray.push({
             "name": name,
             "value": value,
             "type": type
@@ -307,8 +310,8 @@ morel.record = (function (m, $) {
       value = $(textarea).val();
       type = "textarea";
 
-      if (value != "") {
-        record_array.push({
+      if (value !== "") {
+        recordArray.push({
           "name": name,
           "value": value,
           "type": type
@@ -323,8 +326,8 @@ morel.record = (function (m, $) {
       value = $(select).find(":selected").val();
       type = "select";
 
-      if (value != "") {
-        record_array.push({
+      if (value !== "") {
+        recordArray.push({
           "name": name,
           "value": value,
           "type": type
@@ -332,7 +335,7 @@ morel.record = (function (m, $) {
       }
     });
 
-    return record_array;
+    return recordArray;
   };
 
   return m;

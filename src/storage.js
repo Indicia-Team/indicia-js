@@ -2,8 +2,11 @@
  * STORAGE MODULE
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.storage = (function (m, $) {
+  "use strict";
+  /*global _log*/
+
   /**
    * Checks if there is enough space in the storage.
    *
@@ -62,7 +65,7 @@ morel.storage = (function (m, $) {
     if ($.isPlainObject(val)) {
       return !$.isEmptyObject(val);
     } else {
-      return val != null;
+      return val;
     }
   };
 
@@ -90,7 +93,7 @@ morel.storage = (function (m, $) {
 
   /**
    * Sets an item in temporary storage.
-   *
+   * @param data
    * @param item
    */
   m.tmpSet = function (item, data) {
@@ -122,7 +125,7 @@ morel.storage = (function (m, $) {
     if ($.isPlainObject(val)) {
       return !$.isEmptyObject(val);
     } else {
-      return val != null;
+      return val;
     }
   };
 
@@ -141,10 +144,11 @@ morel.storage = (function (m, $) {
   function localStorageHasSpace(size) {
     var taken = JSON.stringify(localStorage).length;
     var left = 1024 * 1024 * 5 - taken;
-    if ((left - size) > 0)
+    if ((left - size) > 0) {
       return 1;
-    else
+    } else {
       return 0;
+    }
   }
 
   return m;
@@ -160,18 +164,19 @@ morel.storage = (function (m, $) {
 /**
  * Converts DataURI object to a Blob.
  *
- * @param {type} form_count
- * @param {type} pic_count
- * @param {type} file
+ * @param {type} dataURI
+ * @param {type} fileType
  * @returns {undefined}
  */
-function dataURItoBlob(dataURI, file_type) {
+function dataURItoBlob(dataURI, fileType) {
+  "use strict";
+
   var binary = atob(dataURI.split(',')[1]);
   var array = [];
   for (var i = 0; i < binary.length; i++) {
     array.push(binary.charCodeAt(i));
   }
   return new Blob([new Uint8Array(array)], {
-    type: file_type
+    type: fileType
   });
 }

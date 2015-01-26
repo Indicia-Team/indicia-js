@@ -4,10 +4,13 @@
  * Object responsible for record input management.
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.record = morel.record || {};
 
 morel.record.inputs = (function (m, $) {
+  "use strict";
+  /*global _log*/
+
   //todo: move KEYS to CONF.
   m.KEYS = {
     'SREF': 'sample:entered_sref',
@@ -62,7 +65,7 @@ morel.record.inputs = (function (m, $) {
     if ($.isPlainObject(val)) {
       return !$.isEmptyObject(val);
     } else {
-      return val != null;
+      return val;
     }
   };
 

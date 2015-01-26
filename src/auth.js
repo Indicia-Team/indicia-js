@@ -2,8 +2,10 @@
  * AUTH MODULE
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.auth = (function (m, $) {
+  "use strict";
+
   //module configuration should be setup in an app config file
   m.CONF = {
     APPNAME: "",
@@ -45,7 +47,7 @@ morel.auth = (function (m, $) {
     var user = m.getUser();
     if (m.isUser()) {
       data.append('email', user.email);
-      data.append('password', user.password)
+      data.append('password', user.password);
     }
 
     return data;

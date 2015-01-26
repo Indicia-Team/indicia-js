@@ -2,8 +2,10 @@
  * GEOLOC MODULE
  **********************************************************************/
 
-morel = morel || {};
-morel.geoloc = (function (m, $) {
+var morel = morel || {};
+morel.geoloc = (function (m) {
+  "use strict";
+  /*global _log*/
 
   //configuration should be setup in app config file
   m.CONF = {
@@ -17,7 +19,7 @@ morel.geoloc = (function (m, $) {
   m.longitude = null;
   m.accuracy = -1;
 
-  m.start_time = 0;
+  m.startTime = 0;
   m.id = 0;
   m.map = null;
 
@@ -44,7 +46,7 @@ morel.geoloc = (function (m, $) {
       'lat': this.latitude,
       'lon': this.longitude,
       'acc': this.accuracy
-    }
+    };
   };
 
   /**
@@ -74,7 +76,7 @@ morel.geoloc = (function (m, $) {
     // Early return if geolocation not supported.
     if (!navigator.geolocation) {
       _log("GEOLOC: not supported!", morel.LOG_ERROR);
-      if (onError != null) {
+      if (onError) {
         onError({message: "Geolocation is not supported!"});
       }
       return;
@@ -84,17 +86,7 @@ morel.geoloc = (function (m, $) {
     morel.geoloc.stop();
     morel.geoloc.clear();
 
-    ////check if the lock is acquired and the accuracy is good enough
-    //var accuracy = morel.geoloc.getAccuracy();
-    //if ((accuracy > -1) && (accuracy < this.CONF.GPS_ACCURACY_LIMIT)){
-    //    _log('GEOLOC: lock is good enough (acc: ' + accuracy + ' meters).');
-    //    if (onSuccess != null) {
-    //        onSuccess(this.get());
-    //    }
-    //    return;
-    //}
-
-    this.start_time = new Date().getTime();
+    this.startTime = new Date().getTime();
 
     // Request geolocation.
     this.id = morel.geoloc.watchPosition(onUpdate, onSuccess, onError);
@@ -118,12 +110,12 @@ morel.geoloc = (function (m, $) {
   m.watchPosition = function (onUpdate, onSuccess, onError) {
     var onGeolocSuccess = function (position) {
       //timeout
-      var current_time = new Date().getTime();
-      if ((current_time - morel.geoloc.start_time) > morel.geoloc.TIMEOUT) {
+      var currentTime = new Date().getTime();
+      if ((currentTime - morel.geoloc.startTime) > morel.geoloc.TIMEOUT) {
         //stop everything
         morel.geoloc.stop();
         _log("GEOLOC: timeout.", morel.LOG_ERROR);
-        if (onError != null) {
+        if (onError) {
           onError({message: "Geolocation timed out!"});
         }
         return;
@@ -136,13 +128,13 @@ morel.geoloc = (function (m, $) {
       };
 
       //set for the first time
-      var prev_accuracy = morel.geoloc.getAccuracy();
-      if (prev_accuracy == -1) {
-        prev_accuracy = location.acc + 1;
+      var prevAccuracy = morel.geoloc.getAccuracy();
+      if (prevAccuracy === -1) {
+        prevAccuracy = location.acc + 1;
       }
 
       //only set it up if the accuracy is increased
-      if (location.acc > -1 && location.acc < prev_accuracy) {
+      if (location.acc > -1 && location.acc < prevAccuracy) {
         morel.geoloc.set(location.lat, location.lon, location.acc);
         if (location.acc < morel.geoloc.CONF.GPS_ACCURACY_LIMIT) {
           _log("GEOLOC: finished: " + location.acc + " meters.", morel.LOG_INFO);
@@ -150,12 +142,12 @@ morel.geoloc = (function (m, $) {
 
           //save in storage
           morel.settings('location', location);
-          if (onSuccess != null) {
+          if (onSuccess) {
             onSuccess(location);
           }
         } else {
           _log("GEOLOC: updated acc: " + location.acc + " meters.", morel.LOG_INFO);
-          if (onUpdate != null) {
+          if (onUpdate) {
             onUpdate(location);
           }
         }
@@ -165,7 +157,7 @@ morel.geoloc = (function (m, $) {
     // Callback if geolocation fails.
     var onGeolocError = function (error) {
       _log("GEOLOC: ERROR.", morel.LOG_ERROR);
-      if (onError != null) {
+      if (onError) {
         onError({'message': error.message});
       }
     };
@@ -191,7 +183,7 @@ morel.geoloc = (function (m, $) {
    */
   m.valid = function () {
     var accuracy = this.getAccuracy();
-    if (accuracy == -1) {
+    if (accuracy === -1) {
       //No GPS lock yet
       return morel.ERROR;
 
@@ -206,4 +198,4 @@ morel.geoloc = (function (m, $) {
   };
 
   return m;
-})(morel.geoloc || {}, morel.$ || jQuery);
+})(morel.geoloc || {});

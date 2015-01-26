@@ -1332,7 +1332,7 @@ morel.geoloc = (function (m, $) {
   m.longitude = null;
   m.accuracy = -1;
 
-  m.start_time = 0;
+  m.startTime = 0;
   m.id = 0;
   m.map = null;
 
@@ -1409,7 +1409,7 @@ morel.geoloc = (function (m, $) {
     //    return;
     //}
 
-    this.start_time = new Date().getTime();
+    this.startTime = new Date().getTime();
 
     // Request geolocation.
     this.id = morel.geoloc.watchPosition(onUpdate, onSuccess, onError);
@@ -1434,7 +1434,7 @@ morel.geoloc = (function (m, $) {
     var onGeolocSuccess = function (position) {
       //timeout
       var current_time = new Date().getTime();
-      if ((current_time - morel.geoloc.start_time) > morel.geoloc.TIMEOUT) {
+      if ((current_time - morel.geoloc.startTime) > morel.geoloc.TIMEOUT) {
         //stop everything
         morel.geoloc.stop();
         _log("GEOLOC: timeout.", morel.LOG_ERROR);

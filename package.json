@@ -1,55 +1,55 @@
 {
-	"name": "morel",
-	"title": "morel",
-	"description": "Mobile Recording Library for biological data collection.",
-	"version": "2.0.0",
-	"homepage": "https://github.com/NERC-CEH/morel",
-	"author": {
-		"name": "Karols Kazlauskis",
-		"email": "karkaz@ceh.ac.uk",
-		"url": "http://brc.ac.uk"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/NERC-CEH/morel"
-	},
-	"bugs": {
-		"url": "https://github.com/NERC-CEH/morel/issues"
-	},
-	"licenses": [
-		{
-			"type": "GNU GPL v3",
-			"url": "http://www.gnu.org/licenses/gpl.html"
-		}
-	],
-	"scripts": {
-		"test": "grunt"
-	},
-	"dependencies": {},
-	"devDependencies": {
-		"grunt": "0.4.4",
-		"grunt-contrib-compress": "0.7.0",
-		"grunt-contrib-concat": "0.3.0",
-		"grunt-contrib-uglify": "0.4.0",
-		"grunt-contrib-watch": "0.6.0",
-		"grunt-text-replace": "0.3.12",
-		"karma": "latest",
-		"mocha": "latest",
-		"karma-mocha": "latest",
-		"karma-chai": "latest",
-		"chai": "latest",
-		"grunt-karma": "latest"
-	},
-	"keywords": [
-		"morel",
-		"mobile",
-		"biological",
-		"bio",
-		"recording",
-		"rec",
-		"library", 
-		"lib",
-		"indicia",
-		"iRecord"
-	]
+  "name": "morel",
+  "title": "morel",
+  "description": "Mobile Recording Library for biological data collection.",
+  "version": "2.1.0",
+  "homepage": "https://github.com/NERC-CEH/morel",
+  "author": {
+    "name": "Karols Kazlauskis",
+    "email": "karkaz@ceh.ac.uk",
+    "url": "http://brc.ac.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NERC-CEH/morel"
+  },
+  "bugs": {
+    "url": "https://github.com/NERC-CEH/morel/issues"
+  },
+  "licenses": [
+    {
+      "type": "GNU GPL v3",
+      "url": "http://www.gnu.org/licenses/gpl.html"
+    }
+  ],
+  "scripts": {
+    "test": "grunt"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "0.4.4",
+    "grunt-contrib-compress": "0.7.0",
+    "grunt-contrib-concat": "0.3.0",
+    "grunt-contrib-uglify": "0.4.0",
+    "grunt-contrib-watch": "0.6.0",
+    "grunt-text-replace": "0.3.12",
+    "karma": "latest",
+    "mocha": "latest",
+    "karma-mocha": "latest",
+    "karma-chai": "latest",
+    "chai": "latest",
+    "grunt-karma": "latest"
+  },
+  "keywords": [
+    "morel",
+    "mobile",
+    "biological",
+    "bio",
+    "recording",
+    "rec",
+    "library",
+    "lib",
+    "indicia",
+    "iRecord"
+  ]
 }

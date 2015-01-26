@@ -4,8 +4,10 @@
  * Module responsible for large data management.
  **********************************************************************/
 
-morel = morel || {};
-morel.db = (function (m, $) {
+var morel = morel || {};
+morel.db = (function (m) {
+  "use strict";
+  /*global _log, IDBKeyRange*/
 
   //todo: move to CONF.
   m.DB_VERSION = 1;
@@ -28,7 +30,7 @@ morel.db = (function (m, $) {
       var transaction = db.transaction([storeName], "readwrite");
       var store = transaction.objectStore(storeName);
 
-      if (callback != null) {
+      if (callback) {
         callback(store);
       }
     };
@@ -42,15 +44,12 @@ morel.db = (function (m, $) {
     };
 
     req.onerror = function (e) {
-      _log("DB: NOT opened successfully.", morel.LOG_ERROR);
-      // _log(e);
+      _log("DB: NOT opened successfully:" + e, morel.LOG_ERROR);
     };
 
     req.onblocked = function (e) {
-      _log("DB: database blocked.", morel.LOG_ERROR);
-      // _log(e);
-    }
-
+      _log("DB: database blocked:" + e, morel.LOG_ERROR);
+    };
   };
 
   /**
@@ -67,7 +66,7 @@ morel.db = (function (m, $) {
       store.add(record, key);
       store.transaction.db.close();
 
-      if (callback != null) {
+      if (callback) {
         callback();
       }
     });
@@ -84,7 +83,7 @@ morel.db = (function (m, $) {
       _log('DB: getting from the store.', morel.LOG_DEBUG);
 
       var result = store.get(key);
-      if (callback != null) {
+      if (callback) {
         callback(result);
       }
 
@@ -115,7 +114,7 @@ morel.db = (function (m, $) {
 
           // Reach the end of the data
         } else {
-          if (callback != null) {
+          if (callback) {
             callback(data);
           }
         }
@@ -144,11 +143,11 @@ morel.db = (function (m, $) {
       _log('DB: clearing store', morel.LOG_DEBUG);
       store.clear();
 
-      if (callback != null) {
-        callback(data);
+      if (callback) {
+        callback();
       }
     });
   };
 
   return m;
-}(morel.db || {}, morel.$ || jQuery));
+}(morel.db || {}));

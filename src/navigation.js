@@ -2,8 +2,10 @@
  * NAVIGATION MODULE
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.navigation = (function (m, $) {
+  "use strict";
+  /*global _log*/
 
   /**
    * Updates the dialog box appended to the page
@@ -86,7 +88,7 @@ morel.navigation = (function (m, $) {
    * @param time 0 if no hiding, null gives default 3000ms delay
    */
   m.message = function (text, time) {
-    if (text == null) {
+    if (!text) {
       _log('NAVIGATION: no text provided to message.', morel.LOG_ERROR);
       return;
     }
@@ -105,7 +107,7 @@ morel.navigation = (function (m, $) {
     //trigger JQM beauty
     $('#' + messageId).trigger('create');
 
-    if (time != 0) {
+    if (time !== 0) {
       setTimeout(function () {
         $.mobile.loading('hide');
       }, time || 3000);
@@ -118,20 +120,10 @@ morel.navigation = (function (m, $) {
    * @param delay
    * @param path If no path supplied goes to morel.PATH
    */
-  m.go = function (delay, path) {
+  m.go = function (delay, basePath, path) {
     setTimeout(function () {
-      path = (path == undefined) ? "" : path;
-      window.location = Drupal.settings.basePath + morel.CONF.HOME + path;
-    }, delay);
-  };
-
-  /**
-   * Opens the app home page.
-   */
-  //todo: clean setting of the timeout and hardcoded '/form'
-  m.goRecord = function (delay) {
-    setTimeout(function () {
-      $.mobile.changePage(Drupal.settings.mobileIformStartPath + '/form');
+      path = path ? "" : path;
+      window.location = basePath + morel.CONF.HOME + path;
     }, delay);
   };
 

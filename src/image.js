@@ -2,8 +2,10 @@
  * IMAGE MODULE
  **********************************************************************/
 
-morel = morel || {};
+var morel = morel || {};
 morel.image = (function (m, $) {
+  "use strict";
+  /*global _log*/
 
   //todo: move to CONF.
   m.MAX_IMG_HEIGHT = 800;
@@ -14,6 +16,7 @@ morel.image = (function (m, $) {
    *
    * @param elem DOM element to look for files
    * @param callback function with an array parameter
+   * @param onError
    */
   m.extractAllToArray = function (elem, callback, onError) {
     var files = morel.image.findAll(elem);
@@ -27,13 +30,13 @@ morel.image = (function (m, $) {
   /**
    * Transforms and resizes an image file into a string and saves it in the storage.
    *
-   * @param key
+   * @param onError
    * @param file
    * @param onSaveSuccess
    * @returns {number}
    */
   m.toString = function (file, onSaveSuccess, onError) {
-    if (file != null) {
+    if (file) {
       _log("IMAGE: working with " + file.name + ".", morel.LOG_DEBUG);
 
       var reader = new FileReader();
@@ -66,8 +69,8 @@ morel.image = (function (m, $) {
 
           var shrinked = canvas.toDataURL(file.type);
 
-          _log("IMAGE: done shrinking file ("
-          + (shrinked.length / 1024) + "KB).", morel.LOG_DEBUG);
+          _log("IMAGE: done shrinking file (" + 
+          (shrinked.length / 1024) + "KB).", morel.LOG_DEBUG);
 
           onSaveSuccess(shrinked);
 
@@ -91,47 +94,49 @@ morel.image = (function (m, $) {
    *
    * @param files An array of files to be saved
    * @param onSaveAllFilesSuccess
+   * @param onError
    */
   m.toStringAll = function (files, onSaveAllFilesSuccess, onError) {
     //recursive calling to save all the images
     saveAllFilesRecursive(files, null);
-    function saveAllFilesRecursive(files, files_array) {
-      files_array = files_array || [];
+    function saveAllFilesRecursive(files, filesArray) {
+      filesArray = filesArray || [];
 
       //recursive files saving
       if (files.length > 0) {
-        var file_info = files.pop();
+        var filesInfo = files.pop();
         //get next file in file array
-        var file = file_info['file'];
-        var name = file_info['input_field_name'];
+        var file = filesInfo.file;
+        var name = filesInfo.input_field_name;
 
         //recursive saving of the files
         var onSaveSuccess = function (file) {
-          files_array.push({
+          filesArray.push({
             "name": name,
             "value": file,
             "type": 'file'
           });
-          saveAllFilesRecursive(files, files_array, onSaveSuccess);
+          saveAllFilesRecursive(files, filesArray, onSaveSuccess);
         };
         morel.image.toString(file, onSaveSuccess, onError);
       } else {
-        onSaveAllFilesSuccess(files_array);
+        onSaveAllFilesSuccess(filesArray);
       }
     }
   };
 
   /**
    * Extracts all files from the page inputs having data-form attribute.
+   * @param elem
    */
   m.findAll = function (elem) {
-    if (elem == null) {
+    if (!elem) {
       elem = $(document);
     }
 
     var files = [];
     $(elem).find('input').each(function (index, input) {
-      if ($(input).attr('type') == "file" && input.files.length > 0) {
+      if ($(input).attr('type') === "file" && input.files.length > 0) {
         var file = morel.image.find(input);
         files.push(file);
       }
@@ -142,7 +147,7 @@ morel.image = (function (m, $) {
   /**
    * Returns a file object with its name.
    *
-   * @param inputId The file input Id
+   * @param input The file input Id
    * @returns {{file: *, input_field_name: *}}
    */
   m.find = function (input) {
