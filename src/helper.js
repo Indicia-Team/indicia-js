@@ -5,17 +5,6 @@
  **********************************************************************/
 
 /**
- * Gets a query parameter from the URL.
- */
-function getParameterByName(name) {
-  "use strict";
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-    results = regex.exec(location.search);
-  return !results ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
-
-/**
  * Takes care of application execution logging.
  *
  * Uses 5 levels of logging:
@@ -137,88 +126,6 @@ function _onerror(message, url, line) {
   return true; // suppress normal error reporting
 }
 
-//todo: remove if not used.
-function loadScript(src) {
-  "use strict";
-  var script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = src;
-  document.body.appendChild(script);
-}
-
-/**
- * Starts an Appcache Manifest Downloading.
- *
- * @param id
- * @param filesNum
- * @param src
- * @param callback
- * @param onError
- */
-function startManifestDownload(id, filesNum, src, callback, onError) {
-  "use strict";
-  /*todo: Add better offline handling:
-   If there is a network connection, but it cannot reach any
-   Internet, it will carry on loading the page, where it should stop it
-   at that point.
-   */
-  if (navigator.onLine) {
-    src = morel.CONF.basePath + src + '?base_path=' + morel.CONF.basePath + '&files=' + filesNum;
-    var frame = document.getElementById(id);
-    if (frame) {
-      //update
-      frame.contentWindow.applicationCache.update();
-    } else {
-      //init
-      //morel.navigation.popup('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', true);
-      morel.navigation.message('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', 0);
-      frame = document.getElementById(id);
-
-      //After frame loading set up its controllers/callbacks
-      frame.onload = function () {
-        _log('Manifest frame loaded', morel.LOG_INFO);
-        if (callback) {
-          frame.contentWindow.finished = callback;
-        }
-
-        if (onError) {
-          frame.contentWindow.error = onError;
-        }
-      };
-    }
-  } else {
-    $.mobile.loading('show', {
-      text: "Looks like you are offline!",
-      theme: "b",
-      textVisible: true,
-      textonly: true
-    });
-  }
-}
-
-/**
- * Initialises and returns a variable.
- *
- * @param name
- * @returns {*}
- */
-function varInit(name) {
-  "use strict";
-  var nameArray = name.split('.');
-  window[nameArray[0]] = window[nameArray[0]] || {};
-  var variable = window[nameArray[0]];
-
-  //iterate through the namespaces
-  for (var i = 1; i < nameArray.length; i++) {
-    if (variable[nameArray[i]] !== 'object') {
-      //overwrite if it is not an object
-      variable[nameArray[i]] = {};
-    }
-    variable = variable[nameArray[i]];
-  }
-  return variable;
-}
-
 /**
  * Clones an object.
  *
@@ -227,7 +134,6 @@ function varInit(name) {
  */
 function objClone(obj) {
   "use strict";
-
   if (null === obj || "object" !== typeof obj) {
     return obj;
   }
@@ -241,52 +147,21 @@ function objClone(obj) {
 }
 
 /**
- * Adds Enable/Disable JQM Tab functionality
- * FROM: http://kylestechnobabble.blogspot.co.uk/2013/08/easy-way-to-enable-disable-hide-jquery.html
- * USAGE:
- * $('MyTabSelector').disableTab(0);        // Disables the first tab
- * $('MyTabSelector').disableTab(1, true);  // Disables & hides the second tab
+ * Converts DataURI object to a Blob.
+ *
+ * @param {type} dataURI
+ * @param {type} fileType
+ * @returns {undefined}
  */
-(function ($) {
+function dataURItoBlob(dataURI, fileType) {
   "use strict";
 
-  $.fn.disableTab = function (tabIndex, hide) {
-
-    // Get the array of disabled tabs, if any
-    var disabledTabs = this.tabs("option", "disabled");
-
-    if ($.isArray(disabledTabs)) {
-      var pos = $.inArray(tabIndex, disabledTabs);
-
-      if (pos < 0) {
-        disabledTabs.push(tabIndex);
-      }
-    }
-    else {
-      disabledTabs = [tabIndex];
-    }
-
-    this.tabs("option", "disabled", disabledTabs);
-
-    if (hide === true) {
-      $(this).find('li:eq(' + tabIndex + ')').addClass('ui-state-hidden');
-    }
-
-    // Enable chaining
-    return this;
-  };
-
-  $.fn.enableTab = function (tabIndex) {
-
-    // Remove the ui-state-hidden class if it exists
-    $(this).find('li:eq(' + tabIndex + ')').removeClass('ui-state-hidden');
-
-    // Use the built-in enable function
-    this.tabs("enable", tabIndex);
-
-    // Enable chaining
-    return this;
-
-  };
-
-})(jQuery);
+  var binary = atob(dataURI.split(',')[1]);
+  var array = [];
+  for (var i = 0; i < binary.length; i++) {
+    array.push(binary.charCodeAt(i));
+  }
+  return new Blob([new Uint8Array(array)], {
+    type: fileType
+  });
+}

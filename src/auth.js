@@ -2,8 +2,8 @@
  * AUTH MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.auth = (function (m, $) {
+/* global morel */
+morel.extend('auth', function (m) {
   "use strict";
 
   //module configuration should be setup in an app config file
@@ -92,8 +92,8 @@ morel.auth = (function (m, $) {
    * @returns {boolean} True if the user exists, else False
    */
   m.isUser = function () {
-    var user = m.getUser();
-    return !$.isEmptyObject(user);
+    var obj = m.getUser();
+    return Object.keys(obj).length !== 0;
   };
 
   /**
@@ -122,5 +122,5 @@ morel.auth = (function (m, $) {
   };
 
   return m;
-}(morel.auth || {}, jQuery));
+});
 

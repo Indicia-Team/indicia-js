@@ -4,8 +4,8 @@
  * Module responsible for large data management.
  **********************************************************************/
 
-var morel = morel || {};
-morel.db = (function (m) {
+/* global morel */
+morel.extend('db', function (m) {
   "use strict";
   /*global _log, IDBKeyRange*/
 
@@ -150,4 +150,4 @@ morel.db = (function (m) {
   };
 
   return m;
-}(morel.db || {}));
+});

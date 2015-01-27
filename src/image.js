@@ -2,10 +2,9 @@
  * IMAGE MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.image = (function (m, $) {
+/* global morel, _log */
+morel.extend('image', function (m) {
   "use strict";
-  /*global _log*/
 
   //todo: move to CONF.
   m.MAX_IMG_HEIGHT = 800;
@@ -157,5 +156,5 @@ morel.image = (function (m, $) {
   };
 
   return m;
-}(morel.image || {}, jQuery));
+});
 

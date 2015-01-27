@@ -4,12 +4,9 @@
  * Takes care of the record database functionality.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = morel.record || {};
-
-morel.record.db = (function (m, $) {
+/* global morel, _log, IDBKeyRange, dataURItoBlob */
+morel.extend('record.db', function (m) {
   "use strict";
-  /*global _log, IDBKeyRange, dataURItoBlob*/
 
   //todo: move to CONF.
   m.RECORDS = "records";
@@ -328,4 +325,4 @@ morel.record.db = (function (m, $) {
   };
 
   return m;
-}(morel.record.db || {}, morel.$ || jQuery));
+});

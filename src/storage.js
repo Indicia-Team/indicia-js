@@ -2,10 +2,9 @@
  * STORAGE MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.storage = (function (m, $) {
+/* global morel, log */
+morel.extend('storage', function (m) {
   "use strict";
-  /*global _log*/
 
   /**
    * Checks if there is enough space in the storage.
@@ -152,31 +151,4 @@ morel.storage = (function (m, $) {
   }
 
   return m;
-}(morel.storage || {}, jQuery));
-
-
-
-/*##############
- ## HELPER  ####
-  //todo: should find a better place for this.
- ##############*/
-
-/**
- * Converts DataURI object to a Blob.
- *
- * @param {type} dataURI
- * @param {type} fileType
- * @returns {undefined}
- */
-function dataURItoBlob(dataURI, fileType) {
-  "use strict";
-
-  var binary = atob(dataURI.split(',')[1]);
-  var array = [];
-  for (var i = 0; i < binary.length; i++) {
-    array.push(binary.charCodeAt(i));
-  }
-  return new Blob([new Uint8Array(array)], {
-    type: fileType
-  });
-}
+});

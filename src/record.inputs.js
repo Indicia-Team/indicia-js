@@ -4,12 +4,9 @@
  * Object responsible for record input management.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = morel.record || {};
-
-morel.record.inputs = (function (m, $) {
+/* global morel, _log* */
+morel.extend('record.inputs', function (m) {
   "use strict";
-  /*global _log*/
 
   //todo: move KEYS to CONF.
   m.KEYS = {
@@ -70,4 +67,4 @@ morel.record.inputs = (function (m, $) {
   };
 
   return m;
-}(morel.record.inputs || {}, morel.$ || jQuery));
+});

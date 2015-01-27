@@ -16,10 +16,11 @@
  *  - Close as many global variables
  **********************************************************************/
 
-var morel = (function (m, $) {
+/*global _log*/
+var morel = (function () {
   "use strict";
-  /*global _log*/
 
+  var m = {};
   m.version = '2.1.0'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
@@ -30,7 +31,6 @@ var morel = (function (m, $) {
   };
 
   //GLOBALS
-  m.$ = $; //todo: remove if not used
   m.data = {};
 
   //CONSTANTS:
@@ -46,75 +46,27 @@ var morel = (function (m, $) {
   m.LOG_DEBUG = 4;
 
   /**
-   * Events from.
-   * http://jqmtricks.wordpress.com/2014/03/26/jquery-mobile-page-events/
+   * Extends the morel library with the provided namespace and its object.
+   *
+   * @param name
+   * @param obj
+   * @returns {*|{}}
    */
-  m.pageEvents = [
-    'pagebeforecreate',
-    'pagecreate',
-    'pagecontainerbeforechange ',
-    'pagecontainerbeforetransition',
-    'pagecontainerbeforehide',
-    'pagecontainerhide',
-    'pagecontainerbeforeshow',
-    'pagecontainershow',
-    'pagecontainertransition',
-    'pagecontainerchange',
-    'pagecontainerchangefailed',
-    'pagecontainerbeforeload',
-    'pagecontainerload',
-    'pagecontainerloadfailed',
-    'pagecontainerremove'
-  ];
+  m.extend = function (name, obj) {
+    var nameArray = name.split('.');
+    var variable = m[nameArray[0]] = m[nameArray[0]] || {};
 
-  /**
-   * Init function.
-   */
-  m.initialise = function () {
-    _log('APP: initialised.', morel.LOG_INFO);
-
-    //todo: needs tidying up
-    //Bind JQM page events with page controller handlers
-    $(document).on(morel.pageEvents.join(' '), function (e, data) {
-      var event = e.type;
-      var id = null;
-      switch (event) {
-        case 'pagecreate':
-        case 'pagecontainerbeforechange':
-          id = data.prevPage ? data.prevPage[0].id : e.target.id;
-          break;
-
-        case 'pagebeforecreate':
-          id = e.target.id;
-          break;
-
-        case 'pagecontainershow':
-        case 'pagecontainerbeforetransition':
-        case 'pagecontainerbeforehide':
-        case 'pagecontainerbeforeshow':
-        case 'pagecontainertransition':
-        case 'pagecontainerhide':
-        case 'pagecontainerchangefailed':
-        case 'pagecontainerchange':
-          id = data.toPage[0].id;
-          break;
-
-        case 'pagecontainerbeforeload':
-        case 'pagecontainerload':
-        case 'pagecontainerloadfailed':
-          /* falls through */
-        default:
-          break;
+    //iterate through the namespaces
+    for (var i = 1; i < nameArray.length; i++) {
+      if (variable[nameArray[i]] !== 'object') {
+        //overwrite if it is not an object
+        variable[nameArray[i]] = {};
       }
-
-      //  var ihd = e.target.id || data.toPage[0].id;
-      var controller = morel.controller[id];
-
-      //if page has controller and it has an event handler
-      if (controller && controller[event]) {
-        controller[event](e, data);
-      }
-    });
+      variable = variable[nameArray[i]];
+    }
+    //if a function than initialize it otherwise assign an object
+    variable = typeof(obj) === "function" ? obj(variable) : obj || {};
+    return variable;
   };
 
   /**
@@ -147,7 +99,7 @@ var morel = (function (m, $) {
   };
 
   /**
-   * Resets the app to the initial state.
+   * Resets the morel to the initial state.
    *
    * Clears localStorage.
    * Clears sessionStorage.
@@ -162,16 +114,16 @@ var morel = (function (m, $) {
   };
 
   return m;
-}(window.morel || {}, jQuery)); //END
+})(); //END
 
 /***********************************************************************
  * IO MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.io = (function (m, $) {
+/* global morel, _log */
+morel.extend('io', function (m) {
   "use strict";
-  /*global _log*/
+
   //configuration should be setup in app config file
   m.CONF = {
     RECORD_URL: "" //todo: set to null and throw error if undefined
@@ -303,7 +255,7 @@ morel.io = (function (m, $) {
   };
 
   return m;
-}(morel.io || {}, jQuery));
+});
 
 /***********************************************************************
  * DB MODULE
@@ -311,8 +263,8 @@ morel.io = (function (m, $) {
  * Module responsible for large data management.
  **********************************************************************/
 
-var morel = morel || {};
-morel.db = (function (m) {
+/* global morel */
+morel.extend('db', function (m) {
   "use strict";
   /*global _log, IDBKeyRange*/
 
@@ -457,14 +409,14 @@ morel.db = (function (m) {
   };
 
   return m;
-}(morel.db || {}));
+});
 
 /***********************************************************************
  * AUTH MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.auth = (function (m, $) {
+/* global morel */
+morel.extend('auth', function (m) {
   "use strict";
 
   //module configuration should be setup in an app config file
@@ -553,8 +505,8 @@ morel.auth = (function (m, $) {
    * @returns {boolean} True if the user exists, else False
    */
   m.isUser = function () {
-    var user = m.getUser();
-    return !$.isEmptyObject(user);
+    var obj = m.getUser();
+    return Object.keys(obj).length !== 0;
   };
 
   /**
@@ -583,7 +535,7 @@ morel.auth = (function (m, $) {
   };
 
   return m;
-}(morel.auth || {}, jQuery));
+});
 
 
 
@@ -594,10 +546,9 @@ morel.auth = (function (m, $) {
  *  - Validation should be moved to the app controllers level.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = (function (m, $) {
+/* global morel, _log */
+morel.extend('record', function (m) {
   "use strict";
-  /*global _log*/
 
   //CONSTANTS
   //todo: add _KEY to each constant name to distinguish all KEYS
@@ -928,7 +879,7 @@ morel.record = (function (m, $) {
   };
 
   return m;
-}(morel.record || {}, morel.$ || jQuery));
+});
 
 /***********************************************************************
  * RECORD.DB MODULE
@@ -936,12 +887,9 @@ morel.record = (function (m, $) {
  * Takes care of the record database functionality.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = morel.record || {};
-
-morel.record.db = (function (m, $) {
+/* global morel, _log, IDBKeyRange, dataURItoBlob */
+morel.extend('record.db', function (m) {
   "use strict";
-  /*global _log, IDBKeyRange, dataURItoBlob*/
 
   //todo: move to CONF.
   m.RECORDS = "records";
@@ -1260,7 +1208,7 @@ morel.record.db = (function (m, $) {
   };
 
   return m;
-}(morel.record.db || {}, morel.$ || jQuery));
+});
 
 /***********************************************************************
  * RECORD.INPUTS MODULE
@@ -1268,12 +1216,9 @@ morel.record.db = (function (m, $) {
  * Object responsible for record input management.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = morel.record || {};
-
-morel.record.inputs = (function (m, $) {
+/* global morel, _log* */
+morel.extend('record.inputs', function (m) {
   "use strict";
-  /*global _log*/
 
   //todo: move KEYS to CONF.
   m.KEYS = {
@@ -1334,16 +1279,15 @@ morel.record.inputs = (function (m, $) {
   };
 
   return m;
-}(morel.record.inputs || {}, morel.$ || jQuery));
+});
 
 /***********************************************************************
  * GEOLOC MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.geoloc = (function (m) {
+/* global morel, _log */
+morel.extend('geoloc', function (m) {
   "use strict";
-  /*global _log*/
 
   //configuration should be setup in app config file
   m.CONF = {
@@ -1536,17 +1480,16 @@ morel.geoloc = (function (m) {
   };
 
   return m;
-})(morel.geoloc || {});
+});
 
 
 /***********************************************************************
  * STORAGE MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.storage = (function (m, $) {
+/* global morel, log */
+morel.extend('storage', function (m) {
   "use strict";
-  /*global _log*/
 
   /**
    * Checks if there is enough space in the storage.
@@ -1693,175 +1636,16 @@ morel.storage = (function (m, $) {
   }
 
   return m;
-}(morel.storage || {}, jQuery));
+});
 
-
-
-/*##############
- ## HELPER  ####
-  //todo: should find a better place for this.
- ##############*/
-
-/**
- * Converts DataURI object to a Blob.
- *
- * @param {type} dataURI
- * @param {type} fileType
- * @returns {undefined}
- */
-function dataURItoBlob(dataURI, fileType) {
-  "use strict";
-
-  var binary = atob(dataURI.split(',')[1]);
-  var array = [];
-  for (var i = 0; i < binary.length; i++) {
-    array.push(binary.charCodeAt(i));
-  }
-  return new Blob([new Uint8Array(array)], {
-    type: fileType
-  });
-}
-
-/***********************************************************************
- * NAVIGATION MODULE
- **********************************************************************/
-
-var morel = morel || {};
-morel.navigation = (function (m, $) {
-  "use strict";
-  /*global _log*/
-
-  /**
-   * Updates the dialog box appended to the page
-   * todo: remove hardcoded dialog ID
-   */
-  m.makeDialog = function (text) {
-    $('#app-dialog-content').empty().append(text);
-  };
-
-  /**
-   * Created a popup.
-   * todo: remove hardcoded popup ID
-   *
-   * @param text
-   * @param addClose
-   */
-  m.popup = function (text, addClose) {
-    this.makePopup(text, addClose);
-    var popup = $('#app-popup');
-    popup.popup();
-    popup.popup('open').trigger('create');
-  };
-
-  /**
-   * Updates the popup div appended to the page
-   */
-  m.makePopup = function (text, addClose) {
-    var PADDING_WIDTH = 10;
-    var PADDING_HEIGHT = 20;
-    var CLOSE_KEY = "<a href='#' data-rel='back' data-role='button '" +
-      "data-theme='b' data-icon='delete' data-iconpos='notext '" +
-      "class='ui-btn-right ui-link ui-btn ui-btn-b ui-icon-delete " +
-      "ui-btn-icon-notext ui-shadow ui-corner-all '" +
-      "role='button'>Close</a>";
-
-    if (addClose) {
-      text = CLOSE_KEY + text;
-    }
-
-    if (PADDING_WIDTH > 0 || PADDING_HEIGHT > 0) {
-      text = "<div style='padding:" + PADDING_WIDTH + "px " + PADDING_HEIGHT + "px;'>" +
-      text + "<div>";
-    }
-
-    $('#app-popup').empty().append(text);
-  };
-
-  /**
-   * Closes a popup.
-   * todo: remove hardcoded popup ID
-   */
-  m.closePopup = function () {
-    $('#app-popup').popup("close");
-  };
-
-  /**
-   * Creates a loader
-   */
-  m.makeLoader = function (text, time) {
-    //clear previous loader
-    $.mobile.loading('hide');
-
-    //display new one
-    $.mobile.loading('show', {
-      theme: "b",
-      html: "<div style='padding:5px 5px;'>" + text + "</div>",
-      textVisible: true,
-      textonly: true
-    });
-
-    setTimeout(function () {
-      $.mobile.loading('hide');
-    }, time);
-  };
-
-  /**
-   * Displays a self disappearing lightweight message.
-   *
-   * @param text
-   * @param time 0 if no hiding, null gives default 3000ms delay
-   */
-  m.message = function (text, time) {
-    if (!text) {
-      _log('NAVIGATION: no text provided to message.', morel.LOG_ERROR);
-      return;
-    }
-
-    var messageId = 'morelLoaderMessage';
-
-    text = '<div id="' + messageId + '">' + text + '</div>';
-
-    $.mobile.loading('show', {
-      theme: "b",
-      textVisible: true,
-      textonly: true,
-      html: text
-    });
-
-    //trigger JQM beauty
-    $('#' + messageId).trigger('create');
-
-    if (time !== 0) {
-      setTimeout(function () {
-        $.mobile.loading('hide');
-      }, time || 3000);
-    }
-  };
-
-  /**
-   * Opens particular morel page-path.
-   *
-   * @param delay
-   * @param path If no path supplied goes to morel.PATH
-   */
-  m.go = function (delay, basePath, path) {
-    setTimeout(function () {
-      path = path ? "" : path;
-      window.location = basePath + morel.CONF.HOME + path;
-    }, delay);
-  };
-
-  return m;
-}(morel.navigation || {}, morel.$ || jQuery));
 
 /***********************************************************************
  * IMAGE MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.image = (function (m, $) {
+/* global morel, _log */
+morel.extend('image', function (m) {
   "use strict";
-  /*global _log*/
 
   //todo: move to CONF.
   m.MAX_IMG_HEIGHT = 800;
@@ -2013,7 +1797,7 @@ morel.image = (function (m, $) {
   };
 
   return m;
-}(morel.image || {}, jQuery));
+});
 
 
 
@@ -2022,17 +1806,6 @@ morel.image = (function (m, $) {
  *
  * Functions that were to ambiguous to be placed in one module.
  **********************************************************************/
-
-/**
- * Gets a query parameter from the URL.
- */
-function getParameterByName(name) {
-  "use strict";
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-    results = regex.exec(location.search);
-  return !results ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
 
 /**
  * Takes care of application execution logging.
@@ -2156,87 +1929,6 @@ function _onerror(message, url, line) {
   return true; // suppress normal error reporting
 }
 
-//todo: remove if not used.
-function loadScript(src) {
-  "use strict";
-  var script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = src;
-  document.body.appendChild(script);
-}
-
-/**
- * Starts an Appcache Manifest Downloading.
- *
- * @param id
- * @param filesNum
- * @param src
- * @param callback
- * @param onError
- */
-function startManifestDownload(id, filesNum, src, callback, onError) {
-  "use strict";
-  /*todo: Add better offline handling:
-   If there is a network connection, but it cannot reach any
-   Internet, it will carry on loading the page, where it should stop it
-   at that point.
-   */
-  if (navigator.onLine) {
-    src = morel.CONF.basePath + src + '?base_path=' + morel.CONF.basePath + '&files=' + filesNum;
-    var frame = document.getElementById(id);
-    if (frame) {
-      //update
-      frame.contentWindow.applicationCache.update();
-    } else {
-      //init
-      //morel.navigation.popup('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', true);
-      morel.navigation.message('<iframe id="' + id + '" src="' + src + '" width="215px" height="215px" scrolling="no" frameBorder="0"></iframe>', 0);
-      frame = document.getElementById(id);
-
-      //After frame loading set up its controllers/callbacks
-      frame.onload = function () {
-        _log('Manifest frame loaded', morel.LOG_INFO);
-        if (callback) {
-          frame.contentWindow.finished = callback;
-        }
-
-        if (onError) {
-          frame.contentWindow.error = onError;
-        }
-      };
-    }
-  } else {
-    $.mobile.loading('show', {
-      text: "Looks like you are offline!",
-      theme: "b",
-      textVisible: true,
-      textonly: true
-    });
-  }
-}
-
-/**
- * Initialises and returns a variable.
- *
- * @param name
- * @returns {*}
- */
-function varInit(name) {
-  "use strict";
-  var nameArray = name.split('.');
-  window[nameArray[0]] = window[nameArray[0]] || {};
-  var variable = window[nameArray[0]];
-
-  //iterate through the namespaces
-  for (var i = 1; i < nameArray.length; i++) {
-    if (variable[nameArray[i]] !== 'object') {
-      //overwrite if it is not an object
-      variable[nameArray[i]] = {};
-    }
-    variable = variable[nameArray[i]];
-  }
-  return variable;
-}
 
 /**
  * Clones an object.
@@ -2246,7 +1938,6 @@ function varInit(name) {
  */
 function objClone(obj) {
   "use strict";
-
   if (null === obj || "object" !== typeof obj) {
     return obj;
   }
@@ -2260,119 +1951,21 @@ function objClone(obj) {
 }
 
 /**
- * Adds Enable/Disable JQM Tab functionality
- * FROM: http://kylestechnobabble.blogspot.co.uk/2013/08/easy-way-to-enable-disable-hide-jquery.html
- * USAGE:
- * $('MyTabSelector').disableTab(0);        // Disables the first tab
- * $('MyTabSelector').disableTab(1, true);  // Disables & hides the second tab
- */
-(function ($) {
-  "use strict";
-
-  $.fn.disableTab = function (tabIndex, hide) {
-
-    // Get the array of disabled tabs, if any
-    var disabledTabs = this.tabs("option", "disabled");
-
-    if ($.isArray(disabledTabs)) {
-      var pos = $.inArray(tabIndex, disabledTabs);
-
-      if (pos < 0) {
-        disabledTabs.push(tabIndex);
-      }
-    }
-    else {
-      disabledTabs = [tabIndex];
-    }
-
-    this.tabs("option", "disabled", disabledTabs);
-
-    if (hide === true) {
-      $(this).find('li:eq(' + tabIndex + ')').addClass('ui-state-hidden');
-    }
-
-    // Enable chaining
-    return this;
-  };
-
-  $.fn.enableTab = function (tabIndex) {
-
-    // Remove the ui-state-hidden class if it exists
-    $(this).find('li:eq(' + tabIndex + ')').removeClass('ui-state-hidden');
-
-    // Use the built-in enable function
-    this.tabs("enable", tabIndex);
-
-    // Enable chaining
-    return this;
-
-  };
-
-})(jQuery);
-
-/**
- * Since the back button does not work in current iOS 7.1.1 while in app mode,
- * it is necessary to manually assign the back button urls.
+ * Converts DataURI object to a Blob.
  *
- * Set up the URL replacements so that the id of the page is matched with the
- * new URL of the back buttons it contains. The use of wild cards is possible:
-
- backButtonUrls = {
-  'app-*':'home',
-  'app-examples':'home',
-  'tab-location':'home' 
-};
+ * @param {type} dataURI
+ * @param {type} fileType
+ * @returns {undefined}
  */
-
-
-
-/**
- * Fixes back buttons for specific page
- */
-/*jslint unparam: true*/
-function fixPageBackButtons(currentPageURL, nextPageId) {
+function dataURItoBlob(dataURI, fileType) {
   "use strict";
-  console.log('FIXING: back buttons ( ' + nextPageId + ')');
 
-  var $buttons = jQuery("div[id='" + nextPageId + "'] a[data-rel='back']");
-  $buttons.each(function (index, button) {
-    jQuery(button).removeAttr('data-rel');
-
-    //skip external pages
-    if (currentPageURL) {
-      //assign new url to the button
-      jQuery(button).attr('href', currentPageURL);
-    }
-  });
-}
-/*jslint unparam: false*/
-
-/**
- * Generic function to detect the browser
- * 
- * Chrome has to have and ID of both Chrome and Safari therefore
- * Safari has to have an ID of only Safari and not Chrome
- */
-function browserDetect(browser) {
-  "use strict";
-  if (browser === 'Chrome' || browser === 'Safari') {
-    var is_chrome = navigator.userAgent.indexOf('Chrome') > -1,
-      is_safari = navigator.userAgent.indexOf("Safari") > -1,
-      is_mobile = navigator.userAgent.indexOf("Mobile") > -1;
-
-    if (is_safari) {
-      if (browser === 'Chrome') {
-        //Chrome
-        return is_chrome;
-      }
-      //Safari
-      return !is_chrome;
-    }
-    if (is_mobile) {
-      //Safari homescreen Agent has only 'Mobile'
-      return true;
-    }
-    return false;
+  var binary = atob(dataURI.split(',')[1]);
+  var array = [];
+  for (var i = 0; i < binary.length; i++) {
+    array.push(binary.charCodeAt(i));
   }
-  return (navigator.userAgent.indexOf(browser) > -1);
+  return new Blob([new Uint8Array(array)], {
+    type: fileType
+  });
 }

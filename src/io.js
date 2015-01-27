@@ -2,10 +2,10 @@
  * IO MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.io = (function (m, $) {
+/* global morel, _log */
+morel.extend('io', function (m) {
   "use strict";
-  /*global _log*/
+
   //configuration should be setup in app config file
   m.CONF = {
     RECORD_URL: "" //todo: set to null and throw error if undefined
@@ -68,22 +68,17 @@ morel.io = (function (m, $) {
         'data': data,
         'recordKey': recordKey
       };
-
       function onPostError(xhr, ajaxOptions, thrownError) {
         _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
         //_log(xhr.responseText);
         var err = {
           message: xhr.status + " " + thrownError + " " + xhr.responseText
         };
-
         onError(err);
       }
-
       m.postRecord(record, callback, onPostError, onSend);
     }
-
     morel.record.db.getData(recordKey, onSuccess);
-
   };
 
   /**
@@ -137,4 +132,4 @@ morel.io = (function (m, $) {
   };
 
   return m;
-}(morel.io || {}, jQuery));
+});

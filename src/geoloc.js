@@ -2,10 +2,9 @@
  * GEOLOC MODULE
  **********************************************************************/
 
-var morel = morel || {};
-morel.geoloc = (function (m) {
+/* global morel, _log */
+morel.extend('geoloc', function (m) {
   "use strict";
-  /*global _log*/
 
   //configuration should be setup in app config file
   m.CONF = {
@@ -198,4 +197,4 @@ morel.geoloc = (function (m) {
   };
 
   return m;
-})(morel.geoloc || {});
+});

@@ -7,10 +7,11 @@
  *  - Close as many global variables
  **********************************************************************/
 
-var morel = (function (m, $) {
+/*global _log*/
+var morel = (function () {
   "use strict";
-  /*global _log*/
 
+  var m = {};
   m.version = '0'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
@@ -19,10 +20,6 @@ var morel = (function (m, $) {
     NAME: "", //todo: set to null to force an application name
     LOG: m.LOG_ERROR
   };
-
-  //GLOBALS
-  m.$ = $; //todo: remove if not used
-  m.data = {};
 
   //CONSTANTS:
   m.TRUE = 1;
@@ -37,75 +34,27 @@ var morel = (function (m, $) {
   m.LOG_DEBUG = 4;
 
   /**
-   * Events from.
-   * http://jqmtricks.wordpress.com/2014/03/26/jquery-mobile-page-events/
+   * Extends the morel library with the provided namespace and its object.
+   *
+   * @param name
+   * @param obj
+   * @returns {*|{}}
    */
-  m.pageEvents = [
-    'pagebeforecreate',
-    'pagecreate',
-    'pagecontainerbeforechange ',
-    'pagecontainerbeforetransition',
-    'pagecontainerbeforehide',
-    'pagecontainerhide',
-    'pagecontainerbeforeshow',
-    'pagecontainershow',
-    'pagecontainertransition',
-    'pagecontainerchange',
-    'pagecontainerchangefailed',
-    'pagecontainerbeforeload',
-    'pagecontainerload',
-    'pagecontainerloadfailed',
-    'pagecontainerremove'
-  ];
+  m.extend = function (name, obj) {
+    var nameArray = name.split('.');
+    var variable = m[nameArray[0]] = m[nameArray[0]] || {};
 
-  /**
-   * Init function.
-   */
-  m.initialise = function () {
-    _log('APP: initialised.', morel.LOG_INFO);
-
-    //todo: needs tidying up
-    //Bind JQM page events with page controller handlers
-    $(document).on(morel.pageEvents.join(' '), function (e, data) {
-      var event = e.type;
-      var id = null;
-      switch (event) {
-        case 'pagecreate':
-        case 'pagecontainerbeforechange':
-          id = data.prevPage ? data.prevPage[0].id : e.target.id;
-          break;
-
-        case 'pagebeforecreate':
-          id = e.target.id;
-          break;
-
-        case 'pagecontainershow':
-        case 'pagecontainerbeforetransition':
-        case 'pagecontainerbeforehide':
-        case 'pagecontainerbeforeshow':
-        case 'pagecontainertransition':
-        case 'pagecontainerhide':
-        case 'pagecontainerchangefailed':
-        case 'pagecontainerchange':
-          id = data.toPage[0].id;
-          break;
-
-        case 'pagecontainerbeforeload':
-        case 'pagecontainerload':
-        case 'pagecontainerloadfailed':
-          /* falls through */
-        default:
-          break;
+    //iterate through the namespaces
+    for (var i = 1; i < nameArray.length; i++) {
+      if (variable[nameArray[i]] !== 'object') {
+        //overwrite if it is not an object
+        variable[nameArray[i]] = {};
       }
-
-      //  var ihd = e.target.id || data.toPage[0].id;
-      var controller = morel.controller[id];
-
-      //if page has controller and it has an event handler
-      if (controller && controller[event]) {
-        controller[event](e, data);
-      }
-    });
+      variable = variable[nameArray[i]];
+    }
+    //if a function than initialize it otherwise assign an object
+    variable = typeof(obj) === "function" ? obj(variable) : obj || {};
+    return variable;
   };
 
   /**
@@ -138,7 +87,7 @@ var morel = (function (m, $) {
   };
 
   /**
-   * Resets the app to the initial state.
+   * Resets the morel to the initial state.
    *
    * Clears localStorage.
    * Clears sessionStorage.
@@ -153,4 +102,4 @@ var morel = (function (m, $) {
   };
 
   return m;
-}(window.morel || {}, jQuery)); //END
+})(); //END

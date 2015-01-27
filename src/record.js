@@ -5,10 +5,9 @@
  *  - Validation should be moved to the app controllers level.
  **********************************************************************/
 
-var morel = morel || {};
-morel.record = (function (m, $) {
+/* global morel, _log */
+morel.extend('record', function (m) {
   "use strict";
-  /*global _log*/
 
   //CONSTANTS
   //todo: add _KEY to each constant name to distinguish all KEYS
@@ -339,4 +338,4 @@ morel.record = (function (m, $) {
   };
 
   return m;
-}(morel.record || {}, morel.$ || jQuery));
+});
