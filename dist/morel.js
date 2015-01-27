@@ -1,6 +1,6 @@
 /*!
  * Mobile Recording Library for biological data collection. 
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * https://github.com/NERC-CEH/morel
  *
@@ -21,7 +21,7 @@ var morel = (function () {
   "use strict";
 
   var m = {};
-  m.version = '2.1.0'; //library version, generated/replaced by grunt
+  m.version = '2.2.0'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
   m.CONF = {
@@ -29,9 +29,6 @@ var morel = (function () {
     NAME: "", //todo: set to null to force an application name
     LOG: m.LOG_ERROR
   };
-
-  //GLOBALS
-  m.data = {};
 
   //CONSTANTS:
   m.TRUE = 1;
@@ -186,22 +183,17 @@ morel.extend('io', function (m) {
         'data': data,
         'recordKey': recordKey
       };
-
       function onPostError(xhr, ajaxOptions, thrownError) {
         _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
         //_log(xhr.responseText);
         var err = {
           message: xhr.status + " " + thrownError + " " + xhr.responseText
         };
-
         onError(err);
       }
-
       m.postRecord(record, callback, onPostError, onSend);
     }
-
     morel.record.db.getData(recordKey, onSuccess);
-
   };
 
   /**
@@ -1928,7 +1920,6 @@ function _onerror(message, url, line) {
   window.onerror = this; // turn on error handling again
   return true; // suppress normal error reporting
 }
-
 
 /**
  * Clones an object.
