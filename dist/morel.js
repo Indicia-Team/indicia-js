@@ -12,7 +12,6 @@
  *
  * Things to work on:
  *  - Decouple the modules as much as possible
- *  - Add better data management - morel.data - should be strictly managed
  *  - Close as many global variables
  **********************************************************************/
 
