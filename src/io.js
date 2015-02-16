@@ -21,10 +21,11 @@ morel.extend('io', function (m) {
     if (navigator.onLine) {
       onSuccess = function (records) {
         //todo
-        var key = Object.keys(records)[0]; //getting the first one of the array
-        if (key) {
+        var record = records[0]; //getting the first one of the array
+        if (record) {
+          var id = record.id
           $.mobile.loading('show');
-          _log("IO: sending record: " + key + ".", morel.LOG_INFO);
+          _log("IO: sending record: " + id + ".", morel.LOG_INFO);
           var onSendSavedSuccess = function (data) {
             var recordKey = this.callback_data.recordKey;
             _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
@@ -32,7 +33,7 @@ morel.extend('io', function (m) {
             morel.record.db.remove(recordKey);
             morel.io.sendAllSavedRecords();
           };
-          m.sendSavedRecord(key, onSendSavedSuccess);
+          m.sendSavedRecord(id, onSendSavedSuccess);
         } else {
           $.mobile.loading('hide');
         }
@@ -74,7 +75,9 @@ morel.extend('io', function (m) {
         var err = {
           message: xhr.status + " " + thrownError + " " + xhr.responseText
         };
-        onError(err);
+        if (onError){
+          onError(err);
+        }
       }
       m.postRecord(record, callback, onPostError, onSend);
     }
