@@ -131,7 +131,7 @@ morel.extend('io', function (m) {
    * @returns {*}
    */
   m.getRecordURL = function (basePath) {
-    return basePath + m.CONF.RECORD_URL;
+    return m.CONF.RECORD_URL;
   };
 
   return m;
