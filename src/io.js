@@ -72,8 +72,14 @@ morel.extend('io', function (m) {
       function onPostError(xhr, ajaxOptions, thrownError) {
         _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
         //_log(xhr.responseText);
+        var message = "";
+        if (xhr.responseText || thrownError){
+          message = xhr.status + " " + thrownError + " " + xhr.responseText;
+        } else {
+          message = "Error occurred while sending.";
+        }
         var err = {
-          message: xhr.status + " " + thrownError + " " + xhr.responseText
+          message: message
         };
         if (onError){
           onError(err);
