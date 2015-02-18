@@ -162,13 +162,13 @@ morel.extend('record.db', function (m) {
       var keyRange = IDBKeyRange.lowerBound(0);
       var req = store.openCursor(keyRange);
 
-      var data = [];
+      var data = {};
       req.onsuccess = function (e) {
         var result = e.target.result;
 
         // If there's data, add it to array
         if (result) {
-          data.push(result.value);
+          data[result.key] = result.value;
           result.continue();
 
           // Reach the end of the data
@@ -253,17 +253,18 @@ morel.extend('record.db', function (m) {
   /**
    * Saves a record using dynamic inputs.
    */
-  m.save = function (callback, onError) {
+  m.save = function (recordInputs, callback, onError) {
+    var record = recordInputs || morel.record.get();
+
     _log("RECORD.DB: saving dynamic record.", morel.LOG_INFO);
     //get new record ID
     var settings = morel.record.getSettings();
     var savedRecordId = ++settings[morel.record.LASTID];
 
     //INPUTS
-    var onExtractFilesSuccess = function (filesArray) {
-      var recordArray = morel.record.extract();
+    var onExtractFilesSuccess = function (files) {
       //merge files and the rest of the inputs
-      recordArray = recordArray.concat(filesArray);
+      jQuery.extend(record, files);
 
       _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
       function onSuccess() {
@@ -275,10 +276,10 @@ morel.extend('record.db', function (m) {
         }
       }
 
-      m.add(recordArray, savedRecordId, onSuccess, onError);
+      m.add(record, savedRecordId, onSuccess, onError);
     };
 
-    morel.image.extractAllToArray(null, onExtractFilesSuccess, onError);
+    morel.image.extractAll(null, onExtractFilesSuccess, onError);
     return morel.TRUE;
   };
 

@@ -10,11 +10,12 @@ morel.extend('record.inputs', function (m) {
 
   //todo: move KEYS to CONF.
   m.KEYS = {
-    'SREF': 'sample:entered_sref',
-    'SREF_SYSTEM': 'sample:entered_sref_system',
-    'SREF_ACCURACY': 'smpAttr:273',
-    'TAXON': 'occurrence:taxa_taxon_list_id',
-    'DATE': 'sample:date'
+    SREF: 'sample:entered_sref',
+    SREF_SYSTEM: 'sample:entered_sref_system',
+    SREF_ACCURACY: 'smpAttr:273',
+    TAXON: 'occurrence:taxa_taxon_list_id',
+    DATE: 'sample:date',
+    COMMENT: 'sample:comment'
   };
 
   /**

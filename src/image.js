@@ -16,12 +16,12 @@ morel.extend('image', function (m) {
    * @param elem DOM element to look for files
    * @param callback function with an array parameter
    */
-  m.extractAllToArray = function (elem, callback, onError) {
-    var files = morel.image.findAll(elem);
-    if (files.length > 0) {
-      morel.image.toStringAll(files, callback, onError);
+  m.extractAll = function (elem, callback, onError) {
+    var fileInputs = morel.image.findAll(elem);
+    if (fileInputs.length > 0) {
+      morel.image.toStringAll(fileInputs, callback, onError);
     } else {
-      callback(files);
+      callback();
     }
   };
 
@@ -94,31 +94,27 @@ morel.extend('image', function (m) {
    * @param onSaveAllFilesSuccess
    * @param onError
    */
-  m.toStringAll = function (files, onSaveAllFilesSuccess, onError) {
+  m.toStringAll = function (fileInputs, onSaveAllFilesSuccess, onError) {
     //recursive calling to save all the images
-    saveAllFilesRecursive(files, null);
-    function saveAllFilesRecursive(files, filesArray) {
-      filesArray = filesArray || [];
+    saveAllFilesRecursive(fileInputs, null);
+    function saveAllFilesRecursive(fileInputs, files) {
+      files = files || {};
 
       //recursive files saving
-      if (files.length > 0) {
-        var filesInfo = files.pop();
+      if (fileInputs.length > 0) {
+        var filesInfo = fileInputs.pop();
         //get next file in file array
         var file = filesInfo.file;
         var name = filesInfo.input_field_name;
 
         //recursive saving of the files
         var onSaveSuccess = function (file) {
-          filesArray.push({
-            "name": name,
-            "value": file,
-            "type": 'file'
-          });
-          saveAllFilesRecursive(files, filesArray, onSaveSuccess);
+          files[name] = file;
+          saveAllFilesRecursive(fileInputs, files, onSaveSuccess);
         };
         morel.image.toString(file, onSaveSuccess, onError);
       } else {
-        onSaveAllFilesSuccess(filesArray);
+        onSaveAllFilesSuccess(files);
       }
     }
   };

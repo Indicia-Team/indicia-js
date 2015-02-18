@@ -1,6 +1,6 @@
 /*!
  * Mobile Recording Library for biological data collection. 
- * Version: 2.2.0
+ * Version: 2.3.0
  *
  * https://github.com/NERC-CEH/morel
  *
@@ -20,7 +20,7 @@ var morel = (function () {
   "use strict";
 
   var m = {};
-  m.version = '2.2.0'; //library version, generated/replaced by grunt
+  m.version = '2.3.0'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
   m.CONF = {
@@ -628,7 +628,7 @@ morel.extend('record', function (m) {
   /**
    * Sets the current record.
    *
-   * @param record The currenr record to be stored.
+   * @param record The current record to be stored.
    */
   m.set = function (record) {
     morel.storage.tmpSet(m.RECORD, record);
@@ -639,157 +639,6 @@ morel.extend('record', function (m) {
    */
   m.clear = function () {
     morel.storage.tmpRemove(m.RECORD);
-  };
-
-  /**
-   * TODO: this and validator() functions need refactoring.
-   *
-   * @param recordId
-   */
-  m.addValidator = function (recordId) {
-    //todo: refactor to $validator
-    var validator = $(recordId).validate({
-      ignore: ":hidden,.inactive",
-      errorClass: "inline-error",
-      errorElement: 'p',
-      highlight: function (element, errorClass) {
-        //todo: refactor to $jqElement
-        var jqElement = $(element);
-        if (jqElement.is(':radio') || jqElement.is(':checkbox')) {
-          //if the element is a radio or checkbox group then highlight the group
-          var jqBox = jqElement.parents('.control-box');
-          if (jqBox.length !== 0) {
-            jqBox.eq(0).addClass('ui-state-error');
-          } else {
-            jqElement.addClass('ui-state-error');
-          }
-        } else {
-          jqElement.addClass('ui-state-error');
-        }
-      },
-      unhighlight: function (element, errorClass) {
-        //todo: refactor to $jqElement
-        var jqElement = $(element);
-        if (jqElement.is(':radio') || jqElement.is(':checkbox')) {
-          //if the element is a radio or checkbox group then highlight the group
-          var jqBox = jqElement.parents('.control-box');
-          if (jqBox.length !== 0) {
-            jqBox.eq(0).removeClass('ui-state-error');
-          } else {
-            jqElement.removeClass('ui-state-error');
-          }
-        } else {
-          jqElement.removeClass('ui-state-error');
-        }
-      },
-      invalidHandler: function (record, validator) {
-        var tabselected = false;
-        jQuery.each(validator.errorMap, function (ctrlId, error) {
-          // select the tab containing the first error control
-          var ctrl = jQuery('[name=' + ctrlId.replace(/:/g, '\\:').replace(/\[/g, '\\[').replace(/\]/g, '\\]') + ']');
-          if (!tabselected) {
-            var tp = ctrl.filter('input,select,textarea').closest('.ui-tabs-panel');
-            if (tp.length === 1) {
-              $(tp).parent().tabs('select', tp.id);
-            }
-            tabselected = true;
-          }
-          ctrl.parents('fieldset').removeClass('collapsed');
-          ctrl.parents('.fieldset-wrapper').show();
-        });
-      },
-      messages: [],
-      errorPlacement: function (error, element) {
-        var jqBox, nexts;
-        if (element.is(':radio') || element.is(':checkbox')) {
-          jqBox = element.parents('.control-box');
-          element = jqBox.length === 0 ? element : jqBox;
-        }
-        nexts = element.nextAll(':visible');
-        element = nexts && $(nexts[0]).hasClass('deh-required') ? nexts[0] : element;
-        error.insertAfter(element);
-      }
-    });
-    //Don't validate whilst user is still typing in field
-    //validator.settings.onkeyup = false;
-  };
-
-  /**
-   * Record validation.
-   */
-  m.validate = function (recordId) {
-    var invalids = [];
-
-    //todo: refactor to $tabinputs
-    var tabinputs = $('#' + recordId).find('input,select,textarea').not(':disabled,[name=],.scTaxonCell,.inactive');
-    if (tabinputs.length > 0) {
-      tabinputs.each(function (index) {
-        if (!$(this).valid()) {
-          var found = false;
-
-          //this is necessary to check if there was an input with
-          //the same name in the invalids array, if found it means
-          //this new invalid input belongs to the same group and should
-          //be ignored.
-          for (var i = 0; i < invalids.length; i++) {
-            if (invalids[i].name === (morel.record.MULTIPLE_GROUP_KEY + this.name)) {
-              found = true;
-              break;
-            }
-            if (invalids[i].name === this.name) {
-              var newID = (this.id).substr(0, this.id.lastIndexOf(':'));
-              invalids[i].name = morel.record.MULTIPLE_GROUP_KEY + this.name;
-              invalids[i].id = newID;
-              found = true;
-              break;
-            }
-          }
-          //save the input as a invalid
-          if (!found) {
-            invalids.push({"name": this.name, "id": this.id});
-          }
-        }
-      });
-    }
-
-    //todo: refactor to $tabtaxoninputs
-    var tabtaxoninputs = $('#entry_record .scTaxonCell').find('input,select').not(':disabled');
-    if (tabtaxoninputs.length > 0) {
-      tabtaxoninputs.each(function (index) {
-        invalids.push({"name": this.name, "id": this.id});
-      });
-    }
-
-    //constructing a response about invalid fields to the user
-    if (invalids.length > 0) {
-      return invalids;
-    }
-    return [];
-  };
-
-  /**
-   * Returns a recording record array from stored inputs.
-   */
-  m.extract = function () {
-    //extract record data
-    var recordArray = [];
-    var inputName, inputValue;
-
-    var record = morel.record.get();
-    if (!record) {
-      return recordArray;
-    }
-    var inputs = Object.keys(record);
-    for (var inputNum = 0; inputNum < inputs.length; inputNum++) {
-      inputName = inputs[inputNum];
-      inputValue = record[inputName];
-      recordArray.push({
-        "name": inputName,
-        "value": inputValue
-      });
-    }
-
-    return recordArray;
   };
 
   /**
@@ -1046,13 +895,13 @@ morel.extend('record.db', function (m) {
       var keyRange = IDBKeyRange.lowerBound(0);
       var req = store.openCursor(keyRange);
 
-      var data = [];
+      var data = {};
       req.onsuccess = function (e) {
         var result = e.target.result;
 
         // If there's data, add it to array
         if (result) {
-          data.push(result.value);
+          data[result.key] = result.value;
           result.continue();
 
           // Reach the end of the data
@@ -1137,17 +986,18 @@ morel.extend('record.db', function (m) {
   /**
    * Saves a record using dynamic inputs.
    */
-  m.save = function (callback, onError) {
+  m.save = function (recordInputs, callback, onError) {
+    var record = recordInputs || morel.record.get();
+
     _log("RECORD.DB: saving dynamic record.", morel.LOG_INFO);
     //get new record ID
     var settings = morel.record.getSettings();
     var savedRecordId = ++settings[morel.record.LASTID];
 
     //INPUTS
-    var onExtractFilesSuccess = function (filesArray) {
-      var recordArray = morel.record.extract();
+    var onExtractFilesSuccess = function (files) {
       //merge files and the rest of the inputs
-      recordArray = recordArray.concat(filesArray);
+      jQuery.extend(record, files);
 
       _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
       function onSuccess() {
@@ -1159,10 +1009,10 @@ morel.extend('record.db', function (m) {
         }
       }
 
-      m.add(recordArray, savedRecordId, onSuccess, onError);
+      m.add(record, savedRecordId, onSuccess, onError);
     };
 
-    morel.image.extractAllToArray(null, onExtractFilesSuccess, onError);
+    morel.image.extractAll(null, onExtractFilesSuccess, onError);
     return morel.TRUE;
   };
 
@@ -1223,11 +1073,12 @@ morel.extend('record.inputs', function (m) {
 
   //todo: move KEYS to CONF.
   m.KEYS = {
-    'SREF': 'sample:entered_sref',
-    'SREF_SYSTEM': 'sample:entered_sref_system',
-    'SREF_ACCURACY': 'smpAttr:273',
-    'TAXON': 'occurrence:taxa_taxon_list_id',
-    'DATE': 'sample:date'
+    SREF: 'sample:entered_sref',
+    SREF_SYSTEM: 'sample:entered_sref_system',
+    SREF_ACCURACY: 'smpAttr:273',
+    TAXON: 'occurrence:taxa_taxon_list_id',
+    DATE: 'sample:date',
+    COMMENT: 'sample:comment'
   };
 
   /**
@@ -1658,12 +1509,12 @@ morel.extend('image', function (m) {
    * @param elem DOM element to look for files
    * @param callback function with an array parameter
    */
-  m.extractAllToArray = function (elem, callback, onError) {
-    var files = morel.image.findAll(elem);
-    if (files.length > 0) {
-      morel.image.toStringAll(files, callback, onError);
+  m.extractAll = function (elem, callback, onError) {
+    var fileInputs = morel.image.findAll(elem);
+    if (fileInputs.length > 0) {
+      morel.image.toStringAll(fileInputs, callback, onError);
     } else {
-      callback(files);
+      callback();
     }
   };
 
@@ -1736,31 +1587,27 @@ morel.extend('image', function (m) {
    * @param onSaveAllFilesSuccess
    * @param onError
    */
-  m.toStringAll = function (files, onSaveAllFilesSuccess, onError) {
+  m.toStringAll = function (fileInputs, onSaveAllFilesSuccess, onError) {
     //recursive calling to save all the images
-    saveAllFilesRecursive(files, null);
-    function saveAllFilesRecursive(files, filesArray) {
-      filesArray = filesArray || [];
+    saveAllFilesRecursive(fileInputs, null);
+    function saveAllFilesRecursive(fileInputs, files) {
+      files = files || {};
 
       //recursive files saving
-      if (files.length > 0) {
-        var filesInfo = files.pop();
+      if (fileInputs.length > 0) {
+        var filesInfo = fileInputs.pop();
         //get next file in file array
         var file = filesInfo.file;
         var name = filesInfo.input_field_name;
 
         //recursive saving of the files
         var onSaveSuccess = function (file) {
-          filesArray.push({
-            "name": name,
-            "value": file,
-            "type": 'file'
-          });
-          saveAllFilesRecursive(files, filesArray, onSaveSuccess);
+          files[name] = file;
+          saveAllFilesRecursive(fileInputs, files, onSaveSuccess);
         };
         morel.image.toString(file, onSaveSuccess, onError);
       } else {
-        onSaveAllFilesSuccess(filesArray);
+        onSaveAllFilesSuccess(files);
       }
     }
   };
