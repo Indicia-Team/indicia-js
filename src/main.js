@@ -25,6 +25,8 @@ var morel = (function () {
   m.FALSE = 0;
   m.ERROR = -1;
 
+  m.SETTINGS = 'morel-settings';
+
   //levels of morel logging
   m.LOG_NONE = 0;
   m.LOG_ERROR = 1;
@@ -60,7 +62,7 @@ var morel = (function () {
    * Initialises the application settings.
    */
   m.initSettings = function () {
-    morel.storage.set('settings', {});
+    morel.storage.set(m.SETTINGS, {});
   };
 
   /**
@@ -71,15 +73,15 @@ var morel = (function () {
    * @returns {*}
    */
   m.settings = function (item, data) {
-    var settings = morel.storage.get('settings');
+    var settings = morel.storage.get(m.SETTINGS);
     if (!settings) {
       morel.initSettings();
-      settings = morel.storage.get('settings');
+      settings = morel.storage.get(m.SETTINGS);
     }
 
     if (data) {
       settings[item] = data;
-      return morel.storage.set('settings', settings);
+      return morel.storage.set(m.SETTINGS, settings);
     } else {
       return (item) ? settings[item] : settings;
     }

@@ -34,6 +34,8 @@ var morel = (function () {
   m.FALSE = 0;
   m.ERROR = -1;
 
+  m.SETTINGS = 'morel-settings';
+
   //levels of morel logging
   m.LOG_NONE = 0;
   m.LOG_ERROR = 1;
@@ -69,7 +71,7 @@ var morel = (function () {
    * Initialises the application settings.
    */
   m.initSettings = function () {
-    morel.storage.set('settings', {});
+    morel.storage.set(m.SETTINGS, {});
   };
 
   /**
@@ -80,15 +82,15 @@ var morel = (function () {
    * @returns {*}
    */
   m.settings = function (item, data) {
-    var settings = morel.storage.get('settings');
+    var settings = morel.storage.get(m.SETTINGS);
     if (!settings) {
       morel.initSettings();
-      settings = morel.storage.get('settings');
+      settings = morel.storage.get(m.SETTINGS);
     }
 
     if (data) {
       settings[item] = data;
-      return morel.storage.set('settings', settings);
+      return morel.storage.set(m.SETTINGS, settings);
     } else {
       return (item) ? settings[item] : settings;
     }
@@ -560,7 +562,7 @@ morel.extend('record', function (m) {
   m.PIC = "_pic_";
   m.DATA = "data";
   m.FILES = "files";
-  m.SETTINGS = "recordSettings";
+  m.SETTINGS = "morel";
   m.LASTID = "lastId";
 
   //GLOBALS
@@ -1359,7 +1361,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.get = function (item) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     var data = localStorage.getItem(item);
     data = JSON.parse(data);
@@ -1373,7 +1375,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.set = function (item, data) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     data = JSON.stringify(data);
     return localStorage.setItem(item, data);
@@ -1385,7 +1387,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.remove = function (item) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     return localStorage.removeItem(item);
   };
@@ -1420,7 +1422,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.tmpGet = function (item) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     var data = sessionStorage.getItem(item);
     data = JSON.parse(data);
@@ -1433,7 +1435,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.tmpSet = function (item, data) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     data = JSON.stringify(data);
     return sessionStorage.setItem(item, data);
@@ -1445,7 +1447,7 @@ morel.extend('storage', function (m) {
    * @param item
    */
   m.tmpRemove = function (item) {
-    item = morel.CONF.NAME + '_' + item;
+    item = morel.CONF.NAME + '-' + item;
 
     return sessionStorage.removeItem(item);
   };

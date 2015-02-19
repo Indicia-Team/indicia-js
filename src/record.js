@@ -18,7 +18,7 @@ morel.extend('record', function (m) {
   m.PIC = "_pic_";
   m.DATA = "data";
   m.FILES = "files";
-  m.SETTINGS = "recordSettings";
+  m.SETTINGS = "morel";
   m.LASTID = "lastId";
 
   //GLOBALS
