@@ -321,7 +321,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.add = function (record, key, callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log("DB: adding to the store.", morel.LOG_DEBUG);
 
       store.add(record, key);
@@ -340,7 +342,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.get = function (key, callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log('DB: getting from the store.', morel.LOG_DEBUG);
 
       var result = store.get(key);
@@ -357,7 +361,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.getAll = function (callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log('DB: getting all from the store.', morel.LOG_DEBUG);
 
       // Get everything in the store
@@ -400,7 +406,8 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.clear = function (callback) {
-    m.open(m.DB_MAIN, m.STORE_RECORDS, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+    m.open(dbName, m.STORE_RECORDS, function (store) {
       _log('DB: clearing store', morel.LOG_DEBUG);
       store.clear();
 
@@ -757,7 +764,8 @@ morel.extend('record.db', function (m) {
    * @param callback
    */
   m.open = function (callback, onError) {
-    var req = window.indexedDB.open(m.DB_MAIN, m.DB_VERSION);
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+    var req = window.indexedDB.open(dbName, m.DB_VERSION);
 
     /**
      * On Database opening success, returns the Records object store.
@@ -767,9 +775,8 @@ morel.extend('record.db', function (m) {
     req.onsuccess = function (e) {
       _log("RECORD.DB: opened successfully.", morel.LOG_DEBUG);
       var db = e.target.result;
-      var storeName = morel.CONF.NAME + '-' + m.STORE_RECORDS;
-      var transaction = db.transaction([storeName], "readwrite");
-      var store = transaction.objectStore(storeName);
+      var transaction = db.transaction([m.STORE_RECORDS], "readwrite");
+      var store = transaction.objectStore(m.STORE_RECORDS);
 
       if (callback) {
         callback(store);
@@ -784,9 +791,8 @@ morel.extend('record.db', function (m) {
     req.onupgradeneeded = function (e) {
       _log("RECORD.DB: upgrading", morel.LOG_INFO);
       var db = e.target.result;
-      var storeName = morel.CONF.NAME + '-' + m.STORE_RECORDS;
 
-      var store = db.createObjectStore(storeName, {'keyPath': 'id'});
+      var store = db.createObjectStore(m.STORE_RECORDS, {'keyPath': 'id'});
       store.createIndex('id', 'id', {unique: true});
     };
 

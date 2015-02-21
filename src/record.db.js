@@ -22,7 +22,8 @@ morel.extend('record.db', function (m) {
    * @param callback
    */
   m.open = function (callback, onError) {
-    var req = window.indexedDB.open(m.DB_MAIN, m.DB_VERSION);
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+    var req = window.indexedDB.open(dbName, m.DB_VERSION);
 
     /**
      * On Database opening success, returns the Records object store.

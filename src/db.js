@@ -60,7 +60,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.add = function (record, key, callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log("DB: adding to the store.", morel.LOG_DEBUG);
 
       store.add(record, key);
@@ -79,7 +81,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.get = function (key, callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log('DB: getting from the store.', morel.LOG_DEBUG);
 
       var result = store.get(key);
@@ -96,7 +100,9 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.getAll = function (callback) {
-    m.open(m.DB_MAIN, m.STORE_MAIN, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+
+    m.open(dbName, m.STORE_MAIN, function (store) {
       _log('DB: getting all from the store.', morel.LOG_DEBUG);
 
       // Get everything in the store
@@ -139,7 +145,8 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.clear = function (callback) {
-    m.open(m.DB_MAIN, m.STORE_RECORDS, function (store) {
+    var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
+    m.open(dbName, m.STORE_RECORDS, function (store) {
       _log('DB: clearing store', morel.LOG_DEBUG);
       store.clear();
 
