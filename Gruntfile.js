@@ -39,13 +39,13 @@ module.exports = function (grunt) {
           'src/appcache_back_button_fix.js'
         ],
         // the location of the resulting JS file
-        dest: 'dist/<%= pkg.name %>.js'
+        dest: '<%= pkg.name %>.js'
       }
     },
     replace: {
       version: {
         src: [
-          'dist/<%= pkg.name %>.js'
+          '<%= pkg.name %>.js'
         ],
         overwrite: true,     // overwrite matched source files
         replacements: [{
@@ -61,7 +61,7 @@ module.exports = function (grunt) {
       },
       dist: {
         files: {
-          'dist/<%= pkg.name %>.min.js': ['<%= concat.src.dest %>']
+          '<%= pkg.name %>.min.js': ['<%= concat.src.dest %>']
         }
       }
     },
