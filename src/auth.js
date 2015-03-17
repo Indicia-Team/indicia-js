@@ -48,7 +48,7 @@ morel.extend('auth', function (m) {
       var user = m.getUser();
 
       data.append('email', user.email);
-      data.append('password', user.password);
+      data.append('usersecret', user.secret);
     }
 
     return data;
