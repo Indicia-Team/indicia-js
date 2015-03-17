@@ -132,26 +132,30 @@ morel.extend('io', function (m) {
    *
    * @returns {undefined}
    */
-  m.sendAllSavedRecords = function () {
+  m.sendAllSavedRecords = function (callback, callbackDone) {
     var onSuccess = null;
     if (navigator.onLine) {
       onSuccess = function (records) {
         var id = Object.keys(records)[0]; //getting the first one of the array
         if (id) {
-          $.mobile.loading('show');
           _log("IO: sending record: " + id + ".", morel.LOG_INFO);
           var onSendSavedSuccess = function (data) {
             var recordKey = this.callback_data.recordKey;
             _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
 
             morel.record.db.remove(recordKey);
-            morel.io.sendAllSavedRecords();
+            if (callback){
+              callback();
+            }
+            morel.io.sendAllSavedRecords(callback, callbackDone);
           };
 
           id = Number.parseInt(id); //only numbers
           m.sendSavedRecord(id, onSendSavedSuccess);
         } else {
-          $.mobile.loading('hide');
+          if (callbackDone){
+            callbackDone();
+          }
         }
       };
 
