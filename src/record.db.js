@@ -241,7 +241,7 @@ morel.extend('record.db', function (m) {
           var file = value;
           var type = file.split(";")[0].split(":")[1];
           var extension = type.split("/")[1];
-          data.append(savedRecord[k].name, dataURItoBlob(file, type), "pic." + extension);
+          data.append(name, dataURItoBlob(file, type), "pic." + extension);
         } else {
           data.append(name, value);
         }
