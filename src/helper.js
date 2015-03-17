@@ -165,3 +165,20 @@ function dataURItoBlob(dataURI, fileType) {
     type: fileType
   });
 }
+
+// Detecting data URLs
+// https://gist.github.com/bgrins/6194623
+
+// data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
+// The "data" URL scheme: http://tools.ietf.org/html/rfc2397
+// Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
+function isDataURL(s) {
+  "use strict";
+  if (!s) {
+    return false;
+  }
+  s = s.toString(); //numbers
+
+  var regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+  return !!s.match(regex);
+}

@@ -974,15 +974,17 @@ morel.extend('record.db', function (m) {
     function onSuccess(savedRecord) {
       var data = new FormData();
 
-      for (var k = 0; k < savedRecord.length; k++) {
-        if (savedRecord[k].type === "file") {
-          var file = savedRecord[k].value;
+      var savedRecordInputs = Object.keys(savedRecord);
+      for (var k = 0; k < savedRecordInputs.length; k++) {
+        var name = savedRecordInputs[k];
+        var value = savedRecord[savedRecordInputs[k]];
+
+        if (isDataURL(value)) {
+          var file = value;
           var type = file.split(";")[0].split(":")[1];
           var extension = type.split("/")[1];
           data.append(savedRecord[k].name, dataURItoBlob(file, type), "pic." + extension);
         } else {
-          var name = savedRecord[k].name;
-          var value = savedRecord[k].value;
           data.append(name, value);
         }
       }
@@ -1825,4 +1827,21 @@ function dataURItoBlob(dataURI, fileType) {
   return new Blob([new Uint8Array(array)], {
     type: fileType
   });
+}
+
+// Detecting data URLs
+// https://gist.github.com/bgrins/6194623
+
+// data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
+// The "data" URL scheme: http://tools.ietf.org/html/rfc2397
+// Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
+function isDataURL(s) {
+  "use strict";
+  if (!s) {
+    return false;
+  }
+  s = s.toString(); //numbers
+
+  var regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+  return !!s.match(regex);
 }

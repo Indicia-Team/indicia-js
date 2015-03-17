@@ -232,15 +232,17 @@ morel.extend('record.db', function (m) {
     function onSuccess(savedRecord) {
       var data = new FormData();
 
-      for (var k = 0; k < savedRecord.length; k++) {
-        if (savedRecord[k].type === "file") {
-          var file = savedRecord[k].value;
+      var savedRecordInputs = Object.keys(savedRecord);
+      for (var k = 0; k < savedRecordInputs.length; k++) {
+        var name = savedRecordInputs[k];
+        var value = savedRecord[savedRecordInputs[k]];
+
+        if (isDataURL(value)) {
+          var file = value;
           var type = file.split(";")[0].split(":")[1];
           var extension = type.split("/")[1];
           data.append(savedRecord[k].name, dataURItoBlob(file, type), "pic." + extension);
         } else {
-          var name = savedRecord[k].name;
-          var value = savedRecord[k].value;
           data.append(name, value);
         }
       }
