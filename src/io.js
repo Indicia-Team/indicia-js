@@ -20,10 +20,8 @@ morel.extend('io', function (m) {
     var onSuccess = null;
     if (navigator.onLine) {
       onSuccess = function (records) {
-        //todo
-        var record = records[0]; //getting the first one of the array
-        if (record) {
-          var id = record.id
+        var id = Object.keys(records)[0]; //getting the first one of the array
+        if (id) {
           $.mobile.loading('show');
           _log("IO: sending record: " + id + ".", morel.LOG_INFO);
           var onSendSavedSuccess = function (data) {
@@ -33,6 +31,8 @@ morel.extend('io', function (m) {
             morel.record.db.remove(recordKey);
             morel.io.sendAllSavedRecords();
           };
+
+          id = Number.parseInt(id); //only numbers
           m.sendSavedRecord(id, onSendSavedSuccess);
         } else {
           $.mobile.loading('hide');
