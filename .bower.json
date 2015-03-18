@@ -2,7 +2,7 @@
   "name": "morel",
   "version": "0.0.0",
   "homepage": "https://github.com/NERC-CEH/morel",
-  "main": "dist/morel.js",
+  "main": "morel.js",
   "dependencies": {},
   "_release": "ab5883b757",
   "_resolution": {
