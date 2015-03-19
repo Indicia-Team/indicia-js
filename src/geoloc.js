@@ -70,11 +70,11 @@ morel.extend('geoloc', function (m) {
    * @returns {*}
    */
   m.run = function (onUpdate, onSuccess, onError) {
-    _log('GEOLOC: run.', morel.LOG_INFO);
+    
 
     // Early return if geolocation not supported.
     if (!navigator.geolocation) {
-      _log("GEOLOC: not supported!", morel.LOG_ERROR);
+      
       if (onError) {
         onError({message: "Geolocation is not supported!"});
       }
@@ -113,7 +113,7 @@ morel.extend('geoloc', function (m) {
       if ((currentTime - morel.geoloc.startTime) > morel.geoloc.TIMEOUT) {
         //stop everything
         morel.geoloc.stop();
-        _log("GEOLOC: timeout.", morel.LOG_ERROR);
+        
         if (onError) {
           onError({message: "Geolocation timed out!"});
         }
@@ -136,7 +136,7 @@ morel.extend('geoloc', function (m) {
       if (location.acc > -1 && location.acc < prevAccuracy) {
         morel.geoloc.set(location.lat, location.lon, location.acc);
         if (location.acc < morel.geoloc.CONF.GPS_ACCURACY_LIMIT) {
-          _log("GEOLOC: finished: " + location.acc + " meters.", morel.LOG_INFO);
+          
           morel.geoloc.stop();
 
           //save in storage
@@ -145,7 +145,7 @@ morel.extend('geoloc', function (m) {
             onSuccess(location);
           }
         } else {
-          _log("GEOLOC: updated acc: " + location.acc + " meters.", morel.LOG_INFO);
+          
           if (onUpdate) {
             onUpdate(location);
           }
@@ -155,7 +155,7 @@ morel.extend('geoloc', function (m) {
 
     // Callback if geolocation fails.
     var onGeolocError = function (error) {
-      _log("GEOLOC: ERROR.", morel.LOG_ERROR);
+      
       if (onError) {
         onError({'message': error.message});
       }

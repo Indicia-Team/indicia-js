@@ -22,10 +22,10 @@ morel.extend('io', function (m) {
       onSuccess = function (records) {
         var id = Object.keys(records)[0]; //getting the first one of the array
         if (id) {
-          _log("IO: sending record: " + id + ".", morel.LOG_INFO);
+          
           var onSendSavedSuccess = function (data) {
             var recordKey = this.callback_data.recordKey;
-            _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
+            
 
             morel.record.db.remove(recordKey);
             if (callback){
@@ -67,15 +67,15 @@ morel.extend('io', function (m) {
    * @param onSend
    */
   m.sendSavedRecord = function (recordKey, callback, onError, onSend) {
-    _log("IO: creating the record.", morel.LOG_DEBUG);
+    
     function onSuccess(data) {
       var record = {
         'data': data,
         'recordKey': recordKey
       };
       function onPostError(xhr, ajaxOptions, thrownError) {
-        _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
-        //_log(xhr.responseText);
+        
+        
         var message = "";
         if (xhr.responseText || thrownError){
           message = xhr.status + " " + thrownError + " " + xhr.responseText;
@@ -98,7 +98,7 @@ morel.extend('io', function (m) {
    * Submits the record.
    */
   m.postRecord = function (record, onSuccess, onError, onSend) {
-    _log('IO: posting a record with AJAX.', morel.LOG_INFO);
+    
     var data = {};
     if (!record.data) {
       //extract the record data
@@ -122,14 +122,14 @@ morel.extend('io', function (m) {
       contentType: false,
       success: onSuccess || function (data) {
         var recordKey = this.callback_data.recordKey;
-        _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
+        
       },
       error: onError || function (xhr, ajaxOptions, thrownError) {
-        _log("IO: record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
-        //_log(xhr.responseText);
+        
+        
       },
       beforeSend: onSend || function () {
-        _log("IO: onSend.", morel.LOG_DEBUG);
+        
       }
     });
   };
@@ -140,7 +140,7 @@ morel.extend('io', function (m) {
    * @param basePath
    * @returns {*}
    */
-  m.getRecordURL = function (basePath) {
+  m.getRecordURL = function () {
     return m.CONF.RECORD_URL;
   };
 

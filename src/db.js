@@ -25,7 +25,7 @@ morel.extend('db', function (m) {
     var req = window.indexedDB.open(name, m.DB_VERSION);
 
     req.onsuccess = function (e) {
-      _log("DB: opened successfully.", morel.LOG_DEBUG);
+      
       var db = e.target.result;
       var transaction = db.transaction([storeName], "readwrite");
       var store = transaction.objectStore(storeName);
@@ -36,7 +36,7 @@ morel.extend('db', function (m) {
     };
 
     req.onupgradeneeded = function (e) {
-      _log("DB: upgrading.", morel.LOG_INFO);
+      
       var db = e.target.result;
 
       db.deleteObjectStore(morel.db.STORE_MAIN);
@@ -44,11 +44,11 @@ morel.extend('db', function (m) {
     };
 
     req.onerror = function (e) {
-      _log("DB: NOT opened successfully:" + e, morel.LOG_ERROR);
+      
     };
 
     req.onblocked = function (e) {
-      _log("DB: database blocked:" + e, morel.LOG_ERROR);
+      
     };
   };
 
@@ -63,7 +63,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log("DB: adding to the store.", morel.LOG_DEBUG);
+      
 
       store.add(record, key);
       store.transaction.db.close();
@@ -84,7 +84,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log('DB: getting from the store.', morel.LOG_DEBUG);
+      
 
       var result = store.get(key);
       if (callback) {
@@ -103,7 +103,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log('DB: getting all from the store.', morel.LOG_DEBUG);
+      
 
       // Get everything in the store
       var keyRange = IDBKeyRange.lowerBound(0);
@@ -147,7 +147,7 @@ morel.extend('db', function (m) {
   m.clear = function (callback) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
     m.open(dbName, m.STORE_RECORDS, function (store) {
-      _log('DB: clearing store', morel.LOG_DEBUG);
+      
       store.clear();
 
       if (callback) {

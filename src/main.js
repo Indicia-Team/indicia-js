@@ -1,38 +1,24 @@
-/***********************************************************************
- * MAIN
- *
- * Things to work on:
- *  - Decouple the modules as much as possible
- *  - Close as many global variables
- **********************************************************************/
-
 /*global _log*/
 var morel = (function () {
+  /*
+   * Things to work on:
+   *  - Decouple the modules as much as possible
+   *  - Close as many global variables
+   */
   "use strict";
 
   var m = {};
-  m.version = '0'; //library version, generated/replaced by grunt
+  m.VERSION = '0'; //library version, generated/replaced by grunt
 
-  //configuration should be setup in morel config file
-  m.CONF = {
-    HOME: "",
-    NAME: "", //todo: set to null to force an application name
-    LOG: m.LOG_ERROR
-  };
+  //library wide configuration
+  m.CONF = {};
 
   //CONSTANTS:
   m.TRUE = 1;
   m.FALSE = 0;
   m.ERROR = -1;
 
-  m.SETTINGS = 'morel-settings';
-
-  //levels of morel logging
-  m.LOG_NONE = 0;
-  m.LOG_ERROR = 1;
-  m.LOG_WARNING = 2;
-  m.LOG_INFO = 3;
-  m.LOG_DEBUG = 4;
+  m.SETTINGS_KEY =  'morel-settings';
 
   /**
    * Extends the morel library with the provided namespace and its object.
@@ -62,7 +48,7 @@ var morel = (function () {
    * Initialises the application settings.
    */
   m.initSettings = function () {
-    morel.storage.set(m.SETTINGS, {});
+    morel.storage.set(m.SETTINGS_KEY, {});
   };
 
   /**
@@ -73,15 +59,15 @@ var morel = (function () {
    * @returns {*}
    */
   m.settings = function (item, data) {
-    var settings = morel.storage.get(m.SETTINGS);
+    var settings = morel.storage.get(m.SETTINGS_KEY);
     if (!settings) {
       morel.initSettings();
-      settings = morel.storage.get(m.SETTINGS);
+      settings = morel.storage.get(m.SETTINGS_KEY);
     }
 
     if (data) {
       settings[item] = data;
-      return morel.storage.set(m.SETTINGS, settings);
+      return morel.storage.set(m.SETTINGS_KEY, settings);
     } else {
       return (item) ? settings[item] : settings;
     }

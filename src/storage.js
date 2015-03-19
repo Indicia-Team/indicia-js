@@ -72,7 +72,7 @@ morel.extend('storage', function (m) {
    * Clears the storage.
    */
   m.clear = function () {
-    _log('STORAGE: clearing', morel.LOG_DEBUG);
+    
 
     localStorage.clear();
   };
@@ -132,7 +132,7 @@ morel.extend('storage', function (m) {
    * Clears the temporary storage.
    */
   m.tmpClear = function () {
-    _log('STORAGE: clearing temporary', morel.LOG_DEBUG);
+    
 
     sessionStorage.clear();
   };

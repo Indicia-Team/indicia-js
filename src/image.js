@@ -35,12 +35,12 @@ morel.extend('image', function (m) {
    */
   m.toString = function (file, onSaveSuccess, onError) {
     if (file) {
-      _log("IMAGE: working with " + file.name + ".", morel.LOG_DEBUG);
+      
 
       var reader = new FileReader();
       //#2
       reader.onload = function () {
-        _log("IMAGE: resizing file.", morel.LOG_DEBUG);
+        
         var image = new Image();
         //#4
         image.onload = function (e) {
@@ -74,7 +74,7 @@ morel.extend('image', function (m) {
 
         };
         reader.onerror = function (e) {
-          _log("IMAGE: reader " + e + ".", morel.LOG_ERROR);
+          
           e.message = e.getMessage();
           onError(e);
         };

@@ -1,47 +1,33 @@
 /*!
  * Mobile Recording Library for biological data collection. 
- * Version: 2.4.0-beta
+ * Version: 2.0.0-beta.2
  *
  * https://github.com/NERC-CEH/morel
  *
  * Author 2015 Karols Kazlauskis
  * Released under the GNU GPL v3 * license.
  */
-/***********************************************************************
- * MAIN
- *
- * Things to work on:
- *  - Decouple the modules as much as possible
- *  - Close as many global variables
- **********************************************************************/
-
 /*global _log*/
 var morel = (function () {
+  /*
+   * Things to work on:
+   *  - Decouple the modules as much as possible
+   *  - Close as many global variables
+   */
   "use strict";
 
   var m = {};
-  m.version = '2.4.0-beta'; //library version, generated/replaced by grunt
+  m.VERSION = '2.0.0-beta.2'; //library version, generated/replaced by grunt
 
-  //configuration should be setup in morel config file
-  m.CONF = {
-    HOME: "",
-    NAME: "", //todo: set to null to force an application name
-    LOG: m.LOG_ERROR
-  };
+  //library wide configuration
+  m.CONF = {};
 
   //CONSTANTS:
   m.TRUE = 1;
   m.FALSE = 0;
   m.ERROR = -1;
 
-  m.SETTINGS = 'morel-settings';
-
-  //levels of morel logging
-  m.LOG_NONE = 0;
-  m.LOG_ERROR = 1;
-  m.LOG_WARNING = 2;
-  m.LOG_INFO = 3;
-  m.LOG_DEBUG = 4;
+  m.SETTINGS_KEY =  'morel-settings';
 
   /**
    * Extends the morel library with the provided namespace and its object.
@@ -71,7 +57,7 @@ var morel = (function () {
    * Initialises the application settings.
    */
   m.initSettings = function () {
-    morel.storage.set(m.SETTINGS, {});
+    morel.storage.set(m.SETTINGS_KEY, {});
   };
 
   /**
@@ -82,15 +68,15 @@ var morel = (function () {
    * @returns {*}
    */
   m.settings = function (item, data) {
-    var settings = morel.storage.get(m.SETTINGS);
+    var settings = morel.storage.get(m.SETTINGS_KEY);
     if (!settings) {
       morel.initSettings();
-      settings = morel.storage.get(m.SETTINGS);
+      settings = morel.storage.get(m.SETTINGS_KEY);
     }
 
     if (data) {
       settings[item] = data;
-      return morel.storage.set(m.SETTINGS, settings);
+      return morel.storage.set(m.SETTINGS_KEY, settings);
     } else {
       return (item) ? settings[item] : settings;
     }
@@ -138,10 +124,10 @@ morel.extend('io', function (m) {
       onSuccess = function (records) {
         var id = Object.keys(records)[0]; //getting the first one of the array
         if (id) {
-          _log("IO: sending record: " + id + ".", morel.LOG_INFO);
+          
           var onSendSavedSuccess = function (data) {
             var recordKey = this.callback_data.recordKey;
-            _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
+            
 
             morel.record.db.remove(recordKey);
             if (callback){
@@ -183,15 +169,15 @@ morel.extend('io', function (m) {
    * @param onSend
    */
   m.sendSavedRecord = function (recordKey, callback, onError, onSend) {
-    _log("IO: creating the record.", morel.LOG_DEBUG);
+    
     function onSuccess(data) {
       var record = {
         'data': data,
         'recordKey': recordKey
       };
       function onPostError(xhr, ajaxOptions, thrownError) {
-        _log("IO: ERROR record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
-        //_log(xhr.responseText);
+        
+        
         var message = "";
         if (xhr.responseText || thrownError){
           message = xhr.status + " " + thrownError + " " + xhr.responseText;
@@ -214,7 +200,7 @@ morel.extend('io', function (m) {
    * Submits the record.
    */
   m.postRecord = function (record, onSuccess, onError, onSend) {
-    _log('IO: posting a record with AJAX.', morel.LOG_INFO);
+    
     var data = {};
     if (!record.data) {
       //extract the record data
@@ -238,14 +224,14 @@ morel.extend('io', function (m) {
       contentType: false,
       success: onSuccess || function (data) {
         var recordKey = this.callback_data.recordKey;
-        _log("IO: record ajax (success): " + recordKey + ".", morel.LOG_INFO);
+        
       },
       error: onError || function (xhr, ajaxOptions, thrownError) {
-        _log("IO: record ajax (" + xhr.status + " " + thrownError + ").", morel.LOG_ERROR);
-        //_log(xhr.responseText);
+        
+        
       },
       beforeSend: onSend || function () {
-        _log("IO: onSend.", morel.LOG_DEBUG);
+        
       }
     });
   };
@@ -256,7 +242,7 @@ morel.extend('io', function (m) {
    * @param basePath
    * @returns {*}
    */
-  m.getRecordURL = function (basePath) {
+  m.getRecordURL = function () {
     return m.CONF.RECORD_URL;
   };
 
@@ -290,7 +276,7 @@ morel.extend('db', function (m) {
     var req = window.indexedDB.open(name, m.DB_VERSION);
 
     req.onsuccess = function (e) {
-      _log("DB: opened successfully.", morel.LOG_DEBUG);
+      
       var db = e.target.result;
       var transaction = db.transaction([storeName], "readwrite");
       var store = transaction.objectStore(storeName);
@@ -301,7 +287,7 @@ morel.extend('db', function (m) {
     };
 
     req.onupgradeneeded = function (e) {
-      _log("DB: upgrading.", morel.LOG_INFO);
+      
       var db = e.target.result;
 
       db.deleteObjectStore(morel.db.STORE_MAIN);
@@ -309,11 +295,11 @@ morel.extend('db', function (m) {
     };
 
     req.onerror = function (e) {
-      _log("DB: NOT opened successfully:" + e, morel.LOG_ERROR);
+      
     };
 
     req.onblocked = function (e) {
-      _log("DB: database blocked:" + e, morel.LOG_ERROR);
+      
     };
   };
 
@@ -328,7 +314,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log("DB: adding to the store.", morel.LOG_DEBUG);
+      
 
       store.add(record, key);
       store.transaction.db.close();
@@ -349,7 +335,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log('DB: getting from the store.', morel.LOG_DEBUG);
+      
 
       var result = store.get(key);
       if (callback) {
@@ -368,7 +354,7 @@ morel.extend('db', function (m) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
 
     m.open(dbName, m.STORE_MAIN, function (store) {
-      _log('DB: getting all from the store.', morel.LOG_DEBUG);
+      
 
       // Get everything in the store
       var keyRange = IDBKeyRange.lowerBound(0);
@@ -412,7 +398,7 @@ morel.extend('db', function (m) {
   m.clear = function (callback) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
     m.open(dbName, m.STORE_RECORDS, function (store) {
-      _log('DB: clearing store', morel.LOG_DEBUG);
+      
       store.clear();
 
       if (callback) {
@@ -691,7 +677,7 @@ morel.extend('record', function (m) {
         case "hidden":
           break;
         default:
-          _log("RECORD: unknown input type: " + type + '.', morel.LOG_ERROR);
+          
           break;
       }
 
@@ -777,7 +763,7 @@ morel.extend('record.db', function (m) {
      * @param e
      */
     req.onsuccess = function (e) {
-      _log("RECORD.DB: opened successfully.", morel.LOG_DEBUG);
+      
       var db = e.target.result;
       var transaction = db.transaction([m.STORE_RECORDS], "readwrite");
       var store = transaction.objectStore(m.STORE_RECORDS);
@@ -793,7 +779,7 @@ morel.extend('record.db', function (m) {
      * @param e
      */
     req.onupgradeneeded = function (e) {
-      _log("RECORD.DB: upgrading", morel.LOG_INFO);
+      
       var db = e.target.result;
 
       var store = db.createObjectStore(m.STORE_RECORDS, {'keyPath': 'id'});
@@ -806,7 +792,7 @@ morel.extend('record.db', function (m) {
      * @param e
      */
     req.onerror = function (e) {
-      _log("RECORD.DB: not opened successfully.", morel.LOG_ERROR);
+      
       e.message = "Database NOT opened successfully.";
       if (onError) {
         onError(e);
@@ -819,7 +805,7 @@ morel.extend('record.db', function (m) {
      * @param e
      */
     req.onblocked = function (e) {
-      _log("RECORD.DB: database blocked.", morel.LOG_ERROR);
+      
       if (onError) {
         onError(e);
       }
@@ -838,7 +824,7 @@ morel.extend('record.db', function (m) {
    */
   m.add = function (record, key, callback, onError) {
     m.open(function (store) {
-      _log("RECORD.DB: adding to the store.", morel.LOG_DEBUG);
+      
       record.id = key;
       var req = store.add(record);
       req.onsuccess = function (event) {
@@ -859,7 +845,7 @@ morel.extend('record.db', function (m) {
    */
   m.get = function (key, callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: getting from the store.', morel.LOG_DEBUG);
+      
 
       var req = store.index('id').get(key);
       req.onsuccess = function (e) {
@@ -881,7 +867,7 @@ morel.extend('record.db', function (m) {
    */
   m.remove = function (key, callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: removing from the store.', morel.LOG_DEBUG);
+      
 
       var req = store.openCursor(IDBKeyRange.only(key));
       req.onsuccess = function () {
@@ -903,7 +889,7 @@ morel.extend('record.db', function (m) {
    */
   m.getAll = function (callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: getting all from the store.', morel.LOG_DEBUG);
+      
 
       // Get everything in the store
       var keyRange = IDBKeyRange.lowerBound(0);
@@ -957,7 +943,7 @@ morel.extend('record.db', function (m) {
    */
   m.clear = function (callback, onError) {
     m.open(function (store) {
-      _log('RECORD.DB: clearing store.', morel.LOG_DEBUG);
+      
       store.clear();
 
       if (callback) {
@@ -1005,7 +991,7 @@ morel.extend('record.db', function (m) {
   m.save = function (recordInputs, callback, onError) {
     var record = recordInputs || morel.record.get();
 
-    _log("RECORD.DB: saving dynamic record.", morel.LOG_INFO);
+    
     //get new record ID
     var settings = morel.record.getSettings();
     var savedRecordId = ++settings[morel.record.LASTID];
@@ -1015,7 +1001,7 @@ morel.extend('record.db', function (m) {
       //merge files and the rest of the inputs
       jQuery.extend(record, files);
 
-      _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
+      
       function onSuccess() {
         //on record save success
         morel.record.setSettings(settings);
@@ -1037,7 +1023,7 @@ morel.extend('record.db', function (m) {
    * Returns the savedRecordId of the saved record, otherwise an morel.ERROR.
    */
   m.saveForm = function (formId, onSuccess) {
-    _log("RECORD.DB: saving a DOM record.", morel.LOG_INFO);
+    
     var records = this.getAll();
 
     //get new record ID
@@ -1054,14 +1040,14 @@ morel.extend('record.db', function (m) {
       //merge files and the rest of the inputs
       recordArray = recordArray.concat(filesArray);
 
-      _log("RECORD.DB: saving the record into database.", morel.LOG_DEBUG);
+      
       try {
         records[savedRecordId] = recordArray;
         m.setAll(records);
         morel.record.setSettings(settings);
       } catch (e) {
-        _log("RECORD.DB: while saving the record.", morel.LOG_ERROR);
-        //_log(e);
+        
+        
         return morel.ERROR;
       }
 
@@ -1221,11 +1207,11 @@ morel.extend('geoloc', function (m) {
    * @returns {*}
    */
   m.run = function (onUpdate, onSuccess, onError) {
-    _log('GEOLOC: run.', morel.LOG_INFO);
+    
 
     // Early return if geolocation not supported.
     if (!navigator.geolocation) {
-      _log("GEOLOC: not supported!", morel.LOG_ERROR);
+      
       if (onError) {
         onError({message: "Geolocation is not supported!"});
       }
@@ -1264,7 +1250,7 @@ morel.extend('geoloc', function (m) {
       if ((currentTime - morel.geoloc.startTime) > morel.geoloc.TIMEOUT) {
         //stop everything
         morel.geoloc.stop();
-        _log("GEOLOC: timeout.", morel.LOG_ERROR);
+        
         if (onError) {
           onError({message: "Geolocation timed out!"});
         }
@@ -1287,7 +1273,7 @@ morel.extend('geoloc', function (m) {
       if (location.acc > -1 && location.acc < prevAccuracy) {
         morel.geoloc.set(location.lat, location.lon, location.acc);
         if (location.acc < morel.geoloc.CONF.GPS_ACCURACY_LIMIT) {
-          _log("GEOLOC: finished: " + location.acc + " meters.", morel.LOG_INFO);
+          
           morel.geoloc.stop();
 
           //save in storage
@@ -1296,7 +1282,7 @@ morel.extend('geoloc', function (m) {
             onSuccess(location);
           }
         } else {
-          _log("GEOLOC: updated acc: " + location.acc + " meters.", morel.LOG_INFO);
+          
           if (onUpdate) {
             onUpdate(location);
           }
@@ -1306,7 +1292,7 @@ morel.extend('geoloc', function (m) {
 
     // Callback if geolocation fails.
     var onGeolocError = function (error) {
-      _log("GEOLOC: ERROR.", morel.LOG_ERROR);
+      
       if (onError) {
         onError({'message': error.message});
       }
@@ -1425,7 +1411,7 @@ morel.extend('storage', function (m) {
    * Clears the storage.
    */
   m.clear = function () {
-    _log('STORAGE: clearing', morel.LOG_DEBUG);
+    
 
     localStorage.clear();
   };
@@ -1485,7 +1471,7 @@ morel.extend('storage', function (m) {
    * Clears the temporary storage.
    */
   m.tmpClear = function () {
-    _log('STORAGE: clearing temporary', morel.LOG_DEBUG);
+    
 
     sessionStorage.clear();
   };
@@ -1544,12 +1530,12 @@ morel.extend('image', function (m) {
    */
   m.toString = function (file, onSaveSuccess, onError) {
     if (file) {
-      _log("IMAGE: working with " + file.name + ".", morel.LOG_DEBUG);
+      
 
       var reader = new FileReader();
       //#2
       reader.onload = function () {
-        _log("IMAGE: resizing file.", morel.LOG_DEBUG);
+        
         var image = new Image();
         //#4
         image.onload = function (e) {
@@ -1583,7 +1569,7 @@ morel.extend('image', function (m) {
 
         };
         reader.onerror = function (e) {
-          _log("IMAGE: reader " + e + ".", morel.LOG_ERROR);
+          
           e.message = e.getMessage();
           onError(e);
         };
@@ -1670,128 +1656,6 @@ morel.extend('image', function (m) {
  *
  * Functions that were to ambiguous to be placed in one module.
  **********************************************************************/
-
-/**
- * Takes care of application execution logging.
- *
- * Uses 5 levels of logging:
- *  0: none
- *  1: errors
- *  2: warnings
- *  3: information
- *  4: debug
- *
- * Levels values defined in core app module.
- *
- * @param message
- * @param level
- * @private
- */
-function _log(message, level) {
-  "use strict";
-  /* global morel */
-  //do nothing if logging turned off
-  if (morel.CONF.LOG === morel.LOG_NONE) {
-    return;
-  }
-
-  if (morel.CONF.LOG >= level || !level ) {
-    switch (level) {
-      case morel.LOG_ERROR:
-        _logError(morel.CONF.basePath, message);
-        break;
-      case morel.LOG_WARNING:
-        console.warn(message);
-        break;
-      case morel.LOG_INFO:
-        console.log(message);
-        break;
-      case morel.LOG_DEBUG:
-      /* falls through */
-      default:
-        //IE does not support console.debug
-        if (!console.debug) {
-          console.log(message);
-          break;
-        }
-        console.debug(message);
-    }
-  }
-}
-
-/**
- * Prints and posts an error to the mobile authentication log.
- *
- * @param error object holding a 'message', and optionally 'url' and 'line' fields.
- * @private
- */
-function _logError(basePath, error) {
-  "use strict";
-  //print error
-  console.error(error.message, error.url, error.line);
-
-  //prepare the message
-  var message = '<b style="color: red">' + error.message + '</b>';
-  message += '</br><b> morel.version = </b><i>"' + morel.version + '"</i>';
-
-  message += '</br><b> morel.CONF.NAME = </b><i>"' + morel.CONF.NAME + '"</i>';
-  message += '</br><b> morel.CONF.VERSION = </b><i>"' + morel.CONF.VERSION + '"</i></br>';
-
-  message += '</br>' + navigator.appName;
-  message += '</br>' + navigator.appVersion;
-
-  var url = error.url + ' (' + error.line + ')';
-
-  if (navigator.onLine) {
-    //send to server
-
-    var data = {};
-    data.append = function (name, value) {
-      this[name] = value;
-    };
-    data.append('message', message);
-    data.append('url', url);
-    morel.auth.appendApp(data);
-
-    //removing unnecessary information
-    delete data.append;
-
-    jQuery.ajax({
-      url: basePath + 'mobile/log',
-      type: 'post',
-      dataType: 'json',
-      success: function (data) {
-        console.log(data);
-      },
-      data: data
-    });
-  }
-}
-
-/**
- * Hook into window.error function.
- *
- * @param message
- * @param url
- * @param line
- * @returns {boolean}
- * @private
- */
-function _onerror(message, url, line) {
-  "use strict";
-  window.onerror = null;
-
-  var error = {
-    'message': message,
-    'url': url || '',
-    'line': line || -1
-  };
-
-  _log(error, morel.LOG_ERROR);
-
-  window.onerror = this; // turn on error handling again
-  return true; // suppress normal error reporting
-}
 
 /**
  * Clones an object.

@@ -49,7 +49,7 @@ module.exports = function (grunt) {
         ],
         overwrite: true,     // overwrite matched source files
         replacements: [{
-          from: /(m\.version =) \'0\';/g,     // string replacement
+          from: /(m\.VERSION =) \'0\';/g,     // string replacement
           to: '$1 \'<%= pkg.version %>\';'
         }]
       }

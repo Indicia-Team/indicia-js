@@ -136,7 +136,7 @@ morel.extend('record', function (m) {
         case "hidden":
           break;
         default:
-          _log("RECORD: unknown input type: " + type + '.', morel.LOG_ERROR);
+          
           break;
       }
 
