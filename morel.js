@@ -1,6 +1,6 @@
 /*!
  * Mobile Recording Library for biological data collection. 
- * Version: 2.4.0
+ * Version: 2.4.0-beta
  *
  * https://github.com/NERC-CEH/morel
  *
@@ -20,7 +20,7 @@ var morel = (function () {
   "use strict";
 
   var m = {};
-  m.version = '2.4.0'; //library version, generated/replaced by grunt
+  m.version = '2.4.0-beta'; //library version, generated/replaced by grunt
 
   //configuration should be setup in morel config file
   m.CONF = {
