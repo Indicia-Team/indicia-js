@@ -515,7 +515,7 @@ morel.extend('auth', function (m) {
    * @returns {Object|*}
    */
   m.getUser = function () {
-    return morel.settings(m.USER);
+    return morel.settings(m.USER) || {};
   };
 
   /**
