@@ -34,7 +34,7 @@ morel.extend('io', function (m) {
             morel.io.sendAllSavedRecords(callback, callbackDone);
           };
 
-          id = Number.parseInt(id); //only numbers
+          id = parseInt(id); //only numbers
           m.sendSavedRecord(id, onSendSavedSuccess);
         } else {
           if (callbackDone){

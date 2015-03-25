@@ -9,6 +9,10 @@ morel.extend('db', function (m) {
   "use strict";
   /*global _log, IDBKeyRange*/
 
+  //because of iOS8 bug on home screen: null & readonly window.indexedDB
+  m.indexedDB = window._indexedDB || window.indexedDB;
+  m.IDBKeyRange = window._IDBKeyRange || window.IDBKeyRange;
+
   //todo: move to CONF.
   m.DB_VERSION = 1;
   m.DB_MAIN = "morel";
@@ -22,7 +26,7 @@ morel.extend('db', function (m) {
    * @param callback
    */
   m.open = function (name, storeName, callback) {
-    var req = window.indexedDB.open(name, m.DB_VERSION);
+    var req = m.indexedDB.open(name, m.DB_VERSION);
 
     req.onsuccess = function (e) {
       
@@ -106,7 +110,7 @@ morel.extend('db', function (m) {
       
 
       // Get everything in the store
-      var keyRange = IDBKeyRange.lowerBound(0);
+      var keyRange = m.IDBKeyRange.lowerBound(0);
       var req = store.openCursor(keyRange);
 
       var data = [];

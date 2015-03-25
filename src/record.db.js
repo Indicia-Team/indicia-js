@@ -8,6 +8,10 @@
 morel.extend('record.db', function (m) {
   "use strict";
 
+  //because of iOS8 bug on home screen: null & readonly window.indexedDB
+  m.indexedDB = window._indexedDB || window.indexedDB;
+  m.IDBKeyRange = window._IDBKeyRange || window.IDBKeyRange;
+
   //todo: move to CONF.
   m.RECORDS = "records";
 
@@ -23,7 +27,7 @@ morel.extend('record.db', function (m) {
    */
   m.open = function (callback, onError) {
     var dbName = morel.CONF.NAME + '-' + m.DB_MAIN;
-    var req = window.indexedDB.open(dbName, m.DB_VERSION);
+    var req = m.indexedDB.open(dbName, m.DB_VERSION);
 
     /**
      * On Database opening success, returns the Records object store.
@@ -137,7 +141,7 @@ morel.extend('record.db', function (m) {
     m.open(function (store) {
       
 
-      var req = store.openCursor(IDBKeyRange.only(key));
+      var req = store.openCursor(m.IDBKeyRange.only(key));
       req.onsuccess = function () {
         var cursor = req.result;
         if (cursor) {
@@ -160,7 +164,7 @@ morel.extend('record.db', function (m) {
       
 
       // Get everything in the store
-      var keyRange = IDBKeyRange.lowerBound(0);
+      var keyRange = m.IDBKeyRange.lowerBound(0);
       var req = store.openCursor(keyRange);
 
       var data = {};
