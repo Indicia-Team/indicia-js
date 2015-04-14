@@ -2,14 +2,52 @@ Provides general use Indicia targeted mobile app recording libraries.
 
 Install using Bower: `bower install 'NERC-CEH/morel'`
 
+## Use
+
+```javascript
+//configuration
+$.extend(morel.io.CONF, {
+  RECORD_URL: 'https://example.com/'
+});
+$.extend(morel.auth.CONF, {
+  APPNAME: "appName",
+  APPSECRET: "appSecret",
+  WEBSITE_ID: 1,
+  SURVEY_ID: 2
+});
+
+//save input
+morel.record.inputs.set('sample:date', '12/12/1923');
+
+//get input
+morel.record.inputs.get('sample:date');
+morel.record.inputs.get(morel.record.inputs.KEYS.DATE); //same as previous
+
+//get current record
+morel.record.get()
+
+//send current record
+morel.io.sendSavedRecord(savedRecordId, onSuccess, onError);
+
+//save current record
+morel.record.db.save(onSuccess, onError);
+
+//get saved records
+morel.record.db.getAll(onSuccess, onError);
+morel.record.db.get(savedRecordId, onSuccess, onError); //individual
+
+```
+
 ## Requirements
 
-Only requirement is [jQuery Mobile](https://github.com/jquery/jquery-mobile).
+[jQuery](https://jquery.com/).
+
+[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) is optional if localStorage is enough.
 
 ## Building
 
 - Install [NodeJS](http://nodejs.org/)
-- Clone a copy of the main MOREL git repo by running:
+- Get a copy of the source by running:
 
 ```bash
 git clone git://github.com/NERC-CEH/morel.git
