@@ -26,7 +26,6 @@ module.exports = function (grunt) {
         src: [
           'src/main.js',
           'src/io.js',
-          'src/db.js',
           'src/auth.js',
           'src/record.js',
           'src/record.db.js',
