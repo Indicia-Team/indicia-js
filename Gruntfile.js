@@ -32,10 +32,8 @@ module.exports = function (grunt) {
           'src/record.inputs.js',
           'src/geoloc.js',
           'src/storage.js',
-          'src/navigation.js',
           'src/image.js',
-          'src/helper.js',
-          'src/appcache_back_button_fix.js'
+          'src/helper.js'
         ],
         // the location of the resulting JS file
         dest: '<%= pkg.name %>.js'
