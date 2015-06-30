@@ -38,7 +38,10 @@
     "karma-mocha": "latest",
     "karma-chai": "latest",
     "chai": "latest",
-    "grunt-karma": "latest"
+    "grunt-karma": "latest",
+    "karma-phantomjs-launcher": "latest",
+    "karma-chrome-launcher": "latest",
+    "karma-firefox-launcher": "latest"
   },
   "keywords": [
     "morel",

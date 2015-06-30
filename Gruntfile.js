@@ -64,23 +64,7 @@ module.exports = function (grunt) {
     },
     karma: {
       unit: {
-        browsers: ['Chrome'],
-        frameworks: ['mocha', 'chai'],
-        'plugins': [
-          'karma-mocha',
-          'karma-chai'
-        ],
-        files: [
-          {src: ['test/*.js']},
-          {src: ['src/*.js']}
-        ],
-        reporters: ['progress'],
-        port: 9876,
-        colors: true,
-        autoWatch: false,
-        singleRun: false,
-        // level of logging
-        logLevel: 'ERROR'
+        configFile: 'test/karma.conf.js'
       }
     }
   });
