@@ -113,7 +113,7 @@ describe('record interface', function(){
 
         //IS
         var exist = morel.record.inputs.is(input);
-        expect(exist).to.be.true;
+        expect(exist).to.be.number;
     });
 });
 
@@ -261,7 +261,7 @@ describe('storage interface', function(){
         morel.storage.tmpSet(item, item_data);
 
         var exists = morel.storage.tmpIs(item);
-        expect(exists).to.be.true;
+        expect(exists).to.be.number;
 
         //GET
         var f_item_data = morel.storage.tmpGet(item);

@@ -1583,6 +1583,11 @@ function isDataURL(s) {
 //From jQuery 1.4.4 .
 function isPlainObject ( obj ) {
   function type( obj ) {
+    var class2type = {};
+    var types = "Boolean Number String Function Array Date RegExp Object".split(" ");
+    for (var i = 0; i < types.length; i++) {
+      class2type["[object " + types[i] + "]"] = types[i].toLowerCase();
+    }
     return obj == null ?
       String( obj ) :
     class2type[ toString.call(obj) ] || "object";
