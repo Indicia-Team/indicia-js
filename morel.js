@@ -8,97 +8,120 @@
  * Released under the GNU GPL v3 * license.
  */
 /*global _log*/
-var morel = (function () {
-  /*
-   * Things to work on:
-   *  - Decouple the modules as much as possible
-   *  - Close as many global variables
-   */
-  "use strict";
 
-  var m = {};
-  m.VERSION = '2.0.0'; //library version, generated/replaced by grunt
+(function (factory) {
+  //Following Backbone.js header style
 
-  //library wide configuration
-  m.CONF = {};
+  // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
+  // We use `self` instead of `window` for `WebWorker` support.
+  var root = (typeof self == 'object' && self.self == self && self) ||
+    (typeof global == 'object' && global.global == global && global);
 
-  //CONSTANTS:
-  m.TRUE = 1;
-  m.FALSE = 0;
-  m.ERROR = -1;
+  //AMD
+  if (typeof define === 'function' && define.amd) {
+    define(['jquery', 'exports'], function ($, exports) {
+      root.morel = factory(root, exports, $);
+    });
 
-  m.SETTINGS_KEY =  'morel-settings';
+  //Node.js or CommonJS
+  } else if (typeof exports !== 'undefined') {
+    try { $ = require('jquery');} catch (e) {}
+    factory(root, exports, $);
 
-  /**
-   * Extends the morel library with the provided namespace and its object.
-   *
-   * @param name
-   * @param obj
-   * @returns {*|{}}
-   */
-  m.extend = function (name, obj) {
-    var nameArray = name.split('.');
-    var variable = m[nameArray[0]] = m[nameArray[0]] || {};
+  //Browser global
+  } else {
+    root.morel = factory(root, {}, (root.$ || root.jQuery));
+  }
+}(function (root, m, $) {
+    /*
+     * Things to work on:
+     *  - Decouple the modules as much as possible
+     *  - Close as many global variables
+     */
+    "use strict";
 
-    //iterate through the namespaces
-    for (var i = 1; i < nameArray.length; i++) {
-      if (variable[nameArray[i]] !== 'object') {
-        //overwrite if it is not an object
-        variable[nameArray[i]] = {};
+    m.VERSION = '2.0.0'; //library version, generated/replaced by grunt
+
+    //library wide configuration
+    m.CONF = {};
+
+    //CONSTANTS:
+    m.TRUE = 1;
+    m.FALSE = 0;
+    m.ERROR = -1;
+
+    m.SETTINGS_KEY =  'morel-settings';
+
+    /**
+     * Extends the morel library with the provided namespace and its object.
+     *
+     * @param name
+     * @param obj
+     * @returns {*|{}}
+     */
+    m.extend = function (name, obj) {
+      var nameArray = name.split('.');
+      var variable = m[nameArray[0]] = m[nameArray[0]] || {};
+
+      //iterate through the namespaces
+      for (var i = 1; i < nameArray.length; i++) {
+        if (variable[nameArray[i]] !== 'object') {
+          //overwrite if it is not an object
+          variable[nameArray[i]] = {};
+        }
+        variable = variable[nameArray[i]];
       }
-      variable = variable[nameArray[i]];
-    }
-    //if a function than initialize it otherwise assign an object
-    variable = typeof(obj) === "function" ? obj(variable) : obj || {};
-    return variable;
-  };
+      //if a function than initialize it otherwise assign an object
+      variable = typeof(obj) === "function" ? obj(variable) : obj || {};
+      return variable;
+    };
 
-  /**
-   * Initialises the application settings.
-   */
-  m.initSettings = function () {
-    morel.storage.set(m.SETTINGS_KEY, {});
-  };
+    /**
+     * Initialises the application settings.
+     */
+    m.initSettings = function () {
+      morel.storage.set(m.SETTINGS_KEY, {});
+    };
 
-  /**
-   * Sets an app setting.
-   *
-   * @param item
-   * @param data
-   * @returns {*}
-   */
-  m.settings = function (item, data) {
-    var settings = morel.storage.get(m.SETTINGS_KEY);
-    if (!settings) {
-      morel.initSettings();
-      settings = morel.storage.get(m.SETTINGS_KEY);
-    }
+    /**
+     * Sets an app setting.
+     *
+     * @param item
+     * @param data
+     * @returns {*}
+     */
+    m.settings = function (item, data) {
+      var settings = morel.storage.get(m.SETTINGS_KEY);
+      if (!settings) {
+        morel.initSettings();
+        settings = morel.storage.get(m.SETTINGS_KEY);
+      }
 
-    if (data) {
-      settings[item] = data;
-      return morel.storage.set(m.SETTINGS_KEY, settings);
-    } else {
-      return (item) ? settings[item] : settings;
-    }
-  };
+      if (data) {
+        settings[item] = data;
+        return morel.storage.set(m.SETTINGS_KEY, settings);
+      } else {
+        return (item) ? settings[item] : settings;
+      }
+    };
 
-  /**
-   * Resets the morel to the initial state.
-   *
-   * Clears localStorage.
-   * Clears sessionStorage.
-   * Clears databases.
-   */
-  m.reset = function () {
-    morel.storage.clear();
-    morel.storage.tmpClear();
+    /**
+     * Resets the morel to the initial state.
+     *
+     * Clears localStorage.
+     * Clears sessionStorage.
+     * Clears databases.
+     */
+    m.reset = function () {
+      morel.storage.clear();
+      morel.storage.tmpClear();
 
-    //morel.db.clear();
-    morel.record.db.clear();
-  };
+      //morel.db.clear();
+      morel.record.db.clear();
+    };
 
-  return m;
-})(); //END
+    return m;
+}));
 
 /***********************************************************************
  * IO MODULE
@@ -767,9 +790,9 @@ morel.extend('record.db', function (m) {
    */
   m.is = function (key, callback, onError) {
     function onSuccess(data) {
-      if ($.isPlainObject(data)) {
+      if (isPlainObject(data)) {
         if (callback) {
-          callback(!$.isEmptyObject(data));
+          callback(!isEmptyObject(data));
         }
       } else {
         if (callback) {
@@ -842,7 +865,7 @@ morel.extend('record.db', function (m) {
     //INPUTS
     var onExtractFilesSuccess = function (files) {
       //merge files and the rest of the inputs
-      jQuery.extend(record, files);
+      extend(record, files);
 
       
       function onSuccess() {
@@ -875,7 +898,7 @@ morel.extend('record.db', function (m) {
 
     //INPUTS
     //todo: refactor to $record
-    var record = $(formId);
+    var record = document.getElementById(formId);
     var onSaveAllFilesSuccess = function (filesArray) {
       //get all the inputs/selects/textboxes into array
       var recordArray = morel.record.extractFromRecord(record);
@@ -968,8 +991,8 @@ morel.extend('record.inputs', function (m) {
    */
   m.is = function (item) {
     var val = this.get(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }
@@ -1243,8 +1266,8 @@ morel.extend('storage', function (m) {
    */
   m.is = function (item) {
     var val = this.get(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }
@@ -1254,8 +1277,6 @@ morel.extend('storage', function (m) {
    * Clears the storage.
    */
   m.clear = function () {
-    
-
     localStorage.clear();
   };
 
@@ -1303,8 +1324,8 @@ morel.extend('storage', function (m) {
    */
   m.tmpIs = function (item) {
     var val = this.tmpGet(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }
@@ -1462,16 +1483,18 @@ morel.extend('image', function (m) {
    */
   m.findAll = function (elem) {
     if (!elem) {
-      elem = $(document);
+      elem = window.document;
     }
 
     var files = [];
-    $(elem).find('input').each(function (index, input) {
-      if ($(input).attr('type') === "file" && input.files.length > 0) {
+    var inputs = elem.getElementsByTagName('input');
+    for (var i = 0; i < inputs.length; i++) {
+      var input = inputs[i];
+      if (input.getAttribute('type') === "file" && input.files.length > 0) {
         var file = morel.image.find(input);
         files.push(file);
       }
-    });
+    }
     return files;
   };
 
@@ -1555,4 +1578,56 @@ function isDataURL(s) {
 
   var regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
   return !!s.match(regex);
+}
+
+//From jQuery 1.4.4 .
+function isPlainObject ( obj ) {
+  function type( obj ) {
+    return obj == null ?
+      String( obj ) :
+    class2type[ toString.call(obj) ] || "object";
+  }
+
+  function isWindow( obj ) {
+    return obj && typeof obj === "object" && "setInterval" in obj;
+  }
+
+  // Must be an Object.
+  // Because of IE, we also have to check the presence of the constructor property.
+  // Make sure that DOM nodes and window objects don't pass through, as well
+  if ( !obj || type(obj) !== "object" || obj.nodeType || isWindow( obj ) ) {
+    return false;
+  }
+
+  // Not own constructor property must be Object
+  if ( obj.constructor &&
+    !hasOwn.call(obj, "constructor") &&
+    !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+    return false;
+  }
+
+  // Own properties are enumerated firstly, so to speed up,
+  // if last one is own, then all properties are own.
+
+  var key;
+  for ( key in obj ) {}
+
+  return key === undefined || hasOwn.call( obj, key );
+}
+
+//checks if the object has any elements.
+function isEmptyObject (obj) {
+  for (var key in obj) {
+    return false;
+  }
+  return true;
+}
+
+function extend (a, b) {
+  for (var key in b) {
+    if (b.hasOwnProperty(key)) {
+      a[key] = b[key];
+    }
+  }
+  return a;
 }

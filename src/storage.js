@@ -61,8 +61,8 @@ morel.extend('storage', function (m) {
    */
   m.is = function (item) {
     var val = this.get(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }
@@ -72,8 +72,6 @@ morel.extend('storage', function (m) {
    * Clears the storage.
    */
   m.clear = function () {
-    
-
     localStorage.clear();
   };
 
@@ -121,8 +119,8 @@ morel.extend('storage', function (m) {
    */
   m.tmpIs = function (item) {
     var val = this.tmpGet(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }

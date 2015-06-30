@@ -196,9 +196,9 @@ morel.extend('record.db', function (m) {
    */
   m.is = function (key, callback, onError) {
     function onSuccess(data) {
-      if ($.isPlainObject(data)) {
+      if (isPlainObject(data)) {
         if (callback) {
-          callback(!$.isEmptyObject(data));
+          callback(!isEmptyObject(data));
         }
       } else {
         if (callback) {
@@ -271,7 +271,7 @@ morel.extend('record.db', function (m) {
     //INPUTS
     var onExtractFilesSuccess = function (files) {
       //merge files and the rest of the inputs
-      jQuery.extend(record, files);
+      extend(record, files);
 
       
       function onSuccess() {
@@ -304,7 +304,7 @@ morel.extend('record.db', function (m) {
 
     //INPUTS
     //todo: refactor to $record
-    var record = $(formId);
+    var record = document.getElementById(formId);
     var onSaveAllFilesSuccess = function (filesArray) {
       //get all the inputs/selects/textboxes into array
       var recordArray = morel.record.extractFromRecord(record);

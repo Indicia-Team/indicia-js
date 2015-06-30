@@ -124,16 +124,18 @@ morel.extend('image', function (m) {
    */
   m.findAll = function (elem) {
     if (!elem) {
-      elem = $(document);
+      elem = window.document;
     }
 
     var files = [];
-    $(elem).find('input').each(function (index, input) {
-      if ($(input).attr('type') === "file" && input.files.length > 0) {
+    var inputs = elem.getElementsByTagName('input');
+    for (var i = 0; i < inputs.length; i++) {
+      var input = inputs[i];
+      if (input.getAttribute('type') === "file" && input.files.length > 0) {
         var file = morel.image.find(input);
         files.push(file);
       }
-    });
+    }
     return files;
   };
 

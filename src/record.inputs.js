@@ -60,8 +60,8 @@ morel.extend('record.inputs', function (m) {
    */
   m.is = function (item) {
     var val = this.get(item);
-    if ($.isPlainObject(val)) {
-      return !$.isEmptyObject(val);
+    if (isPlainObject(val)) {
+      return !isEmptyObject(val);
     } else {
       return val;
     }
