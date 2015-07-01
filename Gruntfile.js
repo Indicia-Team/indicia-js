@@ -13,6 +13,42 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
+    requirejs: {
+      compile: {
+        options: {
+          baseUrl: "src",
+          optimize: "none",
+          findNestedDependencies: true,
+          skipModuleInsertion: true,
+
+          include: [
+            "main",
+            "io",
+            "auth",
+            "geoloc",
+            "helper",
+            "image",
+            "record",
+            "record.db",
+            "record.inputs",
+            "storage"
+          ],
+
+          out: '<%= pkg.name %>.js',
+
+          pragmasOnSave: {
+            buildExclude: true
+          },
+
+          wrap: {
+            startFile: "src/wrap.start",
+            endFile: "src/wrap.end"
+          }
+        }
+      }
+    },
+
     concat: {
       options: {
         // define a string to put between each file in the concatenated output
@@ -22,23 +58,14 @@ module.exports = function (grunt) {
         options: {
           banner: banner
         },
-        // the files to concatenate
-        src: [
-          'src/main.js',
-          'src/io.js',
-          'src/auth.js',
-          'src/record.js',
-          'src/record.db.js',
-          'src/record.inputs.js',
-          'src/geoloc.js',
-          'src/storage.js',
-          'src/image.js',
-          'src/helper.js'
-        ],
+        // the file to update
+        src: '<%= pkg.name %>.js',
+
         // the location of the resulting JS file
         dest: '<%= pkg.name %>.js'
       }
     },
+
     replace: {
       version: {
         src: [
@@ -51,6 +78,7 @@ module.exports = function (grunt) {
         }]
       }
     },
+
     uglify: {
       options: {
         // the banner is inserted at the top of the output
@@ -62,6 +90,7 @@ module.exports = function (grunt) {
         }
       }
     },
+
     karma: {
       unit: {
         configFile: 'test/karma.conf.js'
@@ -70,12 +99,13 @@ module.exports = function (grunt) {
   });
 
   grunt.loadNpmTasks('grunt-karma');
-  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-requirejs');
 
   // the default task can be run just by typing "grunt" on the command line
-  grunt.registerTask('build', ['concat', 'replace', 'uglify']);
+  grunt.registerTask('build', ['requirejs', 'concat', 'replace', 'uglify']);
   grunt.registerTask('test', ['karma']);
   grunt.registerTask('default', ['build', 'karma']);
 

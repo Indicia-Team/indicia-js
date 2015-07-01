@@ -1,115 +1,100 @@
-/*global _log*/
+//>>excludeStart("buildExclude", pragmas.buildExclude);
+define([], function () {
+//>>excludeEnd("buildExclude");
 
-(function (factory) {
-  //Following Backbone.js header style
+  /*
+   * Things to work on:
+   *  - Decouple the modules as much as possible
+   *  - Close as many global variables
+   */
+  "use strict";
 
-  // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
-  // We use `self` instead of `window` for `WebWorker` support.
-  var root = (typeof self == 'object' && self.self == self && self) ||
-    (typeof global == 'object' && global.global == global && global);
+  m.VERSION = '0'; //library version, generated/replaced by grunt
 
-  //AMD
-  if (typeof define === 'function' && define.amd) {
-    define(['jquery', 'exports'], function ($, exports) {
-      root.morel = factory(root, exports, $);
-    });
+  //library wide configuration
+  m.CONF = {};
 
-  //Node.js or CommonJS
-  } else if (typeof exports !== 'undefined') {
-    try { $ = require('jquery');} catch (e) {}
-    factory(root, exports, $);
+  //CONSTANTS:
+  m.TRUE = 1;
+  m.FALSE = 0;
+  m.ERROR = -1;
 
-  //Browser global
-  } else {
-    root.morel = factory(root, {}, (root.$ || root.jQuery));
-  }
-}(function (root, m, $) {
-    /*
-     * Things to work on:
-     *  - Decouple the modules as much as possible
-     *  - Close as many global variables
-     */
-    "use strict";
+  m.SETTINGS_KEY = 'morel-settings';
 
-    m.VERSION = '0'; //library version, generated/replaced by grunt
+  /**
+   * Extends the morel library with the provided namespace and its object.
+   *
+   * @param name
+   * @param obj
+   * @returns {*|{}}
+   */
+  m.extend = function (name, obj) {
+    //if a function than initialize it otherwise assign an object
+    obj = typeof(obj) === "function" ? obj(variable) : obj || {};
 
-    //library wide configuration
-    m.CONF = {};
+    var nameArray = name.split('.');
 
-    //CONSTANTS:
-    m.TRUE = 1;
-    m.FALSE = 0;
-    m.ERROR = -1;
+    var variable = m; //variable for working with deep namespace
 
-    m.SETTINGS_KEY =  'morel-settings';
-
-    /**
-     * Extends the morel library with the provided namespace and its object.
-     *
-     * @param name
-     * @param obj
-     * @returns {*|{}}
-     */
-    m.extend = function (name, obj) {
-      var nameArray = name.split('.');
-      var variable = m[nameArray[0]] = m[nameArray[0]] || {};
-
-      //iterate through the namespaces
-      for (var i = 1; i < nameArray.length; i++) {
-        if (variable[nameArray[i]] !== 'object') {
-          //overwrite if it is not an object
-          variable[nameArray[i]] = {};
-        }
-        variable = variable[nameArray[i]];
+    //iterate through the namespaces creating objects & return reference
+    // of last parent object
+    for (var nameCount = 0; nameCount < (nameArray.length - 1); nameCount++) {
+      if (typeof variable[nameArray[nameCount]] !== 'object') {
+        //overwrite if it is not an object
+        variable[nameArray[nameCount]] = {};
       }
-      //if a function than initialize it otherwise assign an object
-      variable = typeof(obj) === "function" ? obj(variable) : obj || {};
-      return variable;
-    };
+      variable = variable[nameArray[nameCount]];
+    }
+    //assign new object
+    variable[nameArray[nameArray.length - 1]] =  obj;
 
-    /**
-     * Initialises the application settings.
-     */
-    m.initSettings = function () {
-      morel.storage.set(m.SETTINGS_KEY, {});
-    };
+    return m[nameArray[0]];
+  };
 
-    /**
-     * Sets an app setting.
-     *
-     * @param item
-     * @param data
-     * @returns {*}
-     */
-    m.settings = function (item, data) {
-      var settings = morel.storage.get(m.SETTINGS_KEY);
-      if (!settings) {
-        morel.initSettings();
-        settings = morel.storage.get(m.SETTINGS_KEY);
-      }
+  /**
+   * Initialises the application settings.
+   */
+  m.initSettings = function () {
+    m.storage.set(m.SETTINGS_KEY, {});
+  };
 
-      if (data) {
-        settings[item] = data;
-        return morel.storage.set(m.SETTINGS_KEY, settings);
-      } else {
-        return (item) ? settings[item] : settings;
-      }
-    };
+  /**
+   * Sets an app setting.
+   *
+   * @param item
+   * @param data
+   * @returns {*}
+   */
+  m.settings = function (item, data) {
+    var settings = m.storage.get(m.SETTINGS_KEY);
+    if (!settings) {
+      m.initSettings();
+      settings = m.storage.get(m.SETTINGS_KEY);
+    }
 
-    /**
-     * Resets the morel to the initial state.
-     *
-     * Clears localStorage.
-     * Clears sessionStorage.
-     * Clears databases.
-     */
-    m.reset = function () {
-      morel.storage.clear();
-      morel.storage.tmpClear();
+    if (data) {
+      settings[item] = data;
+      return m.storage.set(m.SETTINGS_KEY, settings);
+    } else {
+      return (item) ? settings[item] : settings;
+    }
+  };
 
-      //morel.db.clear();
-      morel.record.db.clear();
-    };
+  /**
+   * Resets the morel to the initial state.
+   *
+   * Clears localStorage.
+   * Clears sessionStorage.
+   * Clears databases.
+   */
+  m.reset = function () {
+    m.storage.clear();
+    m.storage.tmpClear();
 
-    return m;
-}));
+    //m.db.clear();
+    m.record.db.clear();
+  };
+
+//>>excludeStart("buildExclude", pragmas.buildExclude);
+});
+//>>excludeEnd("buildExclude");
