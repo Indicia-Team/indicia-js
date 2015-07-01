@@ -2,7 +2,7 @@
   "name": "morel",
   "title": "morel",
   "description": "Mobile Recording Library for biological data collection.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "homepage": "https://github.com/NERC-CEH/morel",
   "author": {
     "name": "Karols Kazlauskis",
@@ -33,7 +33,7 @@
     "grunt-contrib-uglify": "0.4.0",
     "grunt-contrib-watch": "0.6.0",
     "grunt-text-replace": "0.3.12",
-    "grunt-contrib-requirejs": "0.4.1",
+    "grunt-contrib-requirejs": "0.4.4",
     "requirejs": "2.1.18",
     "karma": "latest",
     "mocha": "latest",

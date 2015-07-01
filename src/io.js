@@ -19,6 +19,7 @@ define([], function () {
      */
     sendAllSavedRecords: function (callback, callbackDone) {
       var onSuccess = null;
+      var that = this;
       if (navigator.onLine) {
         onSuccess = function (records) {
           var id = Object.keys(records)[0]; //getting the first one of the array
@@ -36,7 +37,7 @@ define([], function () {
             };
 
             id = parseInt(id); //only numbers
-            this.sendSavedRecord(id, onSendSavedSuccess);
+            that.sendSavedRecord(id, onSendSavedSuccess);
           } else {
             if (callbackDone){
               callbackDone();
@@ -68,6 +69,7 @@ define([], function () {
      * @param onSend
      */
     sendSavedRecord: function (recordKey, callback, onError, onSend) {
+      var that = this;
 
       function onSuccess(data) {
         var record = {
@@ -90,7 +92,7 @@ define([], function () {
             onError(err);
           }
         }
-        this.postRecord(record, callback, onPostError, onSend);
+        that.postRecord(record, callback, onPostError, onSend);
       }
       m.record.db.getData(recordKey, onSuccess);
     },

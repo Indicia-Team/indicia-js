@@ -29,6 +29,7 @@ define([], function () {
     open: function (callback, onError) {
       var dbName = m.CONF.NAME + '-' + this.DB_MAIN;
       var req = this.indexedDB.open(dbName, this.DB_VERSION);
+      var that = this;
 
       /**
        * On Database opening success, returns the Records object store.
@@ -38,8 +39,8 @@ define([], function () {
       req.onsuccess = function (e) {
 
         var db = e.target.result;
-        var transaction = db.transaction([this.STORE_RECORDS], "readwrite");
-        var store = transaction.objectStore(this.STORE_RECORDS);
+        var transaction = db.transaction([that.STORE_RECORDS], "readwrite");
+        var store = transaction.objectStore(that.STORE_RECORDS);
 
         if (callback) {
           callback(store);
@@ -55,7 +56,7 @@ define([], function () {
 
         var db = e.target.result;
 
-        var store = db.createObjectStore(this.STORE_RECORDS, {'keyPath': 'id'});
+        var store = db.createObjectStore(that.STORE_RECORDS, {'keyPath': 'id'});
         store.createIndex('id', 'id', {unique: true});
       };
 
@@ -139,10 +140,10 @@ define([], function () {
      * @param onError
      */
     remove: function (key, callback, onError) {
+      var that = this;
+
       this.open(function (store) {
-
-
-        var req = store.openCursor(this.IDBKeyRange.only(key));
+        var req = store.openCursor(that.IDBKeyRange.only(key));
         req.onsuccess = function () {
           var cursor = req.result;
           if (cursor) {
@@ -161,11 +162,11 @@ define([], function () {
      * Brings back all saved records from the database.
      */
     getAll: function (callback, onError) {
+      var that = this;
+
       this.open(function (store) {
-
-
         // Get everything in the store
-        var keyRange = this.IDBKeyRange.lowerBound(0);
+        var keyRange = that.IDBKeyRange.lowerBound(0);
         var req = store.openCursor(keyRange);
 
         var data = {};
@@ -296,8 +297,8 @@ define([], function () {
      * Returns the savedRecordId of the saved record, otherwise an m.ERROR.
      */
     saveForm: function (formId, onSuccess) {
-
       var records = this.getAll();
+      var that = this;
 
       //get new record ID
       var settings = m.record.getSettings();
@@ -316,7 +317,7 @@ define([], function () {
 
         try {
           records[savedRecordId] = recordArray;
-          this.setAll(records);
+          that.setAll(records);
           m.record.setSettings(settings);
         } catch (e) {
 
