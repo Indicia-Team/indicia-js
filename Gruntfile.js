@@ -30,7 +30,7 @@ module.exports = function (grunt) {
             "helper",
             "image",
             "record",
-            "record.db",
+            "db",
             "record.inputs",
             "storage"
           ],

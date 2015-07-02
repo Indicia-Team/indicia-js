@@ -1,6 +1,6 @@
 /*!
  * Mobile Recording Library for biological data collection. 
- * Version: 2.1.0
+ * Version: 3.0.0-alpha
  *
  * https://github.com/NERC-CEH/morel
  *
@@ -37,7 +37,7 @@
    */
   "use strict";
 
-  m.VERSION = '2.1.0'; //library version, generated/replaced by grunt
+  m.VERSION = '3.0.0-alpha'; //library version, generated/replaced by grunt
 
   //library wide configuration
   m.CONF = {};
@@ -119,8 +119,7 @@
     m.storage.clear();
     m.storage.tmpClear();
 
-    //m.db.clear();
-    m.record.db.clear();
+    m.db.clear();
   };
 
 
@@ -152,7 +151,7 @@
               var recordKey = this.callback_data.recordKey;
 
 
-              m.record.db.remove(recordKey);
+              m.db.remove(recordKey);
               if (callback){
                 callback();
               }
@@ -168,7 +167,7 @@
           }
         };
 
-        m.record.db.getAll(onSuccess);
+        m.db.getAll(onSuccess);
       } else {
         $.mobile.loading('show', {
           text: "Looks like you are offline!",
@@ -217,7 +216,7 @@
         }
         that.postRecord(record, callback, onPostError, onSend);
       }
-      m.record.db.getData(recordKey, onSuccess);
+      m.db.getData(recordKey, onSuccess);
     },
 
     /**
@@ -619,6 +618,16 @@
       }
     }
     return copy;
+  };
+
+  /**
+   * Generate UUID.
+   */
+  m.getNewUUID = function () {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+    });
   };
 
   /**
@@ -1064,17 +1073,16 @@
  **********************************************************************/
 
   /* global morel, _log, IDBKeyRange, dataURItoBlob */
-  m.extend('record.db', {
+  m.extend('db', {
     //because of iOS8 bug on home screen: null & readonly window.indexedDB
     indexedDB: window._indexedDB || window.indexedDB,
     IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
 
-    //todo: move to CONF.
     RECORDS: "records",
 
-    DB_VERSION: 5,
+    DB_VERSION: 1,
     DB_MAIN: "morel",
-    STORE_RECORDS:"records",
+    STORE_RECORDS: "records",
 
     /**
      * Opens a database connection and returns a records store.

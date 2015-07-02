@@ -63,9 +63,9 @@ describe('record interface', function(){
 
     /**
      * Testing:
-     morel.record.db.remove(savedRecordId)
-     morel.record.db.save(onSaveSuccess);
-     +morel.record.db.getAll()
+     morel.db.remove(savedRecordId)
+     morel.db.save(onSaveSuccess);
+     +morel.db.getAll()
      */
     it('storage', function(){
         //SAVE
@@ -73,9 +73,9 @@ describe('record interface', function(){
         var input_data = Math.random();
         morel.record.inputs.set(input, input_data);
 
-        morel.record.db.save(function(savedRecordId){
+        morel.db.save(function(savedRecordId){
             //GETALL
-            morel.record.db.getAll(function(records){
+            morel.db.getAll(function(records){
                 expect(records).to.be.an.array;
                 expect(records.length).to.be.equal(1);
                 expect(records[0][0].value).to.be.equal(input_data);
@@ -83,8 +83,8 @@ describe('record interface', function(){
                 expect(savedRecordId).to.be.equal(1);
 
                 //REMOVE
-                morel.record.db.remove(savedRecordId);
-                morel.record.db.getAll(function(records){
+                morel.db.remove(savedRecordId);
+                morel.db.getAll(function(records){
                     expect(records).to.be.an.array;
                     expect(records.length).to.be.equal(0);
                 });
