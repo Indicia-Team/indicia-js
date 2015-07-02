@@ -29,7 +29,7 @@ define([], function () {
               var recordKey = this.callback_data.recordKey;
 
 
-              m.record.db.remove(recordKey);
+              m.db.remove(recordKey);
               if (callback){
                 callback();
               }
@@ -45,7 +45,7 @@ define([], function () {
           }
         };
 
-        m.record.db.getAll(onSuccess);
+        m.db.getAll(onSuccess);
       } else {
         $.mobile.loading('show', {
           text: "Looks like you are offline!",
@@ -94,7 +94,7 @@ define([], function () {
         }
         that.postRecord(record, callback, onPostError, onSend);
       }
-      m.record.db.getData(recordKey, onSuccess);
+      m.db.getData(recordKey, onSuccess);
     },
 
     /**

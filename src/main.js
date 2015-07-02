@@ -91,8 +91,7 @@ define([], function () {
     m.storage.clear();
     m.storage.tmpClear();
 
-    //m.db.clear();
-    m.record.db.clear();
+    m.db.clear();
   };
 
 //>>excludeStart("buildExclude", pragmas.buildExclude);
