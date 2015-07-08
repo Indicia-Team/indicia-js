@@ -8,100 +8,139 @@ define([], function () {
      *  - Validation should be moved to the app controllers level.
      **********************************************************************/
 
-    /* global m, _log */
-    m.extend('record', {
-        //CONSTANTS
-        //todo: add _KEY to each constant name to distinguish all KEYS
-        RECORD: "record", //name under which the record is stored
-        MULTIPLE_GROUP_KEY: "multiple_", //to separate a grouped input
-        COUNT: "record_count",
-        STORAGE: "record_",
-        PIC: "_pic_",
-        DATA: "data",
-        FILES: "files",
-        SETTINGS: "morel",
-        LASTID: "lastId",
+    /*
 
-        //GLOBALS
-        totalFiles: 0,
 
-        /**
-         * Initialises the recording environment.
-         *
-         * @returns {*}
-         */
-        init: function () {
-            var settings = this.getSettings();
-            if (!settings) {
-                settings = {};
+     DB
+     -------------
+     get(id)
+     getAll()
+     set(id, {})
+     remove(id)
+
+     submit(id)
+     submitAll()
+
+     [sync(id)]
+     [syncAll()]
+
+     _imagesDeleteAll(id)
+     _imagesDelete(id, imageId)
+     _imagesAdd(id, {})
+     _changeStatus(id, 'status')
+
+     new Sample()
+     ------------
+     getOccurrences(id)
+     getOccurrencesAll()
+     setOccurrence({})
+     removeOccurrence(id)
+
+
+     addImage({})
+     removeImage(arrayId)
+
+     new Occurrence()
+     */
+    (function () {
+
+        var _workspace = {};
+
+        /* global m, _log */
+        m.extend('record', {
+            //CONSTANTS
+            //todo: add _KEY to each constant name to distinguish all KEYS
+            RECORD: "record", //name under which the record is stored
+            MULTIPLE_GROUP_KEY: "multiple_", //to separate a grouped input
+            COUNT: "record_count",
+            STORAGE: "record_",
+            PIC: "_pic_",
+            DATA: "data",
+            FILES: "files",
+            SETTINGS: "morel",
+            LASTID: "lastId",
+
+            //GLOBALS
+            totalFiles: 0,
+
+            /**
+             * Initialises the recording environment.
+             *
+             * @returns {*}
+             */
+            init: function () {
+                var settings = this.getSettings();
+                if (!settings) {
+                    settings = {};
+                    settings[this.LASTID] = 0;
+                    this.setSettings(settings);
+                    return settings;
+                }
+                return null;
+            },
+
+            /**
+             * Record settings. A separate DOM storage unit for storing
+             * recording specific data.
+             * Note: in the future, if apart of LastFormId no other uses arises
+             * should be merged with default m.settings.
+             *
+             * @param settings
+             */
+            setSettings: function (settings) {
+                m.storage.set(this.SETTINGS, settings);
+            },
+
+            /**
+             * Initializes and returns the settings.
+             *
+             * @returns {{}}
+             */
+            initSettings: function () {
+                var settings = {};
                 settings[this.LASTID] = 0;
                 this.setSettings(settings);
                 return settings;
+            },
+
+            /**
+             * Returns the settings.
+             *
+             * @returns {*|{}}
+             */
+            getSettings: function () {
+                var settings = m.storage.get(this.SETTINGS) || this.initSettings();
+                return settings;
+            },
+
+            /**
+             * Returns the current record.
+             *
+             * @returns {*}
+             */
+            get: function () {
+                return m.storage.tmpGet(this.RECORD) || {};
+            },
+
+            /**
+             * Sets the current record.
+             *
+             * @param record The current record to be stored.
+             */
+            set: function (record) {
+                m.storage.tmpSet(this.RECORD, record);
+            },
+
+            /**
+             * Clears the current record.
+             */
+            clear: function () {
+                m.storage.tmpRemove(this.RECORD);
             }
-            return null;
-        },
 
-        /**
-         * Record settings. A separate DOM storage unit for storing
-         * recording specific data.
-         * Note: in the future, if apart of LastFormId no other uses arises
-         * should be merged with default m.settings.
-         *
-         * @param settings
-         */
-        setSettings: function (settings) {
-            m.storage.set(this.SETTINGS, settings);
-        },
+        });
 
-        /**
-         * Initializes and returns the settings.
-         *
-         * @returns {{}}
-         */
-        initSettings: function () {
-            var settings = {};
-            settings[this.LASTID] = 0;
-            this.setSettings(settings);
-            return settings;
-        },
-
-        /**
-         * Returns the settings.
-         *
-         * @returns {*|{}}
-         */
-        getSettings: function () {
-            var settings = m.storage.get(this.SETTINGS) || this.initSettings();
-            return settings;
-        },
-
-        /**
-         * Returns the current record.
-         *
-         * @returns {*}
-         */
-        get: function () {
-            return m.storage.tmpGet(this.RECORD) || {};
-        },
-
-        /**
-         * Sets the current record.
-         *
-         * @param record The current record to be stored.
-         */
-        set: function (record) {
-            m.storage.tmpSet(this.RECORD, record);
-        },
-
-        /**
-         * Clears the current record.
-         */
-        clear: function () {
-            m.storage.tmpRemove(this.RECORD);
-        }
-
-    });
-
+    })();
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });
 //>>excludeEnd("buildExclude");
