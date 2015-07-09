@@ -1,39 +1,48 @@
-//{
-//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
-//    warehouseID: -1, //occurrence_id
-//  status: 'local', //sent
-//  attr: {
-//  'occurrence:comment': 'value',
-//    'occAttr:12': 'value'
-//},
-//  images: [
-//    {
-//      status: 'local', //sent
-//      url: 'http://..', // points to the image on server
-//      data: 'data64:...'
-//    }
-//  ]
-//};
-
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 define([], function () {
 //>>excludeEnd("buildExclude");
 
 
     m.extend('Manager', function () {
-        var Manager = function () {
+        var Manager = function (options) {
+            this.storage = new this.Storage();
         };
+
         m.extend(Manager, {
-            get: function () {
+            //Sample: m.Sample,
+            Storage: m.LocalStorage,
 
+            get: function (item, callback) {
+                var key = item.id;
+                return this.storage.get(key, callback);
             },
 
-            set: function () {
-
+            getAll: function (callback) {
+                this.storage.getAll(callback);
             },
 
-            getAll: function () {
+            set: function (item, callback) {
+                var key = item.id;
+                this.storage.set(key, item, callback);
+            },
+
+            remove: function (item, callback) {
+                var key = item.id;
+                this.storage.remove(key, callback);
+            },
+
+            clear: function (callback) {
+              this.storage.clear(callback);
+            },
+
+            sync: function (item, callback) {
+                //synchronise with the server
+            },
+
+            syncAll: function (callback) {
+
             }
+
         });
 
         return Manager;

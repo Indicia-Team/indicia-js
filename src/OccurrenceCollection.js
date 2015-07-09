@@ -6,35 +6,33 @@ define(['Occurrence'], function () {
     m.OccurrenceCollection = (function () {
 
         var Module = function () {
+            this.occurrences = [];
         };
 
         m.extend(Module.prototype, {
-            occurrences: [],
-
             Occurrence: m.Occurrence,
 
-            add: function (occurrences) {
-                return this.set(occurrences);
+            add: function (items) {
+                return this.set(items);
             },
 
-            set: function (occurrences, options) {
+            set: function (items) {
+                var modified = [],
+                    existing = null;
                 //make an array if single object
-                if (!(occurrences instanceof Array)) {
-                    occurrences = [occurrences];
-                }
-
-                var existing;
-                for (var i = 0; i < occurrences.length; i++) {
+                items = !(items instanceof Array) ? [items] : items;
+                for (var i = 0; i < items.length; i++) {
                     //update existing ones
-                    if (existing = this.get(occurrences[i])) {
-                        existing.set(occurrences[i].attributes);
-
+                    if (existing = this.get(items[i])) {
+                        existing.set(items[i].attributes);
+                        modified.push(items[i]);
                     //add new
                     } else {
-                        this.occurrences.push(occurrences[i]);
+                        this.occurrences.push(items[i]);
+                        modified.push(items[i]);
                     }
                 }
-                return occurrences;
+                return modified;
             },
 
             /**
@@ -42,8 +40,8 @@ define(['Occurrence'], function () {
              * @param occurrence occurrence or its ID
              * @returns {*}
              */
-            get: function (occurrence) {
-                var id = occurrence.id || occurrence;
+            get: function (item) {
+                var id = item.id || item;
                 for (var i = 0; i < this.occurrences.length; i++) {
                     if (this.occurrences[i].id == id) {
                         return this.occurrences[i];
@@ -58,26 +56,37 @@ define(['Occurrence'], function () {
                 return occurrence;
             },
 
-            remove: function (occurrences) {
-                var removed = [];
-                for (var i = 0; i < this.occurrences.length; i++) {
-                    var occurrence = this.get(occurrences[i]);
-                    if (!occurrence) continue;
+            remove: function (items) {
+                var items = !(items instanceof Array) ? [items] : items,
+                    removed = [];
+                for (var i = 0; i < items.length; i++) {
+                    //check if exists
+                    var current = this.get(items[i]);
+                    if (!current) continue;
 
                     //get index
                     var index = -1;
                     for (var j = 0; index < this.occurrences.length; j++) {
-                        if (this.occurrences[j].id === occurrence.id) {
+                        if (this.occurrences[j].id === current.id) {
                             index = j;
                             break;
                         }
                     }
                     if (j > -1) {
-                        this.occurrences.slice(index, 1);
-                        removed.push(occurrence);
+                        this.occurrences.splice(index, 1);
+                        removed.push(current);
                     }
                 }
                 return removed;
+            },
+
+            has: function (item) {
+                var data = this.get(item);
+                return data !== undefined && data !== null;
+            },
+
+            size: function () {
+                return this.occurrences.length;
             }
         });
 

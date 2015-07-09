@@ -8,7 +8,7 @@ describe('Storage:', function(storage){
             storage.clear(function(err) {
                 storage.set(item, value, function (err, data) {
 
-                    console.log(storage.NAME + ': ' + data);
+                 //   console.log(storage.NAME + ': ' + data);
 
                     storage.get(item, function (err, data) {
                         expect(data).to.be.equal(value);

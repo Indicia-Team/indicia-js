@@ -175,7 +175,7 @@ define(['Error'], function () {
                         callback(err);
                         return;
                     }
-                    callback(null, data !== null);
+                    callback(null, data !== undefined && data !== null);
                 });
             },
 

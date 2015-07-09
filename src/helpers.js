@@ -143,6 +143,14 @@ define([], function () {
         }
     };
 
+    m.formatDate = function (date) {
+        var now = date || new Date(),
+            day = ("0" + now.getDate()).slice(-2),
+            month = ("0" + (now.getMonth() + 1)).slice(-2);
+
+        return (day) + "/" + (month) + "/" + now.getFullYear();
+    };
+
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });
 //>>excludeEnd("buildExclude");

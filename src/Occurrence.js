@@ -24,37 +24,74 @@ define(['helpers'], function () {
 
         var Module = function () {
             this.id = m.getNewUUID();
+            this.attributes = {};
+            this.images = [];
+        };
+
+        Module.KEYS = {
+                TAXON: {
+                    name: 'occurrence:taxa_taxon_list_id'
+                },
+                COMMENT: {
+                    name: 'occurrence:comment'
+                }
         };
 
         m.extend(Module.prototype, {
-            id: '',
-            warehouseID: -1,
-            status: 'local',
-            attributes: {},
-            images: [],
-
-            set: function (key, data) {
-                this.attributes[key] = data;
+            set: function (name, data) {
+                var key = this.key(name),
+                    value = this.value(name, data);
+                this.attributes[key] = value;
             },
 
-            get: function (key) {
+            get: function (name) {
+                var key = this.key(name);
                 return this.attributes[key];
             },
 
-            remove: function (key) {
-              delete this.attributes[key];
+            remove: function (name) {
+                var key = this.key(name);
+                delete this.attributes[key];
             },
 
             clear: function () {
                 this.attributes = {};
             },
 
-            has: function(key) {
-                return this.get(key) !== null;
+            has: function(name) {
+                var data = this.get(name);
+                return data !== undefined && data !== null;
             },
 
             removeAllImages: function () {
                 this.images = [];
+            },
+
+            key: function (name) {
+                name = name.toUpperCase();
+                var key = Module.KEYS[name];
+                if (!key || !key.name) {
+                    console.warn('morel.Occurrence: no such key: ' + key);
+                    return name;
+                }
+                return key.name;
+            },
+
+            value: function (name, data) {
+                var value = null;
+                name = name.toUpperCase();
+                if (typeof data !== 'string' ||
+                    !Module.KEYS[name] ||
+                    !Module.KEYS[name].values) {
+                    return data;
+                }
+                value = Module.KEYS[name].values[data];
+                if (!value) {
+                    console.warn('morel.Occurrence: no such ' + name + ' value: ' + data);
+                    return data;
+                }
+
+                return value;
             },
 
             toJSON: function () {
