@@ -1,120 +1,130 @@
-describe('Manager', function () {
+var URL = 'http://192.171.199.230/irecord7',
+    APPNAME = 'test',
+    APPSECRET = 'test',
+    WEBSITE_ID= 23,
+    SURVEY_ID = 42,
 
-    var URL = 'http://192.171.199.230/irecord7',
-        APPNAME = 'test',
-        APPSECRET = 'test',
-        WEBSITE_ID= 23,
-        SURVEY_ID = 42,
+    options = {
+        url: URL,
+        appname: APPNAME,
+        appsecret: APPSECRET,
+        website_id: WEBSITE_ID,
+        survey_id: SURVEY_ID
+    },
+    manager = null;
 
-        options = {
-            url: URL,
-            appname: APPNAME,
-            appsecret: APPSECRET,
-            website_id: WEBSITE_ID,
-            survey_id: SURVEY_ID
-        };
+var tests = function (manager, callback) {
+    describe('Manager', function () {
+            after(callback);
 
+            it('new', function () {
+                expect(manager.conf.website_id).to.be.equal(WEBSITE_ID);
+            });
 
-    var manager = new morel.Manager(options);
+            it('set get has', function () {
+                var sample = new morel.Sample(),
+                    key = Date.now().toString(),
+                    value = Math.random();
 
-    it('new', function () {
-        expect(manager.conf.website_id).to.be.equal(WEBSITE_ID);
-    });
+                sample.set(key, value);
 
-    it('set get has', function () {
-        var sample = new morel.Sample(),
-            key = Date.now().toString(),
-            value = Math.random();
-
-        sample.set(key, value);
-
-        manager.clear(function (err) {
-            if (err) throw err.message;
-
-            manager.set(sample, function (err) {
-                if (err) throw err.message;
-                manager.get(sample, function (err, data) {
+                manager.clear(function (err) {
                     if (err) throw err.message;
 
-                    expect(data instanceof morel.Sample).to.be.true;
-                    expect(sample.get(key)).to.be.equal(data.get(key));
-                });
+                    manager.set(sample, function (err) {
+                        if (err) throw err.message;
+                        manager.get(sample, function (err, data) {
+                            if (err) throw err.message;
 
-                manager.has(sample, function (err, data) {
-                    if (err) throw err.message;
+                            expect(data instanceof morel.Sample).to.be.true;
+                            expect(sample.get(key)).to.be.equal(data.get(key));
+                        });
 
-                    expect(data).to.be.true;
-                    manager.has(new morel.Sample(), function (err, data) {
-                        expect(data).to.be.false;
+                        manager.has(sample, function (err, data) {
+                            if (err) throw err.message;
+
+                            expect(data).to.be.true;
+                            manager.has(new morel.Sample(), function (err, data) {
+                                expect(data).to.be.false;
+                            });
+                        });
+
                     });
                 });
-
             });
-        });
-    });
 
-    it('getall clear', function () {
-        var sample = new morel.Sample(),
-            sample2 = new morel.Sample();
+            it('getall clear', function () {
+                var sample = new morel.Sample(),
+                    sample2 = new morel.Sample();
 
-        manager.clear(function (err) {
-            if (err) throw err.message;
-
-            //add one
-            manager.set(sample, function (err) {
-                if (err) throw err.message;
-
-                //add two
-                manager.set(sample2, function (err) {
+                manager.clear(function (err) {
                     if (err) throw err.message;
 
-                    manager.has(sample, function (err, data) {
+                    //add one
+                    manager.set(sample, function (err) {
                         if (err) throw err.message;
-                        expect(data).to.be.true;
 
-                        //getall
-                        manager.getAll(function (err, data) {
-                            expect(Object.keys(data).length).to.be.equal(2);
+                        //add two
+                        manager.set(sample2, function (err) {
+                            if (err) throw err.message;
 
-                            manager.clear(function (err, data) {
+                            manager.has(sample, function (err, data) {
+                                if (err) throw err.message;
+                                expect(data).to.be.true;
+
+                                //getall
+                                manager.getAll(function (err, data) {
+                                    expect(Object.keys(data).length).to.be.equal(2);
+
+                                    manager.clear(function (err, data) {
+                                        manager.has(sample, function (err, data) {
+                                            expect(data).to.be.false;
+                                        });
+                                    })
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+
+
+            it('remove', function () {
+                var sample = new morel.Sample();
+
+                manager.clear(function (err) {
+                    if (err) throw err.message;
+
+                    manager.set(sample, function (err) {
+                        if (err) throw err.message;
+
+                        manager.has(sample, function (err, data) {
+                            if (err) throw err.message;
+
+                            expect(data).to.be.true;
+
+                            manager.remove(sample, function (err) {
                                 manager.has(sample, function (err, data) {
                                     expect(data).to.be.false;
                                 });
-                            })
+                            });
                         });
+
                     });
                 });
             });
-        });
-        });
-
-
-    it('remove', function () {
-        var sample = new morel.Sample();
-
-        manager.clear(function (err) {
-            if (err) throw err.message;
-
-            manager.set(sample, function (err) {
-                if (err) throw err.message;
-
-                manager.has(sample, function (err, data) {
-                    if (err) throw err.message;
-
-                    expect(data).to.be.true;
-
-                    manager.remove(sample, function (err) {
-                        manager.has(sample, function (err, data) {
-                            expect(data).to.be.false;
-                        });
-                    });
-                });
-
-            });
-        });
+            //sync
+            //syncAll
     });
-    //sync
-    //syncAll
+};
+
+manager = new morel.Manager(options);
+tests(manager, function () {
+    manager = new morel.Manager(morel.extend(options, {Storage: morel.Storage}));
+    tests(manager, function () {
+        manager = new morel.Manager(morel.extend(options, {Storage: morel.DatabaseStorage}));
+        tests(manager, function () {});
+    });
 });
 
 

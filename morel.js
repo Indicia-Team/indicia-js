@@ -680,12 +680,12 @@
              * @returns {{}}
              */
             getAll: function (callback) {
-                var data = [];
+                var data = {};
                 var key = '';
-                for ( var i = 0, len = localStorage.length; i < len; ++i ) {
+                for (var i = 0, len = localStorage.length; i < len; ++i ) {
                     key = localStorage.key(i);
                     var parsed = JSON.parse(localStorage.getItem(key));
-                    data.push(parsed);
+                    data[key] = parsed;
                 }
                 callback(null, data);
             },
@@ -1079,7 +1079,12 @@
 
     m.Manager = (function () {
         var Module = function (options) {
+            options || (options = {});
             m.extend(this.conf, options);
+
+            this.Storage = options.Storage || m.LocalStorage;
+            this.Sample = options.Sample || m.Sample;
+
             this.storage = new this.Storage();
         };
 
@@ -1091,8 +1096,6 @@
                 survey_id: -1,
                 website_id: -1
             },
-            Sample: m.Sample,
-            Storage: m.LocalStorage,
 
             get: function (item, callback) {
                 var that = this,
@@ -1107,10 +1110,11 @@
                 var that = this;
                 this.storage.getAll(function (err, data){
                     var samples = {},
-                        sample = null;
+                        sample = null,
+                        keys = Object.keys(data);
 
-                    for (var i = 0; i < data.length; i++) {
-                        sample = new that.Sample(data[i]);
+                    for (var i = 0; i < keys.length; i++) {
+                        sample = new that.Sample(data[keys[i]]);
                         samples[sample.id] = sample;
                     }
                     callback(err, samples);
