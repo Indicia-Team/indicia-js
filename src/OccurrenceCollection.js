@@ -5,8 +5,16 @@ define(['Occurrence'], function () {
 
     m.OccurrenceCollection = (function () {
 
-        var Module = function () {
+        var Module = function (options) {
+            var occurrence = null;
             this.occurrences = [];
+
+            if (typeof options === 'array') {
+                for (var i = 0; i < options.length; i++) {
+                    occurrence = new this.Occurrence(options[i]);
+                    this.occurrences.push(occurrence);
+                }
+            }
         };
 
         m.extend(Module.prototype, {
@@ -24,13 +32,12 @@ define(['Occurrence'], function () {
                 for (var i = 0; i < items.length; i++) {
                     //update existing ones
                     if (existing = this.get(items[i])) {
-                        existing.set(items[i].attributes);
-                        modified.push(items[i]);
+                        existing.attributes = items[i].attributes;
                     //add new
                     } else {
                         this.occurrences.push(items[i]);
-                        modified.push(items[i]);
                     }
+                    modified.push(items[i]);
                 }
                 return modified;
             },
@@ -87,6 +94,15 @@ define(['Occurrence'], function () {
 
             size: function () {
                 return this.occurrences.length;
+            },
+
+            toJSON: function () {
+                var json = [];
+                for (var i = 0; i < this.occurrences.length; i++) {
+                    json.push(this.occurrences[i].toJSON());
+                }
+
+                return json;
             }
         });
 

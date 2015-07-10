@@ -22,10 +22,11 @@ define(['helpers'], function () {
 
     m.Occurrence = (function () {
 
-        var Module = function () {
-            this.id = m.getNewUUID();
-            this.attributes = {};
-            this.images = [];
+        var Module = function (options) {
+            options || (options = {});
+            this.id = options.id || m.getNewUUID();
+            this.attributes = options.attributes || {};
+            this.images = options.images || [];
         };
 
         Module.KEYS = {
@@ -71,7 +72,7 @@ define(['helpers'], function () {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
                 if (!key || !key.name) {
-                    console.warn('morel.Occurrence: no such key: ' + key);
+                    console.warn('morel.Occurrence: no such key: ' + name);
                     return name;
                 }
                 return key.name;
@@ -96,7 +97,9 @@ define(['helpers'], function () {
 
             toJSON: function () {
                 var data = {
-                    sample: this.sample
+                    id: this.id,
+                    attributes: this.attributes,
+                    images: this.images
                 };
                 //add occurrences
                 return data;

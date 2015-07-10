@@ -1,84 +1,122 @@
 describe('Manager', function () {
 
-    //init
+    var URL = 'http://192.171.199.230/irecord7',
+        APPNAME = 'test',
+        APPSECRET = 'test',
+        WEBSITE_ID= 23,
+        SURVEY_ID = 42,
 
-    //set
-    //get
-    //getAll
-    //remove
-    //clear
+        options = {
+            url: URL,
+            appname: APPNAME,
+            appsecret: APPSECRET,
+            website_id: WEBSITE_ID,
+            survey_id: SURVEY_ID
+        };
+
+
+    var manager = new morel.Manager(options);
+
+    it('new', function () {
+        expect(manager.conf.website_id).to.be.equal(WEBSITE_ID);
+    });
+
+    it('set get has', function () {
+        var sample = new morel.Sample(),
+            key = Date.now().toString(),
+            value = Math.random();
+
+        sample.set(key, value);
+
+        manager.clear(function (err) {
+            if (err) throw err.message;
+
+            manager.set(sample, function (err) {
+                if (err) throw err.message;
+                manager.get(sample, function (err, data) {
+                    if (err) throw err.message;
+
+                    expect(data instanceof morel.Sample).to.be.true;
+                    expect(sample.get(key)).to.be.equal(data.get(key));
+                });
+
+                manager.has(sample, function (err, data) {
+                    if (err) throw err.message;
+
+                    expect(data).to.be.true;
+                    manager.has(new morel.Sample(), function (err, data) {
+                        expect(data).to.be.false;
+                    });
+                });
+
+            });
+        });
+    });
+
+    it('getall clear', function () {
+        var sample = new morel.Sample(),
+            sample2 = new morel.Sample();
+
+        manager.clear(function (err) {
+            if (err) throw err.message;
+
+            //add one
+            manager.set(sample, function (err) {
+                if (err) throw err.message;
+
+                //add two
+                manager.set(sample2, function (err) {
+                    if (err) throw err.message;
+
+                    manager.has(sample, function (err, data) {
+                        if (err) throw err.message;
+                        expect(data).to.be.true;
+
+                        //getall
+                        manager.getAll(function (err, data) {
+                            expect(Object.keys(data).length).to.be.equal(2);
+
+                            manager.clear(function (err, data) {
+                                manager.has(sample, function (err, data) {
+                                    expect(data).to.be.false;
+                                });
+                            })
+                        });
+                    });
+                });
+            });
+        });
+        });
+
+
+    it('remove', function () {
+        var sample = new morel.Sample();
+
+        manager.clear(function (err) {
+            if (err) throw err.message;
+
+            manager.set(sample, function (err) {
+                if (err) throw err.message;
+
+                manager.has(sample, function (err, data) {
+                    if (err) throw err.message;
+
+                    expect(data).to.be.true;
+
+                    manager.remove(sample, function (err) {
+                        manager.has(sample, function (err, data) {
+                            expect(data).to.be.false;
+                        });
+                    });
+                });
+
+            });
+        });
+    });
     //sync
     //syncAll
-
 });
 
-//describe('record', function(){
-//    beforeEach(function(){
-//       //clear records
-//    });
-//
-//    it('clear', function () {
-//    });
-//
-//    it('', function(){
-//        //create new
-//        var manager = new morel.Manager();
-//        var config = {
-//
-//        };
-//        manager.init(config);
-//
-//        var sample = new morel.Sample();
-//       // sample.setDate();
-//        var occurrence = sample.addOccurrence();
-//        //modify occurrence
-//
-//        manager.set(sample);
-//
-//        var sampleResult = manager.get(sample.id);
-//
-//        expect(sampleResult.id).to.be.equal(sample.id);
-//    });
-//
-//});
-
-//new with options
-
-//remove
-
-//remove all
-
-//get(id)
-//getAll()
-
-//set
-//set(id, {})
-//submit(id) -> DB.submit(id)
-//submitAll() -> DB.submitAll()
-
-
-//
-///**
-// * morel.record.inputs.KEYS.*
-// * morel.record.inputs.set(input, data)
-// * morel.record.inputs.is(input)
-// */
-//it('inputs', function(){
-//    //KEYS
-//    expect(morel.record.inputs.KEYS).to.be.array;
-//
-//    //SET
-//    var input = 'input';
-//    var input_data = Math.random();
-//
-//    morel.record.inputs.set(input, input_data);
-//    var f_input_data = morel.record.inputs.get(input);
-//    expect(f_input_data).to.equal(input_data);
-//
-//    //IS
-//    var exist = morel.record.inputs.is(input);
-//    expect(exist).to.be.number;
-//});
 
 //
 //describe('authentication', function(){
@@ -183,31 +221,5 @@ describe('Manager', function () {
 //     */
 //    it('main', function(){
 //
-//    });
-//});
-//
-//describe('storage', function(){
-//    beforeEach(function(){
-//        morel.storage.tmpClear();
-//    });
-//    afterEach(function(){});
-//
-//    /**
-//     * morel.storage.tmpGet
-//     * morel.storage.tmpSet
-//     */
-//    it('main', function(){
-//        //SET
-//        var item = 'item';
-//        var item_data = Math.random();
-//        morel.storage.tmpSet(item, item_data);
-//
-//        var exists = morel.storage.tmpIs(item);
-//        expect(exists).to.be.number;
-//
-//        //GET
-//        var f_item_data = morel.storage.tmpGet(item);
-//        expect(f_item_data).to.exist;
-//        expect(f_item_data).to.be.equal(item_data);
 //    });
 //});

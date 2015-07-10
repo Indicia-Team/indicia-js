@@ -241,10 +241,11 @@
 
     m.Occurrence = (function () {
 
-        var Module = function () {
-            this.id = m.getNewUUID();
-            this.attributes = {};
-            this.images = [];
+        var Module = function (options) {
+            options || (options = {});
+            this.id = options.id || m.getNewUUID();
+            this.attributes = options.attributes || {};
+            this.images = options.images || [];
         };
 
         Module.KEYS = {
@@ -290,7 +291,7 @@
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
                 if (!key || !key.name) {
-                    console.warn('morel.Occurrence: no such key: ' + key);
+                    console.warn('morel.Occurrence: no such key: ' + name);
                     return name;
                 }
                 return key.name;
@@ -315,7 +316,9 @@
 
             toJSON: function () {
                 var data = {
-                    sample: this.sample
+                    id: this.id,
+                    attributes: this.attributes,
+                    images: this.images
                 };
                 //add occurrences
                 return data;
@@ -327,8 +330,16 @@
 
     m.OccurrenceCollection = (function () {
 
-        var Module = function () {
+        var Module = function (options) {
+            var occurrence = null;
             this.occurrences = [];
+
+            if (typeof options === 'array') {
+                for (var i = 0; i < options.length; i++) {
+                    occurrence = new this.Occurrence(options[i]);
+                    this.occurrences.push(occurrence);
+                }
+            }
         };
 
         m.extend(Module.prototype, {
@@ -346,13 +357,12 @@
                 for (var i = 0; i < items.length; i++) {
                     //update existing ones
                     if (existing = this.get(items[i])) {
-                        existing.set(items[i].attributes);
-                        modified.push(items[i]);
+                        existing.attributes = items[i].attributes;
                     //add new
                     } else {
                         this.occurrences.push(items[i]);
-                        modified.push(items[i]);
                     }
+                    modified.push(items[i]);
                 }
                 return modified;
             },
@@ -409,6 +419,15 @@
 
             size: function () {
                 return this.occurrences.length;
+            },
+
+            toJSON: function () {
+                var json = [];
+                for (var i = 0; i < this.occurrences.length; i++) {
+                    json.push(this.occurrences[i].toJSON());
+                }
+
+                return json;
             }
         });
 
@@ -423,14 +442,26 @@
      */
     m.Sample = (function () {
 
-        var Module = function () {
-            this.id = m.getNewUUID();
-            this.occurrences = new m.OccurrenceCollection();
-            this.attributes = {};
+        var Module = function (options) {
+            options || (options = {});
 
-            var date = new Date();
-            this.set('DATE', m.formatDate(date));
-            this.set('LOCATION_TYPE', 'LATLON');
+            this.id = options.id || m.getNewUUID();
+
+            if (options.occurrences) {
+                this.occurrences = new m.OccurrenceCollection(options.occurrences);
+            } else {
+                this.occurrences = new m.OccurrenceCollection();
+            }
+
+            if (options.attributes) {
+                this.attributes =  options.attributes;
+            } else {
+                this.attributes = {};
+
+                var date = new Date();
+                this.set('DATE', m.formatDate(date));
+                this.set('LOCATION_TYPE', 'LATLON');
+            }
         };
 
         Module.KEYS =  {
@@ -498,7 +529,7 @@
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
                 if (!key || !key.name) {
-                    console.warn('morel.Sample: no such key: ' + key);
+                    console.warn('morel.Sample: no such key: ' + name);
                     return name;
                 }
                 return key.name;
@@ -523,10 +554,16 @@
 
             toJSON: function () {
                 var data = {
-                    sample: this.sample
-                };
-                //add occurrences
+                        id: this.id,
+                        attributes: this.attributes
+                    };
+
+                data.occurrences = this.occurrences.toJSON();
                 return data;
+            },
+
+            parse: function () {
+
             }
         });
 
@@ -639,15 +676,16 @@
             },
 
             /**
-             * Returns all the keys from the store;
+             * Returns all the objects from the store;
              * @returns {{}}
              */
             getAll: function (callback) {
-                var data = {};
+                var data = [];
                 var key = '';
                 for ( var i = 0, len = localStorage.length; i < len; ++i ) {
                     key = localStorage.key(i);
-                    data[key] = localStorage.getItem(key);
+                    var parsed = JSON.parse(localStorage.getItem(key));
+                    data.push(parsed);
                 }
                 callback(null, data);
             },
@@ -683,13 +721,7 @@
              */
             has: function (key, callback) {
                 var data = null;
-                var val = this.get(key, function (err, data) {
-                    if (m.isPlainObject(val)) {
-                        data = !m.isEmptyObject(val);
-                    } else {
-                        data = val;
-                    }
-
+                this.get(key, function (err, data) {
                     callback(null, data !== undefined && data !== null);
                 });
             },
@@ -785,18 +817,14 @@
             set: function (key, data, callback) {
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
-                    var req = store.put(data, key);
+                    var req = store.put(data.toJSON(), key);
 
                     req.onsuccess = function () {
-                        if (callback) {
-                            callback(null, data);
-                        }
+                        callback && callback(null, data);
                     };
 
                     req.onerror = function (e) {
@@ -849,9 +877,7 @@
 
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
@@ -862,9 +888,7 @@
                             store.delete(cursor.primaryKey);
                             cursor.continue();
                         } else {
-                            if (callback) {
-                                callback();
-                            }
+                            callback && callback();
                         }
                     };
                     req.onerror = function (e) {
@@ -939,18 +963,14 @@
             clear: function (callback) {
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
                     var req = store.clear();
 
                     req.onsuccess = function () {
-                        if (callback) {
-                            callback();
-                        }
+                        callback && callback();
                     };
 
                     req.onerror = function (e) {
@@ -958,9 +978,7 @@
                             error = new m.Error(message);
                         console.error(message);
 
-                        if (callback) {
-                            callback(error);
-                        }
+                        callback && callback(error);
                     };
                 });
             },
@@ -1056,6 +1074,80 @@
         return Module;
     }());
 
+
+
+
+    m.Manager = (function () {
+        var Module = function (options) {
+            m.extend(this.conf, options);
+            this.storage = new this.Storage();
+        };
+
+        m.extend(Module.prototype, {
+            conf: {
+                url: '',
+                appname: '',
+                appsecret: '',
+                survey_id: -1,
+                website_id: -1
+            },
+            Sample: m.Sample,
+            Storage: m.LocalStorage,
+
+            get: function (item, callback) {
+                var that = this,
+                    key = typeof item === 'object' ? item.id : item;
+                this.storage.get(key, function (err, data) {
+                    var sample = new that.Sample(data);
+                    callback(err, sample);
+                });
+            },
+
+            getAll: function (callback) {
+                var that = this;
+                this.storage.getAll(function (err, data){
+                    var samples = {},
+                        sample = null;
+
+                    for (var i = 0; i < data.length; i++) {
+                        sample = new that.Sample(data[i]);
+                        samples[sample.id] = sample;
+                    }
+                    callback(err, samples);
+                });
+            },
+
+            set: function (item, callback) {
+                var key = item.id;
+                this.storage.set(key, item, callback);
+            },
+
+            remove: function (item, callback) {
+                var key = item.id;
+                this.storage.remove(key, callback);
+            },
+
+            has: function (item, callback) {
+                var key = item.id;
+                this.storage.has(key, callback);
+            },
+
+            clear: function (callback) {
+              this.storage.clear(callback);
+            },
+
+            sync: function (item, callback) {
+                //synchronise with the server
+            },
+
+            syncAll: function (callback) {
+
+            }
+
+        });
+
+        return Module;
+    }());
 
     return m;
 }));

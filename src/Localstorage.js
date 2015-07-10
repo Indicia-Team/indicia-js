@@ -26,15 +26,16 @@ define([], function () {
             },
 
             /**
-             * Returns all the keys from the store;
+             * Returns all the objects from the store;
              * @returns {{}}
              */
             getAll: function (callback) {
-                var data = {};
+                var data = [];
                 var key = '';
                 for ( var i = 0, len = localStorage.length; i < len; ++i ) {
                     key = localStorage.key(i);
-                    data[key] = localStorage.getItem(key);
+                    var parsed = JSON.parse(localStorage.getItem(key));
+                    data.push(parsed);
                 }
                 callback(null, data);
             },
@@ -70,14 +71,8 @@ define([], function () {
              */
             has: function (key, callback) {
                 var data = null;
-                var val = this.get(key, function (err, data) {
-                    if (m.isPlainObject(val)) {
-                        data = !m.isEmptyObject(val);
-                    } else {
-                        data = val;
-                    }
-
-                    callback(null, data !== null);
+                this.get(key, function (err, data) {
+                    callback(null, data !== undefined && data !== null);
                 });
             },
 

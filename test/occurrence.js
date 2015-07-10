@@ -19,8 +19,6 @@ describe('Occurrence', function () {
         expect(occurrence.get(item)).to.be.equal(value);
 
         occurrence.remove(item);
-        console.log(occurrence.attributes);
-        console.log(occurrence.get(item));
         expect(occurrence.has(item)).to.be.false;
     });
 
@@ -33,5 +31,17 @@ describe('Occurrence', function () {
         expect(Object.keys(occurrence.attributes).length).to.be.equal(1);
         occurrence.clear();
         expect(Object.keys(occurrence.attributes).length).to.be.equal(0);
-    })
+    });
+
+    it('toJSON', function () {
+        var item = Date.now().toString(),
+            value = Math.random(),
+            occurrence = new morel.Occurrence();
+        occurrence.set(item, value);
+
+        var json = occurrence.toJSON();
+
+        expect(json.id).to.be.equal(occurrence.id);
+        expect(json.attributes[item]).to.be.equal(value);
+    });
 });

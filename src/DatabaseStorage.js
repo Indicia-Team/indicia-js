@@ -31,18 +31,14 @@ define(['Error'], function () {
             set: function (key, data, callback) {
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
-                    var req = store.put(data, key);
+                    var req = store.put(data.toJSON(), key);
 
                     req.onsuccess = function () {
-                        if (callback) {
-                            callback(null, data);
-                        }
+                        callback && callback(null, data);
                     };
 
                     req.onerror = function (e) {
@@ -95,9 +91,7 @@ define(['Error'], function () {
 
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
@@ -108,9 +102,7 @@ define(['Error'], function () {
                             store.delete(cursor.primaryKey);
                             cursor.continue();
                         } else {
-                            if (callback) {
-                                callback();
-                            }
+                            callback && callback();
                         }
                     };
                     req.onerror = function (e) {
@@ -185,18 +177,14 @@ define(['Error'], function () {
             clear: function (callback) {
                 this.open(function (err, store) {
                     if (err) {
-                        if (callback) {
-                            callback(err);
-                        }
+                        callback && callback(err);
                         return;
                     }
 
                     var req = store.clear();
 
                     req.onsuccess = function () {
-                        if (callback) {
-                            callback();
-                        }
+                        callback && callback();
                     };
 
                     req.onerror = function (e) {
@@ -204,9 +192,7 @@ define(['Error'], function () {
                             error = new m.Error(message);
                         console.error(message);
 
-                        if (callback) {
-                            callback(error);
-                        }
+                        callback && callback(error);
                     };
                 });
             },

@@ -8,13 +8,22 @@ describe('OccurrenceCollection', function () {
 
     it('set get remove has', function () {
         var collection = new morel.OccurrenceCollection(),
-             occurrence = new morel.Occurrence(),
-             occurrence2 = new morel.Occurrence();
+            occurrence = new morel.Occurrence(),
+            occurrence2 = new morel.Occurrence(),
+            item = Date.now().toString(),
+            value = Math.random();
+
         expect(collection.size()).to.be.equal(0);
 
         collection.set(occurrence);
         expect(collection.size()).to.be.equal(1);
 
+        collection.set(occurrence2);
+        expect(collection.size()).to.be.equal(2);
+
+        //update
+        occurrence2.set(item, value);
+        expect(collection.get(occurrence2).get(item)).to.be.equal(value); //updates through reference
         collection.set(occurrence2);
         expect(collection.size()).to.be.equal(2);
 
@@ -32,6 +41,20 @@ describe('OccurrenceCollection', function () {
 
         expect(collection.size()).to.be.equal(1);
         expect(collection.has(occurrence)).to.be.true;
+    });
+
+    it('toJSON', function () {
+        var item = Date.now().toString(),
+            value = Math.random(),
+            occurrence = new morel.Occurrence(),
+            collection = new morel.OccurrenceCollection();
+        collection.set(occurrence);
+
+        var json = collection.toJSON();
+
+        expect(json).to.be.an.array;
+        expect(json.length).to.be.equal(1);
+        expect(json[0].id).to.be.equal(occurrence.id);
     });
 
 });

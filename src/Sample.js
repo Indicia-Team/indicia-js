@@ -11,14 +11,26 @@ define(["OccurrenceCollection"], function () {
      */
     m.Sample = (function () {
 
-        var Module = function () {
-            this.id = m.getNewUUID();
-            this.occurrences = new m.OccurrenceCollection();
-            this.attributes = {};
+        var Module = function (options) {
+            options || (options = {});
 
-            var date = new Date();
-            this.set('DATE', m.formatDate(date));
-            this.set('LOCATION_TYPE', 'LATLON');
+            this.id = options.id || m.getNewUUID();
+
+            if (options.occurrences) {
+                this.occurrences = new m.OccurrenceCollection(options.occurrences);
+            } else {
+                this.occurrences = new m.OccurrenceCollection();
+            }
+
+            if (options.attributes) {
+                this.attributes =  options.attributes;
+            } else {
+                this.attributes = {};
+
+                var date = new Date();
+                this.set('DATE', m.formatDate(date));
+                this.set('LOCATION_TYPE', 'LATLON');
+            }
         };
 
         Module.KEYS =  {
@@ -86,7 +98,7 @@ define(["OccurrenceCollection"], function () {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
                 if (!key || !key.name) {
-                    console.warn('morel.Sample: no such key: ' + key);
+                    console.warn('morel.Sample: no such key: ' + name);
                     return name;
                 }
                 return key.name;
@@ -111,10 +123,16 @@ define(["OccurrenceCollection"], function () {
 
             toJSON: function () {
                 var data = {
-                    sample: this.sample
-                };
-                //add occurrences
+                        id: this.id,
+                        attributes: this.attributes
+                    };
+
+                data.occurrences = this.occurrences.toJSON();
                 return data;
+            },
+
+            parse: function () {
+
             }
         });
 

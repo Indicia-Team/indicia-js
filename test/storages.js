@@ -6,11 +6,14 @@ describe('Storage:', function(storage){
         it('set get has', function(){
             var item = Date.now().toString(), value = Math.random();
             storage.clear(function(err) {
-                storage.set(item, value, function (err, data) {
+                if (err) throw err.message;
 
-                 //   console.log(storage.NAME + ': ' + data);
+                storage.set(item, value, function (err, data) {
+                    if (err) throw err.message;
 
                     storage.get(item, function (err, data) {
+                        if (err) throw err.message;
+
                         expect(data).to.be.equal(value);
 
                         storage.has(item, function (err, data) {
@@ -23,16 +26,27 @@ describe('Storage:', function(storage){
 
         it('size, clear', function () {
             storage.clear(function(err) {
+                if (err) throw err.message;
+
                 storage.size(function (err, data) {
+                    if (err) throw err.message;
+
                     var item = Date.now().toString(), value = Math.random();
                     expect(data).to.be.equal(0);
 
                     storage.set(item, value, function (err, data) {
-                        storage.size(function (err, data) {
-                            expect(data).to.be.equal(1);
+                        if (err) throw err.message;
 
-                            storage.clear(function () {
+                        storage.size(function (err, data) {
+                            if (err) throw err.message;
+
+                            expect(data).to.be.equal(1);
+                            storage.clear(function (err) {
+                                if (err) throw err.message;
+
                                 storage.size(function (err, data) {
+                                    if (err) throw err.message;
+
                                     expect(data).to.be.equal(0);
                                 })
                             });
@@ -44,15 +58,24 @@ describe('Storage:', function(storage){
 
         it('getAll', function(){
             storage.clear(function(err) {
+                if (err) throw err.message;
 
                 storage.getAll(function (err, data) {
+                    if (err) throw err.message;
+
                     var item = Date.now().toString(), value = Math.random();
                     expect(data).to.be.an.object;
 
                     storage.set(item, value, function (err, data) {
+                        if (err) throw err.message;
+
                         storage.getAll(function (err, data) {
+                            if (err) throw err.message;
+
                             var allItemsKeys = Object.keys(data);
                             storage.size(function (err, data) {
+                                if (err) throw err.message;
+
                                 expect(allItemsKeys.length).to.be.equal(data);
                             })
                         });

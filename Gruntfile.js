@@ -24,10 +24,7 @@ module.exports = function (grunt) {
 
                     include: [
                         "main",
-                        "Sample",
-                        "Storage",
-                        "LocalStorage",
-                        "DatabaseStorage"
+                        "Manager"
                     ],
 
                     out: '<%= pkg.name %>.js',

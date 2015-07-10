@@ -64,7 +64,7 @@ define([], function () {
              */
             has: function (key, callback) {
                 var data = this.get(key, function (err, data) {
-                    callback(null, data );
+                    callback(null, data !== undefined && data !== null);
                 });
             },
 
