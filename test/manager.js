@@ -1,6 +1,6 @@
-var URL = 'http://192.171.199.230/irecord7',
+var URL = 'http://192.171.199.230/irecord7/mobile/submit',
     APPNAME = 'test',
-    APPSECRET = 'test',
+    APPSECRET = 'mytest',
     WEBSITE_ID= 23,
     SURVEY_ID = 42,
 
@@ -18,7 +18,7 @@ var tests = function (manager, callback) {
             after(callback);
 
             it('new', function () {
-                expect(manager.conf.website_id).to.be.equal(WEBSITE_ID);
+                expect(manager.conf.url).to.be.equal(URL);
             });
 
             it('set get has', function () {

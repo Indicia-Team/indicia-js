@@ -334,7 +334,7 @@
             var occurrence = null;
             this.occurrences = [];
 
-            if (typeof options === 'array') {
+            if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
                     occurrence = new this.Occurrence(options[i]);
                     this.occurrences.push(occurrence);
@@ -562,13 +562,153 @@
                 return data;
             },
 
-            parse: function () {
+            flatten: function () {
+                var json = this.toJSON(),
+                    flattened = {};
 
+                m.extend(flattened, json.attributes);
+
+                for (var i = 0; i < json.occurrences.length; i++) {
+                    m.extend(flattened, json.occurrences[i].attributes);
+                }
+                return flattened;
+            }
+
+        });
+
+        return Module;
+    }());
+    /***********************************************************************
+     * AUTH MODULE
+     **********************************************************************/
+
+    /* global morel */
+    m.Auth = (function (){
+
+        var Module = function (options) {
+            options || (options = {});
+            m.extend(this.conf, options);
+        };
+
+        m.extend(Module.prototype, {
+            //module configuration should be setup in an app config file
+            conf: {
+                appname: '',
+                appsecret: '',
+                survey_id: -1,
+                website_id: -1
+            },
+
+            /**
+             * Appends user and app authentication to the passed data object.
+             * Note: object has to implement 'append' method.
+             *
+             * @param data An object to modify
+             * @returns {*} A data object
+             */
+            append: function (data) {
+                //user logins
+                //this.appendUser(data);
+                //app logins
+                this.appendApp(data);
+                //warehouse data
+                this.appendWarehouse(data);
+
+                return data;
+            },
+
+            /**
+             * Appends user authentication - Email and Password to
+             * the passed data object.
+             * Note: object has to implement 'append' method.
+             *
+             * @param data An object to modify
+             * @returns {*} A data object
+             */
+            appendUser: function (data) {
+                if (this.isUser()) {
+                    var user = this.getUser();
+
+                    data.append('email', user.email);
+                    data.append('usersecret', user.secret);
+                }
+
+                return data;
+            },
+
+            /**
+             * Appends app authentication - Appname and Appsecret to
+             * the passed object.
+             * Note: object has to implement 'append' method.
+             *
+             * @param data An object to modify
+             * @returns {*} A data object
+             */
+            appendApp: function (data) {
+                data.append('appname', this.conf.appname);
+                data.append('appsecret', this.conf.appsecret);
+
+                return data;
+            },
+
+            /**
+             * Appends warehouse related information - website_id and survey_id to
+             * the passed data object.
+             * Note: object has to implement 'append' method.
+             *
+             * This is necessary because the data must be associated to some
+             * website and survey in the warehouse.
+             *
+             * @param data An object to modify
+             * @returns {*} An data object
+             */
+            appendWarehouse: function (data) {
+                data.append('website_id', this.conf.website_id);
+                data.append('survey_id', this.conf.survey_id);
+
+                return data;
+            },
+
+            /**
+             * Checks if the user has authenticated with the app.
+             *
+             * @returns {boolean} True if the user exists, else False
+             */
+            isUser: function () {
+                var obj = this.getUser();
+                return Object.keys(obj).length !== 0;
+            },
+
+            /**
+             * Brings the user details from the storage.
+             *
+             * @returns {Object|*}
+             */
+            getUser: function () {
+                return m.settings(this.USER) || {};
+            },
+
+            /**
+             * Saves the authenticated user details to the storage.
+             *
+             * @param user A user object
+             */
+            setUser: function (user) {
+                m.settings(this.USER, user);
+            },
+
+            /**
+             * Removes the current user details from the storage.
+             */
+            removeUser: function () {
+                m.settings(this.USER, {});
             }
         });
 
         return Module;
     }());
+
+
     /***********************************************************************
      * STORAGE MODULE
      **********************************************************************/
@@ -657,11 +797,15 @@
      **********************************************************************/
 
     m.LocalStorage = (function () {
-        var Module = function () {
+        var Module = function (options) {
+            this.conf.appname = options.appname;
         };
 
         m.extend(Module.prototype, {
             NAME: 'LocalStorage',
+            conf: {
+                appname: ''
+            },
 
             /**
              * Gets an key from the storage.
@@ -669,7 +813,7 @@
              * @param key
              */
             get: function (key, callback) {
-                var data = localStorage.getItem(key);
+                var data = localStorage.getItem(this._getKey(key));
                 data = JSON.parse(data);
 
                 callback(null, data);
@@ -684,8 +828,11 @@
                 var key = '';
                 for (var i = 0, len = localStorage.length; i < len; ++i ) {
                     key = localStorage.key(i);
-                    var parsed = JSON.parse(localStorage.getItem(key));
-                    data[key] = parsed;
+                    //check if the key belongs to this storage
+                    if (key.indexOf(this._getPrefix()) !== -1) {
+                        var parsed = JSON.parse(localStorage.getItem(key));
+                        data[key] = parsed;
+                    }
                 }
                 callback(null, data);
             },
@@ -698,7 +845,7 @@
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);
-                localStorage.setItem(key, data);
+                localStorage.setItem(this._getKey(key), data);
                 callback && callback(null, data);
             },
 
@@ -708,7 +855,7 @@
              * @param key
              */
             remove: function (key, callback) {
-                localStorage.removeItem(key);
+                localStorage.removeItem(this._getKey(key));
                 callback && callback();
             },
 
@@ -721,7 +868,7 @@
              */
             has: function (key, callback) {
                 var data = null;
-                this.get(key, function (err, data) {
+                this.get(this._getKey(key), function (err, data) {
                     callback(null, data !== undefined && data !== null);
                 });
             },
@@ -753,6 +900,14 @@
                 } else {
                     callback(null, 0);
                 }
+            },
+
+            _getKey: function (key) {
+                return this._getPrefix() + key;
+            },
+
+            _getPrefix: function () {
+                return 'morel-' + (this.conf.appname ? (this.conf.appname + '-') : '');
             }
 
         });
@@ -761,41 +916,29 @@
     })();
 
 
-//{
-//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
-//    warehouseID: -1, //occurrence_id
-//  status: 'local', //sent
-//  attr: {
-//  'occurrence:comment': 'value',
-//    'occAttr:12': 'value'
-//},
-//  images: [
-//    {
-//      status: 'local', //sent
-//      url: 'http://..', // points to the image on server
-//      data: 'data64:...'
-//    }
-//  ]
-//};
 
-
-
-    m.extend('Error', function () {
-        var Error = function (message) {
+    m.Error = (function () {
+        var Module = function (message) {
             this.message = message;
         };
 
-        return Error;
-    });
+        return Module;
+    }());
 
 
     m.DatabaseStorage = (function () {
-        var Module = function () {
+        var Module = function (options) {
+            options || (options = {});
+            this.DB_NAME = options.appname ?
+                            this.DB_NAME + '-' + options.appname : this.DB_NAME;
         };
 
         m.extend(Module.prototype, {
-            //because of iOS8 bug on home screen: null & readonly window.indexedDB
+            conf: {
+                appname: ''
+            },
 
+            //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
 
@@ -1076,32 +1219,39 @@
 
 
 
-
     m.Manager = (function () {
         var Module = function (options) {
             options || (options = {});
-            m.extend(this.conf, options);
+
+            this.conf.url = options.url;
+            this.conf.appname = options.appname;
+
+            this.auth = new m.Auth({
+                appname: options.appname,
+                appsecret: options.appsecret,
+                survey_id: options.survey_id,
+                website_id: options.website_id
+            });
 
             this.Storage = options.Storage || m.LocalStorage;
             this.Sample = options.Sample || m.Sample;
 
-            this.storage = new this.Storage();
+            this.storage = new this.Storage({
+                appname: options.appname
+            });
         };
 
         m.extend(Module.prototype, {
             conf: {
                 url: '',
-                appname: '',
-                appsecret: '',
-                survey_id: -1,
-                website_id: -1
+                appname: ''
             },
 
             get: function (item, callback) {
                 var that = this,
                     key = typeof item === 'object' ? item.id : item;
                 this.storage.get(key, function (err, data) {
-                    var sample = new that.Sample(data);
+                    var sample = data ? new that.Sample(data) : null;
                     callback(err, sample);
                 });
             },
@@ -1141,17 +1291,288 @@
             },
 
             sync: function (item, callback) {
+                var that = this;
                 //synchronise with the server
+                this.get(item, function (err, data) {
+                    if (data) {
+                        that.sendStored(data, callback);
+                    } else {
+                        callback(err);
+                    }
+                });
             },
 
             syncAll: function (callback) {
+                this.sendAllStored(callback);
+            },
 
+
+            /**
+             * Sending all saved records.
+             *
+             * @returns {undefined}
+             */
+            sendAllStored: function (callback) {
+                var that = this;
+                this.getAll(function (err, samples) {
+                    var sample = {},
+                        samplesIDs = [];
+
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+
+                    //recursively loop through samples
+                    samplesIDs = Object.keys(samples);
+                    for (var i = 0; i < samplesIDs.length; i++) {
+                        sample = samples[samplesIDs[i]];
+                        that.sendStored(sample, function (err, data) {
+                            if (err) {
+                                callback && callback(err);
+                                return;
+                            }
+
+                            delete samples[samplesIDs[i]];
+
+                            if (Object.keys(samples).length === 0) {
+                                //finished
+                                callback && callback(null);
+                            }
+                        });
+                    }
+                })
+            },
+
+            sendStored: function (sample, callback) {
+                var that = this,
+                    onSuccess = function (data) {
+                        //update sample
+                        sample.warehouse_id = 'done';
+
+                        //save sample
+                        that.set(sample, function (err, data) {
+                            callback && callback(null, data);
+                        });
+                    },
+
+                    onError = function (err) {
+                        callback && callback(err);
+                    };
+
+                this.send(sample, function (err, data) {
+                    if (err) {
+                        onError(err);
+                    } else {
+                        onSuccess(data);
+                    }
+                });
+            },
+
+            /**
+             * Sends the saved record
+             *
+             * @param recordKey
+             * @param callback
+             * @param onError
+             * @param onSend
+             */
+            send: function (sample, callback) {
+                var flattened = sample.flatten(),
+                    formData = new FormData();
+
+                //images
+
+                var keys = Object.keys(flattened);
+                for (var i= 0; i < keys.length; i++) {
+                    formData.append(keys[i], flattened[keys[i]]);
+                }
+
+                //Add authentication
+                formData = this.auth.append(formData);
+
+                this._post(formData, callback);
+            },
+
+            /**
+             * Submits the record.
+             */
+            _post: function (formData, callback) {
+                var ajax = new XMLHttpRequest();
+
+                ajax.onreadystatechange = function () {
+                    var error = null;
+                    if (ajax.readyState === XMLHttpRequest.DONE) {
+                        switch (ajax.status) {
+                            case 200:
+                                callback(null, ajax.response);
+                                break;
+                            case 400:
+                                 error = new m.Error(ajax.response);
+                                callback(error);
+                                break;
+                            default:
+                                error = new m.Error('Unknown problem while sending request.');
+                                callback && callback(error);
+                        }
+                    }
+                };
+
+                ajax.open('POST', this.conf.url, true);
+                ajax.setRequestHeader("Content-type", "multipart/form-data");
+                ajax.send(formData);
             }
-
         });
 
         return Module;
     }());
+
+    /***********************************************************************
+     * IMAGE MODULE
+     **********************************************************************/
+
+    /* global morel, _log */
+    m.extend('image', {
+        //todo: move to CONF.
+        MAX_IMG_HEIGHT: 800,
+        MAX_IMG_WIDTH: 800,
+
+        /**
+         * Returns all the images resized and stingified from an element.
+         *
+         * @param elem DOM element to look for files
+         * @param callback function with an array parameter
+         */
+        extractAll: function (elem, callback) {
+            var fileInputs = m.image.findAll(elem);
+            if (fileInputs.length > 0) {
+                m.image.toStringAll(fileInputs, callback);
+            } else {
+                callback();
+            }
+        },
+
+        /**
+         * Transforms and resizes an image file into a string.
+         *
+         * @param onError
+         * @param file
+         * @param onSaveSuccess
+         * @returns {number}
+         */
+        toString: function (file, callback) {
+                var reader = new FileReader();
+                //#2
+                reader.onload = function () {
+
+                    var image = new Image();
+                    //#4
+                    image.onload = function (e) {
+                        var width = image.width;
+                        var height = image.height;
+
+                        //resizing
+                        var res;
+                        if (width > height) {
+                            res = width / m.image.MAX_IMG_WIDTH;
+                        } else {
+                            res = height / m.image.MAX_IMG_HEIGHT;
+                        }
+
+                        width = width / res;
+                        height = height / res;
+
+                        var canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        var imgContext = canvas.getContext('2d');
+                        imgContext.drawImage(image, 0, 0, width, height);
+
+                        var shrinked = canvas.toDataURL(file.type);
+
+                        callback(null, shrinked);
+
+                    };
+                    reader.onerror = function (e) {
+                        var error = new m.Error(e.getMessage());
+                        callback(error);
+                    };
+
+                    //#3
+                    image.src = reader.result;
+                };
+                //1#
+                reader.readAsDataURL(file);
+        },
+
+        /**
+         * Saves all the files. Uses recursion.
+         *
+         * @param files An array of files to be saved
+         * @param onSaveAllFilesSuccess
+         * @param onError
+         */
+        toStringAll: function (fileInputs, onSaveAllFilesSuccess, onError) {
+            //recursive calling to save all the images
+            saveAllFilesRecursive(fileInputs, null);
+            function saveAllFilesRecursive(fileInputs, files) {
+                files = files || {};
+
+                //recursive files saving
+                if (fileInputs.length > 0) {
+                    var filesInfo = fileInputs.pop();
+                    //get next file in file array
+                    var file = filesInfo.file;
+                    var name = filesInfo.input_field_name;
+
+                    //recursive saving of the files
+                    var onSaveSuccess = function (file) {
+                        files[name] = file;
+                        saveAllFilesRecursive(fileInputs, files, onSaveSuccess);
+                    };
+                    m.image.toString(file, onSaveSuccess, onError);
+                } else {
+                    onSaveAllFilesSuccess(files);
+                }
+            }
+        },
+
+        /**
+         * Extracts all files from the page inputs.
+         */
+        findAll: function (elem) {
+            if (!elem) {
+                elem = window.document;
+            }
+
+            var files = [];
+            var inputs = elem.getElementsByTagName('input');
+            for (var i = 0; i < inputs.length; i++) {
+                var input = inputs[i];
+                if (input.getAttribute('type') === "file" && input.files.length > 0) {
+                    var file = m.image._file(input);
+                    files.push(file);
+                }
+            }
+            return files;
+        },
+
+        /**
+         * Returns a file object with its name.
+         *
+         * @param input The file input Id
+         * @returns {{file: *, input_field_name: *}}
+         */
+        _file: function (input) {
+            var file = {
+                'file': input.files[0],
+                'input_field_name': input.attributes.name.value
+            };
+            return file;
+        }
+    });
+
 
     return m;
 }));

@@ -7,11 +7,15 @@ define([], function () {
      **********************************************************************/
 
     m.LocalStorage = (function () {
-        var Module = function () {
+        var Module = function (options) {
+            this.conf.appname = options.appname;
         };
 
         m.extend(Module.prototype, {
             NAME: 'LocalStorage',
+            conf: {
+                appname: ''
+            },
 
             /**
              * Gets an key from the storage.
@@ -19,7 +23,7 @@ define([], function () {
              * @param key
              */
             get: function (key, callback) {
-                var data = localStorage.getItem(key);
+                var data = localStorage.getItem(this._getKey(key));
                 data = JSON.parse(data);
 
                 callback(null, data);
@@ -30,12 +34,15 @@ define([], function () {
              * @returns {{}}
              */
             getAll: function (callback) {
-                var data = [];
+                var data = {};
                 var key = '';
-                for ( var i = 0, len = localStorage.length; i < len; ++i ) {
+                for (var i = 0, len = localStorage.length; i < len; ++i ) {
                     key = localStorage.key(i);
-                    var parsed = JSON.parse(localStorage.getItem(key));
-                    data.push(parsed);
+                    //check if the key belongs to this storage
+                    if (key.indexOf(this._getPrefix()) !== -1) {
+                        var parsed = JSON.parse(localStorage.getItem(key));
+                        data[key] = parsed;
+                    }
                 }
                 callback(null, data);
             },
@@ -48,7 +55,7 @@ define([], function () {
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);
-                localStorage.setItem(key, data);
+                localStorage.setItem(this._getKey(key), data);
                 callback && callback(null, data);
             },
 
@@ -58,7 +65,7 @@ define([], function () {
              * @param key
              */
             remove: function (key, callback) {
-                localStorage.removeItem(key);
+                localStorage.removeItem(this._getKey(key));
                 callback && callback();
             },
 
@@ -71,7 +78,7 @@ define([], function () {
              */
             has: function (key, callback) {
                 var data = null;
-                this.get(key, function (err, data) {
+                this.get(this._getKey(key), function (err, data) {
                     callback(null, data !== undefined && data !== null);
                 });
             },
@@ -103,6 +110,14 @@ define([], function () {
                 } else {
                     callback(null, 0);
                 }
+            },
+
+            _getKey: function (key) {
+                return this._getPrefix() + key;
+            },
+
+            _getPrefix: function () {
+                return 'morel-' + (this.conf.appname ? (this.conf.appname + '-') : '');
             }
 
         });

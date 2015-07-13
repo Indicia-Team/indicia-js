@@ -131,9 +131,18 @@ define(["OccurrenceCollection"], function () {
                 return data;
             },
 
-            parse: function () {
+            flatten: function () {
+                var json = this.toJSON(),
+                    flattened = {};
 
+                m.extend(flattened, json.attributes);
+
+                for (var i = 0; i < json.occurrences.length; i++) {
+                    m.extend(flattened, json.occurrences[i].attributes);
+                }
+                return flattened;
             }
+
         });
 
         return Module;

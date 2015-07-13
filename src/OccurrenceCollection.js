@@ -9,7 +9,7 @@ define(['Occurrence'], function () {
             var occurrence = null;
             this.occurrences = [];
 
-            if (typeof options === 'array') {
+            if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
                     occurrence = new this.Occurrence(options[i]);
                     this.occurrences.push(occurrence);

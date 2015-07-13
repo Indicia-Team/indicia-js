@@ -4,12 +4,18 @@ define(['Error'], function () {
 //>>excludeEnd("buildExclude");
 
     m.DatabaseStorage = (function () {
-        var Module = function () {
+        var Module = function (options) {
+            options || (options = {});
+            this.DB_NAME = options.appname ?
+                            this.DB_NAME + '-' + options.appname : this.DB_NAME;
         };
 
         m.extend(Module.prototype, {
-            //because of iOS8 bug on home screen: null & readonly window.indexedDB
+            conf: {
+                appname: ''
+            },
 
+            //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
 
