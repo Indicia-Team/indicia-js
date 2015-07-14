@@ -6,7 +6,6 @@ define([], function () {
      * AUTH MODULE
      **********************************************************************/
 
-    /* global morel */
     m.Auth = (function (){
 
         var Module = function (options) {

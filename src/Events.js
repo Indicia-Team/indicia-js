@@ -5,13 +5,27 @@ define([], function () {
 
     m.Events = (function (){
 
-        var Module = function (options) {
-            options || (options = {});
+        var Module = {
+            on: function (name, callback) {
+                this._init(name);
+                this._events[name].push(callback);
+            },
+
+            trigger: function (name) {
+                this._init(name);
+                var callbacks = this._events[name];
+
+                for (var i = 0; i < callbacks.length; i++) {
+                    callbacks[i].call();
+                }
+            },
+
+            _init: function (name) {
+                this._events = this._events || {};
+                this._events[name] || (this._events[name] = []);
+            }
+
         };
-
-        m.extend(Module.prototype, {
-
-        });
 
         return Module;
     }());

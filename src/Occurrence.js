@@ -43,6 +43,8 @@ define(['helpers'], function () {
                 var key = this.key(name),
                     value = this.value(name, data);
                 this.attributes[key] = value;
+
+                this.trigger('change');
             },
 
             get: function (name) {
@@ -53,10 +55,14 @@ define(['helpers'], function () {
             remove: function (name) {
                 var key = this.key(name);
                 delete this.attributes[key];
+
+                this.trigger('change');
             },
 
             clear: function () {
                 this.attributes = {};
+
+                this.trigger('change');
             },
 
             has: function(name) {
@@ -105,6 +111,8 @@ define(['helpers'], function () {
                 return data;
             }
         });
+
+        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());

@@ -39,6 +39,8 @@ define(['Occurrence'], function () {
                     }
                     modified.push(items[i]);
                 }
+
+                this.trigger('change');
                 return modified;
             },
 
@@ -84,6 +86,7 @@ define(['Occurrence'], function () {
                         removed.push(current);
                     }
                 }
+                this.trigger('change');
                 return removed;
             },
 
@@ -105,6 +108,8 @@ define(['Occurrence'], function () {
                 return json;
             }
         });
+
+        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());

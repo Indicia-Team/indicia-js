@@ -82,7 +82,7 @@
      * @param obj
      * @returns {*}
      */
-    m.objClone = function(obj) {
+    m.objClone = function (obj) {
         if (null === obj || "object" !== typeof obj) {
             return obj;
         }
@@ -99,8 +99,8 @@
      * Generate UUID.
      */
     m.getNewUUID = function () {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
     };
@@ -112,7 +112,7 @@
      * @param {type} fileType
      * @returns {undefined}
      */
-    m.dataURItoBlob = function(dataURI, fileType) {
+    m.dataURItoBlob = function (dataURI, fileType) {
         var binary = atob(dataURI.split(',')[1]);
         var array = [];
         for (var i = 0; i < binary.length; i++) {
@@ -140,33 +140,31 @@
     };
 
     //From jQuery 1.4.4 .
-    m.isPlainObject = function(obj) {
-        function type( obj ) {
+    m.isPlainObject = function (obj) {
+        function type(obj) {
             var class2type = {};
             var types = "Boolean Number String Function Array Date RegExp Object".split(" ");
             for (var i = 0; i < types.length; i++) {
                 class2type["[object " + types[i] + "]"] = types[i].toLowerCase();
             }
             return obj == null ?
-                String( obj ) :
-            class2type[ toString.call(obj) ] || "object";
+                String(obj) :
+            class2type[toString.call(obj)] || "object";
         }
 
-        function isWindow( obj ) {
+        function isWindow(obj) {
             return obj && typeof obj === "object" && "setInterval" in obj;
         }
 
         // Must be an Object.
         // Because of IE, we also have to check the presence of the constructor property.
         // Make sure that DOM nodes and window objects don't pass through, as well
-        if ( !obj || type(obj) !== "object" || obj.nodeType || isWindow( obj ) ) {
+        if (!obj || type(obj) !== "object" || obj.nodeType || isWindow(obj)) {
             return false;
         }
 
         // Not own constructor property must be Object
-        if ( obj.constructor &&
-            !hasOwn.call(obj, "constructor") &&
-            !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+        if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
             return false;
         }
 
@@ -174,13 +172,14 @@
         // if last one is own, then all properties are own.
 
         var key;
-        for ( key in obj ) {}
+        for (key in obj) {
+        }
 
-        return key === undefined || hasOwn.call( obj, key );
+        return key === undefined || hasOwn.call(obj, key);
     };
 
     //checks if the object has any elements.
-    m.isEmptyObject = function(obj) {
+    m.isEmptyObject = function (obj) {
         for (var key in obj) {
             return false;
         }
@@ -197,12 +196,12 @@
             m[a] || (m[a] = {});
             return ext(m[a], b);
 
-        //normal object extend
+            //normal object extend
         } else {
             return ext(a, b);
         }
 
-        function ext (a, b) {
+        function ext(a, b) {
             for (var key in b) {
                 if (b.hasOwnProperty(key)) {
                     a[key] = b[key];
@@ -218,6 +217,63 @@
             month = ("0" + (now.getMonth() + 1)).slice(-2);
 
         return (day) + "/" + (month) + "/" + now.getFullYear();
+    };
+
+    /**
+     * Transforms and resizes an image file into a string.
+     *
+     * @param onError
+     * @param file
+     * @param onSaveSuccess
+     * @returns {number}
+     */
+    m.imageToString = function (file, callback) {
+        var MAX_IMG_HEIGHT = 800,
+            MAX_IMG_WIDTH = 800;
+
+        var reader = new FileReader();
+        //#2
+        reader.onload = function () {
+
+            var image = new Image();
+            //#4
+            image.onload = function (e) {
+                var width = image.width;
+                var height = image.height;
+
+                //resizing
+                var res;
+                if (width > height) {
+                    res = width / MAX_IMG_WIDTH;
+                } else {
+                    res = height / MAX_IMG_HEIGHT;
+                }
+
+                width = width / res;
+                height = height / res;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                var imgContext = canvas.getContext('2d');
+                imgContext.drawImage(image, 0, 0, width, height);
+
+                var shrinked = canvas.toDataURL(file.type);
+
+                callback(null, shrinked);
+
+            };
+            reader.onerror = function (e) {
+                var error = new m.Error(e.getMessage());
+                callback(error);
+            };
+
+            //#3
+            image.src = reader.result;
+        };
+        //1#
+        reader.readAsDataURL(file);
     };
 
 
@@ -262,6 +318,8 @@
                 var key = this.key(name),
                     value = this.value(name, data);
                 this.attributes[key] = value;
+
+                this.trigger('change');
             },
 
             get: function (name) {
@@ -272,10 +330,14 @@
             remove: function (name) {
                 var key = this.key(name);
                 delete this.attributes[key];
+
+                this.trigger('change');
             },
 
             clear: function () {
                 this.attributes = {};
+
+                this.trigger('change');
             },
 
             has: function(name) {
@@ -325,6 +387,8 @@
             }
         });
 
+        m.extend(Module.prototype, m.Events);
+
         return Module;
     }());
 
@@ -364,6 +428,8 @@
                     }
                     modified.push(items[i]);
                 }
+
+                this.trigger('change');
                 return modified;
             },
 
@@ -409,6 +475,7 @@
                         removed.push(current);
                     }
                 }
+                this.trigger('change');
                 return removed;
             },
 
@@ -431,8 +498,39 @@
             }
         });
 
+        m.extend(Module.prototype, m.Events);
+
         return Module;
     }());
+
+    m.Events = (function (){
+
+        var Module = {
+            on: function (name, callback) {
+                this._init(name);
+                this._events[name].push(callback);
+            },
+
+            trigger: function (name) {
+                this._init(name);
+                var callbacks = this._events[name];
+
+                for (var i = 0; i < callbacks.length; i++) {
+                    callbacks[i].call();
+                }
+            },
+
+            _init: function (name) {
+                this._events = this._events || {};
+                this._events[name] || (this._events[name] = []);
+            }
+
+        };
+
+        return Module;
+    }());
+
+
 
     /**
      * Refers to the event in which the sightings were observed, in other
@@ -504,6 +602,8 @@
                 var key = this.key(name),
                     value = this.value(name, data);
                 this.attributes[key] = value;
+
+                this.trigger('change');
             },
 
             get: function (name) {
@@ -514,10 +614,12 @@
             remove: function (name) {
                 var key = this.key(name);
                 delete this.attributes[key];
+                this.trigger('change');
             },
 
             clear: function () {
                 this.attributes = {};
+                this.trigger('change');
             },
 
             has: function (name) {
@@ -576,13 +678,14 @@
 
         });
 
+        m.extend(Module.prototype, m.Events);
+
         return Module;
     }());
     /***********************************************************************
      * AUTH MODULE
      **********************************************************************/
 
-    /* global morel */
     m.Auth = (function (){
 
         var Module = function (options) {
@@ -1426,153 +1529,6 @@
 
         return Module;
     }());
-
-    /***********************************************************************
-     * IMAGE MODULE
-     **********************************************************************/
-
-    /* global morel, _log */
-    m.extend('image', {
-        //todo: move to CONF.
-        MAX_IMG_HEIGHT: 800,
-        MAX_IMG_WIDTH: 800,
-
-        /**
-         * Returns all the images resized and stingified from an element.
-         *
-         * @param elem DOM element to look for files
-         * @param callback function with an array parameter
-         */
-        extractAll: function (elem, callback) {
-            var fileInputs = m.image.findAll(elem);
-            if (fileInputs.length > 0) {
-                m.image.toStringAll(fileInputs, callback);
-            } else {
-                callback();
-            }
-        },
-
-        /**
-         * Transforms and resizes an image file into a string.
-         *
-         * @param onError
-         * @param file
-         * @param onSaveSuccess
-         * @returns {number}
-         */
-        toString: function (file, callback) {
-                var reader = new FileReader();
-                //#2
-                reader.onload = function () {
-
-                    var image = new Image();
-                    //#4
-                    image.onload = function (e) {
-                        var width = image.width;
-                        var height = image.height;
-
-                        //resizing
-                        var res;
-                        if (width > height) {
-                            res = width / m.image.MAX_IMG_WIDTH;
-                        } else {
-                            res = height / m.image.MAX_IMG_HEIGHT;
-                        }
-
-                        width = width / res;
-                        height = height / res;
-
-                        var canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-
-                        var imgContext = canvas.getContext('2d');
-                        imgContext.drawImage(image, 0, 0, width, height);
-
-                        var shrinked = canvas.toDataURL(file.type);
-
-                        callback(null, shrinked);
-
-                    };
-                    reader.onerror = function (e) {
-                        var error = new m.Error(e.getMessage());
-                        callback(error);
-                    };
-
-                    //#3
-                    image.src = reader.result;
-                };
-                //1#
-                reader.readAsDataURL(file);
-        },
-
-        /**
-         * Saves all the files. Uses recursion.
-         *
-         * @param files An array of files to be saved
-         * @param onSaveAllFilesSuccess
-         * @param onError
-         */
-        toStringAll: function (fileInputs, onSaveAllFilesSuccess, onError) {
-            //recursive calling to save all the images
-            saveAllFilesRecursive(fileInputs, null);
-            function saveAllFilesRecursive(fileInputs, files) {
-                files = files || {};
-
-                //recursive files saving
-                if (fileInputs.length > 0) {
-                    var filesInfo = fileInputs.pop();
-                    //get next file in file array
-                    var file = filesInfo.file;
-                    var name = filesInfo.input_field_name;
-
-                    //recursive saving of the files
-                    var onSaveSuccess = function (file) {
-                        files[name] = file;
-                        saveAllFilesRecursive(fileInputs, files, onSaveSuccess);
-                    };
-                    m.image.toString(file, onSaveSuccess, onError);
-                } else {
-                    onSaveAllFilesSuccess(files);
-                }
-            }
-        },
-
-        /**
-         * Extracts all files from the page inputs.
-         */
-        findAll: function (elem) {
-            if (!elem) {
-                elem = window.document;
-            }
-
-            var files = [];
-            var inputs = elem.getElementsByTagName('input');
-            for (var i = 0; i < inputs.length; i++) {
-                var input = inputs[i];
-                if (input.getAttribute('type') === "file" && input.files.length > 0) {
-                    var file = m.image._file(input);
-                    files.push(file);
-                }
-            }
-            return files;
-        },
-
-        /**
-         * Returns a file object with its name.
-         *
-         * @param input The file input Id
-         * @returns {{file: *, input_field_name: *}}
-         */
-        _file: function (input) {
-            var file = {
-                'file': input.files[0],
-                'input_field_name': input.attributes.name.value
-            };
-            return file;
-        }
-    });
-
 
     return m;
 }));

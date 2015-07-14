@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global define, m */
-define(["OccurrenceCollection"], function () {
+define(["OccurrenceCollection", "Events"], function () {
 //>>excludeEnd("buildExclude");
 
     /**
@@ -73,6 +73,8 @@ define(["OccurrenceCollection"], function () {
                 var key = this.key(name),
                     value = this.value(name, data);
                 this.attributes[key] = value;
+
+                this.trigger('change');
             },
 
             get: function (name) {
@@ -83,10 +85,12 @@ define(["OccurrenceCollection"], function () {
             remove: function (name) {
                 var key = this.key(name);
                 delete this.attributes[key];
+                this.trigger('change');
             },
 
             clear: function () {
                 this.attributes = {};
+                this.trigger('change');
             },
 
             has: function (name) {
@@ -144,6 +148,8 @@ define(["OccurrenceCollection"], function () {
             }
 
         });
+
+        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());
