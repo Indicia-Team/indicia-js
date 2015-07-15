@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define, */
-define(['Occurrence'], function () {
+define(['Occurrence', "Events"], function () {
 //>>excludeEnd("buildExclude");
 
     m.OccurrenceCollection = (function () {

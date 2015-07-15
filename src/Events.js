@@ -7,13 +7,12 @@ define([], function () {
 
         var Module = {
             on: function (name, callback) {
-                this._init(name);
-                this._events[name].push(callback);
+                var callbacks = this._init(name);
+                callbacks.push(callback);
             },
 
             trigger: function (name) {
-                this._init(name);
-                var callbacks = this._events[name];
+                var callbacks = this._init(name);
 
                 for (var i = 0; i < callbacks.length; i++) {
                     callbacks[i].call();
@@ -21,10 +20,27 @@ define([], function () {
             },
 
             _init: function (name) {
-                this._events = this._events || {};
-                this._events[name] || (this._events[name] = []);
-            }
+                name = name.toLowerCase();
+                var namespace = name.split(':');
 
+                this._events = this._events || {};
+                if (!this._events[namespace[0]]) {
+                    this._events[namespace[0]] = {
+                        any: []
+                    }
+                }
+
+                if (namespace.length === 1) {
+                    return this._events[namespace[0]].all;
+                } else {
+                    if (!this._events[namespace[0]][namespace[1]]) {
+                        this._events[namespace[0]][namespace[1]] = [];
+                    }
+
+                    return this._events[namespace[0]][namespace[1]]
+                }
+
+            }
         };
 
         return Module;

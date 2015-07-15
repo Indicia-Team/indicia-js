@@ -24,7 +24,8 @@ module.exports = function (grunt) {
 
                     include: [
                         "main",
-                        "Manager"
+                        "Manager",
+                        "Geoloc"
                     ],
 
                     out: '<%= pkg.name %>.js',

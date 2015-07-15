@@ -74,7 +74,7 @@ define(["OccurrenceCollection", "Events"], function () {
                     value = this.value(name, data);
                 this.attributes[key] = value;
 
-                this.trigger('change');
+                this.trigger('change:' + name);
             },
 
             get: function (name) {
@@ -85,7 +85,7 @@ define(["OccurrenceCollection", "Events"], function () {
             remove: function (name) {
                 var key = this.key(name);
                 delete this.attributes[key];
-                this.trigger('change');
+                this.trigger('change:' + name);
             },
 
             clear: function () {
