@@ -48,7 +48,9 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                         keys = Object.keys(data);
 
                     for (var i = 0; i < keys.length; i++) {
-                        sample = new that.Sample(data[keys[i]]);
+                        sample = new that.Sample(m.extend(data[keys[i]], {
+                           plainAttributes: true
+                        }));
                         samples[sample.id] = sample;
                     }
                     callback(err, samples);
@@ -61,12 +63,12 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
             },
 
             remove: function (item, callback) {
-                var key = item.id;
+                var key = typeof item === 'object' ? item.id : item;
                 this.storage.remove(key, callback);
             },
 
             has: function (item, callback) {
-                var key = item.id;
+                var key = typeof item === 'object' ? item.id : item;
                 this.storage.has(key, callback);
             },
 
@@ -86,8 +88,8 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                 });
             },
 
-            syncAll: function (callback) {
-                this.sendAllStored(callback);
+            syncAll: function (callbackOnPartial, callback) {
+                this.sendAllStored(callbackOnPartial, callback);
             },
 
 
@@ -96,7 +98,7 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
              *
              * @returns {undefined}
              */
-            sendAllStored: function (callback) {
+            sendAllStored: function (callbackOnPartial, callback) {
                 var that = this;
                 this.getAll(function (err, samples) {
                     var sample = {},
@@ -122,6 +124,8 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                             if (Object.keys(samples).length === 0) {
                                 //finished
                                 callback && callback(null);
+                            } else {
+                                callbackOnPartial && callbackOnPartial(null);
                             }
                         });
                     }

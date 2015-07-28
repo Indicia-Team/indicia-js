@@ -11,8 +11,48 @@ define(['Occurrence', "Events"], function () {
 
             if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
-                    occurrence = new this.Occurrence(options[i]);
-                    this.occurrences.push(occurrence);
+                    occurrence = options[i];
+                    if (occurrence instanceof morel.Occurrence) {
+                        this.occurrences.push(occurrence);
+                    } else {
+                        //no option is provided for transformed keys without creating
+                        //an Occurrence object. Eg. this is not possible:
+                        //  new OccurrenceCollection([
+                        //   {
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         taxon: 'xxxx'
+                        //     }
+                        //   }
+                        // ])
+
+                        //must be:
+
+                        //  new OccurrenceCollection([
+                        //   {
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         occurrence:taxon_taxon_list_id: 'xxxx'
+                        //     }
+                        //   }
+                        // ])
+
+                        //or:
+
+                        //  new OccurrenceCollection([
+                        //   new Occurrence({
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         taxon: 'xxxx'
+                        //     }
+                        //   })
+                        // ])
+                        m.extend(occurrence, {
+                            plainAttributes: true
+                        });
+                        occurrence = new morel.Occurrence(occurrence);
+                        this.occurrences.push(occurrence);
+                    }
                 }
             }
         };

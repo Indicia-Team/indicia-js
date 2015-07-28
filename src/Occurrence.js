@@ -23,9 +23,28 @@ define(['helpers', "Events"], function () {
     m.Occurrence = (function () {
 
         var Module = function (options) {
+            var name = null,
+                value = null,
+                key = null;
+
             options || (options = {});
             this.id = options.id || m.getNewUUID();
-            this.attributes = options.attributes || {};
+            this.attributes = {};
+
+            if (options.attributes) {
+                if (options.plainAttributes) {
+                    this.attributes = options.attributes;
+
+                //transform keys
+                } else {
+                    for (name in options.attributes) {
+                        key = this.key(name);
+                        value = this.value(name, options.attributes[name]);
+                        this.attributes[key] = value;
+                    }
+                }
+            }
+
             this.images = options.images || [];
         };
 
@@ -87,7 +106,7 @@ define(['helpers', "Events"], function () {
             value: function (name, data) {
                 var value = null;
                 name = name.toUpperCase();
-                if (typeof data !== 'string' ||
+                if (typeof data !== 'object' ||
                     !Module.KEYS[name] ||
                     !Module.KEYS[name].values) {
                     return data;

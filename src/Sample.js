@@ -12,9 +12,14 @@ define(["OccurrenceCollection", "Events"], function () {
     m.Sample = (function () {
 
         var Module = function (options) {
+            var name = null,
+                value = null,
+                key = null;
+
             options || (options = {});
 
             this.id = options.id || m.getNewUUID();
+            this.attributes = {};
 
             if (options.occurrences) {
                 this.occurrences = new m.OccurrenceCollection(options.occurrences);
@@ -23,7 +28,17 @@ define(["OccurrenceCollection", "Events"], function () {
             }
 
             if (options.attributes) {
-                this.attributes =  options.attributes;
+                if (options.plainAttributes) {
+                    this.attributes = options.attributes;
+
+                //transform keys
+                } else {
+                    for (name in options.attributes) {
+                        key = this.key(name);
+                        value = this.value(name, options.attributes[name]);
+                        this.attributes[key] = value;
+                    }
+                }
             } else {
                 this.attributes = {};
 

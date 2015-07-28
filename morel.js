@@ -343,9 +343,28 @@
     m.Occurrence = (function () {
 
         var Module = function (options) {
+            var name = null,
+                value = null,
+                key = null;
+
             options || (options = {});
             this.id = options.id || m.getNewUUID();
-            this.attributes = options.attributes || {};
+            this.attributes = {};
+
+            if (options.attributes) {
+                if (options.plainAttributes) {
+                    this.attributes = options.attributes;
+
+                //transform keys
+                } else {
+                    for (name in options.attributes) {
+                        key = this.key(name);
+                        value = this.value(name, options.attributes[name]);
+                        this.attributes[key] = value;
+                    }
+                }
+            }
+
             this.images = options.images || [];
         };
 
@@ -407,7 +426,7 @@
             value: function (name, data) {
                 var value = null;
                 name = name.toUpperCase();
-                if (typeof data !== 'string' ||
+                if (typeof data !== 'object' ||
                     !Module.KEYS[name] ||
                     !Module.KEYS[name].values) {
                     return data;
@@ -445,8 +464,48 @@
 
             if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
-                    occurrence = new this.Occurrence(options[i]);
-                    this.occurrences.push(occurrence);
+                    occurrence = options[i];
+                    if (occurrence instanceof morel.Occurrence) {
+                        this.occurrences.push(occurrence);
+                    } else {
+                        //no option is provided for transformed keys without creating
+                        //an Occurrence object. Eg. this is not possible:
+                        //  new OccurrenceCollection([
+                        //   {
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         taxon: 'xxxx'
+                        //     }
+                        //   }
+                        // ])
+
+                        //must be:
+
+                        //  new OccurrenceCollection([
+                        //   {
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         occurrence:taxon_taxon_list_id: 'xxxx'
+                        //     }
+                        //   }
+                        // ])
+
+                        //or:
+
+                        //  new OccurrenceCollection([
+                        //   new Occurrence({
+                        //     id: 'xxxx'
+                        //     attributes: {
+                        //         taxon: 'xxxx'
+                        //     }
+                        //   })
+                        // ])
+                        m.extend(occurrence, {
+                            plainAttributes: true
+                        });
+                        occurrence = new morel.Occurrence(occurrence);
+                        this.occurrences.push(occurrence);
+                    }
                 }
             }
         };
@@ -561,9 +620,14 @@
     m.Sample = (function () {
 
         var Module = function (options) {
+            var name = null,
+                value = null,
+                key = null;
+
             options || (options = {});
 
             this.id = options.id || m.getNewUUID();
+            this.attributes = {};
 
             if (options.occurrences) {
                 this.occurrences = new m.OccurrenceCollection(options.occurrences);
@@ -572,7 +636,17 @@
             }
 
             if (options.attributes) {
-                this.attributes =  options.attributes;
+                if (options.plainAttributes) {
+                    this.attributes = options.attributes;
+
+                //transform keys
+                } else {
+                    for (name in options.attributes) {
+                        key = this.key(name);
+                        value = this.value(name, options.attributes[name]);
+                        this.attributes[key] = value;
+                    }
+                }
             } else {
                 this.attributes = {};
 
@@ -1387,7 +1461,9 @@
                         keys = Object.keys(data);
 
                     for (var i = 0; i < keys.length; i++) {
-                        sample = new that.Sample(data[keys[i]]);
+                        sample = new that.Sample(m.extend(data[keys[i]], {
+                           plainAttributes: true
+                        }));
                         samples[sample.id] = sample;
                     }
                     callback(err, samples);
@@ -1400,12 +1476,12 @@
             },
 
             remove: function (item, callback) {
-                var key = item.id;
+                var key = typeof item === 'object' ? item.id : item;
                 this.storage.remove(key, callback);
             },
 
             has: function (item, callback) {
-                var key = item.id;
+                var key = typeof item === 'object' ? item.id : item;
                 this.storage.has(key, callback);
             },
 
@@ -1425,8 +1501,8 @@
                 });
             },
 
-            syncAll: function (callback) {
-                this.sendAllStored(callback);
+            syncAll: function (callbackOnPartial, callback) {
+                this.sendAllStored(callbackOnPartial, callback);
             },
 
 
@@ -1435,7 +1511,7 @@
              *
              * @returns {undefined}
              */
-            sendAllStored: function (callback) {
+            sendAllStored: function (callbackOnPartial, callback) {
                 var that = this;
                 this.getAll(function (err, samples) {
                     var sample = {},
@@ -1461,6 +1537,8 @@
                             if (Object.keys(samples).length === 0) {
                                 //finished
                                 callback && callback(null);
+                            } else {
+                                callbackOnPartial && callbackOnPartial(null);
                             }
                         });
                     }
