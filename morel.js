@@ -296,23 +296,27 @@
 
             _init: function (name) {
                 name = name.toLowerCase();
-                var namespace = name.split(':');
+                var namespace = name.split(':'),
+                    events = [];
 
                 this._events = this._events || {};
                 if (!this._events[namespace[0]]) {
                     this._events[namespace[0]] = {
-                        any: []
+                        all: []
                     }
                 }
 
                 if (namespace.length === 1) {
-                    return this._events[namespace[0]].any;
+                    return this._events[namespace[0]].all;
                 } else {
                     if (!this._events[namespace[0]][namespace[1]]) {
                         this._events[namespace[0]][namespace[1]] = [];
                     }
 
-                    return this._events[namespace[0]][namespace[1]]
+                    events = this._events[namespace[0]][namespace[1]];
+                    events = events.concat(this._events[namespace[0]].all);
+
+                    return events;
                 }
 
             }
@@ -370,20 +374,28 @@
 
         Module.KEYS = {
                 TAXON: {
-                    name: 'occurrence:taxa_taxon_list_id'
+                    id: 'taxa_taxon_list_id'
                 },
                 COMMENT: {
-                    name: 'occurrence:comment'
+                    id: 'comment'
                 }
         };
 
         m.extend(Module.prototype, {
             set: function (name, data) {
                 var key = this.key(name),
-                    value = this.value(name, data);
+                    value = this.value(name, data),
+                    changed = false;
+
+                if (this.attributes[key] !== value) {
+                    changed = true;
+                }
+
                 this.attributes[key] = value;
 
-                this.trigger('change:' + name);
+                if (changed) {
+                    this.trigger('change:' + name);
+                }
             },
 
             get: function (name) {
@@ -416,11 +428,11 @@
             key: function (name) {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
-                if (!key || !key.name) {
+                if (!key || !key.id) {
                     console.warn('morel.Occurrence: no such key: ' + name);
                     return name;
                 }
-                return key.name;
+                return key.id;
             },
 
             value: function (name, data) {
@@ -461,6 +473,7 @@
         var Module = function (options) {
             var occurrence = null;
             this.occurrences = [];
+            this.length = 0;
 
             if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
@@ -506,6 +519,7 @@
                         occurrence = new morel.Occurrence(occurrence);
                         this.occurrences.push(occurrence);
                     }
+                    this.length++;
                 }
             }
         };
@@ -528,7 +542,10 @@
                         existing.attributes = items[i].attributes;
                     //add new
                     } else {
+                        items[i].on('change', this._occurrenceEvent, this);
+
                         this.occurrences.push(items[i]);
+                        this.length++;
                     }
                     modified.push(items[i]);
                 }
@@ -580,6 +597,7 @@
                     }
                     if (j > -1) {
                         this.occurrences.splice(index, 1);
+                        this.length--;
                         removed.push(current);
                     }
                 }
@@ -603,6 +621,10 @@
                 }
 
                 return json;
+            },
+
+            _occurrenceEvent: function () {
+                this.trigger('change');
             }
         });
 
@@ -657,47 +679,38 @@
         };
 
         Module.KEYS =  {
-                ID: {
-                    name: 'sample:id'
-                },
-                SURVEY: {
-                    name: 'sample:survey_id'
-                },
-                DATE: {
-                    name: 'sample:date'
-                },
-                COMMENT: {
-                    name: 'sample:comment'
-                },
-                IMAGE: {
-                    name: 'sample:image'
-                },
-                LOCATION: {
-                    name: 'sample:entered_sref'
-                },
+                ID: { id: 'id' },
+                SURVEY: { id: 'survey_id' },
+                DATE: { id: 'date' },
+                COMMENT: { id: 'comment' },
+                IMAGE: { id: 'image' },
+                LOCATION: { id: 'entered_sref' },
                 LOCATION_TYPE: {
-                    name: 'sample:entered_sref_system',
+                    id: 'entered_sref_system',
                     values: {
                         'BRITISH': 'OSGB', //for British National Grid
                         'IRISH': 'OSIE', //for Irish Grid
                         'LATLON': 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
                     }
                 },
-                LOCATION_NAME: {
-                    name: 'sample:location_name'
-                },
-                DELETED: {
-                    name: 'sample:deleted'
-                }
+                LOCATION_NAME: { id: 'location_name' },
+                DELETED: { id: 'deleted' }
         };
 
         m.extend(Module.prototype, {
             set: function (name, data) {
                 var key = this.key(name),
-                    value = this.value(name, data);
+                    value = this.value(name, data),
+                    changed = false;
+
+                if (this.attributes[key] !== value) {
+                    changed = true;
+                }
                 this.attributes[key] = value;
 
-                this.trigger('change:' + name);
+                if (changed) {
+                    this.trigger('change:' + name);
+                }
             },
 
             get: function (name) {
@@ -724,11 +737,11 @@
             key: function (name) {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
-                if (!key || !key.name) {
+                if (!key || !key.id) {
                     console.warn('morel.Sample: no such key: ' + name);
                     return name;
                 }
-                return key.name;
+                return key.id;
             },
 
             value: function (name, data) {

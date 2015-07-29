@@ -8,6 +8,7 @@ define(['Occurrence', "Events"], function () {
         var Module = function (options) {
             var occurrence = null;
             this.occurrences = [];
+            this.length = 0;
 
             if (options instanceof Array) {
                 for (var i = 0; i < options.length; i++) {
@@ -53,6 +54,7 @@ define(['Occurrence', "Events"], function () {
                         occurrence = new morel.Occurrence(occurrence);
                         this.occurrences.push(occurrence);
                     }
+                    this.length++;
                 }
             }
         };
@@ -75,7 +77,10 @@ define(['Occurrence', "Events"], function () {
                         existing.attributes = items[i].attributes;
                     //add new
                     } else {
+                        items[i].on('change', this._occurrenceEvent, this);
+
                         this.occurrences.push(items[i]);
+                        this.length++;
                     }
                     modified.push(items[i]);
                 }
@@ -127,6 +132,7 @@ define(['Occurrence', "Events"], function () {
                     }
                     if (j > -1) {
                         this.occurrences.splice(index, 1);
+                        this.length--;
                         removed.push(current);
                     }
                 }
@@ -150,6 +156,10 @@ define(['Occurrence', "Events"], function () {
                 }
 
                 return json;
+            },
+
+            _occurrenceEvent: function () {
+                this.trigger('change');
             }
         });
 

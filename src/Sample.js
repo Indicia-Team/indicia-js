@@ -49,47 +49,38 @@ define(["OccurrenceCollection", "Events"], function () {
         };
 
         Module.KEYS =  {
-                ID: {
-                    name: 'sample:id'
-                },
-                SURVEY: {
-                    name: 'sample:survey_id'
-                },
-                DATE: {
-                    name: 'sample:date'
-                },
-                COMMENT: {
-                    name: 'sample:comment'
-                },
-                IMAGE: {
-                    name: 'sample:image'
-                },
-                LOCATION: {
-                    name: 'sample:entered_sref'
-                },
+                ID: { id: 'id' },
+                SURVEY: { id: 'survey_id' },
+                DATE: { id: 'date' },
+                COMMENT: { id: 'comment' },
+                IMAGE: { id: 'image' },
+                LOCATION: { id: 'entered_sref' },
                 LOCATION_TYPE: {
-                    name: 'sample:entered_sref_system',
+                    id: 'entered_sref_system',
                     values: {
                         'BRITISH': 'OSGB', //for British National Grid
                         'IRISH': 'OSIE', //for Irish Grid
                         'LATLON': 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
                     }
                 },
-                LOCATION_NAME: {
-                    name: 'sample:location_name'
-                },
-                DELETED: {
-                    name: 'sample:deleted'
-                }
+                LOCATION_NAME: { id: 'location_name' },
+                DELETED: { id: 'deleted' }
         };
 
         m.extend(Module.prototype, {
             set: function (name, data) {
                 var key = this.key(name),
-                    value = this.value(name, data);
+                    value = this.value(name, data),
+                    changed = false;
+
+                if (this.attributes[key] !== value) {
+                    changed = true;
+                }
                 this.attributes[key] = value;
 
-                this.trigger('change:' + name);
+                if (changed) {
+                    this.trigger('change:' + name);
+                }
             },
 
             get: function (name) {
@@ -116,11 +107,11 @@ define(["OccurrenceCollection", "Events"], function () {
             key: function (name) {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
-                if (!key || !key.name) {
+                if (!key || !key.id) {
                     console.warn('morel.Sample: no such key: ' + name);
                     return name;
                 }
-                return key.name;
+                return key.id;
             },
 
             value: function (name, data) {

@@ -21,23 +21,27 @@ define([], function () {
 
             _init: function (name) {
                 name = name.toLowerCase();
-                var namespace = name.split(':');
+                var namespace = name.split(':'),
+                    events = [];
 
                 this._events = this._events || {};
                 if (!this._events[namespace[0]]) {
                     this._events[namespace[0]] = {
-                        any: []
+                        all: []
                     }
                 }
 
                 if (namespace.length === 1) {
-                    return this._events[namespace[0]].any;
+                    return this._events[namespace[0]].all;
                 } else {
                     if (!this._events[namespace[0]][namespace[1]]) {
                         this._events[namespace[0]][namespace[1]] = [];
                     }
 
-                    return this._events[namespace[0]][namespace[1]]
+                    events = this._events[namespace[0]][namespace[1]];
+                    events = events.concat(this._events[namespace[0]].all);
+
+                    return events;
                 }
 
             }

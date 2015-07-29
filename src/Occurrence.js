@@ -50,20 +50,28 @@ define(['helpers', "Events"], function () {
 
         Module.KEYS = {
                 TAXON: {
-                    name: 'occurrence:taxa_taxon_list_id'
+                    id: 'taxa_taxon_list_id'
                 },
                 COMMENT: {
-                    name: 'occurrence:comment'
+                    id: 'comment'
                 }
         };
 
         m.extend(Module.prototype, {
             set: function (name, data) {
                 var key = this.key(name),
-                    value = this.value(name, data);
+                    value = this.value(name, data),
+                    changed = false;
+
+                if (this.attributes[key] !== value) {
+                    changed = true;
+                }
+
                 this.attributes[key] = value;
 
-                this.trigger('change:' + name);
+                if (changed) {
+                    this.trigger('change:' + name);
+                }
             },
 
             get: function (name) {
@@ -96,11 +104,11 @@ define(['helpers', "Events"], function () {
             key: function (name) {
                 name = name.toUpperCase();
                 var key = Module.KEYS[name];
-                if (!key || !key.name) {
+                if (!key || !key.id) {
                     console.warn('morel.Occurrence: no such key: ' + name);
                     return name;
                 }
-                return key.name;
+                return key.id;
             },
 
             value: function (name, data) {
