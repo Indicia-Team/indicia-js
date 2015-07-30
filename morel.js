@@ -212,9 +212,24 @@
     };
 
     m.formatDate = function (date) {
-        var now = date || new Date(),
-            day = ("0" + now.getDate()).slice(-2),
-            month = ("0" + (now.getMonth() + 1)).slice(-2);
+        var now = new Date(),
+            day = 0, month = 0,
+            reg = /\d{4}-\d{1,2}-\d{1,2}$/,
+            regInv = /\d{1,2}-\d{1,2}-\d{4}$/,
+            dateArray = [];
+
+        if (typeof date === 'string') {
+            dateArray = date.split('-');
+            if (reg.test(date)) {
+                date = new Date(parseInt(dateArray[0]), parseInt(dateArray[1]) - 1, parseInt(dateArray[2]));
+            } else if (regInv.test(date)) {
+                date = new Date(parseInt(dateArray[2]), parseInt(dateArray[1]) - 1, parseInt(dateArray[0]));
+            }
+        }
+
+        now = date || now;
+        day = ("0" + now.getDate()).slice(-2);
+        month = ("0" + (now.getMonth() + 1)).slice(-2);
 
         return (day) + "/" + (month) + "/" + now.getFullYear();
     };
