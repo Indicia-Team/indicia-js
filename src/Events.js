@@ -7,19 +7,19 @@ define([], function () {
 
         var Module = {
             on: function (name, callback, context) {
-                var callbacks = this._init(name);
+                var callbacks = this._callbacks(name);
                 callbacks.push({callback: callback, context: context});
             },
 
             trigger: function (name) {
-                var callbacks = this._init(name);
+                var callbacks = this._callbacks(name, true);
 
                 for (var i = 0; i < callbacks.length; i++) {
                     callbacks[i].callback.call(callbacks[i].context || this);
                 }
             },
 
-            _init: function (name) {
+            _callbacks: function (name, trigger) {
                 name = name.toLowerCase();
                 var namespace = name.split(':'),
                     events = [];
@@ -39,7 +39,9 @@ define([], function () {
                     }
 
                     events = this._events[namespace[0]][namespace[1]];
-                    events = events.concat(this._events[namespace[0]].all);
+                    if (trigger) {
+                        events = events.concat(this._events[namespace[0]].all);
+                    }
 
                     return events;
                 }
