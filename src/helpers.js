@@ -145,15 +145,21 @@ define([], function () {
     m.formatDate = function (date) {
         var now = new Date(),
             day = 0, month = 0,
-            reg = /\d{4}-\d{1,2}-\d{1,2}$/,
-            regInv = /\d{1,2}-\d{1,2}-\d{4}$/,
+            reg = /\d{2}\/\d{2}\/\d{4}$/,
+            regDash = /\d{4}-\d{1,2}-\d{1,2}$/,
+            regDashInv = /\d{1,2}-\d{1,2}-\d{4}$/,
             dateArray = [];
 
         if (typeof date === 'string') {
             dateArray = date.split('-');
+            //check if valid
             if (reg.test(date)) {
+                return date;
+            //dashed
+            } else if (regDash.test(date)) {
                 date = new Date(parseInt(dateArray[0]), parseInt(dateArray[1]) - 1, parseInt(dateArray[2]));
-            } else if (regInv.test(date)) {
+            //inversed dashed
+            } else if (regDashInv.test(date)) {
                 date = new Date(parseInt(dateArray[2]), parseInt(dateArray[1]) - 1, parseInt(dateArray[0]));
             }
         }
