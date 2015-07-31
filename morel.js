@@ -221,10 +221,13 @@
 
         if (typeof date === 'string') {
             dateArray = date.split('-');
+            //check if valid
             if (reg.test(date)) {
                 return date;
+            //dashed
             } else if (regDash.test(date)) {
                 date = new Date(parseInt(dateArray[0]), parseInt(dateArray[1]) - 1, parseInt(dateArray[2]));
+            //inversed dashed
             } else if (regDashInv.test(date)) {
                 date = new Date(parseInt(dateArray[2]), parseInt(dateArray[1]) - 1, parseInt(dateArray[0]));
             }
@@ -570,7 +573,7 @@
                     modified.push(items[i]);
                 }
 
-                this.trigger('change');
+                this.trigger('update');
                 return modified;
             },
 
@@ -621,7 +624,7 @@
                         removed.push(current);
                     }
                 }
-                this.trigger('change');
+                this.trigger('update');
                 return removed;
             },
 

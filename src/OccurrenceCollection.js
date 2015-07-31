@@ -85,7 +85,7 @@ define(['Occurrence', "Events"], function () {
                     modified.push(items[i]);
                 }
 
-                this.trigger('change');
+                this.trigger('update');
                 return modified;
             },
 
@@ -136,7 +136,7 @@ define(['Occurrence', "Events"], function () {
                         removed.push(current);
                     }
                 }
-                this.trigger('change');
+                this.trigger('update');
                 return removed;
             },
 
