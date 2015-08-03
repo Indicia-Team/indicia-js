@@ -2,13 +2,16 @@
 /*global m, define */
 define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * MANAGER MODULE
+     **********************************************************************/
 
     m.Manager = (function () {
         var Module = function (options) {
             options || (options = {});
 
-            this.conf.url = options.url;
-            this.conf.appname = options.appname;
+            this.CONF.url = options.url;
+            this.CONF.appname = options.appname;
 
             this.auth = new m.Auth({
                 appname: options.appname,
@@ -26,7 +29,7 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
         };
 
         m.extend(Module.prototype, {
-            conf: {
+            CONF: {
                 url: '',
                 appname: ''
             },
@@ -206,7 +209,7 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                     }
                 };
 
-                ajax.open('POST', this.conf.url, true);
+                ajax.open('POST', this.CONF.url, true);
                 ajax.setRequestHeader("Content-type", "multipart/form-data");
                 ajax.send(formData);
             }

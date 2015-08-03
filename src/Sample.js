@@ -2,6 +2,9 @@
 /*global define, m */
 define(["OccurrenceCollection", "Events"], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * SAMPLE MODULE
+     **********************************************************************/
 
     /**
      * Refers to the event in which the sightings were observed, in other

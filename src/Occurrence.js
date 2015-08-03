@@ -19,6 +19,9 @@
 /*global m, define, */
 define(['helpers', "Events"], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * OCCURRENCE MODULE
+     **********************************************************************/
 
     m.Occurrence = (function () {
 

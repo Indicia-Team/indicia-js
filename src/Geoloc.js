@@ -2,9 +2,8 @@
 define([], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * GEOLOC MODULE
+     * GEOLOCATION MODULE
      **********************************************************************/
-
 
     /* global morel, _log */
     m.extend('geoloc', {

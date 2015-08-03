@@ -2,6 +2,9 @@
 /*global m, define */
 define([], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * ERROR MODULE
+     **********************************************************************/
 
     m.Error = (function () {
         var Module = function (message) {

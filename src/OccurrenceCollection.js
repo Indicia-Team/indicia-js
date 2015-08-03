@@ -2,6 +2,9 @@
 /*global m, define, */
 define(['Occurrence', "Events"], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * OCCURRENCES COLLECTION MODULE
+     **********************************************************************/
 
     m.OccurrenceCollection = (function () {
 
