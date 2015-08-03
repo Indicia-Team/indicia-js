@@ -8,14 +8,20 @@ define([], function () {
 
     m.Auth = (function (){
 
+        /**
+         * options:
+         *  @appname String subdomain name to use for database
+         *  @appsecret String API key
+         *  @survey_id Int
+         *  @website_id Int
+         */
         var Module = function (options) {
             options || (options = {});
-            m.extend(this.conf, options);
+            m.extend(this.CONF, options);
         };
 
         m.extend(Module.prototype, {
-            //module configuration should be setup in an app config file
-            conf: {
+            CONF: {
                 appname: '',
                 appsecret: '',
                 survey_id: -1,
@@ -68,8 +74,8 @@ define([], function () {
              * @returns {*} A data object
              */
             appendApp: function (data) {
-                data.append('appname', this.conf.appname);
-                data.append('appsecret', this.conf.appsecret);
+                data.append('appname', this.CONF.appname);
+                data.append('appsecret', this.CONF.appsecret);
 
                 return data;
             },
@@ -86,8 +92,8 @@ define([], function () {
              * @returns {*} An data object
              */
             appendWarehouse: function (data) {
-                data.append('website_id', this.conf.website_id);
-                data.append('survey_id', this.conf.survey_id);
+                data.append('website_id', this.CONF.website_id);
+                data.append('survey_id', this.CONF.survey_id);
 
                 return data;
             },

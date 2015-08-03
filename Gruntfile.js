@@ -1,14 +1,14 @@
 module.exports = function (grunt) {
     'use strict';
     var banner = "/*!\n" +
-        " * Mobile Recording Library for biological data collection. \n" +
-        " * Version: <%= pkg.version %>\n" +
+      " * <%= pkg.name %> <%= pkg.version %>\n" +
+      " * <%= pkg.description %> \n" +
         " *\n" +
         " * <%= pkg.homepage %>\n" +
         " *\n" +
         " * Author <%= grunt.template.today('yyyy') %> <%= pkg.author.name %>\n" +
-        " * Released under the <%= _.pluck(pkg.licenses, 'type').join(', ') %>" +
-        " * license.\n" +
+        " * Released under the <%= _.pluck(pkg.licenses, 'type').join(', ') %> license.\n" +
+        " * <%= _.pluck(pkg.licenses, 'url') %>\n" +
         " */\n";
 
     grunt.initConfig({

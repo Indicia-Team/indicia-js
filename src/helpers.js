@@ -3,8 +3,6 @@ define([], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * HELPER FUNCTIONS
-     *
-     * Functions that were too ambiguous to be placed in one module.
      **********************************************************************/
 
     /**
@@ -117,6 +115,12 @@ define([], function () {
         return true;
     };
 
+    /**
+     * Extends an object with the properties of another object or return of a function.
+     * @param a Object or String. If String, then extends this libraries global
+     * @param b Function or Object
+     * @returns {*}
+     */
     m.extend = function (a, b) {
         if (typeof b === 'function') {
             b = b();
@@ -142,6 +146,11 @@ define([], function () {
         }
     };
 
+  /**
+   * Formats the date to Indicia Warehouse format.
+   * @param date String or Date object
+   * @returns String formatted date
+   */
     m.formatDate = function (date) {
         var now = new Date(),
             day = 0, month = 0,

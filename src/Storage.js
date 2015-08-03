@@ -16,7 +16,7 @@ define([], function () {
             NAME: 'Storage',
 
             /**
-             * Gets an key from the storage.
+             * Gets an item from the storage.
              *
              * @param key
              */
@@ -26,7 +26,7 @@ define([], function () {
             },
 
             /**
-             * Returns all the keys from the storage;
+             * Returns all items from the storage;
              *
              * @returns {{}|*|m.Storage.storage}
              */
@@ -36,10 +36,12 @@ define([], function () {
             },
 
             /**
-             * Sets an key in the storage.
+             * Sets an item in the storage.
              * Note: it overrides any existing key with the same name.
              *
              * @param key
+             * @param data
+             * @param callback
              */
             set: function (key, data, callback) {
                 this.storage[key] = data;
@@ -47,7 +49,7 @@ define([], function () {
             },
 
             /**
-             * Removes the key from the storage.
+             * Removes an item from the storage.
              *
              * @param key
              */
@@ -57,7 +59,7 @@ define([], function () {
             },
 
             /**
-             * Checks if the key exists.
+             * Checks if a key exists.
              *
              * @param key Input name
              * @returns {boolean}
@@ -76,6 +78,10 @@ define([], function () {
                 callback && callback(null, this.storage);
             },
 
+            /**
+             * Calculates current occupied the size of the storage.
+             * @param callback
+             */
             size: function (callback) {
                 var data = Object.keys(this.storage).length;
                 callback(null, data);
@@ -84,6 +90,7 @@ define([], function () {
 
         return Module;
     })();
+
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });
 //>>excludeEnd("buildExclude");

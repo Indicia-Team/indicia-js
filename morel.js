@@ -1,11 +1,12 @@
 /*!
+ * morel 3.0.0-alpha
  * Mobile Recording Library for biological data collection. 
- * Version: 3.0.0-alpha
  *
  * https://github.com/NERC-CEH/morel
  *
- * Author 2015 Karols Kazlauskis
- * Released under the GNU GPL v3 * license.
+ * Author 2015 Karolis Kazlauskis
+ * Released under the GNU GPL v3 license.
+ * http://www.gnu.org/licenses/gpl.html
  */
 (function (factory) {
     // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
@@ -29,11 +30,6 @@
         root.morel = factory(root, {}, (root.$ || root.jQuery));
     }
 }(function (root, m, $) {
-    /*
-     * Things to work on:
-     *  - Decouple the modules as much as possible
-     *  - Close as many global variables
-     */
     "use strict";
 
     m.VERSION = '3.0.0-alpha'; //library version, generated/replaced by grunt
@@ -46,34 +42,9 @@
     m.FALSE = 0;
     m.ERROR = -1;
 
-    m.SETTINGS_KEY = 'morel-settings';
-
-    /**
-     * Initialises the application settings.
-     */
-    m.initSettings = function () {
-        m.storage.set(m.SETTINGS_KEY, {});
-    };
-
-    /**
-     * Resets the morel to the initial state.
-     *
-     * Clears localStorage.
-     * Clears sessionStorage.
-     * Clears databases.
-     */
-    m.reset = function () {
-        m.storage.clear();
-        m.storage.tmpClear();
-
-        m.db.clear();
-    };
-
 
     /***********************************************************************
      * HELPER FUNCTIONS
-     *
-     * Functions that were too ambiguous to be placed in one module.
      **********************************************************************/
 
     /**
@@ -186,6 +157,12 @@
         return true;
     };
 
+    /**
+     * Extends an object with the properties of another object or return of a function.
+     * @param a Object or String. If String, then extends this libraries global
+     * @param b Function or Object
+     * @returns {*}
+     */
     m.extend = function (a, b) {
         if (typeof b === 'function') {
             b = b();
@@ -211,6 +188,11 @@
         }
     };
 
+  /**
+   * Formats the date to Indicia Warehouse format.
+   * @param date String or Date object
+   * @returns String formatted date
+   */
     m.formatDate = function (date) {
         var now = new Date(),
             day = 0, month = 0,
@@ -818,14 +800,20 @@
 
     m.Auth = (function (){
 
+        /**
+         * options:
+         *  @appname String subdomain name to use for database
+         *  @appsecret String API key
+         *  @survey_id Int
+         *  @website_id Int
+         */
         var Module = function (options) {
             options || (options = {});
-            m.extend(this.conf, options);
+            m.extend(this.CONF, options);
         };
 
         m.extend(Module.prototype, {
-            //module configuration should be setup in an app config file
-            conf: {
+            CONF: {
                 appname: '',
                 appsecret: '',
                 survey_id: -1,
@@ -878,8 +866,8 @@
              * @returns {*} A data object
              */
             appendApp: function (data) {
-                data.append('appname', this.conf.appname);
-                data.append('appsecret', this.conf.appsecret);
+                data.append('appname', this.CONF.appname);
+                data.append('appsecret', this.CONF.appsecret);
 
                 return data;
             },
@@ -896,8 +884,8 @@
              * @returns {*} An data object
              */
             appendWarehouse: function (data) {
-                data.append('website_id', this.conf.website_id);
-                data.append('survey_id', this.conf.survey_id);
+                data.append('website_id', this.CONF.website_id);
+                data.append('survey_id', this.CONF.survey_id);
 
                 return data;
             },
@@ -956,7 +944,7 @@
             NAME: 'Storage',
 
             /**
-             * Gets an key from the storage.
+             * Gets an item from the storage.
              *
              * @param key
              */
@@ -966,7 +954,7 @@
             },
 
             /**
-             * Returns all the keys from the storage;
+             * Returns all items from the storage;
              *
              * @returns {{}|*|m.Storage.storage}
              */
@@ -976,10 +964,12 @@
             },
 
             /**
-             * Sets an key in the storage.
+             * Sets an item in the storage.
              * Note: it overrides any existing key with the same name.
              *
              * @param key
+             * @param data
+             * @param callback
              */
             set: function (key, data, callback) {
                 this.storage[key] = data;
@@ -987,7 +977,7 @@
             },
 
             /**
-             * Removes the key from the storage.
+             * Removes an item from the storage.
              *
              * @param key
              */
@@ -997,7 +987,7 @@
             },
 
             /**
-             * Checks if the key exists.
+             * Checks if a key exists.
              *
              * @param key Input name
              * @returns {boolean}
@@ -1016,6 +1006,10 @@
                 callback && callback(null, this.storage);
             },
 
+            /**
+             * Calculates current occupied the size of the storage.
+             * @param callback
+             */
             size: function (callback) {
                 var data = Object.keys(this.storage).length;
                 callback(null, data);
@@ -1025,45 +1019,53 @@
         return Module;
     })();
 
+
     /***********************************************************************
-     * STORAGE MODULE
+     * LOCAL STORAGE MODULE
      **********************************************************************/
 
     m.LocalStorage = (function () {
+        /**
+         * options:
+         *  @appname String subdomain name to use for storage
+         */
         var Module = function (options) {
-            this.conf.appname = options.appname;
+            options || (options = {});
+
+            this.storage = window.localStorage;
+
+            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
         m.extend(Module.prototype, {
-            NAME: 'LocalStorage',
-            conf: {
-                appname: ''
-            },
+            TYPE: 'LocalStorage',
+            NAME: 'morel',
 
             /**
-             * Gets an key from the storage.
+             * Gets an item from the storage.
              *
              * @param key
              */
             get: function (key, callback) {
-                var data = localStorage.getItem(this._getKey(key));
+                var data = this.storage.getItem(this._getKey(key));
                 data = JSON.parse(data);
 
                 callback(null, data);
             },
 
             /**
-             * Returns all the objects from the store;
-             * @returns {{}}
+             * Returns all items from the storage;
+             *
+             * @returns {{}|*|m.Storage.storage}
              */
             getAll: function (callback) {
                 var data = {};
                 var key = '';
-                for (var i = 0, len = localStorage.length; i < len; ++i ) {
-                    key = localStorage.key(i);
+                for (var i = 0, len = this.storage.length; i < len; ++i ) {
+                    key = this.storage.key(i);
                     //check if the key belongs to this storage
                     if (key.indexOf(this._getPrefix()) !== -1) {
-                        var parsed = JSON.parse(localStorage.getItem(key));
+                        var parsed = JSON.parse(this.storage.getItem(key));
                         data[key] = parsed;
                     }
                 }
@@ -1071,30 +1073,30 @@
             },
 
             /**
-             * Sets an key in the storage.
+             * Sets an item in the storage.
              * Note: it overrides any existing key with the same name.
              *
              * @param key
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);
-                localStorage.setItem(this._getKey(key), data);
+                this.storage.setItem(this._getKey(key), data);
                 callback && callback(null, data);
             },
 
             /**
-             * Removes the key from the storage.
+             * Removes an item from the storage.
              *
              * @param key
              */
             remove: function (key, callback) {
-                localStorage.removeItem(this._getKey(key));
+                this.storage.removeItem(this._getKey(key));
                 callback && callback();
             },
 
 
             /**
-             * Checks if the key exists.
+             * Checks if a key exists.
              *
              * @param key Input name
              * @returns {boolean}
@@ -1111,12 +1113,17 @@
              * Clears the storage.
              */
             clear: function (callback) {
-                localStorage.clear();
+                this.storage.clear();
                 callback && callback();
             },
 
+            /**
+             * Calculates current occupied the size of the storage.
+             *
+             * @param callback
+             */
             size: function (callback) {
-                callback(null, localStorage.length);
+                callback(null, this.storage.length);
             },
 
             /**
@@ -1126,7 +1133,7 @@
              * @returns {*}
              */
             hasSpace: function (size, callback) {
-                var taken = JSON.stringify(localStorage).length;
+                var taken = JSON.stringify(this.storage).length;
                 var left = 1024 * 1024 * 5 - taken;
                 if ((left - size) > 0) {
                     callback(null, 1);
@@ -1140,10 +1147,10 @@
             },
 
             _getPrefix: function () {
-                return 'morel-' + (this.conf.appname ? (this.conf.appname + '-') : '');
+                return this.NAME + '-';
             }
 
-        });
+    });
 
         return Module;
     })();
@@ -1158,37 +1165,38 @@
         return Module;
     }());
 
+    /***********************************************************************
+     * DATABASE STORAGE MODULE
+     **********************************************************************/
 
     m.DatabaseStorage = (function () {
+        /**
+         * options:
+         *  @appname String subdomain name to use for storage
+         */
         var Module = function (options) {
             options || (options = {});
-            this.DB_NAME = options.appname ?
-                            this.DB_NAME + '-' + options.appname : this.DB_NAME;
+            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
         m.extend(Module.prototype, {
-            conf: {
-                appname: ''
-            },
-
             //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
 
             VERSION: 1,
-            NAME: 'DatabaseStorage',
-            DB_NAME: "morel",
+            TYPE: 'DatabaseStorage',
+            NAME: "morel",
             STORE_NAME: "samples",
 
             /**
-             * Adds a record under a specified key to the database.
+             * Adds an item under a specified key to the database.
              * Note: might be a good idea to move the key assignment away from
              * the function parameters and rather auto assign one and return on callback.
              *
-             * @param record
              * @param key
+             * @param data
              * @param callback
-             * @param onError
              */
             set: function (key, data, callback) {
                 this.open(function (err, store) {
@@ -1381,14 +1389,14 @@
             },
 
             /**
-             * Opens a database connection and returns a records store.
+             * Opens a database connection and returns a store.
              *
              * @param onError
              * @param callback
              */
             open: function (callback) {
                 var that = this,
-                    req = this.indexedDB.open(this.DB_NAME, this.VERSION);
+                    req = this.indexedDB.open(this.NAME, this.VERSION);
 
                 /**
                  * On Database opening success, returns the Records object store.

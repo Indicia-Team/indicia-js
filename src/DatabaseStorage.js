@@ -2,37 +2,38 @@
 /*global m, define, isEmptyObject, isPlainObject, IDBKeyRange, indexedDB */
 define(['Error'], function () {
 //>>excludeEnd("buildExclude");
+    /***********************************************************************
+     * DATABASE STORAGE MODULE
+     **********************************************************************/
 
     m.DatabaseStorage = (function () {
+        /**
+         * options:
+         *  @appname String subdomain name to use for storage
+         */
         var Module = function (options) {
             options || (options = {});
-            this.DB_NAME = options.appname ?
-                            this.DB_NAME + '-' + options.appname : this.DB_NAME;
+            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
         m.extend(Module.prototype, {
-            conf: {
-                appname: ''
-            },
-
             //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
 
             VERSION: 1,
-            NAME: 'DatabaseStorage',
-            DB_NAME: "morel",
+            TYPE: 'DatabaseStorage',
+            NAME: "morel",
             STORE_NAME: "samples",
 
             /**
-             * Adds a record under a specified key to the database.
+             * Adds an item under a specified key to the database.
              * Note: might be a good idea to move the key assignment away from
              * the function parameters and rather auto assign one and return on callback.
              *
-             * @param record
              * @param key
+             * @param data
              * @param callback
-             * @param onError
              */
             set: function (key, data, callback) {
                 this.open(function (err, store) {
@@ -225,14 +226,14 @@ define(['Error'], function () {
             },
 
             /**
-             * Opens a database connection and returns a records store.
+             * Opens a database connection and returns a store.
              *
              * @param onError
              * @param callback
              */
             open: function (callback) {
                 var that = this,
-                    req = this.indexedDB.open(this.DB_NAME, this.VERSION);
+                    req = this.indexedDB.open(this.NAME, this.VERSION);
 
                 /**
                  * On Database opening success, returns the Records object store.

@@ -3,44 +3,51 @@
 define([], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * STORAGE MODULE
+     * LOCAL STORAGE MODULE
      **********************************************************************/
 
     m.LocalStorage = (function () {
+        /**
+         * options:
+         *  @appname String subdomain name to use for storage
+         */
         var Module = function (options) {
-            this.conf.appname = options.appname;
+            options || (options = {});
+
+            this.storage = window.localStorage;
+
+            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
         m.extend(Module.prototype, {
-            NAME: 'LocalStorage',
-            conf: {
-                appname: ''
-            },
+            TYPE: 'LocalStorage',
+            NAME: 'morel',
 
             /**
-             * Gets an key from the storage.
+             * Gets an item from the storage.
              *
              * @param key
              */
             get: function (key, callback) {
-                var data = localStorage.getItem(this._getKey(key));
+                var data = this.storage.getItem(this._getKey(key));
                 data = JSON.parse(data);
 
                 callback(null, data);
             },
 
             /**
-             * Returns all the objects from the store;
-             * @returns {{}}
+             * Returns all items from the storage;
+             *
+             * @returns {{}|*|m.Storage.storage}
              */
             getAll: function (callback) {
                 var data = {};
                 var key = '';
-                for (var i = 0, len = localStorage.length; i < len; ++i ) {
-                    key = localStorage.key(i);
+                for (var i = 0, len = this.storage.length; i < len; ++i ) {
+                    key = this.storage.key(i);
                     //check if the key belongs to this storage
                     if (key.indexOf(this._getPrefix()) !== -1) {
-                        var parsed = JSON.parse(localStorage.getItem(key));
+                        var parsed = JSON.parse(this.storage.getItem(key));
                         data[key] = parsed;
                     }
                 }
@@ -48,30 +55,30 @@ define([], function () {
             },
 
             /**
-             * Sets an key in the storage.
+             * Sets an item in the storage.
              * Note: it overrides any existing key with the same name.
              *
              * @param key
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);
-                localStorage.setItem(this._getKey(key), data);
+                this.storage.setItem(this._getKey(key), data);
                 callback && callback(null, data);
             },
 
             /**
-             * Removes the key from the storage.
+             * Removes an item from the storage.
              *
              * @param key
              */
             remove: function (key, callback) {
-                localStorage.removeItem(this._getKey(key));
+                this.storage.removeItem(this._getKey(key));
                 callback && callback();
             },
 
 
             /**
-             * Checks if the key exists.
+             * Checks if a key exists.
              *
              * @param key Input name
              * @returns {boolean}
@@ -88,12 +95,17 @@ define([], function () {
              * Clears the storage.
              */
             clear: function (callback) {
-                localStorage.clear();
+                this.storage.clear();
                 callback && callback();
             },
 
+            /**
+             * Calculates current occupied the size of the storage.
+             *
+             * @param callback
+             */
             size: function (callback) {
-                callback(null, localStorage.length);
+                callback(null, this.storage.length);
             },
 
             /**
@@ -103,7 +115,7 @@ define([], function () {
              * @returns {*}
              */
             hasSpace: function (size, callback) {
-                var taken = JSON.stringify(localStorage).length;
+                var taken = JSON.stringify(this.storage).length;
                 var left = 1024 * 1024 * 5 - taken;
                 if ((left - size) > 0) {
                     callback(null, 1);
@@ -117,10 +129,10 @@ define([], function () {
             },
 
             _getPrefix: function () {
-                return 'morel-' + (this.conf.appname ? (this.conf.appname + '-') : '');
+                return this.NAME + '-';
             }
 
-        });
+    });
 
         return Module;
     })();
