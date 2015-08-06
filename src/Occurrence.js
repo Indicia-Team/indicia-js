@@ -17,7 +17,7 @@
 
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define, */
-define(['helpers', "Events"], function () {
+define(['helpers', 'Image', "Events", "Collection"], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * OCCURRENCE MODULE
@@ -48,7 +48,16 @@ define(['helpers', "Events"], function () {
                 }
             }
 
-            this.images = options.images || [];
+            if (options.images) {
+                this.images = new m.Collection({
+                    model: m.Image,
+                    data: options.images
+                });
+            } else {
+                this.images = new m.Collection({
+                    model: m.Image
+                });
+            }
         };
 
         Module.KEYS = {
@@ -100,8 +109,20 @@ define(['helpers', "Events"], function () {
                 return data !== undefined && data !== null;
             },
 
+            setImage: function (data, index) {
+                index = index || this.images.length;
+                this.images[index] = new m.Image ({data: data});
+                this.trigger('change:image');
+            },
+
+            removeImage: function (index) {
+                this.images = this.images.splice(index, 1);
+                this.trigger('change:image');
+            },
+
             removeAllImages: function () {
                 this.images = [];
+                this.trigger('change:image');
             },
 
             key: function (name) {

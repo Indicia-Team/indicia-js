@@ -222,62 +222,109 @@
         return (day) + "/" + (month) + "/" + now.getFullYear();
     };
 
-    /**
-     * Transforms and resizes an image file into a string.
-     *
-     * @param onError
-     * @param file
-     * @param onSaveSuccess
-     * @returns {number}
-     */
-    m.imageToString = function (file, callback) {
-        var MAX_IMG_HEIGHT = 800,
-            MAX_IMG_WIDTH = 800;
 
-        var reader = new FileReader();
-        //#2
-        reader.onload = function () {
+    /***********************************************************************
+     * EVENTS MODULE
+     **********************************************************************/
 
-            var image = new Image();
-            //#4
-            image.onload = function (e) {
-                var width = image.width;
-                var height = image.height;
+    m.Image = (function (){
 
-                //resizing
-                var res;
-                if (width > height) {
-                    res = width / MAX_IMG_WIDTH;
-                } else {
-                    res = height / MAX_IMG_HEIGHT;
+        var Module = function (options) {
+            options || (options = {});
+
+            this.id = options.id || m.getNewUUID();
+
+            if (typeof options === 'string') {
+                this.data = options;
+                return;
+            }
+
+            this.status = options.status || 'local';
+            this.url = options.url || '';
+            this.data = options.data || '';
+        };
+
+
+        m.extend(Module, {
+            /**
+             * Transforms and resizes an image file into a string.
+             *
+             * @param onError
+             * @param file
+             * @param onSaveSuccess
+             * @returns {number}
+             */
+            toString: function (file, callback) {
+                if (!window.FileReader) {
+                    var message = 'No File Reader',
+                        error = new m.Error(message);
+                    console.error(message);
+
+                    return callback(error);
                 }
 
-                width = width / res;
-                height = height / res;
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    callback(null, event.target.result, file.type);
+                };
+                reader.readAsDataURL(file);
+            },
 
-                var canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
+            /**
+             * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
+             * @param data
+             * @param width
+             * @param height
+             * @param callback
+             */
+            resize: function(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
+                var image = new Image();
 
-                var imgContext = canvas.getContext('2d');
-                imgContext.drawImage(image, 0, 0, width, height);
+                image.onload = function() {
+                    var width = image.width;
+                    var height = image.height;
 
-                var shrinked = canvas.toDataURL(file.type);
+                    //resizing
+                    var res;
+                    if (width > height) {
+                        res = width / MAX_WIDTH;
+                    } else {
+                        res = height / MAX_HEIGHT;
+                    }
 
-                callback(null, shrinked);
+                    width = width / res;
+                    height = height / res;
 
-            };
-            reader.onerror = function (e) {
-                var error = new m.Error(e.getMessage());
-                callback(error);
-            };
+                    // Create a canvas with the desired dimensions
+                    var canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
 
-            //#3
-            image.src = reader.result;
-        };
-        //1#
-        reader.readAsDataURL(file);
-    };
+                    // Scale and draw the source image to the canvas
+                    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+
+                    // Convert the canvas to a data URL in PNG format
+                    callback(null, image, canvas.toDataURL(fileType));
+                };
+
+                image.src = data;
+            }
+        });
+
+        m.extend(Module.prototype, {
+            toJSON: function () {
+                var data = {
+                    status: this.status,
+                    url: this.url,
+                    data: this.data
+                };
+
+                return data;
+            }
+        });
+
+        return Module;
+    }());
 
 
     /***********************************************************************
@@ -352,6 +399,200 @@
 //};
 
     /***********************************************************************
+     * COLLECTION MODULE
+     **********************************************************************/
+
+    /*
+     no option is provided for transformed keys without creating
+     an Model object. Eg. this is not possible:
+     new Collection([
+         {
+             id: 'xxxx'
+             attributes: {
+                taxon: 'xxxx'
+             }
+         }
+     ])
+
+     must be:
+
+     new Collection([
+         {
+             id: 'xxxx'
+             attributes: {
+                Model:taxon_taxon_list_id: 'xxxx'
+             }
+         }
+     ])
+
+     or:
+
+     new Collection([
+         new Model({
+             id: 'xxxx'
+             attributes: {
+                taxon: 'xxxx'
+             }
+         })
+     ])
+     */
+
+    m.Collection = (function () {
+
+        var Module = function (options) {
+            var model = null;
+            this.Model = options.model;
+
+            this.data = [];
+            this.length = 0;
+
+            if (options.data instanceof Array) {
+                for (var i = 0; i < options.data.length; i++) {
+                    model = options.data[i];
+                    if (model instanceof this.Model) {
+                        this.data.push(model);
+                    } else {
+                        m.extend(model, {
+                            plainAttributes: true
+                        });
+                        model = new this.Model(model);
+                        this.data.push(model);
+                    }
+                    this.length++;
+                }
+            }
+
+            this.initialize();
+        };
+
+        m.extend(Module.prototype, {
+            initialize: function () {},
+
+            add: function (items) {
+                return this.set(items);
+            },
+
+            set: function (items) {
+                var modified = [],
+                    existing = null;
+                //make an array if single object
+                items = !(items instanceof Array) ? [items] : items;
+                for (var i = 0; i < items.length; i++) {
+                    //update existing ones
+                    if (existing = this.get(items[i])) {
+                        existing.attributes = items[i].attributes;
+                        //add new
+                    } else {
+                        if (typeof items[i].on === 'function') {
+                            items[i].on('change', this._modelEvent, this);
+                        }
+
+                        this.data.push(items[i]);
+                        this.length++;
+                    }
+                    modified.push(items[i]);
+                }
+
+                this.trigger('update');
+                return modified;
+            },
+
+            /**
+             *
+             * @param model model or its ID
+             * @returns {*}
+             */
+            get: function (item) {
+                var id = item.id || item;
+                for (var i = 0; i < this.data.length; i++) {
+                    if (this.data[i].id == id) {
+                        return this.data[i];
+                    }
+                }
+                return null;
+            },
+
+            getFirst: function () {
+                return this.data[0];
+            },
+
+            create: function () {
+                var model = new this.Model();
+                this.add(model);
+                return model;
+            },
+
+            remove: function (items) {
+                var items = !(items instanceof Array) ? [items] : items,
+                    removed = [];
+                for (var i = 0; i < items.length; i++) {
+                    //check if exists
+                    var current = this.get(items[i]);
+                    if (!current) continue;
+
+                    //get index
+                    var index = -1;
+                    for (var j = 0; index < this.data.length; j++) {
+                        if (this.data[j].id === current.id) {
+                            index = j;
+                            break;
+                        }
+                    }
+                    if (j > -1) {
+                        this.data.splice(index, 1);
+                        this.length--;
+                        removed.push(current);
+                    }
+                }
+                this.trigger('update');
+                return removed;
+            },
+
+            has: function (item) {
+                var data = this.get(item);
+                return data !== undefined && data !== null;
+            },
+
+            size: function () {
+                return this.data.length;
+            },
+
+            toJSON: function () {
+                var json = [];
+                for (var i = 0; i < this.data.length; i++) {
+                    json.push(this.data[i].toJSON());
+                }
+
+                return json;
+            },
+
+            _modelEvent: function () {
+                this.trigger('change');
+            }
+        });
+
+        m.extend(Module.prototype, m.Events);
+
+        return Module;
+    }());
+//{
+//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
+//    warehouseID: -1, //occurrence_id
+//  status: 'local', //sent
+//  attr: {
+//  'occurrence:comment': 'value',
+//    'occAttr:12': 'value'
+//},
+//  images: [
+//    {
+//      status: 'local', //sent
+//      url: 'http://..', // points to the image on server
+//      data: 'data64:...'
+//    }
+//  ]
+//};
+
+    /***********************************************************************
      * OCCURRENCE MODULE
      **********************************************************************/
 
@@ -380,7 +621,16 @@
                 }
             }
 
-            this.images = options.images || [];
+            if (options.images) {
+                this.images = new m.Collection({
+                    model: m.Image,
+                    data: options.images
+                });
+            } else {
+                this.images = new m.Collection({
+                    model: m.Image
+                });
+            }
         };
 
         Module.KEYS = {
@@ -432,8 +682,20 @@
                 return data !== undefined && data !== null;
             },
 
+            setImage: function (data, index) {
+                index = index || this.images.length;
+                this.images[index] = new m.Image ({data: data});
+                this.trigger('change:image');
+            },
+
+            removeImage: function (index) {
+                this.images = this.images.splice(index, 1);
+                this.trigger('change:image');
+            },
+
             removeAllImages: function () {
                 this.images = [];
+                this.trigger('change:image');
             },
 
             key: function (name) {
@@ -479,174 +741,6 @@
         return Module;
     }());
     /***********************************************************************
-     * OCCURRENCES COLLECTION MODULE
-     **********************************************************************/
-
-    m.OccurrenceCollection = (function () {
-
-        var Module = function (options) {
-            var occurrence = null;
-            this.occurrences = [];
-            this.length = 0;
-
-            if (options instanceof Array) {
-                for (var i = 0; i < options.length; i++) {
-                    occurrence = options[i];
-                    if (occurrence instanceof morel.Occurrence) {
-                        this.occurrences.push(occurrence);
-                    } else {
-                        //no option is provided for transformed keys without creating
-                        //an Occurrence object. Eg. this is not possible:
-                        //  new OccurrenceCollection([
-                        //   {
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         taxon: 'xxxx'
-                        //     }
-                        //   }
-                        // ])
-
-                        //must be:
-
-                        //  new OccurrenceCollection([
-                        //   {
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         occurrence:taxon_taxon_list_id: 'xxxx'
-                        //     }
-                        //   }
-                        // ])
-
-                        //or:
-
-                        //  new OccurrenceCollection([
-                        //   new Occurrence({
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         taxon: 'xxxx'
-                        //     }
-                        //   })
-                        // ])
-                        m.extend(occurrence, {
-                            plainAttributes: true
-                        });
-                        occurrence = new morel.Occurrence(occurrence);
-                        this.occurrences.push(occurrence);
-                    }
-                    this.length++;
-                }
-            }
-        };
-
-        m.extend(Module.prototype, {
-            Occurrence: m.Occurrence,
-
-            add: function (items) {
-                return this.set(items);
-            },
-
-            set: function (items) {
-                var modified = [],
-                    existing = null;
-                //make an array if single object
-                items = !(items instanceof Array) ? [items] : items;
-                for (var i = 0; i < items.length; i++) {
-                    //update existing ones
-                    if (existing = this.get(items[i])) {
-                        existing.attributes = items[i].attributes;
-                    //add new
-                    } else {
-                        items[i].on('change', this._occurrenceEvent, this);
-
-                        this.occurrences.push(items[i]);
-                        this.length++;
-                    }
-                    modified.push(items[i]);
-                }
-
-                this.trigger('update');
-                return modified;
-            },
-
-            /**
-             *
-             * @param occurrence occurrence or its ID
-             * @returns {*}
-             */
-            get: function (item) {
-                var id = item.id || item;
-                for (var i = 0; i < this.occurrences.length; i++) {
-                    if (this.occurrences[i].id == id) {
-                        return this.occurrences[i];
-                    }
-                }
-                return null;
-            },
-
-            getFirst: function () {
-              return this.occurrences[0];
-            },
-
-            create: function () {
-                var occurrence = new this.Occurrence();
-                this.add(occurrence);
-                return occurrence;
-            },
-
-            remove: function (items) {
-                var items = !(items instanceof Array) ? [items] : items,
-                    removed = [];
-                for (var i = 0; i < items.length; i++) {
-                    //check if exists
-                    var current = this.get(items[i]);
-                    if (!current) continue;
-
-                    //get index
-                    var index = -1;
-                    for (var j = 0; index < this.occurrences.length; j++) {
-                        if (this.occurrences[j].id === current.id) {
-                            index = j;
-                            break;
-                        }
-                    }
-                    if (j > -1) {
-                        this.occurrences.splice(index, 1);
-                        this.length--;
-                        removed.push(current);
-                    }
-                }
-                this.trigger('update');
-                return removed;
-            },
-
-            has: function (item) {
-                var data = this.get(item);
-                return data !== undefined && data !== null;
-            },
-
-            size: function () {
-                return this.occurrences.length;
-            },
-
-            toJSON: function () {
-                var json = [];
-                for (var i = 0; i < this.occurrences.length; i++) {
-                    json.push(this.occurrences[i].toJSON());
-                }
-
-                return json;
-            },
-
-            _occurrenceEvent: function () {
-                this.trigger('change');
-            }
-        });
-
-        m.extend(Module.prototype, m.Events);
-
-        return Module;
-    }());
-    /***********************************************************************
      * SAMPLE MODULE
      **********************************************************************/
 
@@ -669,9 +763,14 @@
             this.attributes = {};
 
             if (options.occurrences) {
-                this.occurrences = new m.OccurrenceCollection(options.occurrences);
+                this.occurrences = new m.Collection({
+                    model: m.Occurrence,
+                    data: options.occurrences
+                });
             } else {
-                this.occurrences = new m.OccurrenceCollection();
+                this.occurrences = new m.Collection({
+                    model: m.Occurrence
+                });
             }
 
             if (options.attributes) {
@@ -1482,8 +1581,8 @@
         var Module = function (options) {
             options || (options = {});
 
-            this.conf.url = options.url;
-            this.conf.appname = options.appname;
+            this.CONF.url = options.url;
+            this.CONF.appname = options.appname;
 
             this.auth = new m.Auth({
                 appname: options.appname,
@@ -1501,7 +1600,7 @@
         };
 
         m.extend(Module.prototype, {
-            conf: {
+            CONF: {
                 url: '',
                 appname: ''
             },
@@ -1681,7 +1780,7 @@
                     }
                 };
 
-                ajax.open('POST', this.conf.url, true);
+                ajax.open('POST', this.CONF.url, true);
                 ajax.setRequestHeader("Content-type", "multipart/form-data");
                 ajax.send(formData);
             }
@@ -1761,7 +1860,6 @@
          */
         run: function (onUpdate, onSuccess, onError) {
 
-
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {
 
@@ -1830,7 +1928,6 @@
                         m.geoloc.stop();
 
                         //save in storage
-                        m.settings('location', location);
                         if (onSuccess) {
                             onSuccess(location);
                         }

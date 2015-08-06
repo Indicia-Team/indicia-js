@@ -180,63 +180,6 @@ define([], function () {
         return (day) + "/" + (month) + "/" + now.getFullYear();
     };
 
-    /**
-     * Transforms and resizes an image file into a string.
-     *
-     * @param onError
-     * @param file
-     * @param onSaveSuccess
-     * @returns {number}
-     */
-    m.imageToString = function (file, callback) {
-        var MAX_IMG_HEIGHT = 800,
-            MAX_IMG_WIDTH = 800;
-
-        var reader = new FileReader();
-        //#2
-        reader.onload = function () {
-
-            var image = new Image();
-            //#4
-            image.onload = function (e) {
-                var width = image.width;
-                var height = image.height;
-
-                //resizing
-                var res;
-                if (width > height) {
-                    res = width / MAX_IMG_WIDTH;
-                } else {
-                    res = height / MAX_IMG_HEIGHT;
-                }
-
-                width = width / res;
-                height = height / res;
-
-                var canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-
-                var imgContext = canvas.getContext('2d');
-                imgContext.drawImage(image, 0, 0, width, height);
-
-                var shrinked = canvas.toDataURL(file.type);
-
-                callback(null, shrinked);
-
-            };
-            reader.onerror = function (e) {
-                var error = new m.Error(e.getMessage());
-                callback(error);
-            };
-
-            //#3
-            image.src = reader.result;
-        };
-        //1#
-        reader.readAsDataURL(file);
-    };
-
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });
 //>>excludeEnd("buildExclude");

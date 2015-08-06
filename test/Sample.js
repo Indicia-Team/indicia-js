@@ -3,7 +3,7 @@ describe('Sample', function () {
         var sample = new morel.Sample();
         expect(sample.id).to.be.a.string;
         expect(sample.attributes).to.be.an.object;
-        expect(sample.occurrences instanceof morel.OccurrenceCollection).to.be.true
+        expect(sample.occurrences instanceof morel.Collection).to.be.true
     });
 
     it('set get has', function () {
