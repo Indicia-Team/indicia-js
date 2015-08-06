@@ -72,7 +72,6 @@ define([], function () {
          */
         run: function (onUpdate, onSuccess, onError) {
 
-
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {
 
@@ -141,7 +140,6 @@ define([], function () {
                         m.geoloc.stop();
 
                         //save in storage
-                        m.settings('location', location);
                         if (onSuccess) {
                             onSuccess(location);
                         }
