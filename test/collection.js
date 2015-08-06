@@ -1,13 +1,17 @@
-describe('OccurrenceCollection', function () {
+describe('Collection', function () {
     it('new', function () {
-        var collection = new morel.OccurrenceCollection();
-        expect(collection.occurrences).to.be.an.array;
-        expect(collection.occurrences.length).to.be.equal(0);
+        var collection = new morel.Collection({
+            model: morel.Occurrence
+        });
+        expect(collection.data).to.be.an.array;
+        expect(collection.data.length).to.be.equal(0);
     });
 
 
     it('set get remove has', function () {
-        var collection = new morel.OccurrenceCollection(),
+        var collection = new morel.Collection({
+                model: morel.Occurrence
+            }),
             occurrence = new morel.Occurrence(),
             occurrence2 = new morel.Occurrence(),
             item = Date.now().toString(),
@@ -35,7 +39,9 @@ describe('OccurrenceCollection', function () {
     });
 
     it('create', function () {
-        var collection = new morel.OccurrenceCollection();
+        var collection = new morel.Collection({
+            model: morel.Occurrence
+        });
         expect(collection.size()).to.be.equal(0);
         var occurrence = collection.create();
 
@@ -47,7 +53,9 @@ describe('OccurrenceCollection', function () {
         var item = Date.now().toString(),
             value = Math.random(),
             occurrence = new morel.Occurrence(),
-            collection = new morel.OccurrenceCollection();
+            collection = new morel.Collection({
+                model: morel.Occurrence
+            });
         collection.set(occurrence);
 
         var json = collection.toJSON();

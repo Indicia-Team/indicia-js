@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global define, m */
-define(["OccurrenceCollection", "Events"], function () {
+define(['Occurrence', "Collection", "Events"], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * SAMPLE MODULE
@@ -25,9 +25,14 @@ define(["OccurrenceCollection", "Events"], function () {
             this.attributes = {};
 
             if (options.occurrences) {
-                this.occurrences = new m.OccurrenceCollection(options.occurrences);
+                this.occurrences = new m.Collection({
+                    model: m.Occurrence,
+                    data: options.occurrences
+                });
             } else {
-                this.occurrences = new m.OccurrenceCollection();
+                this.occurrences = new m.Collection({
+                    model: m.Occurrence
+                });
             }
 
             if (options.attributes) {

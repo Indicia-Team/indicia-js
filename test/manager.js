@@ -18,7 +18,7 @@ var tests = function (manager, callback) {
             after(callback);
 
             it('new', function () {
-                expect(manager.conf.url).to.be.equal(URL);
+                expect(manager.CONF.url).to.be.equal(URL);
             });
 
             it('set get has', function () {

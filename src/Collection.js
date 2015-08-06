@@ -1,69 +1,93 @@
+//{
+//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
+//    warehouseID: -1, //occurrence_id
+//  status: 'local', //sent
+//  attr: {
+//  'occurrence:comment': 'value',
+//    'occAttr:12': 'value'
+//},
+//  images: [
+//    {
+//      status: 'local', //sent
+//      url: 'http://..', // points to the image on server
+//      data: 'data64:...'
+//    }
+//  ]
+//};
+
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define, */
-define(['Occurrence', "Events"], function () {
+define(['helpers', "Events"], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * OCCURRENCES COLLECTION MODULE
+     * COLLECTION MODULE
      **********************************************************************/
 
-    m.OccurrenceCollection = (function () {
+    /*
+     no option is provided for transformed keys without creating
+     an Model object. Eg. this is not possible:
+     new Collection([
+         {
+             id: 'xxxx'
+             attributes: {
+                taxon: 'xxxx'
+             }
+         }
+     ])
+
+     must be:
+
+     new Collection([
+         {
+             id: 'xxxx'
+             attributes: {
+                Model:taxon_taxon_list_id: 'xxxx'
+             }
+         }
+     ])
+
+     or:
+
+     new Collection([
+         new Model({
+             id: 'xxxx'
+             attributes: {
+                taxon: 'xxxx'
+             }
+         })
+     ])
+     */
+
+    m.Collection = (function () {
 
         var Module = function (options) {
-            var occurrence = null;
-            this.occurrences = [];
+            var model = null;
+            this.Model = options.model;
+
+            this.data = [];
             this.length = 0;
 
-            if (options instanceof Array) {
-                for (var i = 0; i < options.length; i++) {
-                    occurrence = options[i];
-                    if (occurrence instanceof morel.Occurrence) {
-                        this.occurrences.push(occurrence);
+            if (options.data instanceof Array) {
+                for (var i = 0; i < options.data.length; i++) {
+                    model = options.data[i];
+                    if (model instanceof this.Model) {
+                        this.data.push(model);
                     } else {
-                        //no option is provided for transformed keys without creating
-                        //an Occurrence object. Eg. this is not possible:
-                        //  new OccurrenceCollection([
-                        //   {
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         taxon: 'xxxx'
-                        //     }
-                        //   }
-                        // ])
-
-                        //must be:
-
-                        //  new OccurrenceCollection([
-                        //   {
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         occurrence:taxon_taxon_list_id: 'xxxx'
-                        //     }
-                        //   }
-                        // ])
-
-                        //or:
-
-                        //  new OccurrenceCollection([
-                        //   new Occurrence({
-                        //     id: 'xxxx'
-                        //     attributes: {
-                        //         taxon: 'xxxx'
-                        //     }
-                        //   })
-                        // ])
-                        m.extend(occurrence, {
+                        m.extend(model, {
                             plainAttributes: true
                         });
-                        occurrence = new morel.Occurrence(occurrence);
-                        this.occurrences.push(occurrence);
+                        model = new this.Model(model);
+                        this.data.push(model);
                     }
                     this.length++;
                 }
             }
+
+            this.initialize();
         };
 
         m.extend(Module.prototype, {
-            Occurrence: m.Occurrence,
+            initialize: function () {},
 
             add: function (items) {
                 return this.set(items);
@@ -78,11 +102,13 @@ define(['Occurrence', "Events"], function () {
                     //update existing ones
                     if (existing = this.get(items[i])) {
                         existing.attributes = items[i].attributes;
-                    //add new
+                        //add new
                     } else {
-                        items[i].on('change', this._occurrenceEvent, this);
+                        if (typeof items[i].on === 'function') {
+                            items[i].on('change', this._modelEvent, this);
+                        }
 
-                        this.occurrences.push(items[i]);
+                        this.data.push(items[i]);
                         this.length++;
                     }
                     modified.push(items[i]);
@@ -94,27 +120,27 @@ define(['Occurrence', "Events"], function () {
 
             /**
              *
-             * @param occurrence occurrence or its ID
+             * @param model model or its ID
              * @returns {*}
              */
             get: function (item) {
                 var id = item.id || item;
-                for (var i = 0; i < this.occurrences.length; i++) {
-                    if (this.occurrences[i].id == id) {
-                        return this.occurrences[i];
+                for (var i = 0; i < this.data.length; i++) {
+                    if (this.data[i].id == id) {
+                        return this.data[i];
                     }
                 }
                 return null;
             },
 
             getFirst: function () {
-              return this.occurrences[0];
+                return this.data[0];
             },
 
             create: function () {
-                var occurrence = new this.Occurrence();
-                this.add(occurrence);
-                return occurrence;
+                var model = new this.Model();
+                this.add(model);
+                return model;
             },
 
             remove: function (items) {
@@ -127,14 +153,14 @@ define(['Occurrence', "Events"], function () {
 
                     //get index
                     var index = -1;
-                    for (var j = 0; index < this.occurrences.length; j++) {
-                        if (this.occurrences[j].id === current.id) {
+                    for (var j = 0; index < this.data.length; j++) {
+                        if (this.data[j].id === current.id) {
                             index = j;
                             break;
                         }
                     }
                     if (j > -1) {
-                        this.occurrences.splice(index, 1);
+                        this.data.splice(index, 1);
                         this.length--;
                         removed.push(current);
                     }
@@ -149,19 +175,19 @@ define(['Occurrence', "Events"], function () {
             },
 
             size: function () {
-                return this.occurrences.length;
+                return this.data.length;
             },
 
             toJSON: function () {
                 var json = [];
-                for (var i = 0; i < this.occurrences.length; i++) {
-                    json.push(this.occurrences[i].toJSON());
+                for (var i = 0; i < this.data.length; i++) {
+                    json.push(this.data[i].toJSON());
                 }
 
                 return json;
             },
 
-            _occurrenceEvent: function () {
+            _modelEvent: function () {
                 this.trigger('change');
             }
         });
