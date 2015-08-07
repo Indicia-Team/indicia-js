@@ -142,10 +142,10 @@ define(['Occurrence', "Collection", "Events"], function () {
             toJSON: function () {
                 var data = {
                         id: this.id,
-                        attributes: this.attributes
+                        attributes: this.attributes,
+                        occurrences: this.occurrences.toJSON()
                     };
 
-                data.occurrences = this.occurrences.toJSON();
                 return data;
             },
 

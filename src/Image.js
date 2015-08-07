@@ -18,7 +18,6 @@ define([], function () {
                 return;
             }
 
-            this.status = options.status || 'local';
             this.url = options.url || '';
             this.data = options.data || '';
         };
@@ -60,11 +59,12 @@ define([], function () {
                 var image = new Image();
 
                 image.onload = function() {
-                    var width = image.width;
-                    var height = image.height;
+                    var width = image.width,
+                        height = image.height,
+                        canvas = null,
+                        res = null;
 
                     //resizing
-                    var res;
                     if (width > height) {
                         res = width / MAX_WIDTH;
                     } else {
@@ -75,7 +75,7 @@ define([], function () {
                     height = height / res;
 
                     // Create a canvas with the desired dimensions
-                    var canvas = document.createElement("canvas");
+                    canvas = document.createElement("canvas");
                     canvas.width = width;
                     canvas.height = height;
 
@@ -93,11 +93,10 @@ define([], function () {
         m.extend(Module.prototype, {
             toJSON: function () {
                 var data = {
-                    status: this.status,
+                    id: this.id,
                     url: this.url,
                     data: this.data
                 };
-
                 return data;
             }
         });

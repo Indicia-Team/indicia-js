@@ -156,7 +156,7 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
                 var data = {
                     id: this.id,
                     attributes: this.attributes,
-                    images: this.images
+                    images: this.images.toJSON()
                 };
                 //add occurrences
                 return data;
