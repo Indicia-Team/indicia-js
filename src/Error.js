@@ -7,8 +7,15 @@ define([], function () {
      **********************************************************************/
 
     m.Error = (function () {
-        var Module = function (message) {
-            this.message = message;
+        var Module = function (options) {
+            if (typeof options === 'string') {
+                this.number = -1;
+                this.message = options;
+                return;
+            }
+
+            this.number = options.number || -1;
+            this.message = options.message || '';
         };
 
         return Module;

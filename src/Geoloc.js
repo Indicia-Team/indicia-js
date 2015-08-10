@@ -6,22 +6,21 @@ define([], function () {
      **********************************************************************/
 
     /* global morel, _log */
-    m.extend('geoloc', {
-        //configuration should be setup in app config file
+    m.extend('Geoloc', {
         CONF: {
-            GPS_ACCURACY_LIMIT: 26000,
+            GPS_ACCURACY_LIMIT: 100, //meters
             HIGH_ACCURACY: true,
             TIMEOUT: 120000
         },
 
-        //todo: limit the scope of the variables to this module's functions.
+        TIMEOUT_ERR: 1, //code
+
         latitude: null,
         longitude: null,
         accuracy: -1,
 
         startTime: 0,
         id: 0,
-        map: null,
 
         /**
          * Sets the Latitude, Longitude and the Accuracy of the GPS lock.
@@ -56,13 +55,8 @@ define([], function () {
             this.set(null, null, -1);
         },
 
-        /**
-         * Gets the accuracy of the current GPS lock.
-         *
-         * @returns {*}
-         */
-        getAccuracy: function () {
-            return this.accuracy;
+        isRunning: function () {
+          return this.id;
         },
 
         /**
@@ -70,53 +64,61 @@ define([], function () {
          *
          * @returns {*}
          */
-        run: function (onUpdate, onSuccess, onError) {
+        run: function (onUpdate, callback, accuracyLimit) {
+            accuracyLimit = accuracyLimit || this.CONF.GPS_ACCURACY_LIMIT;
 
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {
-
-                if (onError) {
-                    onError({message: "Geolocation is not supported!"});
-                }
+                var error = new m.Error("Geolocation is not supported.");
+                callback && callback(error);
                 return;
             }
 
             //stop any other geolocation service started before
-            m.geoloc.stop();
-            m.geoloc.clear();
+            this.stop();
+            this.clear();
 
             this.startTime = new Date().getTime();
 
             // Request geolocation.
-            this.id = m.geoloc.watchPosition(onUpdate, onSuccess, onError);
+            this.id = this.watchPosition(onUpdate, callback, accuracyLimit);
         },
 
         /**
          * Stops any currently running geolocation service.
          */
         stop: function () {
-            navigator.geolocation.clearWatch(m.geoloc.id);
+            navigator.geolocation.clearWatch(this.id);
+            this.id = 0;
         },
 
         /**
          * Watches the GPS position.
          *
          * @param onUpdate
-         * @param onSuccess
-         * @param onError
+         * @param callback
+         * @param accuracyLimit accuracy in meters to which capture location
          * @returns {Number} id of running GPS
          */
-        watchPosition: function (onUpdate, onSuccess, onError) {
-            var onGeolocSuccess = function (position) {
-                //timeout
-                var currentTime = new Date().getTime();
-                if ((currentTime - m.geoloc.startTime) > m.geoloc.TIMEOUT) {
-                    //stop everything
-                    m.geoloc.stop();
+        watchPosition: function (onUpdate, callback, accuracyLimit) {
+            var that = this,
+                options = {
+                    enableHighAccuracy: this.CONF.HIGH_ACCURACY,
+                    maximumAge: 0,
+                    timeout: this.CONF.TIMEOUT
+                };
 
-                    if (onError) {
-                        onError({message: "Geolocation timed out!"});
-                    }
+            var onSuccess = function (position) {
+                var currentTime = new Date().getTime();
+                if ((currentTime - that.startTime) > that.TIMEOUT) {
+                    //timed out
+                    that.stop();
+
+                    var error = new m.Error({
+                        number: that.TIMEOUT_ERR,
+                        message: "Geolocation timed out."
+                    });
+                    callback && callback(error);
                     return;
                 }
 
@@ -127,74 +129,36 @@ define([], function () {
                 };
 
                 //set for the first time
-                var prevAccuracy = m.geoloc.getAccuracy();
+                var prevAccuracy = that.accuracy;
                 if (prevAccuracy === -1) {
                     prevAccuracy = location.acc + 1;
                 }
 
-                //only set it up if the accuracy is increased
                 if (location.acc > -1 && location.acc < prevAccuracy) {
-                    m.geoloc.set(location.lat, location.lon, location.acc);
-                    if (location.acc < m.geoloc.CONF.GPS_ACCURACY_LIMIT) {
+                    //only set it up if the accuracy has increased
+                    that.set(location.lat, location.lon, location.acc);
 
-                        m.geoloc.stop();
+                    if (location.acc < accuracyLimit) {
+                        that.stop();
 
-                        //save in storage
-                        if (onSuccess) {
-                            onSuccess(location);
-                        }
+                        callback && callback(null, location);
                     } else {
-
-                        if (onUpdate) {
-                            onUpdate(location);
-                        }
+                        onUpdate && onUpdate(location);
                     }
                 }
             };
 
-            // Callback if geolocation fails.
-            var onGeolocError = function (error) {
-
-                if (onError) {
-                    onError({'message': error.message});
-                }
+            //Callback if geolocation fails
+            var onError = function (err) {
+                var error = new m.Error(err.message);
+                callback && callback(error);
             };
 
-            // Geolocation options.
-            var options = {
-                enableHighAccuracy: this.CONF.HIGH_ACCURACY,
-                maximumAge: 0,
-                timeout: this.CONF.TIMEOUT
-            };
-
-            return navigator.geolocation.watchPosition(
-                onGeolocSuccess,
-                onGeolocError,
-                options
-            );
-        },
-
-        /**
-         * Validates the current GPS lock quality.
-         *
-         * @returns {*}
-         */
-        valid: function () {
-            var accuracy = this.getAccuracy();
-            if (accuracy === -1) {
-                //No GPS lock yet
-                return m.ERROR;
-
-            } else if (accuracy > this.CONF.GPS_ACCURACY_LIMIT) {
-                //Geolocated with bad accuracy
-                return m.FALSE;
-
-            } else {
-                //Geolocation accuracy is good enough
-                return m.TRUE;
-            }
+            return navigator.geolocation.watchPosition(onSuccess, onError, options);
         }
     });
+
+    m.extend(m.Geoloc, m.Events);
 
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });
