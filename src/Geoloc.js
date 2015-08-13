@@ -1,5 +1,5 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
-define([], function () {
+define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * GEOLOCATION MODULE

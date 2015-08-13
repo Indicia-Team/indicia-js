@@ -14,6 +14,14 @@ define([], function () {
                 callbacks.push({callback: callback, context: context});
             },
 
+            off: function (name, callback, context) {
+                //todo
+            },
+
+            offAll: function () {
+                this._events = {};
+            },
+
             trigger: function (name) {
                 var callbacks = this._callbacks(name, true);
 

@@ -85,7 +85,7 @@ describe('Storage:', function(storage){
         });
     };
 
-    tests(new morel.Storage());
+    tests(new morel.PlainStorage());
     tests(new morel.LocalStorage());
     tests(new morel.DatabaseStorage());
 });

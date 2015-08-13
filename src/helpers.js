@@ -11,18 +11,19 @@ define([], function () {
      * @param obj
      * @returns {*}
      */
-    m.objClone = function (obj) {
+    m.cloneDeep = function (obj) {
         if (null === obj || "object" !== typeof obj) {
             return obj;
         }
-        var copy = obj.constructor();
+        var copy = {};
         for (var attr in obj) {
             if (obj.hasOwnProperty(attr)) {
-                copy[attr] = objClone(obj[attr]);
+                copy[attr] = m.objClone(obj[attr]);
             }
         }
         return copy;
     };
+
 
     /**
      * Generate UUID.

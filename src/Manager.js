@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define */
-define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], function () {
+define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * MANAGER MODULE
@@ -20,12 +20,11 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                 website_id: options.website_id
             });
 
-            this.Storage = options.Storage || m.LocalStorage;
-            this.Sample = options.Sample || m.Sample;
-
-            this.storage = new this.Storage({
-                appname: options.appname
+            this.storage = new m.Storage({
+                appname: options.appname,
+                Storage: options.Storage
             });
+            this._attachListeners();
         };
 
         m.extend(Module.prototype, {
@@ -34,60 +33,40 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                 appname: ''
             },
 
+            //storage functions
             get: function (item, callback) {
-                var that = this,
-                    key = typeof item === 'object' ? item.id : item;
-                this.storage.get(key, function (err, data) {
-                    var sample = data ? new that.Sample(data) : null;
-                    callback(err, sample);
-                });
+                this.storage.get(item, callback);
             },
-
             getAll: function (callback) {
-                var that = this;
-                this.storage.getAll(function (err, data){
-                    var samples = {},
-                        sample = null,
-                        keys = Object.keys(data);
-
-                    for (var i = 0; i < keys.length; i++) {
-                        sample = new that.Sample(m.extend(data[keys[i]], {
-                           plainAttributes: true
-                        }));
-                        samples[sample.id] = sample;
-                    }
-                    callback(err, samples);
-                });
+                this.storage.getAll(callback);
             },
-
             set: function (item, callback) {
-                var key = item.id;
-                this.storage.set(key, item, callback);
+                this.storage.set(item, callback);
             },
-
             remove: function (item, callback) {
-                var key = typeof item === 'object' ? item.id : item;
-                this.storage.remove(key, callback);
+                this.storage.remove(item, callback);
             },
-
             has: function (item, callback) {
-                var key = typeof item === 'object' ? item.id : item;
-                this.storage.has(key, callback);
+                this.storage.has(item, callback);
             },
-
             clear: function (callback) {
-              this.storage.clear(callback);
+                this.storage.clear(callback);
             },
 
             sync: function (item, callback) {
                 var that = this;
-                //synchronise with the server
+
+                if (item instanceof m.Sample) {
+                    this.sendStored(item, callback);
+                    return;
+                }
+
                 this.get(item, function (err, data) {
-                    if (data) {
-                        that.sendStored(data, callback);
-                    } else {
+                    if (err) {
                         callback(err);
+                        return;
                     }
+                    that.sendStored(data, callback);
                 });
             },
 
@@ -104,27 +83,30 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
             sendAllStored: function (callbackOnPartial, callback) {
                 var that = this;
                 this.getAll(function (err, samples) {
-                    var sample = {},
-                        samplesIDs = [];
-
                     if (err) {
                         callback(err);
                         return;
                     }
 
+                    //shallow copy
+                    var remainingSamples = m.extend({}, samples.data);
+
                     //recursively loop through samples
-                    samplesIDs = Object.keys(samples);
-                    for (var i = 0; i < samplesIDs.length; i++) {
-                        sample = samples[samplesIDs[i]];
+                    for (var i = 0; i < remainingSamples.length; i++) {
+                        var sample = remainingSamples[i];
+                        if (sample.warehouse_id) {
+                            delete remainingSamples[i];
+                            continue;
+                        }
                         that.sendStored(sample, function (err, data) {
                             if (err) {
                                 callback && callback(err);
                                 return;
                             }
 
-                            delete samples[samplesIDs[i]];
+                            delete remainingSamples[i];
 
-                            if (Object.keys(samples).length === 0) {
+                            if (remainingSamples.length === 0) {
                                 //finished
                                 callback && callback(null);
                             } else {
@@ -136,26 +118,22 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
             },
 
             sendStored: function (sample, callback) {
-                var that = this,
-                    onSuccess = function (data) {
+                var that = this;
+
+                sample.trigger('sync:request');
+                this.send(sample, function (err, data) {
+                    if (err) {
+                        sample.trigger('sync:error');
+                        callback && callback(err);
+                    } else {
                         //update sample
                         sample.warehouse_id = 'done';
 
                         //save sample
                         that.set(sample, function (err, data) {
+                            sample.trigger('sync:done');
                             callback && callback(null, data);
                         });
-                    },
-
-                    onError = function (err) {
-                        callback && callback(err);
-                    };
-
-                this.send(sample, function (err, data) {
-                    if (err) {
-                        onError(err);
-                    } else {
-                        onSuccess(data);
                     }
                 });
             },
@@ -212,8 +190,17 @@ define(['Sample', 'Auth', 'Storage', 'LocalStorage', 'DatabaseStorage'], functio
                 ajax.open('POST', this.CONF.url, true);
                 ajax.setRequestHeader("Content-type", "multipart/form-data");
                 ajax.send(formData);
+            },
+
+            _attachListeners: function () {
+                var that = this;
+                this.storage.on('update', function () {
+                    that.trigger('update');
+                });
             }
         });
+
+        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());

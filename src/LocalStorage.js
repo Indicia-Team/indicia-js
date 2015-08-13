@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global define, m */
-define([], function () {
+define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * LOCAL STORAGE MODULE
@@ -59,6 +59,7 @@ define([], function () {
              * Note: it overrides any existing key with the same name.
              *
              * @param key
+             * @param data JSON object
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);

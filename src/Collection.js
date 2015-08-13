@@ -137,6 +137,12 @@ define(['helpers', "Events"], function () {
                 return this.data[0];
             },
 
+            each: function (method) {
+                for (var i = 0; i < this.data.length; i++) {
+                    method(this.data[i]);
+                }
+            },
+
             create: function () {
                 var model = new this.Model();
                 this.add(model);
@@ -176,6 +182,12 @@ define(['helpers', "Events"], function () {
 
             size: function () {
                 return this.data.length;
+            },
+
+            clear: function () {
+                this.data = [];
+                this.length = 0;
+                this.trigger('update');
             },
 
             toJSON: function () {

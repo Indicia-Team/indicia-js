@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global define, m */
-define(['Occurrence', "Collection", "Events"], function () {
+define(['helpers', 'Occurrence', "Collection", "Events"], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * SAMPLE MODULE
@@ -74,6 +74,8 @@ define(['Occurrence', "Collection", "Events"], function () {
                 LOCATION_NAME: { id: 'location_name' },
                 DELETED: { id: 'deleted' }
         };
+
+        m.extend(Module.prototype, m.Events);
 
         m.extend(Module.prototype, {
             set: function (name, data) {
@@ -159,11 +161,20 @@ define(['Occurrence', "Collection", "Events"], function () {
                     m.extend(flattened, json.occurrences[i].attributes);
                 }
                 return flattened;
+            },
+
+            /**
+             * Detach all the listeners.
+             */
+            offAll: function () {
+                this._events = {};
+                this.occurrences.offAll();
+                for (var i = 0; i < this.occurrences.data.length; i++) {
+                    this.occurrences.data[i].offAll();
+                }
             }
 
         });
-
-        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());

@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define */
-define([], function () {
+define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * AUTH MODULE

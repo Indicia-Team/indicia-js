@@ -53,18 +53,19 @@
      * @param obj
      * @returns {*}
      */
-    m.objClone = function (obj) {
+    m.cloneDeep = function (obj) {
         if (null === obj || "object" !== typeof obj) {
             return obj;
         }
-        var copy = obj.constructor();
+        var copy = {};
         for (var attr in obj) {
             if (obj.hasOwnProperty(attr)) {
-                copy[attr] = objClone(obj[attr]);
+                copy[attr] = m.objClone(obj[attr]);
             }
         }
         return copy;
     };
+
 
     /**
      * Generate UUID.
@@ -227,6 +228,68 @@
      * EVENTS MODULE
      **********************************************************************/
 
+    m.Events = (function (){
+
+        var Module = {
+            on: function (name, callback, context) {
+                var callbacks = this._callbacks(name);
+                callbacks.push({callback: callback, context: context});
+            },
+
+            off: function (name, callback, context) {
+                //todo
+            },
+
+            offAll: function () {
+                this._events = {};
+            },
+
+            trigger: function (name) {
+                var callbacks = this._callbacks(name, true);
+
+                for (var i = 0; i < callbacks.length; i++) {
+                    callbacks[i].callback.call(callbacks[i].context || this);
+                }
+            },
+
+            _callbacks: function (name, trigger) {
+                name = name.toLowerCase();
+                var namespace = name.split(':'),
+                    events = [];
+
+                this._events = this._events || {};
+                if (!this._events[namespace[0]]) {
+                    this._events[namespace[0]] = {
+                        all: []
+                    }
+                }
+
+                if (namespace.length === 1) {
+                    return this._events[namespace[0]].all;
+                } else {
+                    if (!this._events[namespace[0]][namespace[1]]) {
+                        this._events[namespace[0]][namespace[1]] = [];
+                    }
+
+                    events = this._events[namespace[0]][namespace[1]];
+                    if (trigger) {
+                        events = events.concat(this._events[namespace[0]].all);
+                    }
+
+                    return events;
+                }
+
+            }
+        };
+
+        return Module;
+    }());
+
+
+    /***********************************************************************
+     * EVENTS MODULE
+     **********************************************************************/
+
     m.Image = (function (){
 
         var Module = function (options) {
@@ -321,60 +384,6 @@
                 return data;
             }
         });
-
-        return Module;
-    }());
-
-
-    /***********************************************************************
-     * EVENTS MODULE
-     **********************************************************************/
-
-    m.Events = (function (){
-
-        var Module = {
-            on: function (name, callback, context) {
-                var callbacks = this._callbacks(name);
-                callbacks.push({callback: callback, context: context});
-            },
-
-            trigger: function (name) {
-                var callbacks = this._callbacks(name, true);
-
-                for (var i = 0; i < callbacks.length; i++) {
-                    callbacks[i].callback.call(callbacks[i].context || this);
-                }
-            },
-
-            _callbacks: function (name, trigger) {
-                name = name.toLowerCase();
-                var namespace = name.split(':'),
-                    events = [];
-
-                this._events = this._events || {};
-                if (!this._events[namespace[0]]) {
-                    this._events[namespace[0]] = {
-                        all: []
-                    }
-                }
-
-                if (namespace.length === 1) {
-                    return this._events[namespace[0]].all;
-                } else {
-                    if (!this._events[namespace[0]][namespace[1]]) {
-                        this._events[namespace[0]][namespace[1]] = [];
-                    }
-
-                    events = this._events[namespace[0]][namespace[1]];
-                    if (trigger) {
-                        events = events.concat(this._events[namespace[0]].all);
-                    }
-
-                    return events;
-                }
-
-            }
-        };
 
         return Module;
     }());
@@ -515,6 +524,12 @@
                 return this.data[0];
             },
 
+            each: function (method) {
+                for (var i = 0; i < this.data.length; i++) {
+                    method(this.data[i]);
+                }
+            },
+
             create: function () {
                 var model = new this.Model();
                 this.add(model);
@@ -554,6 +569,12 @@
 
             size: function () {
                 return this.data.length;
+            },
+
+            clear: function () {
+                this.data = [];
+                this.length = 0;
+                this.trigger('update');
             },
 
             toJSON: function () {
@@ -812,6 +833,8 @@
                 DELETED: { id: 'deleted' }
         };
 
+        m.extend(Module.prototype, m.Events);
+
         m.extend(Module.prototype, {
             set: function (name, data) {
                 var key = this.key(name),
@@ -896,11 +919,20 @@
                     m.extend(flattened, json.occurrences[i].attributes);
                 }
                 return flattened;
+            },
+
+            /**
+             * Detach all the listeners.
+             */
+            offAll: function () {
+                this._events = {};
+                this.occurrences.offAll();
+                for (var i = 0; i < this.occurrences.data.length; i++) {
+                    this.occurrences.data[i].offAll();
+                }
             }
 
         });
-
-        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());
@@ -1041,17 +1073,17 @@
 
 
     /***********************************************************************
-     * STORAGE MODULE
+     * PLAIN STORAGE MODULE
      **********************************************************************/
 
-    m.Storage = (function () {
+    m.PlainStorage = (function () {
 
         var Module = function () {
             this.storage = {};
         };
 
         m.extend(Module.prototype, {
-            NAME: 'Storage',
+            NAME: 'PlainStorage',
 
             /**
              * Gets an item from the storage.
@@ -1187,6 +1219,7 @@
              * Note: it overrides any existing key with the same name.
              *
              * @param key
+             * @param data JSON object
              */
             set: function (key, data, callback) {
                 data = JSON.stringify(data);
@@ -1351,7 +1384,7 @@
              * the function parameters and rather auto assign one and return on callback.
              *
              * @param key
-             * @param data
+             * @param data JSON or object having toJSON function
              * @param callback
              */
             set: function (key, data, callback) {
@@ -1361,7 +1394,9 @@
                         return;
                     }
 
-                    var req = store.put(data.toJSON(), key);
+                    data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
+
+                    var req = store.put(data, key);
 
                     req.onsuccess = function () {
                         callback && callback(null, data);
@@ -1616,6 +1651,153 @@
 
 
     /***********************************************************************
+     * STORAGE MODULE
+     **********************************************************************/
+
+    m.Storage = (function () {
+        var Module = function (options) {
+            options || (options = {});
+
+            var that = this;
+
+            this.Sample = options.Sample || m.Sample;
+
+            //internal storage
+            this.Storage = options.Storage || m.LocalStorage;
+            this.storage = new this.Storage({
+                appname: options.appname
+            });
+
+            //initialize the cache
+            this.cache = {};
+            this.initialized = false;
+            this.storage.getAll(function (err, data) {
+                var samples = [],
+                    sample = null,
+                    keys = Object.keys(data);
+
+                for (var i = 0; i < keys.length; i++) {
+                    sample = new that.Sample(m.extend(data[keys[i]], {
+                        plainAttributes: true
+                    }));
+                    samples.push(sample);
+                }
+                that.cache =  new m.Collection({
+                    model: that.Sample,
+                    data: samples
+                });
+                that._attachListeners();
+
+                that.initialized = true;
+                that.trigger('init');
+            });
+        };
+
+        m.extend(Module.prototype, {
+            get: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.get(item, callback);
+                    });
+                    return;
+                }
+
+                var key = typeof item === 'object' ? item.id : item;
+                callback(null, this.cache.get(key));
+            },
+
+            getAll: function (callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.getAll(callback);
+                    });
+                    return;
+                }
+                callback(null, this.cache);
+            },
+
+            set: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.set(item, callback);
+                    });
+                    return;
+                }
+                var that = this,
+                    key = item.id;
+                this.storage.set(key, item, function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.set(item);
+                    callback && callback();
+                });
+            },
+
+            remove: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.remove(item, callback);
+                    });
+                    return;
+                }
+                var that = this,
+                    key = typeof item === 'object' ? item.id : item;
+                this.storage.remove(key, function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.remove(item);
+                    callback && callback();
+                });
+            },
+
+            has: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.has(item, callback);
+                    });
+                    return;
+                }
+                var key = typeof item === 'object' ? item.id : item;
+                this.cache.has(key, callback);
+            },
+
+            clear: function (callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.clear(item, callback);
+                    });
+                    return;
+                }
+                var that = this;
+                this.storage.clear(function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.clear();
+                    callback && callback();
+                });
+            },
+
+            _attachListeners: function () {
+                var that = this;
+                //listen on cache because it is last updated
+                this.cache.on('update', function () {
+                    that.trigger('update');
+                });
+            }
+        });
+
+        m.extend(Module.prototype, m.Events);
+
+        return Module;
+    }());
+
+    /***********************************************************************
      * MANAGER MODULE
      **********************************************************************/
 
@@ -1633,12 +1815,11 @@
                 website_id: options.website_id
             });
 
-            this.Storage = options.Storage || m.LocalStorage;
-            this.Sample = options.Sample || m.Sample;
-
-            this.storage = new this.Storage({
-                appname: options.appname
+            this.storage = new m.Storage({
+                appname: options.appname,
+                Storage: options.Storage
             });
+            this._attachListeners();
         };
 
         m.extend(Module.prototype, {
@@ -1647,60 +1828,40 @@
                 appname: ''
             },
 
+            //storage functions
             get: function (item, callback) {
-                var that = this,
-                    key = typeof item === 'object' ? item.id : item;
-                this.storage.get(key, function (err, data) {
-                    var sample = data ? new that.Sample(data) : null;
-                    callback(err, sample);
-                });
+                this.storage.get(item, callback);
             },
-
             getAll: function (callback) {
-                var that = this;
-                this.storage.getAll(function (err, data){
-                    var samples = {},
-                        sample = null,
-                        keys = Object.keys(data);
-
-                    for (var i = 0; i < keys.length; i++) {
-                        sample = new that.Sample(m.extend(data[keys[i]], {
-                           plainAttributes: true
-                        }));
-                        samples[sample.id] = sample;
-                    }
-                    callback(err, samples);
-                });
+                this.storage.getAll(callback);
             },
-
             set: function (item, callback) {
-                var key = item.id;
-                this.storage.set(key, item, callback);
+                this.storage.set(item, callback);
             },
-
             remove: function (item, callback) {
-                var key = typeof item === 'object' ? item.id : item;
-                this.storage.remove(key, callback);
+                this.storage.remove(item, callback);
             },
-
             has: function (item, callback) {
-                var key = typeof item === 'object' ? item.id : item;
-                this.storage.has(key, callback);
+                this.storage.has(item, callback);
             },
-
             clear: function (callback) {
-              this.storage.clear(callback);
+                this.storage.clear(callback);
             },
 
             sync: function (item, callback) {
                 var that = this;
-                //synchronise with the server
+
+                if (item instanceof m.Sample) {
+                    this.sendStored(item, callback);
+                    return;
+                }
+
                 this.get(item, function (err, data) {
-                    if (data) {
-                        that.sendStored(data, callback);
-                    } else {
+                    if (err) {
                         callback(err);
+                        return;
                     }
+                    that.sendStored(data, callback);
                 });
             },
 
@@ -1717,27 +1878,30 @@
             sendAllStored: function (callbackOnPartial, callback) {
                 var that = this;
                 this.getAll(function (err, samples) {
-                    var sample = {},
-                        samplesIDs = [];
-
                     if (err) {
                         callback(err);
                         return;
                     }
 
+                    //shallow copy
+                    var remainingSamples = m.extend({}, samples.data);
+
                     //recursively loop through samples
-                    samplesIDs = Object.keys(samples);
-                    for (var i = 0; i < samplesIDs.length; i++) {
-                        sample = samples[samplesIDs[i]];
+                    for (var i = 0; i < remainingSamples.length; i++) {
+                        var sample = remainingSamples[i];
+                        if (sample.warehouse_id) {
+                            delete remainingSamples[i];
+                            continue;
+                        }
                         that.sendStored(sample, function (err, data) {
                             if (err) {
                                 callback && callback(err);
                                 return;
                             }
 
-                            delete samples[samplesIDs[i]];
+                            delete remainingSamples[i];
 
-                            if (Object.keys(samples).length === 0) {
+                            if (remainingSamples.length === 0) {
                                 //finished
                                 callback && callback(null);
                             } else {
@@ -1749,26 +1913,22 @@
             },
 
             sendStored: function (sample, callback) {
-                var that = this,
-                    onSuccess = function (data) {
+                var that = this;
+
+                sample.trigger('sync:request');
+                this.send(sample, function (err, data) {
+                    if (err) {
+                        sample.trigger('sync:error');
+                        callback && callback(err);
+                    } else {
                         //update sample
                         sample.warehouse_id = 'done';
 
                         //save sample
                         that.set(sample, function (err, data) {
+                            sample.trigger('sync:done');
                             callback && callback(null, data);
                         });
-                    },
-
-                    onError = function (err) {
-                        callback && callback(err);
-                    };
-
-                this.send(sample, function (err, data) {
-                    if (err) {
-                        onError(err);
-                    } else {
-                        onSuccess(data);
                     }
                 });
             },
@@ -1825,8 +1985,17 @@
                 ajax.open('POST', this.CONF.url, true);
                 ajax.setRequestHeader("Content-type", "multipart/form-data");
                 ajax.send(formData);
+            },
+
+            _attachListeners: function () {
+                var that = this;
+                this.storage.on('update', function () {
+                    that.trigger('update');
+                });
             }
         });
+
+        m.extend(Module.prototype, m.Events);
 
         return Module;
     }());

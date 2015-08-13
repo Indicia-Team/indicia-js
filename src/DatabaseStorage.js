@@ -1,6 +1,6 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define, isEmptyObject, isPlainObject, IDBKeyRange, indexedDB */
-define(['Error'], function () {
+define(['helpers', 'Error'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * DATABASE STORAGE MODULE
@@ -32,7 +32,7 @@ define(['Error'], function () {
              * the function parameters and rather auto assign one and return on callback.
              *
              * @param key
-             * @param data
+             * @param data JSON or object having toJSON function
              * @param callback
              */
             set: function (key, data, callback) {
@@ -42,7 +42,9 @@ define(['Error'], function () {
                         return;
                     }
 
-                    var req = store.put(data.toJSON(), key);
+                    data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
+
+                    var req = store.put(data, key);
 
                     req.onsuccess = function () {
                         callback && callback(null, data);

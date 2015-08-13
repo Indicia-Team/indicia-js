@@ -1,95 +1,154 @@
 //>>excludeStart("buildExclude", pragmas.buildExclude);
-/*global define, m */
-define([], function () {
+/*global m, define */
+define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
+    'LocalStorage', 'DatabaseStorage'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
      * STORAGE MODULE
      **********************************************************************/
 
     m.Storage = (function () {
+        var Module = function (options) {
+            options || (options = {});
 
-        var Module = function () {
-            this.storage = {};
+            var that = this;
+
+            this.Sample = options.Sample || m.Sample;
+
+            //internal storage
+            this.Storage = options.Storage || m.LocalStorage;
+            this.storage = new this.Storage({
+                appname: options.appname
+            });
+
+            //initialize the cache
+            this.cache = {};
+            this.initialized = false;
+            this.storage.getAll(function (err, data) {
+                var samples = [],
+                    sample = null,
+                    keys = Object.keys(data);
+
+                for (var i = 0; i < keys.length; i++) {
+                    sample = new that.Sample(m.extend(data[keys[i]], {
+                        plainAttributes: true
+                    }));
+                    samples.push(sample);
+                }
+                that.cache =  new m.Collection({
+                    model: that.Sample,
+                    data: samples
+                });
+                that._attachListeners();
+
+                that.initialized = true;
+                that.trigger('init');
+            });
         };
 
         m.extend(Module.prototype, {
-            NAME: 'Storage',
+            get: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.get(item, callback);
+                    });
+                    return;
+                }
 
-            /**
-             * Gets an item from the storage.
-             *
-             * @param key
-             */
-            get: function (key, callback) {
-                var data = this.storage[key];
-                callback(null, data);
+                var key = typeof item === 'object' ? item.id : item;
+                callback(null, this.cache.get(key));
             },
 
-            /**
-             * Returns all items from the storage;
-             *
-             * @returns {{}|*|m.Storage.storage}
-             */
             getAll: function (callback) {
-                var data = this.storage;
-                callback(null, data);
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.getAll(callback);
+                    });
+                    return;
+                }
+                callback(null, this.cache);
             },
 
-            /**
-             * Sets an item in the storage.
-             * Note: it overrides any existing key with the same name.
-             *
-             * @param key
-             * @param data
-             * @param callback
-             */
-            set: function (key, data, callback) {
-                this.storage[key] = data;
-                callback && callback(null, data);
-            },
-
-            /**
-             * Removes an item from the storage.
-             *
-             * @param key
-             */
-            remove: function (key, callback) {
-                delete this.storage[key];
-                callback && callback();
-            },
-
-            /**
-             * Checks if a key exists.
-             *
-             * @param key Input name
-             * @returns {boolean}
-             */
-            has: function (key, callback) {
-                var data = this.get(key, function (err, data) {
-                    callback(null, data !== undefined && data !== null);
+            set: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.set(item, callback);
+                    });
+                    return;
+                }
+                var that = this,
+                    key = item.id;
+                this.storage.set(key, item, function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.set(item);
+                    callback && callback();
                 });
             },
 
-            /**
-             * Clears the storage.
-             */
-            clear: function (callback) {
-                this.storage = {};
-                callback && callback(null, this.storage);
+            remove: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.remove(item, callback);
+                    });
+                    return;
+                }
+                var that = this,
+                    key = typeof item === 'object' ? item.id : item;
+                this.storage.remove(key, function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.remove(item);
+                    callback && callback();
+                });
             },
 
-            /**
-             * Calculates current occupied the size of the storage.
-             * @param callback
-             */
-            size: function (callback) {
-                var data = Object.keys(this.storage).length;
-                callback(null, data);
+            has: function (item, callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.has(item, callback);
+                    });
+                    return;
+                }
+                var key = typeof item === 'object' ? item.id : item;
+                this.cache.has(key, callback);
+            },
+
+            clear: function (callback) {
+                if (!this.initialized) {
+                    this.on('init', function () {
+                        this.clear(item, callback);
+                    });
+                    return;
+                }
+                var that = this;
+                this.storage.clear(function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    that.cache.clear();
+                    callback && callback();
+                });
+            },
+
+            _attachListeners: function () {
+                var that = this;
+                //listen on cache because it is last updated
+                this.cache.on('update', function () {
+                    that.trigger('update');
+                });
             }
         });
 
+        m.extend(Module.prototype, m.Events);
+
         return Module;
-    })();
+    }());
 
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });

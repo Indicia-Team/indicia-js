@@ -120,7 +120,7 @@ var tests = function (manager, callback) {
 
 manager = new morel.Manager(options);
 tests(manager, function () {
-    manager = new morel.Manager(morel.extend(options, {Storage: morel.Storage}));
+    manager = new morel.Manager(morel.extend(options, {Storage: morel.PlainStorage}));
     tests(manager, function () {
         manager = new morel.Manager(morel.extend(options, {Storage: morel.DatabaseStorage}));
         tests(manager, function () {});
