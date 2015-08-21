@@ -26,27 +26,11 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
     m.Occurrence = (function () {
 
         var Module = function (options) {
-            var name = null,
-                value = null,
-                key = null;
+            var name = null;
 
             options || (options = {});
             this.id = options.id || m.getNewUUID();
-            this.attributes = {};
-
-            if (options.attributes) {
-                if (options.plainAttributes) {
-                    this.attributes = options.attributes;
-
-                //transform keys
-                } else {
-                    for (name in options.attributes) {
-                        key = this.key(name);
-                        value = this.value(name, options.attributes[name]);
-                        this.attributes[key] = value;
-                    }
-                }
-            }
+            this.attributes = options.attributes || {};
 
             if (options.images) {
                 this.images = new m.Collection({
@@ -60,26 +44,24 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
             }
         };
 
-        Module.KEYS = {
-                TAXON: {
+        Module.keys = {
+                taxon: {
                     id: 'taxa_taxon_list_id'
                 },
-                COMMENT: {
+                comment: {
                     id: 'comment'
                 }
         };
 
         m.extend(Module.prototype, {
             set: function (name, data) {
-                var key = this.key(name),
-                    value = this.value(name, data),
-                    changed = false;
+                var changed = false;
 
-                if (this.attributes[key] !== value) {
+                if (this.attributes[name] !== data) {
                     changed = true;
                 }
 
-                this.attributes[key] = value;
+                this.attributes[name] = data;
 
                 if (changed) {
                     this.trigger('change:' + name);
@@ -87,20 +69,16 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
             },
 
             get: function (name) {
-                var key = this.key(name);
-                return this.attributes[key];
+                return this.attributes[name];
             },
 
             remove: function (name) {
-                var key = this.key(name);
-                delete this.attributes[key];
-
+                delete this.attributes[name];
                 this.trigger('change:' + name);
             },
 
             clear: function () {
                 this.attributes = {};
-
                 this.trigger('change');
             },
 
@@ -125,33 +103,6 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
                 this.trigger('change:image');
             },
 
-            key: function (name) {
-                name = name.toUpperCase();
-                var key = Module.KEYS[name];
-                if (!key || !key.id) {
-                    console.warn('morel.Occurrence: no such key: ' + name);
-                    return name;
-                }
-                return key.id;
-            },
-
-            value: function (name, data) {
-                var value = null;
-                name = name.toUpperCase();
-                if (typeof data !== 'object' ||
-                    !Module.KEYS[name] ||
-                    !Module.KEYS[name].values) {
-                    return data;
-                }
-                value = Module.KEYS[name].values[data];
-                if (!value) {
-                    console.warn('morel.Occurrence: no such ' + name + ' value: ' + data);
-                    return data;
-                }
-
-                return value;
-            },
-
             toJSON: function () {
                 var data = {
                     id: this.id,
@@ -160,6 +111,56 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
                 };
                 //add occurrences
                 return data;
+            },
+
+            flatten: function (flattener) {
+                var flattened =  flattener.apply(this, [Module.keys, this.attributes]);
+
+                m.extend(flattened, this.images.flatten(flattener));
+
+                return flattened;
+            },
+
+            /**
+             * Get Warehouse key.
+             *
+             * @param name
+             * @returns {*}
+             * @private
+             */
+            _key: function (name) {
+                name = name.toUpperCase();
+                var key = Module.keys[name];
+                if (!key || !key.id) {
+                    console.warn('morel.Occurrence: no such key: ' + name);
+                    return name;
+                }
+                return key.id;
+            },
+
+            /**
+             * Get Warehouse value.
+             *
+             * @param name
+             * @param data
+             * @returns {*}
+             * @private
+             */
+            _value: function (name, data) {
+                var value = null;
+                name = name.toUpperCase();
+                if (typeof data !== 'object' ||
+                    !Module.keys[name] ||
+                    !Module.keys[name].values) {
+                    return data;
+                }
+                value = Module.keys[name].values[data];
+                if (!value) {
+                    console.warn('morel.Occurrence: no such ' + name + ' value: ' + data);
+                    return data;
+                }
+
+                return value;
             }
         });
 

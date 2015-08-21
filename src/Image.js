@@ -98,6 +98,10 @@ define(['helpers'], function () {
                     data: this.data
                 };
                 return data;
+            },
+
+            flatten: function (flattener) {
+                return flattener.apply(this, [null, this.data]);
             }
         });
 

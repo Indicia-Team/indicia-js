@@ -199,6 +199,15 @@ define(['helpers', "Events"], function () {
                 return json;
             },
 
+            flatten: function (flattener) {
+                var flattened = {};
+
+                for (var i = 0; i < this.length; i++) {
+                    m.extend(flattened, this.data[i].flatten(flattener))
+                }
+                return flattened;
+            },
+
             _modelEvent: function () {
                 this.trigger('change');
             }

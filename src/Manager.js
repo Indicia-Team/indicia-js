@@ -61,12 +61,12 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     return;
                 }
 
-                this.get(item, function (err, data) {
+                this.get(item, function (err, sample) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    that.sendStored(data, callback);
+                    that.sendStored(sample, callback);
                 });
             },
 
@@ -147,10 +147,9 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
              * @param onSend
              */
             send: function (sample, callback) {
-                var flattened = sample.flatten(),
+                var flattened = sample.flatten(this._flattener),
                     formData = new FormData();
 
-                //images
 
                 var keys = Object.keys(flattened);
                 for (var i= 0; i < keys.length; i++) {
@@ -187,8 +186,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     }
                 };
 
-                ajax.open('POST', this.CONF.url, true);
-                ajax.setRequestHeader("Content-type", "multipart/form-data");
+                ajax.open('POST', this.CONF.url);
                 ajax.send(formData);
             },
 
@@ -197,6 +195,46 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 this.storage.on('update', function () {
                     that.trigger('update');
                 });
+            },
+
+            _flattener: function (keys, attributes, images) {
+                var flattened = {},
+                    attr = null,
+                    name = null,
+                    value = null,
+                    native = 'sample:',
+                    custom = 'smpAttr:';
+                if (this instanceof m.Image) {
+                    return {'occurrence:image': attributes};
+                }
+
+                if (this instanceof m.Occurrence) {
+                    native = 'occurrence';
+                    custom = 'occAttr';
+                }
+
+                for (attr in attributes) {
+                    if (!keys[attr]) {
+                        console.warn('morel.Occurrence: no such key: ' + attr);
+                        flattened[attr] = attributes;
+                        continue;
+                    }
+
+                    name = keys[attr].id;
+                    name = parseInt(name, 10) >= 0 ? custom + name : native + name;
+
+                    value = attributes[attr];
+
+                    if (keys[attr].values) {
+                        value = keys[attr].values[value];
+                    }
+
+                    flattened[name] = value;
+                }
+
+
+
+                return flattened;
             }
         });
 

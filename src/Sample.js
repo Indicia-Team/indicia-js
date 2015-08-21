@@ -36,57 +36,45 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
             }
 
             if (options.attributes) {
-                if (options.plainAttributes) {
-                    this.attributes = options.attributes;
-
-                //transform keys
-                } else {
-                    for (name in options.attributes) {
-                        key = this.key(name);
-                        value = this.value(name, options.attributes[name]);
-                        this.attributes[key] = value;
-                    }
-                }
+                this.attributes = options.attributes;
             } else {
                 this.attributes = {};
 
                 var date = new Date();
-                this.set('DATE', m.formatDate(date));
-                this.set('LOCATION_TYPE', 'LATLON');
+                this.set('date', m.formatDate(date));
+                this.set('location_type', 'latlon');
             }
         };
 
-        Module.KEYS =  {
-                ID: { id: 'id' },
-                SURVEY: { id: 'survey_id' },
-                DATE: { id: 'date' },
-                COMMENT: { id: 'comment' },
-                IMAGE: { id: 'image' },
-                LOCATION: { id: 'entered_sref' },
-                LOCATION_TYPE: {
+        Module.keys =  {
+                id: { id: 'id' },
+                survey: { id: 'survey_id' },
+                date: { id: 'date' },
+                comment: { id: 'comment' },
+                image: { id: 'image' },
+                location: { id: 'entered_sref' },
+                location_type: {
                     id: 'entered_sref_system',
                     values: {
-                        'BRITISH': 'OSGB', //for British National Grid
-                        'IRISH': 'OSIE', //for Irish Grid
-                        'LATLON': 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
+                        british: 'OSGB', //for British National Grid
+                        irish: 'OSIE', //for Irish Grid
+                        latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
                     }
                 },
-                LOCATION_NAME: { id: 'location_name' },
-                DELETED: { id: 'deleted' }
+                location_name: { id: 'location_name' },
+                deleted: { id: 'deleted' }
         };
 
         m.extend(Module.prototype, m.Events);
 
         m.extend(Module.prototype, {
             set: function (name, data) {
-                var key = this.key(name),
-                    value = this.value(name, data),
-                    changed = false;
+                var changed = false;
 
-                if (this.attributes[key] !== value) {
+                if (this.attributes[name] !== data) {
                     changed = true;
                 }
-                this.attributes[key] = value;
+                this.attributes[name] = data;
 
                 if (changed) {
                     this.trigger('change:' + name);
@@ -94,13 +82,11 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
             },
 
             get: function (name) {
-                var key = this.key(name);
-                return this.attributes[key];
+                return this.attributes[name];
             },
 
             remove: function (name) {
-                var key = this.key(name);
-                delete this.attributes[key];
+                delete this.attributes[name];
                 this.trigger('change:' + name);
             },
 
@@ -114,33 +100,6 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
                 return data !== undefined && data !== null;
             },
 
-            key: function (name) {
-                name = name.toUpperCase();
-                var key = Module.KEYS[name];
-                if (!key || !key.id) {
-                    console.warn('morel.Sample: no such key: ' + name);
-                    return name;
-                }
-                return key.id;
-            },
-
-            value: function (name, data) {
-                var value = null;
-                name = name.toUpperCase();
-                if (typeof data !== 'string' ||
-                    !Module.KEYS[name] ||
-                    !Module.KEYS[name].values) {
-                    return data;
-                }
-                value = Module.KEYS[name].values[data];
-                if (!value) {
-                    console.warn('morel.Sample: no such ' + name + ' value: ' + data);
-                    return data;
-                }
-
-                return value;
-            },
-
             toJSON: function () {
                 var data = {
                         id: this.id,
@@ -151,15 +110,11 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
                 return data;
             },
 
-            flatten: function () {
-                var json = this.toJSON(),
-                    flattened = {};
+            flatten: function (flattener) {
+                var flattened = flattener.apply(this, [Module.keys, this.attributes]);
 
-                m.extend(flattened, json.attributes);
-
-                for (var i = 0; i < json.occurrences.length; i++) {
-                    m.extend(flattened, json.occurrences[i].attributes);
-                }
+                //occurrences
+                m.extend(flattened, this.occurrences.flatten(flattener));
                 return flattened;
             },
 
