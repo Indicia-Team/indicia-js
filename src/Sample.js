@@ -15,13 +15,11 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
     m.Sample = (function () {
 
         var Module = function (options) {
-            var name = null,
-                value = null,
-                key = null;
-
             options || (options = {});
 
             this.id = options.id || m.getNewUUID();
+            this.warehouse_id = options.warehouse_id;
+
             this.attributes = {};
 
             if (options.occurrences) {
@@ -103,6 +101,7 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
             toJSON: function () {
                 var data = {
                         id: this.id,
+                        warehouse_id: this.warehouse_id,
                         attributes: this.attributes,
                         occurrences: this.occurrences.toJSON()
                     };

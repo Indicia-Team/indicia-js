@@ -22,11 +22,11 @@ define([], function () {
                 this._events = {};
             },
 
-            trigger: function (name) {
+            trigger: function (name, attributes) {
                 var callbacks = this._callbacks(name, true);
 
                 for (var i = 0; i < callbacks.length; i++) {
-                    callbacks[i].callback.call(callbacks[i].context || this);
+                    callbacks[i].callback.call(callbacks[i].context || this, attributes);
                 }
             },
 

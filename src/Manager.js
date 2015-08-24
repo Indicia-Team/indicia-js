@@ -25,6 +25,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 Storage: options.Storage
             });
             this._attachListeners();
+            this.synchronising = false;
         };
 
         m.extend(Module.prototype, {
@@ -57,7 +58,14 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 var that = this;
 
                 if (item instanceof m.Sample) {
-                    this.sendStored(item, callback);
+
+                    if (!item.synchronising) {
+                        item.synchronising = true;
+                        that.sendStored(item, function (err) {
+                            item.synchronising = false;
+                            callback && callback(err);
+                        });
+                    }
                     return;
                 }
 
@@ -66,12 +74,27 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                         callback(err);
                         return;
                     }
-                    that.sendStored(sample, callback);
+
+                    if (!sample.synchronising) {
+                        sample.synchronising = true;
+                        that.sendStored(sample, function (err) {
+                            sample.synchronising = false;
+                            callback && callback(err);
+                        });
+                    }
                 });
             },
 
-            syncAll: function (callbackOnPartial, callback) {
-                this.sendAllStored(callbackOnPartial, callback);
+            syncAll: function (onSample) {
+                var that = this;
+                if (!this.synchronising) {
+                    this.synchronising = true;
+                    this.sendAllStored(onSample, function () {
+                        that.synchronising = false;
+                    });
+                } else {
+                    that.trigger('sync:done');
+                }
             },
 
 
@@ -80,39 +103,56 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
              *
              * @returns {undefined}
              */
-            sendAllStored: function (callbackOnPartial, callback) {
+            sendAllStored: function (onSend, callback) {
                 var that = this;
                 this.getAll(function (err, samples) {
                     if (err) {
-                        callback(err);
+                        that.trigger('sync:error', err);
+                        callback();
                         return;
                     }
 
+                    that.trigger('sync:request');
+
                     //shallow copy
-                    var remainingSamples = m.extend({}, samples.data);
+                    var remainingSamples = m.extend([], samples.data);
 
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
                         var sample = remainingSamples[i];
                         if (sample.warehouse_id) {
-                            delete remainingSamples[i];
+                            remainingSamples.splice(i, 1);
+                            i--; //return the cursor
                             continue;
                         }
-                        that.sendStored(sample, function (err, data) {
+
+                        onSend(sample);
+
+                        that.sendStored(sample, function (err, sample) {
                             if (err) {
-                                callback && callback(err);
+                                that.trigger('sync:error', err);
+                                callback();
                                 return;
                             }
 
-                            delete remainingSamples[i];
+                            for (var k = 0; k < remainingSamples.length; k++) {
+                                if (remainingSamples[k].id === sample.id) {
+                                    remainingSamples.splice(k, 1);
+                                    break;
+                                }
+                            }
 
                             if (remainingSamples.length === 0) {
                                 //finished
-                                callback && callback(null);
-                            } else {
-                                callbackOnPartial && callbackOnPartial(null);
+                                that.trigger('sync:done');
+                                callback();
                             }
                         });
+                    }
+
+                    if (!remainingSamples.length) {
+                        that.trigger('sync:done');
+                        callback();
                     }
                 })
             },
@@ -120,8 +160,15 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
             sendStored: function (sample, callback) {
                 var that = this;
 
+                //don't resend
+                if (sample.warehouse_id) {
+                    sample.trigger('sync:done');
+                    callback && callback(null, sample);
+                    return;
+                }
+
                 sample.trigger('sync:request');
-                this.send(sample, function (err, data) {
+                this.send(sample, function (err, sample) {
                     if (err) {
                         sample.trigger('sync:error');
                         callback && callback(err);
@@ -130,9 +177,9 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                         sample.warehouse_id = 'done';
 
                         //save sample
-                        that.set(sample, function (err, data) {
+                        that.set(sample, function (err, sample) {
                             sample.trigger('sync:done');
-                            callback && callback(null, data);
+                            callback && callback(null, sample);
                         });
                     }
                 });
@@ -159,7 +206,9 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 //Add authentication
                 formData = this.auth.append(formData);
 
-                this._post(formData, callback);
+                this._post(formData, function (err) {
+                    callback (err, sample);
+                });
             },
 
             /**
@@ -173,11 +222,11 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     if (ajax.readyState === XMLHttpRequest.DONE) {
                         switch (ajax.status) {
                             case 200:
-                                callback(null, ajax.response);
+                                callback && callback();
                                 break;
                             case 400:
-                                 error = new m.Error(ajax.response);
-                                callback(error);
+                                error = new m.Error(ajax.response);
+                                callback && callback(error);
                                 break;
                             default:
                                 error = new m.Error('Unknown problem while sending request.');

@@ -84,7 +84,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                         return;
                     }
                     that.cache.set(item);
-                    callback && callback();
+                    callback && callback(null, item);
                 });
             },
 

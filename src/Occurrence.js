@@ -26,9 +26,8 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
     m.Occurrence = (function () {
 
         var Module = function (options) {
-            var name = null;
-
             options || (options = {});
+
             this.id = options.id || m.getNewUUID();
             this.attributes = options.attributes || {};
 
