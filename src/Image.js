@@ -3,7 +3,7 @@
 define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * EVENTS MODULE
+     * IMAGE
      **********************************************************************/
 
     m.Image = (function (){
@@ -18,10 +18,41 @@ define(['helpers'], function () {
                 return;
             }
 
+            this.type = options.type || '';
             this.url = options.url || '';
             this.data = options.data || '';
         };
 
+        m.extend(Module.prototype, {
+            /**
+             * Resizes itself.
+             */
+            resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
+                var that = this;
+                Module.resize(this.data, this.type, MAX_WIDTH, MAX_HEIGHT,
+                    function (err, image, data) {
+                        if (err) {
+                            callback && callback(err);
+                            return;
+                        }
+                        that.data = data;
+                        callback && callback(null, image, data);
+                    });
+            },
+
+            toJSON: function () {
+                var data = {
+                    id: this.id,
+                    url: this.url,
+                    type: this.type,
+                    data: this.data
+                };
+                return data;
+            }
+        });
+
+        //add events
+        m.extend(Module.prototype, m.Events);
 
         m.extend(Module, {
             /**
@@ -82,26 +113,11 @@ define(['helpers'], function () {
                     // Scale and draw the source image to the canvas
                     canvas.getContext("2d").drawImage(image, 0, 0, width, height);
 
-                    // Convert the canvas to a data URL in PNG format
+                    // Convert the canvas to a data URL in some format
                     callback(null, image, canvas.toDataURL(fileType));
                 };
 
                 image.src = data;
-            }
-        });
-
-        m.extend(Module.prototype, {
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    url: this.url,
-                    data: this.data
-                };
-                return data;
-            },
-
-            flatten: function (flattener) {
-                return flattener.apply(this, [null, this.data]);
             }
         });
 

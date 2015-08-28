@@ -3,7 +3,7 @@
 define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * LOCAL STORAGE MODULE
+     * LOCAL STORAGE
      **********************************************************************/
 
     m.LocalStorage = (function () {

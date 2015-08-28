@@ -3,7 +3,7 @@
 define(['helpers', 'Error'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * DATABASE STORAGE MODULE
+     * DATABASE STORAGE
      **********************************************************************/
 
     m.DatabaseStorage = (function () {

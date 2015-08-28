@@ -4,7 +4,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
     'LocalStorage', 'DatabaseStorage'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * STORAGE MODULE
+     * STORAGE
      **********************************************************************/
 
     m.Storage = (function () {
@@ -36,7 +36,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                     samples.push(sample);
                 }
                 that.cache =  new m.Collection({
-                    model: that.Sample,
+                    Model: that.Sample,
                     data: samples
                 });
                 that._attachListeners();
@@ -145,6 +145,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
             }
         });
 
+        //add events
         m.extend(Module.prototype, m.Events);
 
         return Module;

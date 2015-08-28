@@ -6,13 +6,13 @@ define([], function () {
 
     m.VERSION = '0'; //library version, generated/replaced by grunt
 
-    //library wide configuration
-    m.CONF = {};
-
-    //CONSTANTS:
-    m.TRUE = 1;
-    m.FALSE = 0;
-    m.ERROR = -1;
+    //CONSTANTS
+    m.SYNCED = 1;
+    m.LOCAL = 2;
+    m.SERVER = 3;
+    m.CHANGED_LOCALLY = 4;
+    m.CHANGED_SERVER = 5;
+    m.CONFLICT = -1;
 
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 });

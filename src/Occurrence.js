@@ -1,26 +1,9 @@
-//{
-//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
-//    warehouseID: -1, //occurrence_id
-//  status: 'local', //sent
-//  attr: {
-//  'occurrence:comment': 'value',
-//    'occAttr:12': 'value'
-//},
-//  images: [
-//    {
-//      status: 'local', //sent
-//      url: 'http://..', // points to the image on server
-//      data: 'data64:...'
-//    }
-//  ]
-//};
-
 //>>excludeStart("buildExclude", pragmas.buildExclude);
 /*global m, define, */
 define(['helpers', 'Image', "Events", "Collection"], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * OCCURRENCE MODULE
+     * OCCURRENCE
      **********************************************************************/
 
     m.Occurrence = (function () {
@@ -33,23 +16,14 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
 
             if (options.images) {
                 this.images = new m.Collection({
-                    model: m.Image,
+                    Model: m.Image,
                     data: options.images
                 });
             } else {
                 this.images = new m.Collection({
-                    model: m.Image
+                    Model: m.Image
                 });
             }
-        };
-
-        Module.keys = {
-                taxon: {
-                    id: 'taxa_taxon_list_id'
-                },
-                comment: {
-                    id: 'comment'
-                }
         };
 
         m.extend(Module.prototype, {
@@ -86,22 +60,6 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
                 return data !== undefined && data !== null;
             },
 
-            setImage: function (data, index) {
-                index = index || this.images.length;
-                this.images[index] = new m.Image ({data: data});
-                this.trigger('change:image');
-            },
-
-            removeImage: function (index) {
-                this.images = this.images.splice(index, 1);
-                this.trigger('change:image');
-            },
-
-            removeAllImages: function () {
-                this.images = [];
-                this.trigger('change:image');
-            },
-
             toJSON: function () {
                 var data = {
                     id: this.id,
@@ -112,58 +70,33 @@ define(['helpers', 'Image', "Events", "Collection"], function () {
                 return data;
             },
 
-            flatten: function (flattener) {
-                var flattened =  flattener.apply(this, [Module.keys, this.attributes]);
-
-                m.extend(flattened, this.images.flatten(flattener));
-
-                return flattened;
-            },
-
             /**
-             * Get Warehouse key.
+             * Returns an object with attributes and their values flattened and
+             * mapped for warehouse submission.
              *
-             * @param name
+             * @param flattener
              * @returns {*}
-             * @private
              */
-            _key: function (name) {
-                name = name.toUpperCase();
-                var key = Module.keys[name];
-                if (!key || !key.id) {
-                    console.warn('morel.Occurrence: no such key: ' + name);
-                    return name;
-                }
-                return key.id;
-            },
-
-            /**
-             * Get Warehouse value.
-             *
-             * @param name
-             * @param data
-             * @returns {*}
-             * @private
-             */
-            _value: function (name, data) {
-                var value = null;
-                name = name.toUpperCase();
-                if (typeof data !== 'object' ||
-                    !Module.keys[name] ||
-                    !Module.keys[name].values) {
-                    return data;
-                }
-                value = Module.keys[name].values[data];
-                if (!value) {
-                    console.warn('morel.Occurrence: no such ' + name + ' value: ' + data);
-                    return data;
-                }
-
-                return value;
+            flatten: function (flattener, count) {
+                //images flattened separately
+                return flattener.apply(this, [Module.keys, this.attributes, count]);;
             }
         });
 
+        //add events
         m.extend(Module.prototype, m.Events);
+
+        /**
+         * Warehouse attributes and their values.
+         */
+        Module.keys = {
+            taxon: {
+                id: ''
+            },
+            comment: {
+                id: 'comment'
+            }
+        };
 
         return Module;
     }());

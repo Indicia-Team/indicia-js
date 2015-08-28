@@ -3,7 +3,7 @@
 define(['helpers'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * PLAIN STORAGE MODULE
+     * PLAIN STORAGE
      **********************************************************************/
 
     m.PlainStorage = (function () {

@@ -3,7 +3,7 @@
 define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
 //>>excludeEnd("buildExclude");
     /***********************************************************************
-     * MANAGER MODULE
+     * MANAGER
      **********************************************************************/
 
     m.Manager = (function () {
@@ -85,15 +85,18 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 });
             },
 
-            syncAll: function (onSample) {
+            syncAll: function (onSample, callback) {
                 var that = this;
                 if (!this.synchronising) {
                     this.synchronising = true;
-                    this.sendAllStored(onSample, function () {
+                    this.sendAllStored(onSample, function (err) {
                         that.synchronising = false;
+
+                        callback && callback(err);
                     });
                 } else {
                     that.trigger('sync:done');
+                    callback && callback();
                 }
             },
 
@@ -107,8 +110,8 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 var that = this;
                 this.getAll(function (err, samples) {
                     if (err) {
-                        that.trigger('sync:error', err);
-                        callback();
+                        that.trigger('sync:error');
+                        callback(err);
                         return;
                     }
 
@@ -120,7 +123,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
                         var sample = remainingSamples[i];
-                        if (sample.warehouse_id) {
+                        if (sample.getSyncStatus() === m.SYNCED) {
                             remainingSamples.splice(i, 1);
                             i--; //return the cursor
                             continue;
@@ -130,8 +133,8 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
 
                         that.sendStored(sample, function (err, sample) {
                             if (err) {
-                                that.trigger('sync:error', err);
-                                callback();
+                                that.trigger('sync:error');
+                                callback(err);
                                 return;
                             }
 
@@ -161,7 +164,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 var that = this;
 
                 //don't resend
-                if (sample.warehouse_id) {
+                if (sample.getSyncStatus() === m.SYNCED) {
                     sample.trigger('sync:done');
                     callback && callback(null, sample);
                     return;
@@ -174,13 +177,19 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                         callback && callback(err);
                     } else {
                         //update sample
-                        sample.warehouse_id = 'done';
+                        sample.metadata.warehouse_id = 1;
+                        sample.metadata.server_on = new Date();
+                        sample.metadata.synced_on = new Date();
 
-                        //save sample
-                        that.set(sample, function (err, sample) {
-                            sample.trigger('sync:done');
-                            callback && callback(null, sample);
+                        //resize images to snapshots
+                        this._resizeImages(sample, function () {
+                            //save sample
+                            that.set(sample, function (err, sample) {
+                                sample.trigger('sync:done');
+                                callback && callback(null, sample);
+                            });
                         });
+
                     }
                 });
             },
@@ -198,6 +207,23 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     formData = new FormData();
 
 
+                //append images
+                var occCount = 0;
+                sample.occurrences.each(function (occurrence) {
+                    var imgCount = 0;
+                    occurrence.images.each(function (image) {
+                        var name = 'sc:' + occCount + '::occurrence_medium:path:' + imgCount;
+                        var blob = m.dataURItoBlob(image.data, image.type);
+                        var extension = image.type.split('/')[1];
+                        formData.append(name, blob, 'pic.' + extension);
+
+                        name = 'sc:' + occCount + '::occurrence_medium:media_type:' + imgCount;
+                        formData.append(name, 'Image:Local');
+                    });
+                    occCount++;
+                });
+
+                //append attributes
                 var keys = Object.keys(flattened);
                 for (var i= 0; i < keys.length; i++) {
                     formData.append(keys[i], flattened[keys[i]]);
@@ -229,7 +255,10 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                                 callback && callback(error);
                                 break;
                             default:
-                                error = new m.Error('Unknown problem while sending request.');
+                                error = new m.Error({
+                                    message: 'Unknown problem while sending request.',
+                                    number: ajax.status
+                                });
                                 callback && callback(error);
                         }
                     }
@@ -246,20 +275,19 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 });
             },
 
-            _flattener: function (keys, attributes, images) {
+            _flattener: function (keys, attributes, count) {
                 var flattened = {},
                     attr = null,
                     name = null,
                     value = null,
+                    prefix = '',
                     native = 'sample:',
                     custom = 'smpAttr:';
-                if (this instanceof m.Image) {
-                    return {'occurrence:image': attributes};
-                }
 
                 if (this instanceof m.Occurrence) {
-                    native = 'occurrence';
-                    custom = 'occAttr';
+                    prefix = 'sc:';
+                    native = '::occurrence:';
+                    custom = '::occAttr:';
                 }
 
                 for (attr in attributes) {
@@ -270,7 +298,20 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     }
 
                     name = keys[attr].id;
-                    name = parseInt(name, 10) >= 0 ? custom + name : native + name;
+
+                    if (!name) {
+                        name = prefix + count + '::present'
+                    } else {
+                        if (parseInt(name, 10) >= 0) {
+                            name = custom + name;
+                        } else {
+                            name = native + name;
+                        }
+
+                        if (prefix) {
+                            name = prefix + count + name;
+                        }
+                    }
 
                     value = attributes[attr];
 
@@ -281,9 +322,32 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     flattened[name] = value;
                 }
 
-
-
                 return flattened;
+            },
+
+            _resizeImages: function (sample, callback) {
+                var images_count = 0;
+                //get number of images to resize - synchronous
+                sample.occurrences.each(function (occurrence) {
+                    occurrence.images.each(function (image) {
+                        images_count++;
+                    });
+                });
+
+                //resize
+                //each occurrence
+                sample.occurrences.each(function (occurrence) {
+                    //each image
+                    occurrence.images.each(function (image) {
+                        image.resize(75, 75, function () {
+                            images_count--;
+                            if (images_count === 0) {
+                                callback();
+                            }
+                        });
+
+                    }, occurrence);
+                });
             }
         });
 

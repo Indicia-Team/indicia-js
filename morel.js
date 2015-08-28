@@ -34,13 +34,13 @@
 
     m.VERSION = '3.0.0-alpha'; //library version, generated/replaced by grunt
 
-    //library wide configuration
-    m.CONF = {};
-
-    //CONSTANTS:
-    m.TRUE = 1;
-    m.FALSE = 0;
-    m.ERROR = -1;
+    //CONSTANTS
+    m.SYNCED = 1;
+    m.LOCAL = 2;
+    m.SERVER = 3;
+    m.CHANGED_LOCALLY = 4;
+    m.CHANGED_SERVER = 5;
+    m.CONFLICT = -1;
 
 
     /***********************************************************************
@@ -225,7 +225,7 @@
 
 
     /***********************************************************************
-     * EVENTS MODULE
+     * EVENTS
      **********************************************************************/
 
     m.Events = (function (){
@@ -287,7 +287,7 @@
 
 
     /***********************************************************************
-     * EVENTS MODULE
+     * IMAGE
      **********************************************************************/
 
     m.Image = (function (){
@@ -302,10 +302,41 @@
                 return;
             }
 
+            this.type = options.type || '';
             this.url = options.url || '';
             this.data = options.data || '';
         };
 
+        m.extend(Module.prototype, {
+            /**
+             * Resizes itself.
+             */
+            resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
+                var that = this;
+                Module.resize(this.data, this.type, MAX_WIDTH, MAX_HEIGHT,
+                    function (err, image, data) {
+                        if (err) {
+                            callback && callback(err);
+                            return;
+                        }
+                        that.data = data;
+                        callback && callback(null, image, data);
+                    });
+            },
+
+            toJSON: function () {
+                var data = {
+                    id: this.id,
+                    url: this.url,
+                    type: this.type,
+                    data: this.data
+                };
+                return data;
+            }
+        });
+
+        //add events
+        m.extend(Module.prototype, m.Events);
 
         m.extend(Module, {
             /**
@@ -366,26 +397,11 @@
                     // Scale and draw the source image to the canvas
                     canvas.getContext("2d").drawImage(image, 0, 0, width, height);
 
-                    // Convert the canvas to a data URL in PNG format
+                    // Convert the canvas to a data URL in some format
                     callback(null, image, canvas.toDataURL(fileType));
                 };
 
                 image.src = data;
-            }
-        });
-
-        m.extend(Module.prototype, {
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    url: this.url,
-                    data: this.data
-                };
-                return data;
-            },
-
-            flatten: function (flattener) {
-                return flattener.apply(this, [null, this.data]);
             }
         });
 
@@ -414,46 +430,11 @@
      * COLLECTION MODULE
      **********************************************************************/
 
-    /*
-     no option is provided for transformed keys without creating
-     an Model object. Eg. this is not possible:
-     new Collection([
-         {
-             id: 'xxxx'
-             attributes: {
-                taxon: 'xxxx'
-             }
-         }
-     ])
-
-     must be:
-
-     new Collection([
-         {
-             id: 'xxxx'
-             attributes: {
-                Model:taxon_taxon_list_id: 'xxxx'
-             }
-         }
-     ])
-
-     or:
-
-     new Collection([
-         new Model({
-             id: 'xxxx'
-             attributes: {
-                taxon: 'xxxx'
-             }
-         })
-     ])
-     */
-
     m.Collection = (function () {
 
         var Module = function (options) {
             var model = null;
-            this.Model = options.model;
+            this.Model = options.Model;
 
             this.data = [];
             this.length = 0;
@@ -464,22 +445,15 @@
                     if (model instanceof this.Model) {
                         this.data.push(model);
                     } else {
-                        m.extend(model, {
-                            plainAttributes: true
-                        });
                         model = new this.Model(model);
                         this.data.push(model);
                     }
                     this.length++;
                 }
             }
-
-            this.initialize();
         };
 
         m.extend(Module.prototype, {
-            initialize: function () {},
-
             add: function (items) {
                 return this.set(items);
             },
@@ -509,11 +483,6 @@
                 return modified;
             },
 
-            /**
-             *
-             * @param model model or its ID
-             * @returns {*}
-             */
             get: function (item) {
                 var id = item.id || item;
                 for (var i = 0; i < this.data.length; i++) {
@@ -528,9 +497,9 @@
                 return this.data[0];
             },
 
-            each: function (method) {
+            each: function (method, context) {
                 for (var i = 0; i < this.data.length; i++) {
-                    method(this.data[i]);
+                    method.apply(context || this, [this.data[i]]);
                 }
             },
 
@@ -594,7 +563,7 @@
                 var flattened = {};
 
                 for (var i = 0; i < this.length; i++) {
-                    m.extend(flattened, this.data[i].flatten(flattener))
+                    m.extend(flattened, this.data[i].flatten(flattener, i))
                 }
                 return flattened;
             },
@@ -608,25 +577,8 @@
 
         return Module;
     }());
-//{
-//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
-//    warehouseID: -1, //occurrence_id
-//  status: 'local', //sent
-//  attr: {
-//  'occurrence:comment': 'value',
-//    'occAttr:12': 'value'
-//},
-//  images: [
-//    {
-//      status: 'local', //sent
-//      url: 'http://..', // points to the image on server
-//      data: 'data64:...'
-//    }
-//  ]
-//};
-
     /***********************************************************************
-     * OCCURRENCE MODULE
+     * OCCURRENCE
      **********************************************************************/
 
     m.Occurrence = (function () {
@@ -639,23 +591,14 @@
 
             if (options.images) {
                 this.images = new m.Collection({
-                    model: m.Image,
+                    Model: m.Image,
                     data: options.images
                 });
             } else {
                 this.images = new m.Collection({
-                    model: m.Image
+                    Model: m.Image
                 });
             }
-        };
-
-        Module.keys = {
-                taxon: {
-                    id: 'taxa_taxon_list_id'
-                },
-                comment: {
-                    id: 'comment'
-                }
         };
 
         m.extend(Module.prototype, {
@@ -692,22 +635,6 @@
                 return data !== undefined && data !== null;
             },
 
-            setImage: function (data, index) {
-                index = index || this.images.length;
-                this.images[index] = new m.Image ({data: data});
-                this.trigger('change:image');
-            },
-
-            removeImage: function (index) {
-                this.images = this.images.splice(index, 1);
-                this.trigger('change:image');
-            },
-
-            removeAllImages: function () {
-                this.images = [];
-                this.trigger('change:image');
-            },
-
             toJSON: function () {
                 var data = {
                     id: this.id,
@@ -718,84 +645,78 @@
                 return data;
             },
 
-            flatten: function (flattener) {
-                var flattened =  flattener.apply(this, [Module.keys, this.attributes]);
-
-                m.extend(flattened, this.images.flatten(flattener));
-
-                return flattened;
-            },
-
             /**
-             * Get Warehouse key.
+             * Returns an object with attributes and their values flattened and
+             * mapped for warehouse submission.
              *
-             * @param name
+             * @param flattener
              * @returns {*}
-             * @private
              */
-            _key: function (name) {
-                name = name.toUpperCase();
-                var key = Module.keys[name];
-                if (!key || !key.id) {
-                    console.warn('morel.Occurrence: no such key: ' + name);
-                    return name;
-                }
-                return key.id;
-            },
-
-            /**
-             * Get Warehouse value.
-             *
-             * @param name
-             * @param data
-             * @returns {*}
-             * @private
-             */
-            _value: function (name, data) {
-                var value = null;
-                name = name.toUpperCase();
-                if (typeof data !== 'object' ||
-                    !Module.keys[name] ||
-                    !Module.keys[name].values) {
-                    return data;
-                }
-                value = Module.keys[name].values[data];
-                if (!value) {
-                    console.warn('morel.Occurrence: no such ' + name + ' value: ' + data);
-                    return data;
-                }
-
-                return value;
+            flatten: function (flattener, count) {
+                //images flattened separately
+                return flattener.apply(this, [Module.keys, this.attributes, count]);;
             }
         });
 
+        //add events
         m.extend(Module.prototype, m.Events);
+
+        /**
+         * Warehouse attributes and their values.
+         */
+        Module.keys = {
+            taxon: {
+                id: ''
+            },
+            comment: {
+                id: 'comment'
+            }
+        };
 
         return Module;
     }());
     /***********************************************************************
-     * SAMPLE MODULE
-     **********************************************************************/
-
-    /**
+     * SAMPLE
+     *
      * Refers to the event in which the sightings were observed, in other
      * words it describes the place, date, people, environmental conditions etc.
      * Within a sample, you can have zero or more occurrences which refer to each
      * species sighted as part of the sample.
-     */
+     **********************************************************************/
+
     m.Sample = (function () {
 
         var Module = function (options) {
             options || (options = {});
 
             this.id = options.id || m.getNewUUID();
-            this.warehouse_id = options.warehouse_id;
 
-            this.attributes = {};
+            if (options.metadata) {
+                this.metadata = options.metadata;
+            } else {
+                this.metadata = {
+                    created_on: new Date(),
+                    updated_on: new Date(),
+
+                    warehouse_id: null,
+
+                    synced_on: null, //set when fully initialized only
+                    server_on: null //updated on server
+                };
+            }
+
+            if (options.attributes) {
+                this.attributes = options.attributes;
+            } else {
+                this.attributes = {
+                    date: m.formatDate(new Date()),
+                    location_type: 'latlon'
+                };
+            }
 
             if (options.occurrences) {
                 this.occurrences = new m.Collection({
-                    model: m.Occurrence,
+                    Model: m.Occurrence,
                     data: options.occurrences
                 });
             } else {
@@ -804,37 +725,7 @@
                 });
             }
 
-            if (options.attributes) {
-                this.attributes = options.attributes;
-            } else {
-                this.attributes = {};
-
-                var date = new Date();
-                this.set('date', m.formatDate(date));
-                this.set('location_type', 'latlon');
-            }
         };
-
-        Module.keys =  {
-                id: { id: 'id' },
-                survey: { id: 'survey_id' },
-                date: { id: 'date' },
-                comment: { id: 'comment' },
-                image: { id: 'image' },
-                location: { id: 'entered_sref' },
-                location_type: {
-                    id: 'entered_sref_system',
-                    values: {
-                        british: 'OSGB', //for British National Grid
-                        irish: 'OSIE', //for Irish Grid
-                        latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
-                    }
-                },
-                location_name: { id: 'location_name' },
-                deleted: { id: 'deleted' }
-        };
-
-        m.extend(Module.prototype, m.Events);
 
         m.extend(Module.prototype, {
             set: function (name, data) {
@@ -872,7 +763,7 @@
             toJSON: function () {
                 var data = {
                         id: this.id,
-                        warehouse_id: this.warehouse_id,
+                        metadata: this.metadata,
                         attributes: this.attributes,
                         occurrences: this.occurrences.toJSON()
                     };
@@ -880,6 +771,13 @@
                 return data;
             },
 
+            /**
+             * Returns an object with attributes and their values flattened and
+             * mapped for warehouse submission.
+             *
+             * @param flattener
+             * @returns {*}
+             */
             flatten: function (flattener) {
                 var flattened = flattener.apply(this, [Module.keys, this.attributes]);
 
@@ -897,14 +795,73 @@
                 for (var i = 0; i < this.occurrences.data.length; i++) {
                     this.occurrences.data[i].offAll();
                 }
-            }
+            },
 
+
+            /**
+             * Sync statuses:
+             * synced, local, server, changed_locally, changed_server, conflict
+             */
+            getSyncStatus: function () {
+                var meta = this.metadata;
+                //on server
+                if (meta.warehouse_id) {
+                    //fully initialized
+                    if (meta.synced_on) {
+                        //changed_locally
+                        if (meta.synced_on < meta.updated_on) {
+                            //changed_server - conflict!
+                            if (meta.synced_on < meta.server_on) {
+                                return m.CONFLICT;
+                            }
+                            return m.CHANGED_LOCALLY;
+                            //changed_server
+                        } else if (meta.synced_on < meta.server_on) {
+                            return m.CHANGED_SERVER;
+                        } else {
+                            return m.SYNCED;
+                        }
+                        //partially initialized - we know the record exists on
+                        //server but has not yet been downloaded
+                    } else {
+                        return m.SERVER;
+                    }
+                    //local only
+                } else {
+                    return m.LOCAL;
+                }
+            }
         });
+
+        //add events
+        m.extend(Module.prototype, m.Events);
+
+        /**
+         * Warehouse attributes and their values.
+         */
+        Module.keys =  {
+            id: { id: 'id' },
+            survey: { id: 'survey_id' },
+            date: { id: 'date' },
+            comment: { id: 'comment' },
+            image: { id: 'image' },
+            location: { id: 'entered_sref' },
+            location_type: {
+                id: 'entered_sref_system',
+                values: {
+                    british: 'OSGB', //for British National Grid
+                    irish: 'OSIE', //for Irish Grid
+                    latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
+                }
+            },
+            location_name: { id: 'location_name' },
+            deleted: { id: 'deleted' }
+        };
 
         return Module;
     }());
     /***********************************************************************
-     * AUTH MODULE
+     * AUTH
      **********************************************************************/
 
     m.Auth = (function (){
@@ -1040,7 +997,7 @@
 
 
     /***********************************************************************
-     * PLAIN STORAGE MODULE
+     * PLAIN STORAGE
      **********************************************************************/
 
     m.PlainStorage = (function () {
@@ -1130,7 +1087,7 @@
 
 
     /***********************************************************************
-     * LOCAL STORAGE MODULE
+     * LOCAL STORAGE
      **********************************************************************/
 
     m.LocalStorage = (function () {
@@ -1303,7 +1260,7 @@
 
 
     /***********************************************************************
-     * ERROR MODULE
+     * ERROR
      **********************************************************************/
 
     m.Error = (function () {
@@ -1322,7 +1279,7 @@
     }());
 
     /***********************************************************************
-     * DATABASE STORAGE MODULE
+     * DATABASE STORAGE
      **********************************************************************/
 
     m.DatabaseStorage = (function () {
@@ -1618,7 +1575,7 @@
 
 
     /***********************************************************************
-     * STORAGE MODULE
+     * STORAGE
      **********************************************************************/
 
     m.Storage = (function () {
@@ -1650,7 +1607,7 @@
                     samples.push(sample);
                 }
                 that.cache =  new m.Collection({
-                    model: that.Sample,
+                    Model: that.Sample,
                     data: samples
                 });
                 that._attachListeners();
@@ -1759,13 +1716,14 @@
             }
         });
 
+        //add events
         m.extend(Module.prototype, m.Events);
 
         return Module;
     }());
 
     /***********************************************************************
-     * MANAGER MODULE
+     * MANAGER
      **********************************************************************/
 
     m.Manager = (function () {
@@ -1847,15 +1805,18 @@
                 });
             },
 
-            syncAll: function (onSample) {
+            syncAll: function (onSample, callback) {
                 var that = this;
                 if (!this.synchronising) {
                     this.synchronising = true;
-                    this.sendAllStored(onSample, function () {
+                    this.sendAllStored(onSample, function (err) {
                         that.synchronising = false;
+
+                        callback && callback(err);
                     });
                 } else {
                     that.trigger('sync:done');
+                    callback && callback();
                 }
             },
 
@@ -1869,8 +1830,8 @@
                 var that = this;
                 this.getAll(function (err, samples) {
                     if (err) {
-                        that.trigger('sync:error', err);
-                        callback();
+                        that.trigger('sync:error');
+                        callback(err);
                         return;
                     }
 
@@ -1882,7 +1843,7 @@
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
                         var sample = remainingSamples[i];
-                        if (sample.warehouse_id) {
+                        if (sample.getSyncStatus() === m.SYNCED) {
                             remainingSamples.splice(i, 1);
                             i--; //return the cursor
                             continue;
@@ -1892,8 +1853,8 @@
 
                         that.sendStored(sample, function (err, sample) {
                             if (err) {
-                                that.trigger('sync:error', err);
-                                callback();
+                                that.trigger('sync:error');
+                                callback(err);
                                 return;
                             }
 
@@ -1923,7 +1884,7 @@
                 var that = this;
 
                 //don't resend
-                if (sample.warehouse_id) {
+                if (sample.getSyncStatus() === m.SYNCED) {
                     sample.trigger('sync:done');
                     callback && callback(null, sample);
                     return;
@@ -1936,13 +1897,19 @@
                         callback && callback(err);
                     } else {
                         //update sample
-                        sample.warehouse_id = 'done';
+                        sample.metadata.warehouse_id = 1;
+                        sample.metadata.server_on = new Date();
+                        sample.metadata.synced_on = new Date();
 
-                        //save sample
-                        that.set(sample, function (err, sample) {
-                            sample.trigger('sync:done');
-                            callback && callback(null, sample);
+                        //resize images to snapshots
+                        this._resizeImages(sample, function () {
+                            //save sample
+                            that.set(sample, function (err, sample) {
+                                sample.trigger('sync:done');
+                                callback && callback(null, sample);
+                            });
                         });
+
                     }
                 });
             },
@@ -1960,6 +1927,23 @@
                     formData = new FormData();
 
 
+                //append images
+                var occCount = 0;
+                sample.occurrences.each(function (occurrence) {
+                    var imgCount = 0;
+                    occurrence.images.each(function (image) {
+                        var name = 'sc:' + occCount + '::occurrence_medium:path:' + imgCount;
+                        var blob = m.dataURItoBlob(image.data, image.type);
+                        var extension = image.type.split('/')[1];
+                        formData.append(name, blob, 'pic.' + extension);
+
+                        name = 'sc:' + occCount + '::occurrence_medium:media_type:' + imgCount;
+                        formData.append(name, 'Image:Local');
+                    });
+                    occCount++;
+                });
+
+                //append attributes
                 var keys = Object.keys(flattened);
                 for (var i= 0; i < keys.length; i++) {
                     formData.append(keys[i], flattened[keys[i]]);
@@ -1991,7 +1975,10 @@
                                 callback && callback(error);
                                 break;
                             default:
-                                error = new m.Error('Unknown problem while sending request.');
+                                error = new m.Error({
+                                    message: 'Unknown problem while sending request.',
+                                    number: ajax.status
+                                });
                                 callback && callback(error);
                         }
                     }
@@ -2008,20 +1995,19 @@
                 });
             },
 
-            _flattener: function (keys, attributes, images) {
+            _flattener: function (keys, attributes, count) {
                 var flattened = {},
                     attr = null,
                     name = null,
                     value = null,
+                    prefix = '',
                     native = 'sample:',
                     custom = 'smpAttr:';
-                if (this instanceof m.Image) {
-                    return {'occurrence:image': attributes};
-                }
 
                 if (this instanceof m.Occurrence) {
-                    native = 'occurrence';
-                    custom = 'occAttr';
+                    prefix = 'sc:';
+                    native = '::occurrence:';
+                    custom = '::occAttr:';
                 }
 
                 for (attr in attributes) {
@@ -2032,7 +2018,20 @@
                     }
 
                     name = keys[attr].id;
-                    name = parseInt(name, 10) >= 0 ? custom + name : native + name;
+
+                    if (!name) {
+                        name = prefix + count + '::present'
+                    } else {
+                        if (parseInt(name, 10) >= 0) {
+                            name = custom + name;
+                        } else {
+                            name = native + name;
+                        }
+
+                        if (prefix) {
+                            name = prefix + count + name;
+                        }
+                    }
 
                     value = attributes[attr];
 
@@ -2043,9 +2042,32 @@
                     flattened[name] = value;
                 }
 
-
-
                 return flattened;
+            },
+
+            _resizeImages: function (sample, callback) {
+                var images_count = 0;
+                //get number of images to resize - synchronous
+                sample.occurrences.each(function (occurrence) {
+                    occurrence.images.each(function (image) {
+                        images_count++;
+                    });
+                });
+
+                //resize
+                //each occurrence
+                sample.occurrences.each(function (occurrence) {
+                    //each image
+                    occurrence.images.each(function (image) {
+                        image.resize(75, 75, function () {
+                            images_count--;
+                            if (images_count === 0) {
+                                callback();
+                            }
+                        });
+
+                    }, occurrence);
+                });
             }
         });
 

@@ -23,46 +23,11 @@ define(['helpers', "Events"], function () {
      * COLLECTION MODULE
      **********************************************************************/
 
-    /*
-     no option is provided for transformed keys without creating
-     an Model object. Eg. this is not possible:
-     new Collection([
-         {
-             id: 'xxxx'
-             attributes: {
-                taxon: 'xxxx'
-             }
-         }
-     ])
-
-     must be:
-
-     new Collection([
-         {
-             id: 'xxxx'
-             attributes: {
-                Model:taxon_taxon_list_id: 'xxxx'
-             }
-         }
-     ])
-
-     or:
-
-     new Collection([
-         new Model({
-             id: 'xxxx'
-             attributes: {
-                taxon: 'xxxx'
-             }
-         })
-     ])
-     */
-
     m.Collection = (function () {
 
         var Module = function (options) {
             var model = null;
-            this.Model = options.model;
+            this.Model = options.Model;
 
             this.data = [];
             this.length = 0;
@@ -73,22 +38,15 @@ define(['helpers', "Events"], function () {
                     if (model instanceof this.Model) {
                         this.data.push(model);
                     } else {
-                        m.extend(model, {
-                            plainAttributes: true
-                        });
                         model = new this.Model(model);
                         this.data.push(model);
                     }
                     this.length++;
                 }
             }
-
-            this.initialize();
         };
 
         m.extend(Module.prototype, {
-            initialize: function () {},
-
             add: function (items) {
                 return this.set(items);
             },
@@ -118,11 +76,6 @@ define(['helpers', "Events"], function () {
                 return modified;
             },
 
-            /**
-             *
-             * @param model model or its ID
-             * @returns {*}
-             */
             get: function (item) {
                 var id = item.id || item;
                 for (var i = 0; i < this.data.length; i++) {
@@ -137,9 +90,9 @@ define(['helpers', "Events"], function () {
                 return this.data[0];
             },
 
-            each: function (method) {
+            each: function (method, context) {
                 for (var i = 0; i < this.data.length; i++) {
-                    method(this.data[i]);
+                    method.apply(context || this, [this.data[i]]);
                 }
             },
 
@@ -203,7 +156,7 @@ define(['helpers', "Events"], function () {
                 var flattened = {};
 
                 for (var i = 0; i < this.length; i++) {
-                    m.extend(flattened, this.data[i].flatten(flattener))
+                    m.extend(flattened, this.data[i].flatten(flattener, i))
                 }
                 return flattened;
             },
