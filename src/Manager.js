@@ -182,7 +182,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                         sample.metadata.synced_on = new Date();
 
                         //resize images to snapshots
-                        this._resizeImages(sample, function () {
+                        that._resizeImages(sample, function () {
                             //save sample
                             that.set(sample, function (err, sample) {
                                 sample.trigger('sync:done');
@@ -212,13 +212,10 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                 sample.occurrences.each(function (occurrence) {
                     var imgCount = 0;
                     occurrence.images.each(function (image) {
-                        var name = 'sc:' + occCount + '::occurrence_medium:path:' + imgCount;
+                        var name = 'sc:' + occCount + '::photo' + imgCount;
                         var blob = m.dataURItoBlob(image.data, image.type);
                         var extension = image.type.split('/')[1];
                         formData.append(name, blob, 'pic.' + extension);
-
-                        name = 'sc:' + occCount + '::occurrence_medium:media_type:' + imgCount;
-                        formData.append(name, 'Image:Local');
                     });
                     occCount++;
                 });
@@ -333,6 +330,11 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                         images_count++;
                     });
                 });
+
+                if (!images_count) {
+                    callback();
+                    return;
+                }
 
                 //resize
                 //each occurrence
