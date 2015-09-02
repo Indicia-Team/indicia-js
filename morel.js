@@ -550,6 +550,10 @@
                 this.trigger('update');
             },
 
+            sort: function (comparator) {
+              this.data.sort(comparator);
+            },
+
             toJSON: function () {
                 var json = [];
                 for (var i = 0; i < this.data.length; i++) {
