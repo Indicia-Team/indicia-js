@@ -65,7 +65,9 @@ define(['helpers'], function () {
          * @returns {*}
          */
         run: function (onUpdate, callback, accuracyLimit) {
-            accuracyLimit = accuracyLimit || this.CONF.GPS_ACCURACY_LIMIT;
+            if (!(accuracyLimit && accuracyLimit < this.CONF.GPS_ACCURACY_LIMIT)) {
+                accuracyLimit = this.CONF.GPS_ACCURACY_LIMIT;
+            }
 
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {

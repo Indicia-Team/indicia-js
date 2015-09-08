@@ -451,6 +451,9 @@
                     this.length++;
                 }
             }
+
+            this.on('add', this._updateEvent, this);
+            this.on('remove', this._updateEvent, this);
         };
 
         m.extend(Module.prototype, {
@@ -460,7 +463,8 @@
 
             set: function (items) {
                 var modified = [],
-                    existing = null;
+                    existing = null,
+                    event = null;
                 //make an array if single object
                 items = !(items instanceof Array) ? [items] : items;
                 for (var i = 0; i < items.length; i++) {
@@ -475,11 +479,12 @@
 
                         this.data.push(items[i]);
                         this.length++;
+                        event = 'add';
                     }
                     modified.push(items[i]);
                 }
 
-                this.trigger('update');
+                event && this.trigger(event);
                 return modified;
             },
 
@@ -531,7 +536,7 @@
                         removed.push(current);
                     }
                 }
-                this.trigger('update');
+                removed.length && this.trigger('remove');
                 return removed;
             },
 
@@ -547,7 +552,7 @@
             clear: function () {
                 this.data = [];
                 this.length = 0;
-                this.trigger('update');
+                this.trigger('clear');
             },
 
             sort: function (comparator) {
@@ -574,6 +579,10 @@
 
             _modelEvent: function () {
                 this.trigger('change');
+            },
+
+            _updateEvent: function () {
+                this.trigger('update');
             }
         });
 
@@ -2146,7 +2155,9 @@
          * @returns {*}
          */
         run: function (onUpdate, callback, accuracyLimit) {
-            accuracyLimit = accuracyLimit || this.CONF.GPS_ACCURACY_LIMIT;
+            if (!(accuracyLimit && accuracyLimit < this.CONF.GPS_ACCURACY_LIMIT)) {
+                accuracyLimit = this.CONF.GPS_ACCURACY_LIMIT;
+            }
 
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {

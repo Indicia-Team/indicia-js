@@ -175,22 +175,22 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     if (err) {
                         sample.trigger('sync:error');
                         callback && callback(err);
-                    } else {
-                        //update sample
-                        sample.metadata.warehouse_id = 1;
-                        sample.metadata.server_on = new Date();
-                        sample.metadata.synced_on = new Date();
-
-                        //resize images to snapshots
-                        that._resizeImages(sample, function () {
-                            //save sample
-                            that.set(sample, function (err, sample) {
-                                sample.trigger('sync:done');
-                                callback && callback(null, sample);
-                            });
-                        });
-
+                        return;
                     }
+
+                    //update sample
+                    sample.metadata.warehouse_id = 1;
+                    sample.metadata.server_on = new Date();
+                    sample.metadata.synced_on = new Date();
+
+                    //resize images to snapshots
+                    that._resizeImages(sample, function () {
+                        //save sample
+                        that.set(sample, function (err, sample) {
+                            sample.trigger('sync:done');
+                            callback && callback(null, sample);
+                        });
+                    });
                 });
             },
 

@@ -44,6 +44,9 @@ define(['helpers', "Events"], function () {
                     this.length++;
                 }
             }
+
+            this.on('add', this._updateEvent, this);
+            this.on('remove', this._updateEvent, this);
         };
 
         m.extend(Module.prototype, {
@@ -53,7 +56,8 @@ define(['helpers', "Events"], function () {
 
             set: function (items) {
                 var modified = [],
-                    existing = null;
+                    existing = null,
+                    event = null;
                 //make an array if single object
                 items = !(items instanceof Array) ? [items] : items;
                 for (var i = 0; i < items.length; i++) {
@@ -68,11 +72,12 @@ define(['helpers', "Events"], function () {
 
                         this.data.push(items[i]);
                         this.length++;
+                        event = 'add';
                     }
                     modified.push(items[i]);
                 }
 
-                this.trigger('update');
+                event && this.trigger(event);
                 return modified;
             },
 
@@ -124,7 +129,7 @@ define(['helpers', "Events"], function () {
                         removed.push(current);
                     }
                 }
-                this.trigger('update');
+                removed.length && this.trigger('remove');
                 return removed;
             },
 
@@ -140,7 +145,7 @@ define(['helpers', "Events"], function () {
             clear: function () {
                 this.data = [];
                 this.length = 0;
-                this.trigger('update');
+                this.trigger('clear');
             },
 
             sort: function (comparator) {
@@ -167,6 +172,10 @@ define(['helpers', "Events"], function () {
 
             _modelEvent: function () {
                 this.trigger('change');
+            },
+
+            _updateEvent: function () {
+                this.trigger('update');
             }
         });
 
