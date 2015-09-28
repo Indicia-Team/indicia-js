@@ -8,6 +8,47 @@ management and communication with Indicia Drupal API (mobile_auth module)
 - Offline storage (LocalStorage, IndexedDB and easily added more)
 - Two way synchronisation with the cloud (Drupal mobile_auth module)
 
+
+## Usage
+
+```javascript
+
+//Sample
+
+var sample = new morel.Sample();
+
+sample.set('date', '12/2/2012')
+
+sample.set('location', '12.345, -12.345')
+
+//Occurrence
+
+var occurrence = new morel.Occurrence();
+
+occurrence.set('taxon', 'bee')
+
+occurrence.set('number', 5);
+
+sample.occurrences.set(occurrence);
+
+//Image
+
+var image = new morel.Image()
+
+image.resize(800, 400)
+
+occurrence.images.set(image);
+
+//Manager
+
+var manager = new morel.Manager()
+
+manager.set(sample);
+
+manager.syncAll();
+
+```
+
 ## Initialization
 
 ### Step 1: Get the library
@@ -83,48 +124,8 @@ So instead of `occurrence.set(232, 12343)` one can
 
 ```
 
-## Usage
-
-```javascript
-
-//Sample
-
-var sample = new morel.Sample();
-
-sample.set('date', '12/2/2012')
-
-sample.set('location', '12.345, -12.345')
-
-//Occurrence
-
-var occurrence = new morel.Occurrence();
-
-occurrence.set('taxon', 'bee')
-
-occurrence.set('number', 5);
-
-sample.occurrences.set(occurrence);
-
-//Image
-
-var image = new morel.Image()
-
-image.resize(800, 400)
-
-occurrence.images.set(image);
-
-//Manager
-
-var manager = new morel.Manager()
-
-manager.set(sample);
-
-manager.syncAll();
-
-```
-
 ### All functions
-Manager:
+**Manager:***
 
 clear: (callback)
 get: (item, callback)
@@ -141,7 +142,7 @@ sync: (item, callback)
 syncAll: (onSample, callback)
 trigger: (name, attributes)
 
-Sample:
+***Sample:***
 
 clear: ()
 flatten: (flattener)
@@ -156,7 +157,7 @@ set: (name, data)
 toJSON: ()
 trigger: (name, attributes)
 
-Occurrence:
+***Occurrence:***
 
 clear: ()
 flatten: (flattener, count)
@@ -170,7 +171,7 @@ set: (name, data)
 toJSON: ()
 trigger: (name, attributes)
 
-Image:
+***Image:***
 
 off: (name, callback, context)
 offAll: ()
@@ -179,7 +180,7 @@ resize: (MAX_WIDTH, MAX_HEIGHT, callback)
 toJSON: ()
 trigger: (name, attributes)
 
-Collection:
+***Collection:***
 
 add: (items)
 clear: ()
