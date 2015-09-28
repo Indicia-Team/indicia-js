@@ -17,7 +17,7 @@
 
 //>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define, */
-define(['helpers', 'Events'], function () {
+define(['helpers', 'Events', 'Occurrence'], function () {
 //>>excludeEnd('buildExclude');
     /***********************************************************************
      * COLLECTION MODULE
@@ -27,7 +27,7 @@ define(['helpers', 'Events'], function () {
 
         var Module = function (options) {
             var model = null;
-            this.Model = options.Model;
+            this.Model = options.Model || m.Occurrence;
 
             this.data = [];
             this.length = 0;
