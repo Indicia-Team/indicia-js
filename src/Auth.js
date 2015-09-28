@@ -1,7 +1,7 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define */
 define(['helpers'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * AUTH
      **********************************************************************/
@@ -137,6 +137,6 @@ define(['helpers'], function () {
         return Module;
     }());
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

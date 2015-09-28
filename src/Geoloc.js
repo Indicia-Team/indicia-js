@@ -1,6 +1,6 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 define(['helpers'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * GEOLOCATION MODULE
      **********************************************************************/
@@ -71,7 +71,7 @@ define(['helpers'], function () {
 
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {
-                var error = new m.Error("Geolocation is not supported.");
+                var error = new m.Error('Geolocation is not supported.');
                 callback && callback(error);
                 return;
             }
@@ -118,7 +118,7 @@ define(['helpers'], function () {
 
                     var error = new m.Error({
                         number: that.TIMEOUT_ERR,
-                        message: "Geolocation timed out."
+                        message: 'Geolocation timed out.'
                     });
                     callback && callback(error);
                     return;
@@ -162,6 +162,6 @@ define(['helpers'], function () {
 
     m.extend(m.Geoloc, m.Events);
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

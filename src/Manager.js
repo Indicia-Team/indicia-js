@@ -1,7 +1,7 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define */
 define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * MANAGER
      **********************************************************************/
@@ -358,6 +358,6 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
         return Module;
     }());
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

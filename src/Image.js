@@ -1,7 +1,7 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define */
 define(['helpers'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * IMAGE
      **********************************************************************/
@@ -106,12 +106,12 @@ define(['helpers'], function () {
                     height = height / res;
 
                     // Create a canvas with the desired dimensions
-                    canvas = document.createElement("canvas");
+                    canvas = document.createElement('canvas');
                     canvas.width = width;
                     canvas.height = height;
 
                     // Scale and draw the source image to the canvas
-                    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+                    canvas.getContext('2d').drawImage(image, 0, 0, width, height);
 
                     // Convert the canvas to a data URL in some format
                     callback(null, image, canvas.toDataURL(fileType));
@@ -124,6 +124,6 @@ define(['helpers'], function () {
         return Module;
     }());
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

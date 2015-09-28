@@ -1,7 +1,7 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define, isEmptyObject, isPlainObject, IDBKeyRange, indexedDB */
 define(['helpers', 'Error'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * DATABASE STORAGE
      **********************************************************************/
@@ -23,8 +23,8 @@ define(['helpers', 'Error'], function () {
 
             VERSION: 1,
             TYPE: 'DatabaseStorage',
-            NAME: "morel",
-            STORE_NAME: "samples",
+            NAME: 'morel',
+            STORE_NAME: 'samples',
 
             /**
              * Adds an item under a specified key to the database.
@@ -234,7 +234,7 @@ define(['helpers', 'Error'], function () {
                  */
                 req.onsuccess = function (e) {
                     var db = e.target.result,
-                        transaction = db.transaction([that.STORE_NAME], "readwrite"),
+                        transaction = db.transaction([that.STORE_NAME], 'readwrite'),
                         store = null,
                         err = null;
                     if (transaction) {
@@ -287,6 +287,6 @@ define(['helpers', 'Error'], function () {
         return Module;
     }());
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

@@ -1,6 +1,6 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 define([], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * HELPER FUNCTIONS
      **********************************************************************/
@@ -12,7 +12,7 @@ define([], function () {
      * @returns {*}
      */
     m.cloneDeep = function (obj) {
-        if (null === obj || "object" !== typeof obj) {
+        if (null === obj || 'object' !== typeof obj) {
             return obj;
         }
         var copy = {};
@@ -57,7 +57,7 @@ define([], function () {
     // https://gist.github.com/bgrins/6194623
 
     // data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
-    // The "data" URL scheme: http://tools.ietf.org/html/rfc2397
+    // The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
     // Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
     m.isDataURL = function (s) {
         if (!s) {
@@ -73,28 +73,28 @@ define([], function () {
     m.isPlainObject = function (obj) {
         function type(obj) {
             var class2type = {};
-            var types = "Boolean Number String Function Array Date RegExp Object".split(" ");
+            var types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
             for (var i = 0; i < types.length; i++) {
-                class2type["[object " + types[i] + "]"] = types[i].toLowerCase();
+                class2type['[object ' + types[i] + ']'] = types[i].toLowerCase();
             }
             return obj == null ?
                 String(obj) :
-            class2type[toString.call(obj)] || "object";
+            class2type[toString.call(obj)] || 'object';
         }
 
         function isWindow(obj) {
-            return obj && typeof obj === "object" && "setInterval" in obj;
+            return obj && typeof obj === 'object' && 'setInterval' in obj;
         }
 
         // Must be an Object.
         // Because of IE, we also have to check the presence of the constructor property.
         // Make sure that DOM nodes and window objects don't pass through, as well
-        if (!obj || type(obj) !== "object" || obj.nodeType || isWindow(obj)) {
+        if (!obj || type(obj) !== 'object' || obj.nodeType || isWindow(obj)) {
             return false;
         }
 
         // Not own constructor property must be Object
-        if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+        if (obj.constructor && !hasOwn.call(obj, 'constructor') && !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')) {
             return false;
         }
 
@@ -175,12 +175,12 @@ define([], function () {
         }
 
         now = date || now;
-        day = ("0" + now.getDate()).slice(-2);
-        month = ("0" + (now.getMonth() + 1)).slice(-2);
+        day = ('0' + now.getDate()).slice(-2);
+        month = ('0' + (now.getMonth() + 1)).slice(-2);
 
-        return (day) + "/" + (month) + "/" + now.getFullYear();
+        return (day) + '/' + (month) + '/' + now.getFullYear();
     };
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

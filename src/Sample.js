@@ -1,7 +1,7 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global define, m */
-define(['helpers', 'Occurrence', "Collection", "Events"], function () {
-//>>excludeEnd("buildExclude");
+define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * SAMPLE
      *
@@ -187,6 +187,6 @@ define(['helpers', 'Occurrence', "Collection", "Events"], function () {
 
         return Module;
     }());
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

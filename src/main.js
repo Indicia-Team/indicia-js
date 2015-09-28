@@ -1,8 +1,8 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 define([], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
 
-    "use strict";
+    'use strict';
 
     m.VERSION = '0'; //library version, generated/replaced by grunt
 
@@ -14,6 +14,6 @@ define([], function () {
     m.CHANGED_SERVER = 5;
     m.CONFLICT = -1;
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

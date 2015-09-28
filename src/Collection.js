@@ -15,10 +15,10 @@
 //  ]
 //};
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define, */
-define(['helpers', "Events"], function () {
-//>>excludeEnd("buildExclude");
+define(['helpers', 'Events'], function () {
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * COLLECTION MODULE
      **********************************************************************/
@@ -183,6 +183,6 @@ define(['helpers', "Events"], function () {
 
         return Module;
     }());
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');

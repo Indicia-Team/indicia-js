@@ -1,8 +1,8 @@
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define */
 define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
     'LocalStorage', 'DatabaseStorage'], function () {
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
     /***********************************************************************
      * STORAGE
      **********************************************************************/
@@ -155,6 +155,6 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
         return Module;
     }());
 
-//>>excludeStart("buildExclude", pragmas.buildExclude);
+//>>excludeStart('buildExclude', pragmas.buildExclude);
 });
-//>>excludeEnd("buildExclude");
+//>>excludeEnd('buildExclude');
