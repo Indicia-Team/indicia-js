@@ -1,52 +1,129 @@
-Provides general use Indicia targeted mobile app recording libraries.
+Indicia Javascript SDK
 
-Install using Bower: `bower install 'NERC-CEH/morel'`
+Modular and framework independent JS library for biological record 
+management and communication with Indicia Drupal API (mobile_auth module)
 
-## Use
+## Features 
+- Effortless work with biological records (Samples and Occurrences)
+- Offline storage (LocalStorage, IndexedDB and easily added more)
+- Two way synchronisation with the cloud (Drupal mobile_auth module)
+
+## Initialization
+
+### Step 1: Get the library
+#### Install using Bower: `bower install 'NERC-CEH/morel'`
+#### Git clone: `git clone git://github.com/NERC-CEH/morel.git`
+
+
+### Step 2: include JS files
+
+You can find them in the root folder of the library.
+
+```html
+<!-- Add JS library file -->
+<script src="path/to/morel.min.js"></script>
+```
+
+It doesn't matter how and where you load the library. Code is executed only when you 
+initialize the library.
+
+`morel` also supports AMD loaders like RequireJS or CommonJS:
 
 ```javascript
-//configuration
-$.extend(morel.io.CONF, {
-  RECORD_URL: 'https://example.com/'
-});
-$.extend(morel.auth.CONF, {
-  APPNAME: "appName",
-  APPSECRET: "appSecret",
-  WEBSITE_ID: 1,
-  SURVEY_ID: 2
+require(['path/to/morel.min.js'], function (morel) {
+    //var Manager = new morel.Manager();
 });
 
-//save input
-morel.record.inputs.set('sample:date', '12/12/1923');
+```
 
-//get input
-morel.record.inputs.get('sample:date');
-morel.record.inputs.get(morel.record.inputs.KEYS.DATE); //same as previous
+## Configuration
 
-//get current record
-morel.record.get()
+```javascript
+var options = {
+  url: 'http://example.com/mobile/submit',
+  appname: "appName",
+  appsecret: "appSecret",
+  website_id: 1,
+  survey_id: 2,
+}
 
-//send current record
-morel.io.sendSavedRecord(savedRecordId, onSuccess, onError);
+var manager = new morel.Manager(options);
 
-//save current record
-morel.record.db.save(onSuccess, onError);
+```
 
-//get saved records
-morel.record.db.getAll(onSuccess, onError);
-morel.record.db.get(savedRecordId, onSuccess, onError); //individual
+You can set human friendly warehouse attribute names (ids) and values for both Sample and Occurrence
+attributes:
+
+So instead of `occurrence.set(232, 12343)` one can `occurrence.set('taxon', 'bee')`
+
+```javascript
+ //Samples
+ morel.extend(morel.Sample.keys, {
+        name: {
+            id: 574
+        },
+        email: {
+            id: 572
+        }
+    });
+
+
+   //Occurrences
+   morel.extend(morel.Occurrence.keys, {
+        certain: {
+            id: 398
+        },
+        taxon: {
+            id: 232,
+            values: {
+                1: 272198,
+                bee: 12343
+            }
+        }
+   });
+
+```
+
+## Usage
+
+```javascript
+//Sample
+
+var sample = new morel.Sample();
+
+sample.set('date', '12/2/2012')
+
+sample.set('location', '12.345, -12.345')
+
+//Occurrence
+
+var occurrence = new morel.Occurrence();
+
+occurrence.set('taxon', 'bee')
+
+occurrence.set('number', 5);
+
+sample.occurrence.add(occurrence);
+
+//Manager
+
+var manager = new morel.Manager()
+
+manager.set(sample);
+
+manager.syncAll();
 
 ```
 
 ## Requirements
 
-[jQuery](https://jquery.com/).
-
-[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) is optional if localStorage is enough.
+[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) - optional if no IndexedDB 
+is not in use or is fully supported by targeted browsers, or localStorage is enough.
 
 ## Building
 
-- Install [NodeJS](http://nodejs.org/)
+To compile morel by yourself make sure that you have  [Node.js](http://nodejs.org/) and [Grunt.js](https://github.com/cowboy/grunt) 
+
 - Get a copy of the source by running:
 
 ```bash
@@ -65,8 +142,13 @@ cd morel && npm install
 grunt
 ```
 
-This will create a `dist` folder with the javascript code.
+This will update a `morel.js` and `morel.min.js`.
 
+- Test the code
+ 
+ ```bash
+ grunt test
+ ```
 
 ## Bugs and feature requests
 
