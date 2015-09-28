@@ -100,6 +100,6 @@ module.exports = function (grunt) {
     // the default task can be run just by typing "grunt" on the command line
     grunt.registerTask('build', ['requirejs', 'concat', 'replace', 'uglify']);
     grunt.registerTask('test', ['karma']);
-    grunt.registerTask('default', ['build', 'karma']);
+    grunt.registerTask('default', ['build']);
 
 };
