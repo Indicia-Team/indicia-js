@@ -87,6 +87,7 @@ So instead of `occurrence.set(232, 12343)` one can `occurrence.set('taxon', 'bee
 ## Usage
 
 ```javascript
+
 //Sample
 
 var sample = new morel.Sample();
@@ -103,7 +104,15 @@ occurrence.set('taxon', 'bee')
 
 occurrence.set('number', 5);
 
-sample.occurrence.add(occurrence);
+sample.occurrences.set(occurrence);
+
+//Image
+
+var image = new morel.Image()
+
+image.resize(800, 400)
+
+occurrence.images.set(image);
 
 //Manager
 
@@ -114,6 +123,77 @@ manager.set(sample);
 manager.syncAll();
 
 ```
+
+### All functions
+Manager:
+clear: (callback)
+get: (item, callback)
+getAll: (callback)
+has: (item, callback)
+off: (name, callback, context)
+offAll: ()
+on: (name, callback, context)
+remove: (item, callback)
+send: (sample, callback)
+sendStored: (sample, callback)
+set: (item, callback)
+sync: (item, callback)
+syncAll: (onSample, callback)
+trigger: (name, attributes)
+
+Sample:
+clear: ()
+flatten: (flattener)
+get: (name)
+getSyncStatus: ()
+has: (name)
+off: (name, callback, context)
+offAll: ()
+on: (name, callback, context)
+remove: (name)
+set: (name, data)
+toJSON: ()
+trigger: (name, attributes)
+
+Occurrence:
+clear: ()
+flatten: (flattener, count)
+get: (name)
+has: (name)
+off: (name, callback, context)
+offAll: ()
+on: (name, callback, context)
+remove: (name)
+set: (name, data)
+toJSON: ()
+trigger: (name, attributes)
+
+Image:
+off: (name, callback, context)
+offAll: ()
+on: (name, callback, context)
+resize: (MAX_WIDTH, MAX_HEIGHT, callback)
+toJSON: ()
+trigger: (name, attributes)
+
+Collection:
+add: (items)
+clear: ()
+create: ()
+each: (method, context)
+flatten: (flattener)
+get: (item)
+getFirst: ()
+has: (item)
+off: (name, callback, context)
+offAll: ()
+on: (name, callback, context)
+remove: (items)
+set: (items)
+size: ()
+sort: (comparator)
+toJSON: ()
+trigger: (name, attributes)
 
 ## Requirements
 
