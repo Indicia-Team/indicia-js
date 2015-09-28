@@ -1,5 +1,5 @@
 /*!
- * morel 3.0.0-alpha
+ * morel 3.0.0
  * Mobile Recording Library for biological data collection. 
  *
  * https://github.com/NERC-CEH/morel
@@ -30,9 +30,9 @@
         root.morel = factory(root, {}, (root.$ || root.jQuery));
     }
 }(function (root, m, $) {
-    "use strict";
+    'use strict';
 
-    m.VERSION = '3.0.0-alpha'; //library version, generated/replaced by grunt
+    m.VERSION = '3.0.0'; //library version, generated/replaced by grunt
 
     //CONSTANTS
     m.SYNCED = 1;
@@ -54,7 +54,7 @@
      * @returns {*}
      */
     m.cloneDeep = function (obj) {
-        if (null === obj || "object" !== typeof obj) {
+        if (null === obj || 'object' !== typeof obj) {
             return obj;
         }
         var copy = {};
@@ -99,7 +99,7 @@
     // https://gist.github.com/bgrins/6194623
 
     // data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
-    // The "data" URL scheme: http://tools.ietf.org/html/rfc2397
+    // The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
     // Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
     m.isDataURL = function (s) {
         if (!s) {
@@ -115,28 +115,28 @@
     m.isPlainObject = function (obj) {
         function type(obj) {
             var class2type = {};
-            var types = "Boolean Number String Function Array Date RegExp Object".split(" ");
+            var types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
             for (var i = 0; i < types.length; i++) {
-                class2type["[object " + types[i] + "]"] = types[i].toLowerCase();
+                class2type['[object ' + types[i] + ']'] = types[i].toLowerCase();
             }
             return obj == null ?
                 String(obj) :
-            class2type[toString.call(obj)] || "object";
+            class2type[toString.call(obj)] || 'object';
         }
 
         function isWindow(obj) {
-            return obj && typeof obj === "object" && "setInterval" in obj;
+            return obj && typeof obj === 'object' && 'setInterval' in obj;
         }
 
         // Must be an Object.
         // Because of IE, we also have to check the presence of the constructor property.
         // Make sure that DOM nodes and window objects don't pass through, as well
-        if (!obj || type(obj) !== "object" || obj.nodeType || isWindow(obj)) {
+        if (!obj || type(obj) !== 'object' || obj.nodeType || isWindow(obj)) {
             return false;
         }
 
         // Not own constructor property must be Object
-        if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+        if (obj.constructor && !hasOwn.call(obj, 'constructor') && !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')) {
             return false;
         }
 
@@ -217,10 +217,10 @@
         }
 
         now = date || now;
-        day = ("0" + now.getDate()).slice(-2);
-        month = ("0" + (now.getMonth() + 1)).slice(-2);
+        day = ('0' + now.getDate()).slice(-2);
+        month = ('0' + (now.getMonth() + 1)).slice(-2);
 
-        return (day) + "/" + (month) + "/" + now.getFullYear();
+        return (day) + '/' + (month) + '/' + now.getFullYear();
     };
 
 
@@ -390,12 +390,12 @@
                     height = height / res;
 
                     // Create a canvas with the desired dimensions
-                    canvas = document.createElement("canvas");
+                    canvas = document.createElement('canvas');
                     canvas.width = width;
                     canvas.height = height;
 
                     // Scale and draw the source image to the canvas
-                    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+                    canvas.getContext('2d').drawImage(image, 0, 0, width, height);
 
                     // Convert the canvas to a data URL in some format
                     callback(null, image, canvas.toDataURL(fileType));
@@ -434,7 +434,7 @@
 
         var Module = function (options) {
             var model = null;
-            this.Model = options.Model;
+            this.Model = options.Model || m.Occurrence;
 
             this.data = [];
             this.length = 0;
@@ -1312,8 +1312,8 @@
 
             VERSION: 1,
             TYPE: 'DatabaseStorage',
-            NAME: "morel",
-            STORE_NAME: "samples",
+            NAME: 'morel',
+            STORE_NAME: 'samples',
 
             /**
              * Adds an item under a specified key to the database.
@@ -1523,7 +1523,7 @@
                  */
                 req.onsuccess = function (e) {
                     var db = e.target.result,
-                        transaction = db.transaction([that.STORE_NAME], "readwrite"),
+                        transaction = db.transaction([that.STORE_NAME], 'readwrite'),
                         store = null,
                         err = null;
                     if (transaction) {
@@ -2155,7 +2155,7 @@
 
             // Early return if geolocation not supported.
             if (!navigator.geolocation) {
-                var error = new m.Error("Geolocation is not supported.");
+                var error = new m.Error('Geolocation is not supported.');
                 callback && callback(error);
                 return;
             }
@@ -2202,7 +2202,7 @@
 
                     var error = new m.Error({
                         number: that.TIMEOUT_ERR,
-                        message: "Geolocation timed out."
+                        message: 'Geolocation timed out.'
                     });
                     callback && callback(error);
                     return;
