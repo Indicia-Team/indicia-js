@@ -111,7 +111,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                 if (!this.initialized) {
                     this.on('init', function () {
                         this.has(item, callback);
-                    });
+                    }, this);
                     return;
                 }
                 var key = typeof item === 'object' ? item.id : item;
@@ -121,7 +121,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
             clear: function (callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.clear(item, callback);
+                        this.clear(callback);
                     });
                     return;
                 }
@@ -134,6 +134,10 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                     that.cache.clear();
                     callback && callback();
                 });
+            },
+
+            size: function (callback) {
+              this.storage.size(callback);
             },
 
             _attachListeners: function () {

@@ -1496,24 +1496,14 @@
             },
 
             size: function (callback) {
-                this.open(function (err, store) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-
-                    var req = store.count();
-                    req.onsuccess = function () {
-                        callback(null, req.result);
-                    };
-
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+               this.getAll(function(err, data) {
+                   if (err) {
+                       callback(err);
+                       return;
+                   }
+                   var size = JSON.stringify(data).length;
+                   callback(null, size);
+               });
             },
 
             /**
@@ -1695,7 +1685,7 @@
                 if (!this.initialized) {
                     this.on('init', function () {
                         this.has(item, callback);
-                    });
+                    }, this);
                     return;
                 }
                 var key = typeof item === 'object' ? item.id : item;
@@ -1705,7 +1695,7 @@
             clear: function (callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.clear(item, callback);
+                        this.clear(callback);
                     });
                     return;
                 }
@@ -1718,6 +1708,10 @@
                     that.cache.clear();
                     callback && callback();
                 });
+            },
+
+            size: function (callback) {
+              this.storage.size(callback);
             },
 
             _attachListeners: function () {
@@ -1908,22 +1902,22 @@
                     if (err) {
                         sample.trigger('sync:error');
                         callback && callback(err);
-                    } else {
-                        //update sample
-                        sample.metadata.warehouse_id = 1;
-                        sample.metadata.server_on = new Date();
-                        sample.metadata.synced_on = new Date();
-
-                        //resize images to snapshots
-                        that._resizeImages(sample, function () {
-                            //save sample
-                            that.set(sample, function (err, sample) {
-                                sample.trigger('sync:done');
-                                callback && callback(null, sample);
-                            });
-                        });
-
+                        return;
                     }
+
+                    //update sample
+                    sample.metadata.warehouse_id = 1;
+                    sample.metadata.server_on = new Date();
+                    sample.metadata.synced_on = new Date();
+
+                    //resize images to snapshots
+                    that._resizeImages(sample, function () {
+                        //save sample
+                        that.set(sample, function (err, sample) {
+                            sample.trigger('sync:done');
+                            callback && callback(null, sample);
+                        });
+                    });
                 });
             },
 

@@ -207,24 +207,14 @@ define(['helpers', 'Error'], function () {
             },
 
             size: function (callback) {
-                this.open(function (err, store) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-
-                    var req = store.count();
-                    req.onsuccess = function () {
-                        callback(null, req.result);
-                    };
-
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+               this.getAll(function(err, data) {
+                   if (err) {
+                       callback(err);
+                       return;
+                   }
+                   var size = JSON.stringify(data).length;
+                   callback(null, size);
+               });
             },
 
             /**
