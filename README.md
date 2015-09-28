@@ -11,8 +11,8 @@ management and communication with Indicia Drupal API (mobile_auth module)
 ## Initialization
 
 ### Step 1: Get the library
-#### Install using Bower: `bower install 'NERC-CEH/morel'`
-#### Git clone: `git clone git://github.com/NERC-CEH/morel.git`
+- Install using Bower: `bower install 'NERC-CEH/morel'` or 
+- Git clone: `git clone git://github.com/NERC-CEH/morel.git`
 
 
 ### Step 2: include JS files
@@ -25,9 +25,7 @@ You can find them in the root folder of the library.
 ```
 
 It doesn't matter how and where you load the library. Code is executed only when you 
-initialize the library.
-
-`morel` also supports AMD loaders like RequireJS or CommonJS:
+initialize the library. `morel` also supports AMD loaders like RequireJS or CommonJS:
 
 ```javascript
 require(['path/to/morel.min.js'], function (morel) {
@@ -54,7 +52,8 @@ var manager = new morel.Manager(options);
 You can set human friendly warehouse attribute names (ids) and values for both Sample and Occurrence
 attributes:
 
-So instead of `occurrence.set(232, 12343)` one can `occurrence.set('taxon', 'bee')`
+So instead of `occurrence.set(232, 12343)` one can 
+`occurrence.set('taxon', 'bee')`, examples:
 
 ```javascript
  //Samples
@@ -126,6 +125,7 @@ manager.syncAll();
 
 ### All functions
 Manager:
+
 clear: (callback)
 get: (item, callback)
 getAll: (callback)
@@ -142,6 +142,7 @@ syncAll: (onSample, callback)
 trigger: (name, attributes)
 
 Sample:
+
 clear: ()
 flatten: (flattener)
 get: (name)
@@ -156,6 +157,7 @@ toJSON: ()
 trigger: (name, attributes)
 
 Occurrence:
+
 clear: ()
 flatten: (flattener, count)
 get: (name)
@@ -169,6 +171,7 @@ toJSON: ()
 trigger: (name, attributes)
 
 Image:
+
 off: (name, callback, context)
 offAll: ()
 on: (name, callback, context)
@@ -177,6 +180,7 @@ toJSON: ()
 trigger: (name, attributes)
 
 Collection:
+
 add: (items)
 clear: ()
 create: ()
