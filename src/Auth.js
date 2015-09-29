@@ -37,7 +37,7 @@ define(['helpers'], function () {
              */
             append: function (data) {
                 //user logins
-                //this.appendUser(data);
+                this.appendUser(data);
                 //app logins
                 this.appendApp(data);
                 //warehouse data
