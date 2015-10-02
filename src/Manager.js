@@ -71,7 +71,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
 
                 this.get(item, function (err, sample) {
                     if (err) {
-                        callback(err);
+                        callback && callback(err);
                         return;
                     }
 

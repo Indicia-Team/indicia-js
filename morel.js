@@ -1,5 +1,5 @@
 /*!
- * morel 3.0.0
+ * morel 3.0.1
  * Mobile Recording Library for biological data collection. 
  *
  * https://github.com/NERC-CEH/morel
@@ -32,7 +32,7 @@
 }(function (root, m, $) {
     'use strict';
 
-    m.VERSION = '3.0.0'; //library version, generated/replaced by grunt
+    m.VERSION = '3.0.1'; //library version, generated/replaced by grunt
 
     //CONSTANTS
     m.SYNCED = 1;
@@ -908,7 +908,7 @@
              */
             append: function (data) {
                 //user logins
-                //this.appendUser(data);
+                this.appendUser(data);
                 //app logins
                 this.appendApp(data);
                 //warehouse data
@@ -1325,27 +1325,31 @@
              * @param callback
              */
             set: function (key, data, callback) {
-                this.open(function (err, store) {
-                    if (err) {
-                        callback && callback(err);
-                        return;
-                    }
+                try {
+                    this.open(function (err, store) {
+                        if (err) {
+                            callback && callback(err);
+                            return;
+                        }
 
-                    data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
+                        data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
 
-                    var req = store.put(data, key);
+                        var req = store.put(data, key);
 
-                    req.onsuccess = function () {
-                        callback && callback(null, data);
-                    };
+                        req.onsuccess = function () {
+                            callback && callback(null, data);
+                        };
 
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+                        req.onerror = function (e) {
+                            var message = 'Database Problem: ' + e.target.error.message,
+                                error = new m.Error(message);
+                            console.error(message);
+                            callback && callback(error);
+                        };
+                    });
+                } catch (err) {
+                    callback && callback(err);
+                }
             },
 
             /**
@@ -1356,25 +1360,29 @@
              * @returns {*}
              */
             get: function (key, callback) {
-                this.open(function (err, store) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
+                try {
+                    this.open(function (err, store) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
 
-                    var req = store.index('id').get(key);
-                    req.onsuccess = function (e) {
-                        var data = e.target.result;
-                        callback(null, data);
-                    };
+                        var req = store.index('id').get(key);
+                        req.onsuccess = function (e) {
+                            var data = e.target.result;
+                            callback(null, data);
+                        };
 
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+                        req.onerror = function (e) {
+                            var message = 'Database Problem: ' + e.target.error.message,
+                                error = new m.Error(message);
+                            console.error(message);
+                            callback(error);
+                        };
+                    });
+                } catch (err) {
+                    callback(err);
+                }
             },
 
             /**
@@ -1387,29 +1395,33 @@
             remove: function (key, callback) {
                 var that = this;
 
-                this.open(function (err, store) {
-                    if (err) {
-                        callback && callback(err);
-                        return;
-                    }
-
-                    var req = store.openCursor(that.IDBKeyRange.only(key));
-                    req.onsuccess = function () {
-                        var cursor = req.result;
-                        if (cursor) {
-                            store.delete(cursor.primaryKey);
-                            cursor.continue();
-                        } else {
-                            callback && callback();
+                try {
+                    this.open(function (err, store) {
+                        if (err) {
+                            callback && callback(err);
+                            return;
                         }
-                    };
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+
+                        var req = store.openCursor(that.IDBKeyRange.only(key));
+                        req.onsuccess = function () {
+                            var cursor = req.result;
+                            if (cursor) {
+                                store.delete(cursor.primaryKey);
+                                cursor.continue();
+                            } else {
+                                callback && callback();
+                            }
+                        };
+                        req.onerror = function (e) {
+                            var message = 'Database Problem: ' + e.target.error.message,
+                                error = new m.Error(message);
+                            console.error(message);
+                            callback && callback(error);
+                        };
+                    });
+                } catch (err) {
+                    callback && callback(err);
+                }
             },
 
             /**
@@ -1418,38 +1430,42 @@
             getAll: function (callback) {
                 var that = this;
 
-                this.open(function (err, store) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-
-                    // Get everything in the store
-                    var keyRange = that.IDBKeyRange.lowerBound(0),
-                        req = store.openCursor(keyRange),
-                        data = {};
-
-                    req.onsuccess = function (e) {
-                        var result = e.target.result;
-
-                        // If there's data, add it to array
-                        if (result) {
-                            data[result.key] = result.value;
-                            result.continue();
-
-                            // Reach the end of the data
-                        } else {
-                            callback(null, data);
+                try {
+                    this.open(function (err, store) {
+                        if (err) {
+                            callback(err);
+                            return;
                         }
-                    };
 
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                });
+                        // Get everything in the store
+                        var keyRange = that.IDBKeyRange.lowerBound(0),
+                            req = store.openCursor(keyRange),
+                            data = {};
+
+                        req.onsuccess = function (e) {
+                            var result = e.target.result;
+
+                            // If there's data, add it to array
+                            if (result) {
+                                data[result.key] = result.value;
+                                result.continue();
+
+                                // Reach the end of the data
+                            } else {
+                                callback(null, data);
+                            }
+                        };
+
+                        req.onerror = function (e) {
+                            var message = 'Database Problem: ' + e.target.error.message,
+                                error = new m.Error(message);
+                            console.error(message);
+                            callback(error);
+                        };
+                    });
+                } catch (err) {
+                    callback(err);
+                }
             },
 
             /**
@@ -1473,26 +1489,30 @@
              * Clears all the saved data.
              */
             clear: function (callback) {
-                this.open(function (err, store) {
-                    if (err) {
-                        callback && callback(err);
-                        return;
-                    }
+                try {
+                    this.open(function (err, store) {
+                        if (err) {
+                            callback && callback(err);
+                            return;
+                        }
 
-                    var req = store.clear();
+                        var req = store.clear();
 
-                    req.onsuccess = function () {
-                        callback && callback();
-                    };
+                        req.onsuccess = function () {
+                            callback && callback();
+                        };
 
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
+                        req.onerror = function (e) {
+                            var message = 'Database Problem: ' + e.target.error.message,
+                                error = new m.Error(message);
+                            console.error(message);
 
-                        callback && callback(error);
-                    };
-                });
+                            callback && callback(error);
+                        };
+                    });
+                } catch (err) {
+                    callback && callback(err);
+                }
             },
 
             size: function (callback) {
@@ -1514,62 +1534,68 @@
              */
             open: function (callback) {
                 var that = this,
+                    req = null;
+
+                try {
                     req = this.indexedDB.open(this.NAME, this.VERSION);
 
-                /**
-                 * On Database opening success, returns the Records object store.
-                 *
-                 * @param e
-                 */
-                req.onsuccess = function (e) {
-                    var db = e.target.result,
-                        transaction = db.transaction([that.STORE_NAME], 'readwrite'),
-                        store = null,
-                        err = null;
-                    if (transaction) {
-                        store = transaction.objectStore(that.STORE_NAME);
-                        if (store) {
-                            callback(null, store);
-                        } else {
-                            err = new m.Error('Database Problem: no such store');
-                            callback(err);
+                    /**
+                     * On Database opening success, returns the Records object store.
+                     *
+                     * @param e
+                     */
+                    req.onsuccess = function (e) {
+                        var db = e.target.result,
+                            transaction = db.transaction([that.STORE_NAME], 'readwrite'),
+                            store = null,
+                            err = null;
+                        if (transaction) {
+                            store = transaction.objectStore(that.STORE_NAME);
+                            if (store) {
+                                callback(null, store);
+                            } else {
+                                err = new m.Error('Database Problem: no such store');
+                                callback(err);
+                            }
                         }
-                    }
-                };
+                    };
 
-                /**
-                 * If the Database needs an upgrade or is initialising.
-                 *
-                 * @param e
-                 */
-                req.onupgradeneeded = function (e) {
-                    var db = e.target.result;
-                    db.createObjectStore(that.STORE_NAME);
-                };
+                    /**
+                     * If the Database needs an upgrade or is initialising.
+                     *
+                     * @param e
+                     */
+                    req.onupgradeneeded = function (e) {
+                        var db = e.target.result;
+                        db.createObjectStore(that.STORE_NAME);
+                    };
 
-                /**
-                 * Error of opening the database.
-                 *
-                 * @param e
-                 */
-                req.onerror = function (e) {
-                    var message = 'Database Problem: ' + e.target.error.message,
-                        error = new m.Error(message);
-                    console.error(message);
-                    callback(error);
-                };
+                    /**
+                     * Error of opening the database.
+                     *
+                     * @param e
+                     */
+                    req.onerror = function (e) {
+                        var message = 'Database Problem: ' + e.target.error.message,
+                            error = new m.Error(message);
+                        console.error(message);
+                        callback(error);
+                    };
 
-                /**
-                 * Error on database being blocked.
-                 *
-                 * @param e
-                 */
-                req.onblocked = function (e) {
-                    var message = 'Database Problem: ' + e.target.error.message,
-                        error = new m.Error(message);
-                    console.error(message);
-                    callback(error);
-                };
+                    /**
+                     * Error on database being blocked.
+                     *
+                     * @param e
+                     */
+                    req.onblocked = function (e) {
+                        var message = 'Database Problem: ' + e.target.error.message,
+                            error = new m.Error(message);
+                        console.error(message);
+                        callback(error);
+                    };
+                } catch (err) {
+                    callback(err);
+                }
             }
         });
 
@@ -1798,7 +1824,7 @@
 
                 this.get(item, function (err, sample) {
                     if (err) {
-                        callback(err);
+                        callback && callback(err);
                         return;
                     }
 
