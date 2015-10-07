@@ -1,5 +1,5 @@
 /*!
- * morel 3.0.1
+ * morel 3.0.2
  * Mobile Recording Library for biological data collection. 
  *
  * https://github.com/NERC-CEH/morel
@@ -32,7 +32,7 @@
 }(function (root, m, $) {
     'use strict';
 
-    m.VERSION = '3.0.1'; //library version, generated/replaced by grunt
+    m.VERSION = '3.0.2'; //library version, generated/replaced by grunt
 
     //CONSTANTS
     m.SYNCED = 1;
@@ -1625,6 +1625,8 @@
             this.cache = {};
             this.initialized = false;
             this.storage.getAll(function (err, data) {
+                data || (data = {});
+
                 var samples = [],
                     sample = null,
                     keys = Object.keys(data);

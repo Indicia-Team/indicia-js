@@ -25,6 +25,8 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
             this.cache = {};
             this.initialized = false;
             this.storage.getAll(function (err, data) {
+                data || (data = {});
+
                 var samples = [],
                     sample = null,
                     keys = Object.keys(data);
