@@ -289,7 +289,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
 
                 for (attr in attributes) {
                     if (!keys[attr]) {
-                        console.warn('morel.Occurrence: no such key: ' + attr);
+                        console.warn('morel.Manager: no such key: ' + attr);
                         flattened[attr] = attributes;
                         continue;
                     }
