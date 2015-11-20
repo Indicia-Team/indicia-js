@@ -35,41 +35,41 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
             },
 
             //storage functions
-            get: function (item, callback) {
-                this.storage.get(item, callback);
+            get: function (model, callback) {
+                this.storage.get(model, callback);
             },
             getAll: function (callback) {
                 this.storage.getAll(callback);
             },
-            set: function (item, callback) {
-                this.storage.set(item, callback);
+            set: function (model, callback) {
+                this.storage.set(model, callback);
             },
-            remove: function (item, callback) {
-                this.storage.remove(item, callback);
+            remove: function (model, callback) {
+                this.storage.remove(model, callback);
             },
-            has: function (item, callback) {
-                this.storage.has(item, callback);
+            has: function (model, callback) {
+                this.storage.has(model, callback);
             },
             clear: function (callback) {
                 this.storage.clear(callback);
             },
 
-            sync: function (item, callback) {
+            sync: function (model, callback) {
                 var that = this;
 
-                if (item instanceof m.Sample) {
+                if (model instanceof m.Sample) {
 
-                    if (!item.synchronising) {
-                        item.synchronising = true;
-                        that.sendStored(item, function (err) {
-                            item.synchronising = false;
+                    if (!model.synchronising) {
+                        model.synchronising = true;
+                        that.sendStored(model, function (err) {
+                            model.synchronising = false;
                             callback && callback(err);
                         });
                     }
                     return;
                 }
 
-                this.get(item, function (err, sample) {
+                this.get(model, function (err, sample) {
                     if (err) {
                         callback && callback(err);
                         return;

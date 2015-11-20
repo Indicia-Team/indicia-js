@@ -440,39 +440,52 @@
         };
 
         m.extend(Module.prototype, {
-            add: function (items) {
-                return this.set(items);
+            add: function (models, options) {
+                return this.set(models, options);
             },
 
-            set: function (items) {
+            set: function (models, options) {
                 var modified = [],
                     existing = null,
-                    event = null;
+                    toAdd = [];
+
+                options || (options = {});
+
                 //make an array if single object
-                items = !(items instanceof Array) ? [items] : items;
-                for (var i = 0; i < items.length; i++) {
+                models = !(models instanceof Array) ? [models] : models;
+
+                var model;
+                for (var i = 0; i < models.length; i++) {
+                    model = models[i];
                     //update existing ones
-                    if (existing = this.get(items[i])) {
-                        existing.attributes = items[i].attributes;
+                    if (existing = this.get(model)) {
+                        existing.attributes = model.attributes;
                         //add new
                     } else {
-                        if (typeof items[i].on === 'function') {
-                            items[i].on('change', this._modelEvent, this);
+                        if (typeof model.on === 'function') {
+                            model.on('change', this._modelEvent, this);
                         }
 
-                        this.models.push(items[i]);
+                        this.models.push(model);
                         this.length++;
-                        event = 'add';
+                        toAdd.push(model);
                     }
-                    modified.push(items[i]);
+                    modified.push(models[i]);
                 }
 
-                event && this.trigger(event);
+                //fire events
+                for (i = 0; i < toAdd.length; i++) {
+                    model = toAdd[i];
+                    model.trigger('add', model, this, options);
+                }
+
+                if (toAdd.length) this.trigger('update', this, options);
+
                 return modified;
             },
 
-            get: function (item) {
-                var id = item.id || item;
+            get: function (model) {
+                var id = model.id || model;
                 for (var i = 0; i < this.models.length; i++) {
                     if (this.models[i].id == id) {
                         return this.models[i];
@@ -497,12 +510,12 @@
                 return model;
             },
 
-            remove: function (items) {
-                var items = !(items instanceof Array) ? [items] : items,
+            remove: function (models) {
+                var models = !(models instanceof Array) ? [models] : models,
                     removed = [];
-                for (var i = 0; i < items.length; i++) {
+                for (var i = 0; i < models.length; i++) {
                     //check if exists
-                    var current = this.get(items[i]);
+                    var current = this.get(models[i]);
                     if (!current) continue;
 
                     //get index
@@ -523,8 +536,8 @@
                 return removed;
             },
 
-            has: function (item) {
-                var model = this.get(item);
+            has: function (model) {
+                var model = this.get(model);
                 return model !== undefined && model !== null;
             },
 
@@ -588,7 +601,7 @@
             if (options.images) {
                 this.images = new m.Collection({
                     Model: m.Image,
-                    data: options.images
+                    models: options.images
                 });
             } else {
                 this.images = new m.Collection({
@@ -713,7 +726,7 @@
             if (options.occurrences) {
                 this.occurrences = new m.Collection({
                     Model: m.Occurrence,
-                    data: options.occurrences
+                    models: options.occurrences
                 });
             } else {
                 this.occurrences = new m.Collection({
@@ -1632,15 +1645,15 @@
         };
 
         m.extend(Module.prototype, {
-            get: function (item, callback) {
+            get: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.get(item, callback);
+                        this.get(model, callback);
                     });
                     return;
                 }
 
-                var key = typeof item === 'object' ? item.id : item;
+                var key = typeof model === 'object' ? model.id : model;
                 callback(null, this.cache.get(key));
             },
 
@@ -1654,52 +1667,52 @@
                 callback(null, this.cache);
             },
 
-            set: function (item, callback) {
+            set: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.set(item, callback);
+                        this.set(model, callback);
                     });
                     return;
                 }
                 var that = this,
-                    key = item.id;
-                this.storage.set(key, item, function (err) {
+                    key = model.id;
+                this.storage.set(key, model, function (err) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    that.cache.set(item);
-                    callback && callback(null, item);
+                    that.cache.set(model);
+                    callback && callback(null, model);
                 });
             },
 
-            remove: function (item, callback) {
+            remove: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.remove(item, callback);
+                        this.remove(model, callback);
                     });
                     return;
                 }
                 var that = this,
-                    key = typeof item === 'object' ? item.id : item;
+                    key = typeof model === 'object' ? model.id : model;
                 this.storage.remove(key, function (err) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    that.cache.remove(item);
+                    that.cache.remove(model);
                     callback && callback();
                 });
             },
 
-            has: function (item, callback) {
+            has: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.has(item, callback);
+                        this.has(model, callback);
                     }, this);
                     return;
                 }
-                var key = typeof item === 'object' ? item.id : item;
+                var key = typeof model === 'object' ? model.id : model;
                 this.cache.has(key, callback);
             },
 
@@ -1773,41 +1786,41 @@
             },
 
             //storage functions
-            get: function (item, callback) {
-                this.storage.get(item, callback);
+            get: function (model, callback) {
+                this.storage.get(model, callback);
             },
             getAll: function (callback) {
                 this.storage.getAll(callback);
             },
-            set: function (item, callback) {
-                this.storage.set(item, callback);
+            set: function (model, callback) {
+                this.storage.set(model, callback);
             },
-            remove: function (item, callback) {
-                this.storage.remove(item, callback);
+            remove: function (model, callback) {
+                this.storage.remove(model, callback);
             },
-            has: function (item, callback) {
-                this.storage.has(item, callback);
+            has: function (model, callback) {
+                this.storage.has(model, callback);
             },
             clear: function (callback) {
                 this.storage.clear(callback);
             },
 
-            sync: function (item, callback) {
+            sync: function (model, callback) {
                 var that = this;
 
-                if (item instanceof m.Sample) {
+                if (model instanceof m.Sample) {
 
-                    if (!item.synchronising) {
-                        item.synchronising = true;
-                        that.sendStored(item, function (err) {
-                            item.synchronising = false;
+                    if (!model.synchronising) {
+                        model.synchronising = true;
+                        that.sendStored(model, function (err) {
+                            model.synchronising = false;
                             callback && callback(err);
                         });
                     }
                     return;
                 }
 
-                this.get(item, function (err, sample) {
+                this.get(model, function (err, sample) {
                     if (err) {
                         callback && callback(err);
                         return;

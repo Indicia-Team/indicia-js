@@ -49,15 +49,15 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
         };
 
         m.extend(Module.prototype, {
-            get: function (item, callback) {
+            get: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.get(item, callback);
+                        this.get(model, callback);
                     });
                     return;
                 }
 
-                var key = typeof item === 'object' ? item.id : item;
+                var key = typeof model === 'object' ? model.id : model;
                 callback(null, this.cache.get(key));
             },
 
@@ -71,52 +71,52 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                 callback(null, this.cache);
             },
 
-            set: function (item, callback) {
+            set: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.set(item, callback);
+                        this.set(model, callback);
                     });
                     return;
                 }
                 var that = this,
-                    key = item.id;
-                this.storage.set(key, item, function (err) {
+                    key = model.id;
+                this.storage.set(key, model, function (err) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    that.cache.set(item);
-                    callback && callback(null, item);
+                    that.cache.set(model);
+                    callback && callback(null, model);
                 });
             },
 
-            remove: function (item, callback) {
+            remove: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.remove(item, callback);
+                        this.remove(model, callback);
                     });
                     return;
                 }
                 var that = this,
-                    key = typeof item === 'object' ? item.id : item;
+                    key = typeof model === 'object' ? model.id : model;
                 this.storage.remove(key, function (err) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    that.cache.remove(item);
+                    that.cache.remove(model);
                     callback && callback();
                 });
             },
 
-            has: function (item, callback) {
+            has: function (model, callback) {
                 if (!this.initialized) {
                     this.on('init', function () {
-                        this.has(item, callback);
+                        this.has(model, callback);
                     }, this);
                     return;
                 }
-                var key = typeof item === 'object' ? item.id : item;
+                var key = typeof model === 'object' ? model.id : model;
                 this.cache.has(key, callback);
             },
 

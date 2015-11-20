@@ -44,7 +44,7 @@ define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
             if (options.occurrences) {
                 this.occurrences = new m.Collection({
                     Model: m.Occurrence,
-                    data: options.occurrences
+                    models: options.occurrences
                 });
             } else {
                 this.occurrences = new m.Collection({

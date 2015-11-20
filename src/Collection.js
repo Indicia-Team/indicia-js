@@ -33,39 +33,52 @@ define(['helpers', 'Events', 'Occurrence'], function () {
         };
 
         m.extend(Module.prototype, {
-            add: function (items) {
-                return this.set(items);
+            add: function (models, options) {
+                return this.set(models, options);
             },
 
-            set: function (items) {
+            set: function (models, options) {
                 var modified = [],
                     existing = null,
-                    event = null;
+                    toAdd = [];
+
+                options || (options = {});
+
                 //make an array if single object
-                items = !(items instanceof Array) ? [items] : items;
-                for (var i = 0; i < items.length; i++) {
+                models = !(models instanceof Array) ? [models] : models;
+
+                var model;
+                for (var i = 0; i < models.length; i++) {
+                    model = models[i];
                     //update existing ones
-                    if (existing = this.get(items[i])) {
-                        existing.attributes = items[i].attributes;
+                    if (existing = this.get(model)) {
+                        existing.attributes = model.attributes;
                         //add new
                     } else {
-                        if (typeof items[i].on === 'function') {
-                            items[i].on('change', this._modelEvent, this);
+                        if (typeof model.on === 'function') {
+                            model.on('change', this._modelEvent, this);
                         }
 
-                        this.models.push(items[i]);
+                        this.models.push(model);
                         this.length++;
-                        event = 'add';
+                        toAdd.push(model);
                     }
-                    modified.push(items[i]);
+                    modified.push(models[i]);
                 }
 
-                event && this.trigger(event);
+                //fire events
+                for (i = 0; i < toAdd.length; i++) {
+                    model = toAdd[i];
+                    model.trigger('add', model, this, options);
+                }
+
+                if (toAdd.length) this.trigger('update', this, options);
+
                 return modified;
             },
 
-            get: function (item) {
-                var id = item.id || item;
+            get: function (model) {
+                var id = model.id || model;
                 for (var i = 0; i < this.models.length; i++) {
                     if (this.models[i].id == id) {
                         return this.models[i];
@@ -90,12 +103,12 @@ define(['helpers', 'Events', 'Occurrence'], function () {
                 return model;
             },
 
-            remove: function (items) {
-                var items = !(items instanceof Array) ? [items] : items,
+            remove: function (models) {
+                var models = !(models instanceof Array) ? [models] : models,
                     removed = [];
-                for (var i = 0; i < items.length; i++) {
+                for (var i = 0; i < models.length; i++) {
                     //check if exists
-                    var current = this.get(items[i]);
+                    var current = this.get(models[i]);
                     if (!current) continue;
 
                     //get index
@@ -116,8 +129,8 @@ define(['helpers', 'Events', 'Occurrence'], function () {
                 return removed;
             },
 
-            has: function (item) {
-                var model = this.get(item);
+            has: function (model) {
+                var model = this.get(model);
                 return model !== undefined && model !== null;
             },
 

@@ -17,7 +17,7 @@ define(['helpers', 'Image', 'Events', 'Collection'], function () {
             if (options.images) {
                 this.images = new m.Collection({
                     Model: m.Image,
-                    data: options.images
+                    models: options.images
                 });
             } else {
                 this.images = new m.Collection({
