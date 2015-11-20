@@ -120,7 +120,7 @@ define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
                 this._events = {};
                 this.occurrences.offAll();
                 for (var i = 0; i < this.occurrences.data.length; i++) {
-                    this.occurrences.data[i].offAll();
+                    this.occurrences.models[i].offAll();
                 }
             },
 

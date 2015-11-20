@@ -3,8 +3,8 @@ describe('Collection', function () {
         var collection = new morel.Collection({
             model: morel.Occurrence
         });
-        expect(collection.data).to.be.an.array;
-        expect(collection.data.length).to.be.equal(0);
+        expect(collection.models).to.be.an.array;
+        expect(collection.models.length).to.be.equal(0);
     });
 
 

@@ -39,7 +39,7 @@ define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
                 }
                 that.cache =  new m.Collection({
                     Model: that.Sample,
-                    data: samples
+                    models: samples
                 });
                 that._attachListeners();
 

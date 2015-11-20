@@ -409,23 +409,6 @@
     }());
 
 
-//{
-//  id: 'yyyyy-yyyyyy-yyyyyyy-yyyyy',
-//    warehouseID: -1, //occurrence_id
-//  status: 'local', //sent
-//  attr: {
-//  'occurrence:comment': 'value',
-//    'occAttr:12': 'value'
-//},
-//  images: [
-//    {
-//      status: 'local', //sent
-//      url: 'http://..', // points to the image on server
-//      data: 'data64:...'
-//    }
-//  ]
-//};
-
     /***********************************************************************
      * COLLECTION MODULE
      **********************************************************************/
@@ -436,17 +419,17 @@
             var model = null;
             this.Model = options.Model || m.Occurrence;
 
-            this.data = [];
+            this.models = [];
             this.length = 0;
 
-            if (options.data instanceof Array) {
-                for (var i = 0; i < options.data.length; i++) {
-                    model = options.data[i];
+            if (options.models instanceof Array) {
+                for (var i = 0; i < options.models.length; i++) {
+                    model = options.models[i];
                     if (model instanceof this.Model) {
-                        this.data.push(model);
+                        this.models.push(model);
                     } else {
                         model = new this.Model(model);
-                        this.data.push(model);
+                        this.models.push(model);
                     }
                     this.length++;
                 }
@@ -477,7 +460,7 @@
                             items[i].on('change', this._modelEvent, this);
                         }
 
-                        this.data.push(items[i]);
+                        this.models.push(items[i]);
                         this.length++;
                         event = 'add';
                     }
@@ -490,21 +473,21 @@
 
             get: function (item) {
                 var id = item.id || item;
-                for (var i = 0; i < this.data.length; i++) {
-                    if (this.data[i].id == id) {
-                        return this.data[i];
+                for (var i = 0; i < this.models.length; i++) {
+                    if (this.models[i].id == id) {
+                        return this.models[i];
                     }
                 }
                 return null;
             },
 
             getFirst: function () {
-                return this.data[0];
+                return this.models[0];
             },
 
             each: function (method, context) {
-                for (var i = 0; i < this.data.length; i++) {
-                    method.apply(context || this, [this.data[i]]);
+                for (var i = 0; i < this.models.length; i++) {
+                    method.apply(context || this, [this.models[i]]);
                 }
             },
 
@@ -524,14 +507,14 @@
 
                     //get index
                     var index = -1;
-                    for (var j = 0; index < this.data.length; j++) {
-                        if (this.data[j].id === current.id) {
+                    for (var j = 0; index < this.models.length; j++) {
+                        if (this.models[j].id === current.id) {
                             index = j;
                             break;
                         }
                     }
                     if (j > -1) {
-                        this.data.splice(index, 1);
+                        this.models.splice(index, 1);
                         this.length--;
                         removed.push(current);
                     }
@@ -541,28 +524,28 @@
             },
 
             has: function (item) {
-                var data = this.get(item);
-                return data !== undefined && data !== null;
+                var model = this.get(item);
+                return model !== undefined && model !== null;
             },
 
             size: function () {
-                return this.data.length;
+                return this.models.length;
             },
 
             clear: function () {
-                this.data = [];
+                this.models = [];
                 this.length = 0;
                 this.trigger('clear');
             },
 
             sort: function (comparator) {
-              this.data.sort(comparator);
+              this.models.sort(comparator);
             },
 
             toJSON: function () {
                 var json = [];
-                for (var i = 0; i < this.data.length; i++) {
-                    json.push(this.data[i].toJSON());
+                for (var i = 0; i < this.models.length; i++) {
+                    json.push(this.models[i].toJSON());
                 }
 
                 return json;
@@ -572,7 +555,7 @@
                 var flattened = {};
 
                 for (var i = 0; i < this.length; i++) {
-                    m.extend(flattened, this.data[i].flatten(flattener, i))
+                    m.extend(flattened, this.models[i].flatten(flattener, i))
                 }
                 return flattened;
             },
@@ -806,7 +789,7 @@
                 this._events = {};
                 this.occurrences.offAll();
                 for (var i = 0; i < this.occurrences.data.length; i++) {
-                    this.occurrences.data[i].offAll();
+                    this.occurrences.models[i].offAll();
                 }
             },
 
@@ -1639,7 +1622,7 @@
                 }
                 that.cache =  new m.Collection({
                     Model: that.Sample,
-                    data: samples
+                    models: samples
                 });
                 that._attachListeners();
 
@@ -1873,7 +1856,7 @@
                     that.trigger('sync:request');
 
                     //shallow copy
-                    var remainingSamples = m.extend([], samples.data);
+                    var remainingSamples = m.extend([], samples.models);
 
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
@@ -2044,7 +2027,7 @@
 
                 for (attr in attributes) {
                     if (!keys[attr]) {
-                        console.warn('morel.Occurrence: no such key: ' + attr);
+                        console.warn('morel.Manager: no such key: ' + attr);
                         flattened[attr] = attributes;
                         continue;
                     }
@@ -2112,6 +2095,7 @@
 
         return Module;
     }());
+
 
     /***********************************************************************
      * GEOLOCATION MODULE

@@ -118,7 +118,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     that.trigger('sync:request');
 
                     //shallow copy
-                    var remainingSamples = m.extend([], samples.data);
+                    var remainingSamples = m.extend([], samples.models);
 
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
