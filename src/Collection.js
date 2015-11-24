@@ -56,7 +56,7 @@ define(['helpers', 'Events', 'Occurrence'], function () {
                         //add new
                     } else {
                         if (typeof model.on === 'function') {
-                            model.on('change', this._modelEvent, this);
+                            model.on('all', this._onModelEvent, this);
                         }
 
                         this.models.push(model);
@@ -166,8 +166,9 @@ define(['helpers', 'Events', 'Occurrence'], function () {
                 return flattened;
             },
 
-            _modelEvent: function () {
-                this.trigger('change');
+            _onModelEvent: function(event, model, collection, options) {
+                if ((event === 'add' || event === 'remove') && collection !== this) return;
+                this.trigger.apply(this, arguments);
             },
 
             _updateEvent: function () {
