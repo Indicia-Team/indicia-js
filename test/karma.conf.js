@@ -1,6 +1,6 @@
 module.exports = function(config) {
   config.set({
-    browsers: ['Firefox'],
+    browsers: ['PhantomJS'],
 
     frameworks: ['mocha', 'chai'],
 
@@ -13,6 +13,7 @@ module.exports = function(config) {
     ],
 
     files: [
+      'indexeddbshim.min.js',
       '../morel.js',
       '*.js'
     ],
