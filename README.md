@@ -1,4 +1,4 @@
-# morel [![Build Status](https://travis-ci.org/Indicia-Team/morel.svg?branch=master)](https://travis-ci.org/Indicia-Team/morel)
+# morel [![Build Status](https://travis-ci.org/Indicia-Team/morel.svg?branch=v3.1)](https://travis-ci.org/Indicia-Team/morel)
 
 Indicia Javascript SDK
 
