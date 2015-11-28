@@ -18,7 +18,8 @@ module.exports = function(config) {
     ],
     reporters: ['progress'],
     port: 9876,
-    colors: true
+    colors: true,
+    singleRun: true
   });
 };
 
