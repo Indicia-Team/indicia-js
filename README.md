@@ -1,3 +1,5 @@
+# morel [![Build Status](https://travis-ci.org/Indicia-Team/morel.svg?branch=master)](https://travis-ci.org/Indicia-Team/morel)
+
 Indicia Javascript SDK
 
 Modular and framework independent JS library for biological record 
