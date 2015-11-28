@@ -1,6 +1,6 @@
 module.exports = function(config) {
   config.set({
-    browsers: ['PhantomJS'],
+    browsers: ['PhantomJS', 'Firefox'],
 
     frameworks: ['mocha', 'chai'],
 
