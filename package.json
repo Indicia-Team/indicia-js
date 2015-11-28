@@ -42,6 +42,7 @@
     "chai": "latest",
     "grunt-karma": "latest",
     "karma-phantomjs-launcher": "latest",
+    "karma-sauce-launcher": "latest",
     "karma-chrome-launcher": "latest",
     "karma-firefox-launcher": "latest"
   },
