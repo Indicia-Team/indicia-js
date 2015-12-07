@@ -36,7 +36,7 @@ define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
                 this.attributes = options.attributes;
             } else {
                 this.attributes = {
-                    date: m.formatDate(new Date()),
+                    date: new Date(),
                     location_type: 'latlon'
                 };
             }
