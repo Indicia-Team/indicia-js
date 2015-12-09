@@ -1,105 +1,78 @@
 //>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define, */
-define(['helpers', 'Image', 'Events', 'Collection'], function () {
+define(['helpers', 'Image', 'Collection'], function () {
 //>>excludeEnd('buildExclude');
-    /***********************************************************************
-     * OCCURRENCE
-     **********************************************************************/
+  /***********************************************************************
+   * OCCURRENCE
+   **********************************************************************/
 
-    m.Occurrence = (function () {
+  m.Occurrence = (function () {
+    var Module = Backbone.Model.extend({
+      constructor: function (attributes, options){
+        var attrs = attributes || {};
 
-        var Module = function (options) {
-            options || (options = {});
+        options || (options = {});
+        this.cid = options.cid || m.getNewUUID();
+        this.attributes = {};
+        if (options.collection) this.collection = options.collection;
+        if (options.parse) attrs = this.parse(attrs, options) || {};
+        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+        this.set(attrs, options);
+        this.changed = {};
 
-            this.id = options.id || m.getNewUUID();
-            this.attributes = options.attributes || {};
 
-            if (options.images) {
-                this.images = new m.Collection({
-                    Model: m.Image,
-                    models: options.images
-                });
-            } else {
-                this.images = new m.Collection({
-                    Model: m.Image
-                });
-            }
+        if (options.images) {
+          this.images = new m.Collection(options.images, {
+            model: m.Image
+          });
+        } else {
+          this.images = new m.Collection([], {
+            model: m.Image
+          });
+        }
+
+        this.initialize.apply(this, arguments);
+      },
+
+      toJSON: function () {
+        var data = {
+          id: this.id,
+          cid: this.cid,
+          attributes: this.attributes,
+          images: this.images.toJSON()
         };
+        //add occurrences
+        return data;
+      },
 
-        m.extend(Module.prototype, {
-            set: function (name, data) {
-                var changed = false;
+      /**
+       * Returns an object with attributes and their values flattened and
+       * mapped for warehouse submission.
+       *
+       * @param flattener
+       * @returns {*}
+       */
+      flatten: function (flattener, count) {
+        //images flattened separately
+        return flattener.apply(this, [Module.keys, this.attributes, count]);;
+      }
+    });
 
-                if (this.attributes[name] !== data) {
-                    changed = true;
-                }
 
-                this.attributes[name] = data;
+    /**
+     * Warehouse attributes and their values.
+     */
+    Module.keys = {
+      taxon: {
+        id: ''
+      },
+      comment: {
+        id: 'comment'
+      }
+    };
 
-                if (changed) {
-                    this.trigger('change:' + name);
-                }
-            },
-
-            get: function (name) {
-                return this.attributes[name];
-            },
-
-            remove: function (name) {
-                delete this.attributes[name];
-                this.trigger('change:' + name);
-            },
-
-            clear: function () {
-                this.attributes = {};
-                this.trigger('change');
-            },
-
-            has: function(name) {
-                var data = this.get(name);
-                return data !== undefined && data !== null;
-            },
-
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    attributes: this.attributes,
-                    images: this.images.toJSON()
-                };
-                //add occurrences
-                return data;
-            },
-
-            /**
-             * Returns an object with attributes and their values flattened and
-             * mapped for warehouse submission.
-             *
-             * @param flattener
-             * @returns {*}
-             */
-            flatten: function (flattener, count) {
-                //images flattened separately
-                return flattener.apply(this, [Module.keys, this.attributes, count]);;
-            }
-        });
-
-        //add events
-        m.extend(Module.prototype, m.Events);
-
-        /**
-         * Warehouse attributes and their values.
-         */
-        Module.keys = {
-            taxon: {
-                id: ''
-            },
-            comment: {
-                id: 'comment'
-            }
-        };
-
-        return Module;
-    }());
+    return Module;
+  }());
 //>>excludeStart('buildExclude', pragmas.buildExclude);
 });
 //>>excludeEnd('buildExclude');

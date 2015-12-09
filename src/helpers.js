@@ -116,37 +116,6 @@ define([], function () {
         return true;
     };
 
-    /**
-     * Extends an object with the properties of another object or return of a function.
-     * @param a Object or String. If String, then extends this libraries global
-     * @param b Function or Object
-     * @returns {*}
-     */
-    m.extend = function (a, b) {
-        if (typeof b === 'function') {
-            b = b();
-        }
-
-        //extend the library itself
-        if (typeof a === 'string') {
-            m[a] || (m[a] = {});
-            return ext(m[a], b);
-
-            //normal object extend
-        } else {
-            return ext(a, b);
-        }
-
-        function ext(a, b) {
-            for (var key in b) {
-                if (b.hasOwnProperty(key)) {
-                    a[key] = b[key];
-                }
-            }
-            return a;
-        }
-    };
-
   /**
    * Formats the date to Indicia Warehouse format.
    * @param date String or Date object

@@ -19,7 +19,7 @@ define(['helpers'], function () {
             this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             TYPE: 'LocalStorage',
             NAME: 'morel',
 

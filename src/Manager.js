@@ -1,6 +1,6 @@
 //>>excludeStart('buildExclude', pragmas.buildExclude);
 /*global m, define */
-define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
+define(['helpers', 'Sample', 'Auth', 'Storage'], function () {
 //>>excludeEnd('buildExclude');
     /***********************************************************************
      * MANAGER
@@ -28,7 +28,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
             this.synchronising = false;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             CONF: {
                 url: '',
                 appname: ''
@@ -118,7 +118,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                     that.trigger('sync:request');
 
                     //shallow copy
-                    var remainingSamples = m.extend([], samples.models);
+                    var remainingSamples = _.extend([], samples.models);
 
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
@@ -139,7 +139,8 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
                             }
 
                             for (var k = 0; k < remainingSamples.length; k++) {
-                                if (remainingSamples[k].id === sample.id) {
+                                if (remainingSamples[k].id === sample.id ||
+                                  remainingSamples[k].cid === sample.cid) {
                                     remainingSamples.splice(k, 1);
                                     break;
                                 }
@@ -353,7 +354,7 @@ define(['helpers', 'Events', 'Sample', 'Auth', 'Storage'], function () {
             }
         });
 
-        m.extend(Module.prototype, m.Events);
+        _.extend(Module.prototype, m.Events);
 
         return Module;
     }());

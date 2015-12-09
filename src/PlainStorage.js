@@ -12,7 +12,7 @@ define(['helpers'], function () {
             this.storage = {};
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             NAME: 'PlainStorage',
 
             /**

@@ -158,37 +158,6 @@
         return true;
     };
 
-    /**
-     * Extends an object with the properties of another object or return of a function.
-     * @param a Object or String. If String, then extends this libraries global
-     * @param b Function or Object
-     * @returns {*}
-     */
-    m.extend = function (a, b) {
-        if (typeof b === 'function') {
-            b = b();
-        }
-
-        //extend the library itself
-        if (typeof a === 'string') {
-            m[a] || (m[a] = {});
-            return ext(m[a], b);
-
-            //normal object extend
-        } else {
-            return ext(a, b);
-        }
-
-        function ext(a, b) {
-            for (var key in b) {
-                if (b.hasOwnProperty(key)) {
-                    a[key] = b[key];
-                }
-            }
-            return a;
-        }
-    };
-
   /**
    * Formats the date to Indicia Warehouse format.
    * @param date String or Date object
@@ -224,995 +193,523 @@
     };
 
 
-    /***********************************************************************
-     * EVENTS
-     **********************************************************************/
+  /***********************************************************************
+   * IMAGE
+   **********************************************************************/
 
-    m.Events = (function (){
+  m.Image = (function (){
 
-        // Backbone.Events
-        // ---------------
+    var Module = Backbone.Model.extend({
+      constructor: function (attributes, options) {
 
-        // A module that can be mixed in to *any object* in order to provide it with
-        // a custom event channel. You may bind a callback to an event with `on` or
-        // remove with `off`; `trigger`-ing an event fires all callbacks in
-        // succession.
-        //
-        //     var object = {};
-        //     _.extend(object, Backbone.Events);
-        //     object.on('expand', function(){ alert('expanded'); });
-        //     object.trigger('expand');
-        //
-        var Events = {};
+        if (typeof attributes === 'string') {
+          var data = attributes;
+          attributes = {data: data};
+          return;
+        }
+        var attrs = attributes || {};
 
-        // Regular expression used to split event strings.
-        var eventSplitter = /\s+/;
+        options || (options = {});
+        this.cid = options.cid || m.getNewUUID();
+        this.attributes = {};
+        if (options.collection) this.collection = options.collection;
+        if (options.parse) attrs = this.parse(attrs, options) || {};
+        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+        this.set(attrs, options);
+        this.changed = {};
 
-        // Iterates over the standard `event, callback` (as well as the fancy multiple
-        // space-separated events `"change blur", callback` and jQuery-style event
-        // maps `{event: callback}`).
-        var eventsApi = function(iteratee, events, name, callback, opts) {
-            var i = 0, names;
-            if (name && typeof name === 'object') {
-                // Handle event maps.
-                if (callback !== void 0 && 'context' in opts && opts.context === void 0) opts.context = callback;
-                for (names = _.keys(name); i < names.length ; i++) {
-                    events = eventsApi(iteratee, events, names[i], name[names[i]], opts);
-                }
-            } else if (name && eventSplitter.test(name)) {
-                // Handle space separated event names by delegating them individually.
-                for (names = name.split(eventSplitter); i < names.length; i++) {
-                    events = iteratee(events, names[i], callback, opts);
-                }
+
+        this.initialize.apply(this, arguments);
+      },
+
+      /**
+       * Resizes itself.
+       */
+      resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
+        var that = this;
+        Module.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT,
+          function (err, image, data) {
+            if (err) {
+              callback && callback(err);
+              return;
+            }
+            that.attributes.data = data;
+            callback && callback(null, image, data);
+          });
+      },
+
+      toJSON: function () {
+        var data = {
+          id: this.id,
+          url: this.attributes.url,
+          type: this.attributes.type,
+          data: this.attributes.data
+        };
+        return data;
+      }
+    });
+
+    _.extend(Module, {
+      /**
+       * Transforms and resizes an image file into a string.
+       *
+       * @param onError
+       * @param file
+       * @param onSaveSuccess
+       * @returns {number}
+       */
+      toString: function (file, callback) {
+        if (!window.FileReader) {
+          var message = 'No File Reader',
+            error = new m.Error(message);
+          console.error(message);
+
+          return callback(error);
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          callback(null, event.target.result, file.type);
+        };
+        reader.readAsDataURL(file);
+      },
+
+      /**
+       * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
+       * @param data
+       * @param width
+       * @param height
+       * @param callback
+       */
+      resize: function(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
+        var image = new Image();
+
+        image.onload = function() {
+          var width = image.width,
+            height = image.height,
+            canvas = null,
+            res = null;
+
+          //resizing
+          if (width > height) {
+            res = width / MAX_WIDTH;
+          } else {
+            res = height / MAX_HEIGHT;
+          }
+
+          width = width / res;
+          height = height / res;
+
+          // Create a canvas with the desired dimensions
+          canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          // Scale and draw the source image to the canvas
+          canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+
+          // Convert the canvas to a data URL in some format
+          callback(null, image, canvas.toDataURL(fileType));
+        };
+
+        image.src = data;
+      }
+    });
+
+    return Module;
+  }());
+
+
+  /***********************************************************************
+   * COLLECTION MODULE
+   **********************************************************************/
+
+  m.Collection = (function () {
+
+    var Module = Backbone.Collection.extend({
+      flatten: function (flattener) {
+        var flattened = {};
+
+        for (var i = 0; i < this.length; i++) {
+          _.extend(flattened, this.models[i].flatten(flattener, i))
+        }
+        return flattened;
+      }
+    })
+
+
+    return Module;
+  }());
+  /***********************************************************************
+   * OCCURRENCE
+   **********************************************************************/
+
+  m.Occurrence = (function () {
+    var Module = Backbone.Model.extend({
+      constructor: function (attributes, options){
+        var attrs = attributes || {};
+
+        options || (options = {});
+        this.cid = options.cid || m.getNewUUID();
+        this.attributes = {};
+        if (options.collection) this.collection = options.collection;
+        if (options.parse) attrs = this.parse(attrs, options) || {};
+        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+        this.set(attrs, options);
+        this.changed = {};
+
+
+        if (options.images) {
+          this.images = new m.Collection(options.images, {
+            model: m.Image
+          });
+        } else {
+          this.images = new m.Collection([], {
+            model: m.Image
+          });
+        }
+
+        this.initialize.apply(this, arguments);
+      },
+
+      toJSON: function () {
+        var data = {
+          id: this.id,
+          cid: this.cid,
+          attributes: this.attributes,
+          images: this.images.toJSON()
+        };
+        //add occurrences
+        return data;
+      },
+
+      /**
+       * Returns an object with attributes and their values flattened and
+       * mapped for warehouse submission.
+       *
+       * @param flattener
+       * @returns {*}
+       */
+      flatten: function (flattener, count) {
+        //images flattened separately
+        return flattener.apply(this, [Module.keys, this.attributes, count]);;
+      }
+    });
+
+
+    /**
+     * Warehouse attributes and their values.
+     */
+    Module.keys = {
+      taxon: {
+        id: ''
+      },
+      comment: {
+        id: 'comment'
+      }
+    };
+
+    return Module;
+  }());
+  /***********************************************************************
+   * SAMPLE
+   *
+   * Refers to the event in which the sightings were observed, in other
+   * words it describes the place, date, people, environmental conditions etc.
+   * Within a sample, you can have zero or more occurrences which refer to each
+   * species sighted as part of the sample.
+   **********************************************************************/
+
+  m.Sample = (function () {
+
+    var Module = Backbone.Model.extend({
+      constructor: function (attributes, options){
+        var attrs = attributes || {};
+
+        if (!attributes) {
+          attrs = {
+            date: new Date(),
+            location_type: 'latlon'
+          };
+        }
+
+        options || (options = {});
+        this.cid = options.cid || m.getNewUUID();
+        this.attributes = {};
+        if (options.collection) this.collection = options.collection;
+        if (options.parse) attrs = this.parse(attrs, options) || {};
+        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+        this.set(attrs, options);
+        this.changed = {};
+
+
+        if (options.metadata) {
+          this.metadata = options.metadata;
+        } else {
+          this.metadata = {
+            created_on: new Date(),
+            updated_on: new Date(),
+
+            warehouse_id: null,
+
+            synced_on: null, //set when fully initialized only
+            server_on: null //updated on server
+          };
+        }
+
+        if (options.occurrences) {
+          var occurrences = [];
+          _.each(options.occurrences, function (occ) {
+            if (occ instanceof m.Occurrence) {
+              occurrences.push(occ);
             } else {
-                // Finally, standard events.
-                events = iteratee(events, name, callback, opts);
+              occurrences.push(new m.Occurrence(occ.attributes, occ));
             }
-            return events;
+          });
+          this.occurrences = new m.Collection(occurrences, {
+            model: m.Occurrence
+          });
+        } else {
+          this.occurrences = new m.Collection([], {
+            model: m.Occurrence
+          });
+        }
+
+        this.initialize.apply(this, arguments);
+      },
+
+      /**
+       * Returns an object with attributes and their values flattened and
+       * mapped for warehouse submission.
+       *
+       * @param flattener
+       * @returns {*}
+       */
+      flatten: function (flattener) {
+        var flattened = flattener.apply(this, [Module.keys, this.attributes]);
+
+        //occurrences
+        _.extend(flattened, this.occurrences.flatten(flattener));
+        return flattened;
+      },
+
+      toJSON: function () {
+        var data = {
+          id: this.id,
+          cid: this.cid,
+          metadata: this.metadata,
+          attributes: this.attributes,
+          occurrences: this.occurrences.toJSON()
         };
 
-        // Bind an event to a `callback` function. Passing `"all"` will bind
-        // the callback to all events fired.
-        Events.on = function(name, callback, context) {
-            return internalOn(this, name, callback, context);
-        };
-
-        // Guard the `listening` argument from the public API.
-        var internalOn = function(obj, name, callback, context, listening) {
-            obj._events = eventsApi(onApi, obj._events || {}, name, callback, {
-                context: context,
-                ctx: obj,
-                listening: listening
-            });
-
-            if (listening) {
-                var listeners = obj._listeners || (obj._listeners = {});
-                listeners[listening.id] = listening;
-            }
-
-            return obj;
-        };
-
-        // Inversion-of-control versions of `on`. Tell *this* object to listen to
-        // an event in another object... keeping track of what it's listening to
-        // for easier unbinding later.
-        Events.listenTo =  function(obj, name, callback) {
-            if (!obj) return this;
-            var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
-            var listeningTo = this._listeningTo || (this._listeningTo = {});
-            var listening = listeningTo[id];
-
-            // This object is not listening to any other events on `obj` yet.
-            // Setup the necessary references to track the listening callbacks.
-            if (!listening) {
-                var thisId = this._listenId || (this._listenId = _.uniqueId('l'));
-                listening = listeningTo[id] = {obj: obj, objId: id, id: thisId, listeningTo: listeningTo, count: 0};
-            }
-
-            // Bind callbacks on obj, and keep track of them on listening.
-            internalOn(obj, name, callback, this, listening);
-            return this;
-        };
-
-        // The reducing API that adds a callback to the `events` object.
-        var onApi = function(events, name, callback, options) {
-            if (callback) {
-                var handlers = events[name] || (events[name] = []);
-                var context = options.context, ctx = options.ctx, listening = options.listening;
-                if (listening) listening.count++;
-
-                handlers.push({ callback: callback, context: context, ctx: context || ctx, listening: listening });
-            }
-            return events;
-        };
-
-        // Remove one or many callbacks. If `context` is null, removes all
-        // callbacks with that function. If `callback` is null, removes all
-        // callbacks for the event. If `name` is null, removes all bound
-        // callbacks for all events.
-        Events.off =  function(name, callback, context) {
-            if (!this._events) return this;
-            this._events = eventsApi(offApi, this._events, name, callback, {
-                context: context,
-                listeners: this._listeners
-            });
-            return this;
-        };
-
-        // Tell this object to stop listening to either specific events ... or
-        // to every object it's currently listening to.
-        Events.stopListening =  function(obj, name, callback) {
-            var listeningTo = this._listeningTo;
-            if (!listeningTo) return this;
-
-            var ids = obj ? [obj._listenId] : _.keys(listeningTo);
-
-            for (var i = 0; i < ids.length; i++) {
-                var listening = listeningTo[ids[i]];
-
-                // If listening doesn't exist, this object is not currently
-                // listening to obj. Break out early.
-                if (!listening) break;
-
-                listening.obj.off(name, callback, this);
-            }
-            if (_.isEmpty(listeningTo)) this._listeningTo = void 0;
-
-            return this;
-        };
-
-        // The reducing API that removes a callback from the `events` object.
-        var offApi = function(events, name, callback, options) {
-            if (!events) return;
-
-            var i = 0, listening;
-            var context = options.context, listeners = options.listeners;
-
-            // Delete all events listeners and "drop" events.
-            if (!name && !callback && !context) {
-                var ids = _.keys(listeners);
-                for (; i < ids.length; i++) {
-                    listening = listeners[ids[i]];
-                    delete listeners[listening.id];
-                    delete listening.listeningTo[listening.objId];
-                }
-                return;
-            }
-
-            var names = name ? [name] : _.keys(events);
-            for (; i < names.length; i++) {
-                name = names[i];
-                var handlers = events[name];
-
-                // Bail out if there are no events stored.
-                if (!handlers) break;
-
-                // Replace events if there are any remaining.  Otherwise, clean up.
-                var remaining = [];
-                for (var j = 0; j < handlers.length; j++) {
-                    var handler = handlers[j];
-                    if (
-                        callback && callback !== handler.callback &&
-                        callback !== handler.callback._callback ||
-                        context && context !== handler.context
-                    ) {
-                        remaining.push(handler);
-                    } else {
-                        listening = handler.listening;
-                        if (listening && --listening.count === 0) {
-                            delete listeners[listening.id];
-                            delete listening.listeningTo[listening.objId];
-                        }
-                    }
-                }
-
-                // Update tail event if the list has any events.  Otherwise, clean up.
-                if (remaining.length) {
-                    events[name] = remaining;
-                } else {
-                    delete events[name];
-                }
-            }
-            if (_.size(events)) return events;
-        };
-
-        // Bind an event to only be triggered a single time. After the first time
-        // the callback is invoked, its listener will be removed. If multiple events
-        // are passed in using the space-separated syntax, the handler will fire
-        // once for each event, not once for a combination of all events.
-        Events.once =  function(name, callback, context) {
-            // Map the event into a `{event: once}` object.
-            var events = eventsApi(onceMap, {}, name, callback, _.bind(this.off, this));
-            return this.on(events, void 0, context);
-        };
-
-        // Inversion-of-control versions of `once`.
-        Events.listenToOnce =  function(obj, name, callback) {
-            // Map the event into a `{event: once}` object.
-            var events = eventsApi(onceMap, {}, name, callback, _.bind(this.stopListening, this, obj));
-            return this.listenTo(obj, events);
-        };
-
-        // Reduces the event callbacks into a map of `{event: onceWrapper}`.
-        // `offer` unbinds the `onceWrapper` after it has been called.
-        var onceMap = function(map, name, callback, offer) {
-            if (callback) {
-                var once = map[name] = _.once(function() {
-                    offer(name, once);
-                    callback.apply(this, arguments);
-                });
-                once._callback = callback;
-            }
-            return map;
-        };
-
-        // Trigger one or many events, firing all bound callbacks. Callbacks are
-        // passed the same arguments as `trigger` is, apart from the event name
-        // (unless you're listening on `"all"`, which will cause your callback to
-        // receive the true name of the event as the first argument).
-        Events.trigger =  function(name) {
-            if (!this._events) return this;
-
-            var length = Math.max(0, arguments.length - 1);
-            var args = Array(length);
-            for (var i = 0; i < length; i++) args[i] = arguments[i + 1];
-
-            eventsApi(triggerApi, this._events, name, void 0, args);
-            return this;
-        };
-
-        // Handles triggering the appropriate event callbacks.
-        var triggerApi = function(objEvents, name, cb, args) {
-            if (objEvents) {
-                var events = objEvents[name];
-                var allEvents = objEvents.all;
-                if (events && allEvents) allEvents = allEvents.slice();
-                if (events) triggerEvents(events, args);
-                if (allEvents) triggerEvents(allEvents, [name].concat(args));
-            }
-            return objEvents;
-        };
-
-        // A difficult-to-believe, but optimized internal dispatch function for
-        // triggering events. Tries to keep the usual cases speedy (most internal
-        // Backbone events have 3 arguments).
-        var triggerEvents = function(events, args) {
-            var ev, i = -1, l = events.length, a1 = args[0], a2 = args[1], a3 = args[2];
-            switch (args.length) {
-                case 0: while (++i < l) (ev = events[i]).callback.call(ev.ctx); return;
-                case 1: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1); return;
-                case 2: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1, a2); return;
-                case 3: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1, a2, a3); return;
-                default: while (++i < l) (ev = events[i]).callback.apply(ev.ctx, args); return;
-            }
-        };
-
-        // Aliases for backwards compatibility.
-        Events.bind   = Events.on;
-        Events.unbind = Events.off;
-
-        return Events;
-    }());
-
-
-    /***********************************************************************
-     * IMAGE
-     **********************************************************************/
-
-    m.Image = (function (){
-
-        var Module = function (options) {
-            options || (options = {});
-
-            this.id = options.id || m.getNewUUID();
-
-            if (typeof options === 'string') {
-                this.data = options;
-                return;
-            }
-
-            this.type = options.type || '';
-            this.url = options.url || '';
-            this.data = options.data || '';
-        };
-
-        m.extend(Module.prototype, {
-            /**
-             * Resizes itself.
-             */
-            resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
-                var that = this;
-                Module.resize(this.data, this.type, MAX_WIDTH, MAX_HEIGHT,
-                    function (err, image, data) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
-                        that.data = data;
-                        callback && callback(null, image, data);
-                    });
-            },
-
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    url: this.url,
-                    type: this.type,
-                    data: this.data
-                };
-                return data;
-            }
-        });
-
-        //add events
-        m.extend(Module.prototype, m.Events);
-
-        m.extend(Module, {
-            /**
-             * Transforms and resizes an image file into a string.
-             *
-             * @param onError
-             * @param file
-             * @param onSaveSuccess
-             * @returns {number}
-             */
-            toString: function (file, callback) {
-                if (!window.FileReader) {
-                    var message = 'No File Reader',
-                        error = new m.Error(message);
-                    console.error(message);
-
-                    return callback(error);
-                }
-
-                var reader = new FileReader();
-                reader.onload = function (event) {
-                    callback(null, event.target.result, file.type);
-                };
-                reader.readAsDataURL(file);
-            },
-
-            /**
-             * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
-             * @param data
-             * @param width
-             * @param height
-             * @param callback
-             */
-            resize: function(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-                var image = new Image();
-
-                image.onload = function() {
-                    var width = image.width,
-                        height = image.height,
-                        canvas = null,
-                        res = null;
-
-                    //resizing
-                    if (width > height) {
-                        res = width / MAX_WIDTH;
-                    } else {
-                        res = height / MAX_HEIGHT;
-                    }
-
-                    width = width / res;
-                    height = height / res;
-
-                    // Create a canvas with the desired dimensions
-                    canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    // Scale and draw the source image to the canvas
-                    canvas.getContext('2d').drawImage(image, 0, 0, width, height);
-
-                    // Convert the canvas to a data URL in some format
-                    callback(null, image, canvas.toDataURL(fileType));
-                };
-
-                image.src = data;
-            }
-        });
-
-        return Module;
-    }());
-
-
-    /***********************************************************************
-     * COLLECTION MODULE
-     **********************************************************************/
-
-    m.Collection = (function () {
-
-        var Module = function (options) {
-            var model = null;
-            this.Model = options.Model || m.Occurrence;
-
-            this.models = [];
-            this.length = 0;
-
-            if (options.models instanceof Array) {
-                for (var i = 0; i < options.models.length; i++) {
-                    model = options.models[i];
-                    if (model instanceof this.Model) {
-                        this.models.push(model);
-                    } else {
-                        model = new this.Model(model);
-                        this.models.push(model);
-                    }
-                    this.length++;
-                }
-            }
-
-            this.on('add', this._updateEvent, this);
-            this.on('remove', this._updateEvent, this);
-        };
-
-        m.extend(Module.prototype, {
-            add: function (models, options) {
-                return this.set(models, options);
-            },
-
-            set: function (models, options) {
-                var modified = [],
-                    existing = null,
-                    toAdd = [];
-
-                options || (options = {});
-
-                //make an array if single object
-                models = !(models instanceof Array) ? [models] : models;
-
-                var model;
-                for (var i = 0; i < models.length; i++) {
-                    model = models[i];
-                    //update existing ones
-                    if (existing = this.get(model)) {
-                        existing.attributes = model.attributes;
-                        //add new
-                    } else {
-                        if (typeof model.on === 'function') {
-                            model.on('all', this._onModelEvent, this);
-                        }
-
-                        this.models.push(model);
-                        this.length++;
-                        toAdd.push(model);
-                    }
-                    modified.push(models[i]);
-                }
-
-                //fire events
-                for (i = 0; i < toAdd.length; i++) {
-                    model = toAdd[i];
-                    model.trigger('add', model, this, options);
-                }
-
-                if (toAdd.length) this.trigger('update', this, options);
-
-                return modified;
-            },
-
-            get: function (model) {
-                var id = model.id || model;
-                for (var i = 0; i < this.models.length; i++) {
-                    if (this.models[i].id == id) {
-                        return this.models[i];
-                    }
-                }
-                return null;
-            },
-
-            getFirst: function () {
-                return this.models[0];
-            },
-
-            each: function (method, context) {
-                for (var i = 0; i < this.models.length; i++) {
-                    method.apply(context || this, [this.models[i]]);
-                }
-            },
-
-            create: function () {
-                var model = new this.Model();
-                this.add(model);
-                return model;
-            },
-
-            remove: function (models) {
-                var models = !(models instanceof Array) ? [models] : models,
-                    removed = [];
-                for (var i = 0; i < models.length; i++) {
-                    //check if exists
-                    var current = this.get(models[i]);
-                    if (!current) continue;
-
-                    //get index
-                    var index = -1;
-                    for (var j = 0; index < this.models.length; j++) {
-                        if (this.models[j].id === current.id) {
-                            index = j;
-                            break;
-                        }
-                    }
-                    if (j > -1) {
-                        this.models.splice(index, 1);
-                        this.length--;
-                        removed.push(current);
-                    }
-                }
-                removed.length && this.trigger('remove');
-                return removed;
-            },
-
-            has: function (model) {
-                var model = this.get(model);
-                return model !== undefined && model !== null;
-            },
-
-            size: function () {
-                return this.models.length;
-            },
-
-            clear: function () {
-                this.models = [];
-                this.length = 0;
-                this.trigger('clear');
-            },
-
-            sort: function (comparator) {
-              this.models.sort(comparator);
-            },
-
-            toJSON: function () {
-                var json = [];
-                for (var i = 0; i < this.models.length; i++) {
-                    json.push(this.models[i].toJSON());
-                }
-
-                return json;
-            },
-
-            flatten: function (flattener) {
-                var flattened = {};
-
-                for (var i = 0; i < this.length; i++) {
-                    m.extend(flattened, this.models[i].flatten(flattener, i))
-                }
-                return flattened;
-            },
-
-            _onModelEvent: function(event, model, collection, options) {
-                if ((event === 'add' || event === 'remove') && collection !== this) return;
-                this.trigger.apply(this, arguments);
-            },
-
-            _updateEvent: function () {
-                this.trigger('update');
-            }
-        });
-
-        m.extend(Module.prototype, m.Events);
-
-        return Module;
-    }());
-    /***********************************************************************
-     * OCCURRENCE
-     **********************************************************************/
-
-    m.Occurrence = (function () {
-
-        var Module = function (options) {
-            options || (options = {});
-
-            this.id = options.id || m.getNewUUID();
-            this.attributes = options.attributes || {};
-
-            if (options.images) {
-                this.images = new m.Collection({
-                    Model: m.Image,
-                    models: options.images
-                });
+        return data;
+      },
+
+      /**
+       * Sync statuses:
+       * synced, local, server, changed_locally, changed_server, conflict
+       */
+      getSyncStatus: function () {
+        var meta = this.metadata;
+        //on server
+        if (meta.warehouse_id) {
+          //fully initialized
+          if (meta.synced_on) {
+            //changed_locally
+            if (meta.synced_on < meta.updated_on) {
+              //changed_server - conflict!
+              if (meta.synced_on < meta.server_on) {
+                return m.CONFLICT;
+              }
+              return m.CHANGED_LOCALLY;
+              //changed_server
+            } else if (meta.synced_on < meta.server_on) {
+              return m.CHANGED_SERVER;
             } else {
-                this.images = new m.Collection({
-                    Model: m.Image
-                });
+              return m.SYNCED;
             }
-        };
+            //partially initialized - we know the record exists on
+            //server but has not yet been downloaded
+          } else {
+            return m.SERVER;
+          }
+          //local only
+        } else {
+          return m.LOCAL;
+        }
+      },
 
-        m.extend(Module.prototype, {
-            set: function (name, data) {
-                var changed = false;
+      /**
+       * Detach all the listeners.
+       */
+      offAll: function () {
+        this._events = {};
+        this.occurrences.offAll();
+        for (var i = 0; i < this.occurrences.data.length; i++) {
+          this.occurrences.models[i].offAll();
+        }
+      }
 
-                if (this.attributes[name] !== data) {
-                    changed = true;
-                }
+    });
 
-                this.attributes[name] = data;
+    /**
+     * Warehouse attributes and their values.
+     */
+    Module.keys =  {
+      id: { id: 'id' },
+      survey: { id: 'survey_id' },
+      date: { id: 'date' },
+      comment: { id: 'comment' },
+      image: { id: 'image' },
+      location: { id: 'entered_sref' },
+      location_type: {
+        id: 'entered_sref_system',
+        values: {
+          british: 'OSGB', //for British National Grid
+          irish: 'OSIE', //for Irish Grid
+          latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
+        }
+      },
+      location_name: { id: 'location_name' },
+      deleted: { id: 'deleted' }
+    };
 
-                if (changed) {
-                    this.trigger('change:' + name);
-                }
-            },
+    return Module;
+  }());
+  /***********************************************************************
+   * AUTH
+   **********************************************************************/
 
-            get: function (name) {
-                return this.attributes[name];
-            },
+  m.Auth = (function (){
 
-            remove: function (name) {
-                delete this.attributes[name];
-                this.trigger('change:' + name);
-            },
+    /**
+     * options:
+     *  @appname String subdomain name to use for database
+     *  @appsecret String API key
+     *  @survey_id Int
+     *  @website_id Int
+     */
+    var Module = function (options) {
+      options || (options = {});
+      _.extend(this.CONF, options);
+    };
 
-            clear: function () {
-                this.attributes = {};
-                this.trigger('change');
-            },
+    _.extend(Module.prototype, {
+      CONF: {
+        appname: '',
+        appsecret: '',
+        survey_id: -1,
+        website_id: -1
+      },
 
-            has: function(name) {
-                var data = this.get(name);
-                return data !== undefined && data !== null;
-            },
+      /**
+       * Appends user and app authentication to the passed data object.
+       * Note: object has to implement 'append' method.
+       *
+       * @param data An object to modify
+       * @returns {*} A data object
+       */
+      append: function (data) {
+        //user logins
+        this.appendUser(data);
+        //app logins
+        this.appendApp(data);
+        //warehouse data
+        this.appendWarehouse(data);
 
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    attributes: this.attributes,
-                    images: this.images.toJSON()
-                };
-                //add occurrences
-                return data;
-            },
+        return data;
+      },
 
-            /**
-             * Returns an object with attributes and their values flattened and
-             * mapped for warehouse submission.
-             *
-             * @param flattener
-             * @returns {*}
-             */
-            flatten: function (flattener, count) {
-                //images flattened separately
-                return flattener.apply(this, [Module.keys, this.attributes, count]);;
-            }
-        });
+      /**
+       * Appends user authentication - Email and Password to
+       * the passed data object.
+       * Note: object has to implement 'append' method.
+       *
+       * @param data An object to modify
+       * @returns {*} A data object
+       */
+      appendUser: function (data) {
+        if (this.isUser()) {
+          var user = this.getUser();
 
-        //add events
-        m.extend(Module.prototype, m.Events);
+          data.append('email', user.email);
+          data.append('usersecret', user.secret);
+        }
 
-        /**
-         * Warehouse attributes and their values.
-         */
-        Module.keys = {
-            taxon: {
-                id: ''
-            },
-            comment: {
-                id: 'comment'
-            }
-        };
+        return data;
+      },
 
-        return Module;
-    }());
-    /***********************************************************************
-     * SAMPLE
-     *
-     * Refers to the event in which the sightings were observed, in other
-     * words it describes the place, date, people, environmental conditions etc.
-     * Within a sample, you can have zero or more occurrences which refer to each
-     * species sighted as part of the sample.
-     **********************************************************************/
+      /**
+       * Appends app authentication - Appname and Appsecret to
+       * the passed object.
+       * Note: object has to implement 'append' method.
+       *
+       * @param data An object to modify
+       * @returns {*} A data object
+       */
+      appendApp: function (data) {
+        data.append('appname', this.CONF.appname);
+        data.append('appsecret', this.CONF.appsecret);
 
-    m.Sample = (function () {
+        return data;
+      },
 
-        var Module = function (options) {
-            options || (options = {});
+      /**
+       * Appends warehouse related information - website_id and survey_id to
+       * the passed data object.
+       * Note: object has to implement 'append' method.
+       *
+       * This is necessary because the data must be associated to some
+       * website and survey in the warehouse.
+       *
+       * @param data An object to modify
+       * @returns {*} An data object
+       */
+      appendWarehouse: function (data) {
+        data.append('website_id', this.CONF.website_id);
+        data.append('survey_id', this.CONF.survey_id);
 
-            this.id = options.id || m.getNewUUID();
+        return data;
+      },
 
-            if (options.metadata) {
-                this.metadata = options.metadata;
-            } else {
-                this.metadata = {
-                    created_on: new Date(),
-                    updated_on: new Date(),
+      /**
+       * Checks if the user has authenticated with the app.
+       *
+       * @returns {boolean} True if the user exists, else False
+       */
+      isUser: function () {
+        var obj = this.getUser();
+        return Object.keys(obj).length !== 0;
+      },
 
-                    warehouse_id: null,
+      /**
+       * Brings the user details from the storage.
+       *
+       * @returns {Object|*}
+       */
+      getUser: function () {
+        return m.settings(this.USER) || {};
+      },
 
-                    synced_on: null, //set when fully initialized only
-                    server_on: null //updated on server
-                };
-            }
+      /**
+       * Saves the authenticated user details to the storage.
+       *
+       * @param user A user object
+       */
+      setUser: function (user) {
+        m.settings(this.USER, user);
+      },
 
-            if (options.attributes) {
-                this.attributes = options.attributes;
-            } else {
-                this.attributes = {
-                    date: new Date(),
-                    location_type: 'latlon'
-                };
-            }
+      /**
+       * Removes the current user details from the storage.
+       */
+      removeUser: function () {
+        m.settings(this.USER, {});
+      }
+    });
 
-            if (options.occurrences) {
-                this.occurrences = new m.Collection({
-                    Model: m.Occurrence,
-                    models: options.occurrences
-                });
-            } else {
-                this.occurrences = new m.Collection({
-                    model: m.Occurrence
-                });
-            }
-
-        };
-
-        m.extend(Module.prototype, {
-            set: function (name, data) {
-                var changed = false;
-
-                if (this.attributes[name] !== data) {
-                    changed = true;
-                }
-                this.attributes[name] = data;
-
-                if (changed) {
-                    this.trigger('change:' + name);
-                }
-            },
-
-            get: function (name) {
-                return this.attributes[name];
-            },
-
-            remove: function (name) {
-                delete this.attributes[name];
-                this.trigger('change:' + name);
-            },
-
-            clear: function () {
-                this.attributes = {};
-                this.trigger('change');
-            },
-
-            has: function (name) {
-                var data = this.get(name);
-                return data !== undefined && data !== null;
-            },
-
-            toJSON: function () {
-                var data = {
-                        id: this.id,
-                        metadata: this.metadata,
-                        attributes: this.attributes,
-                        occurrences: this.occurrences.toJSON()
-                    };
-
-                return data;
-            },
-
-            /**
-             * Returns an object with attributes and their values flattened and
-             * mapped for warehouse submission.
-             *
-             * @param flattener
-             * @returns {*}
-             */
-            flatten: function (flattener) {
-                var flattened = flattener.apply(this, [Module.keys, this.attributes]);
-
-                //occurrences
-                m.extend(flattened, this.occurrences.flatten(flattener));
-                return flattened;
-            },
-
-            /**
-             * Detach all the listeners.
-             */
-            offAll: function () {
-                this._events = {};
-                this.occurrences.offAll();
-                for (var i = 0; i < this.occurrences.data.length; i++) {
-                    this.occurrences.models[i].offAll();
-                }
-            },
-
-
-            /**
-             * Sync statuses:
-             * synced, local, server, changed_locally, changed_server, conflict
-             */
-            getSyncStatus: function () {
-                var meta = this.metadata;
-                //on server
-                if (meta.warehouse_id) {
-                    //fully initialized
-                    if (meta.synced_on) {
-                        //changed_locally
-                        if (meta.synced_on < meta.updated_on) {
-                            //changed_server - conflict!
-                            if (meta.synced_on < meta.server_on) {
-                                return m.CONFLICT;
-                            }
-                            return m.CHANGED_LOCALLY;
-                            //changed_server
-                        } else if (meta.synced_on < meta.server_on) {
-                            return m.CHANGED_SERVER;
-                        } else {
-                            return m.SYNCED;
-                        }
-                        //partially initialized - we know the record exists on
-                        //server but has not yet been downloaded
-                    } else {
-                        return m.SERVER;
-                    }
-                    //local only
-                } else {
-                    return m.LOCAL;
-                }
-            }
-        });
-
-        //add events
-        m.extend(Module.prototype, m.Events);
-
-        /**
-         * Warehouse attributes and their values.
-         */
-        Module.keys =  {
-            id: { id: 'id' },
-            survey: { id: 'survey_id' },
-            date: { id: 'date' },
-            comment: { id: 'comment' },
-            image: { id: 'image' },
-            location: { id: 'entered_sref' },
-            location_type: {
-                id: 'entered_sref_system',
-                values: {
-                    british: 'OSGB', //for British National Grid
-                    irish: 'OSIE', //for Irish Grid
-                    latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
-                }
-            },
-            location_name: { id: 'location_name' },
-            deleted: { id: 'deleted' }
-        };
-
-        return Module;
-    }());
-    /***********************************************************************
-     * AUTH
-     **********************************************************************/
-
-    m.Auth = (function (){
-
-        /**
-         * options:
-         *  @appname String subdomain name to use for database
-         *  @appsecret String API key
-         *  @survey_id Int
-         *  @website_id Int
-         */
-        var Module = function (options) {
-            options || (options = {});
-            m.extend(this.CONF, options);
-        };
-
-        m.extend(Module.prototype, {
-            CONF: {
-                appname: '',
-                appsecret: '',
-                survey_id: -1,
-                website_id: -1
-            },
-
-            /**
-             * Appends user and app authentication to the passed data object.
-             * Note: object has to implement 'append' method.
-             *
-             * @param data An object to modify
-             * @returns {*} A data object
-             */
-            append: function (data) {
-                //user logins
-                this.appendUser(data);
-                //app logins
-                this.appendApp(data);
-                //warehouse data
-                this.appendWarehouse(data);
-
-                return data;
-            },
-
-            /**
-             * Appends user authentication - Email and Password to
-             * the passed data object.
-             * Note: object has to implement 'append' method.
-             *
-             * @param data An object to modify
-             * @returns {*} A data object
-             */
-            appendUser: function (data) {
-                if (this.isUser()) {
-                    var user = this.getUser();
-
-                    data.append('email', user.email);
-                    data.append('usersecret', user.secret);
-                }
-
-                return data;
-            },
-
-            /**
-             * Appends app authentication - Appname and Appsecret to
-             * the passed object.
-             * Note: object has to implement 'append' method.
-             *
-             * @param data An object to modify
-             * @returns {*} A data object
-             */
-            appendApp: function (data) {
-                data.append('appname', this.CONF.appname);
-                data.append('appsecret', this.CONF.appsecret);
-
-                return data;
-            },
-
-            /**
-             * Appends warehouse related information - website_id and survey_id to
-             * the passed data object.
-             * Note: object has to implement 'append' method.
-             *
-             * This is necessary because the data must be associated to some
-             * website and survey in the warehouse.
-             *
-             * @param data An object to modify
-             * @returns {*} An data object
-             */
-            appendWarehouse: function (data) {
-                data.append('website_id', this.CONF.website_id);
-                data.append('survey_id', this.CONF.survey_id);
-
-                return data;
-            },
-
-            /**
-             * Checks if the user has authenticated with the app.
-             *
-             * @returns {boolean} True if the user exists, else False
-             */
-            isUser: function () {
-                var obj = this.getUser();
-                return Object.keys(obj).length !== 0;
-            },
-
-            /**
-             * Brings the user details from the storage.
-             *
-             * @returns {Object|*}
-             */
-            getUser: function () {
-                return m.settings(this.USER) || {};
-            },
-
-            /**
-             * Saves the authenticated user details to the storage.
-             *
-             * @param user A user object
-             */
-            setUser: function (user) {
-                m.settings(this.USER, user);
-            },
-
-            /**
-             * Removes the current user details from the storage.
-             */
-            removeUser: function () {
-                m.settings(this.USER, {});
-            }
-        });
-
-        return Module;
-    }());
+    return Module;
+  }());
 
 
     /***********************************************************************
@@ -1225,7 +722,7 @@
             this.storage = {};
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             NAME: 'PlainStorage',
 
             /**
@@ -1322,7 +819,7 @@
             this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             TYPE: 'LocalStorage',
             NAME: 'morel',
 
@@ -1511,7 +1008,7 @@
             this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
@@ -1809,159 +1306,158 @@
     }());
 
 
-    /***********************************************************************
-     * STORAGE
-     **********************************************************************/
+  /***********************************************************************
+   * STORAGE
+   **********************************************************************/
 
-    m.Storage = (function () {
-        var Module = function (options) {
-            options || (options = {});
+  m.Storage = (function () {
+    var Module = function (options) {
+      options || (options = {});
 
-            var that = this;
+      var that = this;
 
-            this.Sample = options.Sample || m.Sample;
+      this.Sample = options.Sample || m.Sample;
 
-            //internal storage
-            this.Storage = options.Storage || m.LocalStorage;
-            this.storage = new this.Storage({
-                appname: options.appname
-            });
+      //internal storage
+      this.Storage = options.Storage || m.LocalStorage;
+      this.storage = new this.Storage({
+        appname: options.appname
+      });
 
-            //initialize the cache
-            this.cache = {};
-            this.initialized = false;
-            this.storage.getAll(function (err, data) {
-                data || (data = {});
+      //initialize the cache
+      this.cache = {};
+      this.initialized = false;
+      this.storage.getAll(function (err, data) {
+        data || (data = {});
 
-                var samples = [],
-                    sample = null,
-                    keys = Object.keys(data);
+        var samples = [],
+          sample = null,
+          keys = Object.keys(data);
 
-                for (var i = 0; i < keys.length; i++) {
-                    sample = new that.Sample(m.extend(data[keys[i]], {
-                        plainAttributes: true
-                    }));
-                    samples.push(sample);
-                }
-                that.cache =  new m.Collection({
-                    Model: that.Sample,
-                    models: samples
-                });
-                that._attachListeners();
-
-                that.initialized = true;
-                that.trigger('init');
-            });
-        };
-
-        m.extend(Module.prototype, {
-            get: function (model, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.get(model, callback);
-                    });
-                    return;
-                }
-
-                var key = typeof model === 'object' ? model.id : model;
-                callback(null, this.cache.get(key));
-            },
-
-            getAll: function (callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.getAll(callback);
-                    });
-                    return;
-                }
-                callback(null, this.cache);
-            },
-
-            set: function (model, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.set(model, callback);
-                    });
-                    return;
-                }
-                var that = this,
-                    key = model.id;
-                this.storage.set(key, model, function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.set(model);
-                    callback && callback(null, model);
-                });
-            },
-
-            remove: function (model, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.remove(model, callback);
-                    });
-                    return;
-                }
-                var that = this,
-                    key = typeof model === 'object' ? model.id : model;
-                this.storage.remove(key, function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.remove(model);
-                    callback && callback();
-                });
-            },
-
-            has: function (model, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.has(model, callback);
-                    }, this);
-                    return;
-                }
-                var key = typeof model === 'object' ? model.id : model;
-                this.cache.has(key, callback);
-            },
-
-            clear: function (callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.clear(callback);
-                    });
-                    return;
-                }
-                var that = this;
-                this.storage.clear(function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.clear();
-                    callback && callback();
-                });
-            },
-
-            size: function (callback) {
-              this.storage.size(callback);
-            },
-
-            _attachListeners: function () {
-                var that = this;
-                //listen on cache because it is last updated
-                this.cache.on('update', function () {
-                    that.trigger('update');
-                });
-            }
+        for (var i = 0; i < keys.length; i++) {
+          var current = data[keys[i]];
+          sample = new that.Sample(current.attributes, current);
+          sample.cid = current.cid;
+          samples.push(sample);
+        }
+        that.cache =  new m.Collection(samples, {
+          model: that.Sample
         });
+        that._attachListeners();
 
-        //add events
-        m.extend(Module.prototype, m.Events);
+        that.initialized = true;
+        that.trigger('init');
+      });
+    };
 
-        return Module;
-    }());
+    _.extend(Module.prototype, {
+      get: function (model, callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.get(model, callback);
+          });
+          return;
+        }
+
+        var key = typeof model === 'object' ? model.id || model.cid : model;
+        callback(null, this.cache.get(key));
+      },
+
+      getAll: function (callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.getAll(callback);
+          });
+          return;
+        }
+        callback(null, this.cache);
+      },
+
+      set: function (model, callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.set(model, callback);
+          });
+          return;
+        }
+        var that = this,
+          key = model.id || model.cid;
+        this.storage.set(key, model, function (err) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          that.cache.set(model, {remove: false});
+          callback && callback(null, model);
+        });
+      },
+
+      remove: function (model, callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.remove(model, callback);
+          });
+          return;
+        }
+        var that = this,
+          key = typeof model === 'object' ? model.id || model.cid : model;
+        this.storage.remove(key, function (err) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          that.cache.remove(model);
+          callback && callback();
+        });
+      },
+
+      has: function (model, callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.has(model, callback);
+          }, this);
+          return;
+        }
+        var key = typeof model === 'object' ? model.id || model.cid : model;
+        this.cache.has(key, callback);
+      },
+
+      clear: function (callback) {
+        if (!this.initialized) {
+          this.on('init', function () {
+            this.clear(callback);
+          });
+          return;
+        }
+        var that = this;
+        this.storage.clear(function (err) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          that.cache.clear();
+          callback && callback();
+        });
+      },
+
+      size: function (callback) {
+        this.storage.size(callback);
+      },
+
+      _attachListeners: function () {
+        var that = this;
+        //listen on cache because it is last updated
+        this.cache.on('update', function () {
+          that.trigger('update');
+        });
+      }
+    });
+
+    //add events
+    _.extend(Module.prototype, Backbone.Events);
+
+    return Module;
+  }());
 
     /***********************************************************************
      * MANAGER
@@ -1989,7 +1485,7 @@
             this.synchronising = false;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             CONF: {
                 url: '',
                 appname: ''
@@ -2079,7 +1575,7 @@
                     that.trigger('sync:request');
 
                     //shallow copy
-                    var remainingSamples = m.extend([], samples.models);
+                    var remainingSamples = _.extend([], samples.models);
 
                     //recursively loop through samples
                     for (var i = 0; i < remainingSamples.length; i++) {
@@ -2100,7 +1596,8 @@
                             }
 
                             for (var k = 0; k < remainingSamples.length; k++) {
-                                if (remainingSamples[k].id === sample.id) {
+                                if (remainingSamples[k].id === sample.id ||
+                                  remainingSamples[k].cid === sample.cid) {
                                     remainingSamples.splice(k, 1);
                                     break;
                                 }
@@ -2314,172 +1811,172 @@
             }
         });
 
-        m.extend(Module.prototype, m.Events);
+        _.extend(Module.prototype, m.Events);
 
         return Module;
     }());
 
 
-    /***********************************************************************
-     * GEOLOCATION MODULE
-     **********************************************************************/
+  /***********************************************************************
+   * GEOLOCATION MODULE
+   **********************************************************************/
 
-    /* global morel, _log */
-    m.extend('Geoloc', {
-        CONF: {
-            GPS_ACCURACY_LIMIT: 100, //meters
-            HIGH_ACCURACY: true,
-            TIMEOUT: 120000
-        },
+  /* global morel, _log */
+  _.extend('Geoloc', {
+    CONF: {
+      GPS_ACCURACY_LIMIT: 100, //meters
+      HIGH_ACCURACY: true,
+      TIMEOUT: 120000
+    },
 
-        TIMEOUT_ERR: 1, //code
+    TIMEOUT_ERR: 1, //code
 
-        latitude: null,
-        longitude: null,
-        accuracy: -1,
+    latitude: null,
+    longitude: null,
+    accuracy: -1,
 
-        startTime: 0,
-        id: 0,
+    startTime: 0,
+    id: 0,
 
-        /**
-         * Sets the Latitude, Longitude and the Accuracy of the GPS lock.
-         *
-         * @param lat
-         * @param lon
-         * @param acc
-         */
-        set: function (lat, lon, acc) {
-            this.latitude = lat;
-            this.longitude = lon;
-            this.accuracy = acc;
-        },
+    /**
+     * Sets the Latitude, Longitude and the Accuracy of the GPS lock.
+     *
+     * @param lat
+     * @param lon
+     * @param acc
+     */
+    set: function (lat, lon, acc) {
+      this.latitude = lat;
+      this.longitude = lon;
+      this.accuracy = acc;
+    },
 
-        /**
-         * Gets the the Latitude, Longitude and the Accuracy of the GPS lock.
-         *
-         * @returns {{lat: *, lon: *, acc: *}}
-         */
-        get: function () {
-            return {
-                'lat': this.latitude,
-                'lon': this.longitude,
-                'acc': this.accuracy
-            };
-        },
+    /**
+     * Gets the the Latitude, Longitude and the Accuracy of the GPS lock.
+     *
+     * @returns {{lat: *, lon: *, acc: *}}
+     */
+    get: function () {
+      return {
+        'lat': this.latitude,
+        'lon': this.longitude,
+        'acc': this.accuracy
+      };
+    },
 
-        /**
-         * Clears the current GPS lock.
-         */
-        clear: function () {
-            this.set(null, null, -1);
-        },
+    /**
+     * Clears the current GPS lock.
+     */
+    clear: function () {
+      this.set(null, null, -1);
+    },
 
-        isRunning: function () {
-          return this.id;
-        },
+    isRunning: function () {
+      return this.id;
+    },
 
-        /**
-         * Runs the GPS.
-         *
-         * @returns {*}
-         */
-        run: function (onUpdate, callback, accuracyLimit) {
-            if (!(accuracyLimit && accuracyLimit < this.CONF.GPS_ACCURACY_LIMIT)) {
-                accuracyLimit = this.CONF.GPS_ACCURACY_LIMIT;
-            }
+    /**
+     * Runs the GPS.
+     *
+     * @returns {*}
+     */
+    run: function (onUpdate, callback, accuracyLimit) {
+      if (!(accuracyLimit && accuracyLimit < this.CONF.GPS_ACCURACY_LIMIT)) {
+        accuracyLimit = this.CONF.GPS_ACCURACY_LIMIT;
+      }
 
-            // Early return if geolocation not supported.
-            if (!navigator.geolocation) {
-                var error = new m.Error('Geolocation is not supported.');
-                callback && callback(error);
-                return;
-            }
+      // Early return if geolocation not supported.
+      if (!navigator.geolocation) {
+        var error = new m.Error('Geolocation is not supported.');
+        callback && callback(error);
+        return;
+      }
 
-            //stop any other geolocation service started before
-            this.stop();
-            this.clear();
+      //stop any other geolocation service started before
+      this.stop();
+      this.clear();
 
-            this.startTime = new Date().getTime();
+      this.startTime = new Date().getTime();
 
-            // Request geolocation.
-            this.id = this.watchPosition(onUpdate, callback, accuracyLimit);
-        },
+      // Request geolocation.
+      this.id = this.watchPosition(onUpdate, callback, accuracyLimit);
+    },
 
-        /**
-         * Stops any currently running geolocation service.
-         */
-        stop: function () {
-            navigator.geolocation.clearWatch(this.id);
-            this.id = 0;
-        },
+    /**
+     * Stops any currently running geolocation service.
+     */
+    stop: function () {
+      navigator.geolocation.clearWatch(this.id);
+      this.id = 0;
+    },
 
-        /**
-         * Watches the GPS position.
-         *
-         * @param onUpdate
-         * @param callback
-         * @param accuracyLimit accuracy in meters to which capture location
-         * @returns {Number} id of running GPS
-         */
-        watchPosition: function (onUpdate, callback, accuracyLimit) {
-            var that = this,
-                options = {
-                    enableHighAccuracy: this.CONF.HIGH_ACCURACY,
-                    maximumAge: 0,
-                    timeout: this.CONF.TIMEOUT
-                };
+    /**
+     * Watches the GPS position.
+     *
+     * @param onUpdate
+     * @param callback
+     * @param accuracyLimit accuracy in meters to which capture location
+     * @returns {Number} id of running GPS
+     */
+    watchPosition: function (onUpdate, callback, accuracyLimit) {
+      var that = this,
+        options = {
+          enableHighAccuracy: this.CONF.HIGH_ACCURACY,
+          maximumAge: 0,
+          timeout: this.CONF.TIMEOUT
+        };
 
-            var onSuccess = function (position) {
-                var currentTime = new Date().getTime();
-                if ((currentTime - that.startTime) > that.TIMEOUT) {
-                    //timed out
-                    that.stop();
+      var onSuccess = function (position) {
+        var currentTime = new Date().getTime();
+        if ((currentTime - that.startTime) > that.TIMEOUT) {
+          //timed out
+          that.stop();
 
-                    var error = new m.Error({
-                        number: that.TIMEOUT_ERR,
-                        message: 'Geolocation timed out.'
-                    });
-                    callback && callback(error);
-                    return;
-                }
-
-                var location = {
-                    'lat': position.coords.latitude,
-                    'lon': position.coords.longitude,
-                    'acc': position.coords.accuracy
-                };
-
-                //set for the first time
-                var prevAccuracy = that.accuracy;
-                if (prevAccuracy === -1) {
-                    prevAccuracy = location.acc + 1;
-                }
-
-                if (location.acc > -1 && location.acc < prevAccuracy) {
-                    //only set it up if the accuracy has increased
-                    that.set(location.lat, location.lon, location.acc);
-
-                    if (location.acc < accuracyLimit) {
-                        that.stop();
-
-                        callback && callback(null, location);
-                    } else {
-                        onUpdate && onUpdate(location);
-                    }
-                }
-            };
-
-            //Callback if geolocation fails
-            var onError = function (err) {
-                var error = new m.Error(err.message);
-                callback && callback(error);
-            };
-
-            return navigator.geolocation.watchPosition(onSuccess, onError, options);
+          var error = new m.Error({
+            number: that.TIMEOUT_ERR,
+            message: 'Geolocation timed out.'
+          });
+          callback && callback(error);
+          return;
         }
-    });
 
-    m.extend(m.Geoloc, m.Events);
+        var location = {
+          'lat': position.coords.latitude,
+          'lon': position.coords.longitude,
+          'acc': position.coords.accuracy
+        };
+
+        //set for the first time
+        var prevAccuracy = that.accuracy;
+        if (prevAccuracy === -1) {
+          prevAccuracy = location.acc + 1;
+        }
+
+        if (location.acc > -1 && location.acc < prevAccuracy) {
+          //only set it up if the accuracy has increased
+          that.set(location.lat, location.lon, location.acc);
+
+          if (location.acc < accuracyLimit) {
+            that.stop();
+
+            callback && callback(null, location);
+          } else {
+            onUpdate && onUpdate(location);
+          }
+        }
+      };
+
+      //Callback if geolocation fails
+      var onError = function (err) {
+        var error = new m.Error(err.message);
+        callback && callback(error);
+      };
+
+      return navigator.geolocation.watchPosition(onSuccess, onError, options);
+    }
+  });
+
+  _.extend(m.Geoloc, Backbone.Events);
 
 
     return m;

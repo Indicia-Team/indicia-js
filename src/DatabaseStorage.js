@@ -16,7 +16,7 @@ define(['helpers', 'Error'], function () {
             this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
         };
 
-        m.extend(Module.prototype, {
+        _.extend(Module.prototype, {
             //because of iOS8 bug on home screen: null & readonly window.indexedDB
             indexedDB: window._indexedDB || window.indexedDB,
             IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
