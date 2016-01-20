@@ -98,11 +98,15 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
 
       /**
        * Sync statuses:
-       * synced, local, server, changed_locally, changed_server, conflict
+       * synchronising, synced, local, server, changed_locally, changed_server, conflict
        */
       getSyncStatus: function () {
         var meta = this.metadata;
         //on server
+        if (meta.synchronising) {
+          return m.SYNCHRONISING;
+        }
+
         if (meta.warehouse_id) {
           //fully initialized
           if (meta.synced_on) {

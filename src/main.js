@@ -7,6 +7,7 @@ define([], function () {
     m.VERSION = '0'; //library version, generated/replaced by grunt
 
     //CONSTANTS
+    m.SYNCHRONISING = 0;
     m.SYNCED = 1;
     m.LOCAL = 2;
     m.SERVER = 3;

@@ -4,7 +4,7 @@
  *
  * https://github.com/NERC-CEH/morel
  *
- * Author 2015 Karolis Kazlauskis
+ * Author 2016 Karolis Kazlauskis
  * Released under the GNU GPL v3 license.
  * http://www.gnu.org/licenses/gpl.html
  */
@@ -35,6 +35,7 @@
     m.VERSION = '3.0.2'; //library version, generated/replaced by grunt
 
     //CONSTANTS
+    m.SYNCHRONISING = 0;
     m.SYNCED = 1;
     m.LOCAL = 2;
     m.SERVER = 3;
@@ -507,11 +508,15 @@
 
       /**
        * Sync statuses:
-       * synced, local, server, changed_locally, changed_server, conflict
+       * synchronising, synced, local, server, changed_locally, changed_server, conflict
        */
       getSyncStatus: function () {
         var meta = this.metadata;
         //on server
+        if (meta.synchronising) {
+          return m.SYNCHRONISING;
+        }
+
         if (meta.warehouse_id) {
           //fully initialized
           if (meta.synced_on) {
@@ -576,142 +581,6 @@
 
     return Module;
   }());
-  /***********************************************************************
-   * AUTH
-   **********************************************************************/
-
-  m.Auth = (function (){
-
-    /**
-     * options:
-     *  @appname String subdomain name to use for database
-     *  @appsecret String API key
-     *  @survey_id Int
-     *  @website_id Int
-     */
-    var Module = function (options) {
-      options || (options = {});
-      _.extend(this.CONF, options);
-    };
-
-    _.extend(Module.prototype, {
-      CONF: {
-        appname: '',
-        appsecret: '',
-        survey_id: -1,
-        website_id: -1
-      },
-
-      /**
-       * Appends user and app authentication to the passed data object.
-       * Note: object has to implement 'append' method.
-       *
-       * @param data An object to modify
-       * @returns {*} A data object
-       */
-      append: function (data) {
-        //user logins
-        this.appendUser(data);
-        //app logins
-        this.appendApp(data);
-        //warehouse data
-        this.appendWarehouse(data);
-
-        return data;
-      },
-
-      /**
-       * Appends user authentication - Email and Password to
-       * the passed data object.
-       * Note: object has to implement 'append' method.
-       *
-       * @param data An object to modify
-       * @returns {*} A data object
-       */
-      appendUser: function (data) {
-        if (this.isUser()) {
-          var user = this.getUser();
-
-          data.append('email', user.email);
-          data.append('usersecret', user.secret);
-        }
-
-        return data;
-      },
-
-      /**
-       * Appends app authentication - Appname and Appsecret to
-       * the passed object.
-       * Note: object has to implement 'append' method.
-       *
-       * @param data An object to modify
-       * @returns {*} A data object
-       */
-      appendApp: function (data) {
-        data.append('appname', this.CONF.appname);
-        data.append('appsecret', this.CONF.appsecret);
-
-        return data;
-      },
-
-      /**
-       * Appends warehouse related information - website_id and survey_id to
-       * the passed data object.
-       * Note: object has to implement 'append' method.
-       *
-       * This is necessary because the data must be associated to some
-       * website and survey in the warehouse.
-       *
-       * @param data An object to modify
-       * @returns {*} An data object
-       */
-      appendWarehouse: function (data) {
-        data.append('website_id', this.CONF.website_id);
-        data.append('survey_id', this.CONF.survey_id);
-
-        return data;
-      },
-
-      /**
-       * Checks if the user has authenticated with the app.
-       *
-       * @returns {boolean} True if the user exists, else False
-       */
-      isUser: function () {
-        var obj = this.getUser();
-        return Object.keys(obj).length !== 0;
-      },
-
-      /**
-       * Brings the user details from the storage.
-       *
-       * @returns {Object|*}
-       */
-      getUser: function () {
-        return m.settings(this.USER) || {};
-      },
-
-      /**
-       * Saves the authenticated user details to the storage.
-       *
-       * @param user A user object
-       */
-      setUser: function (user) {
-        m.settings(this.USER, user);
-      },
-
-      /**
-       * Removes the current user details from the storage.
-       */
-      removeUser: function () {
-        m.settings(this.USER, {});
-      }
-    });
-
-    return Module;
-  }());
-
-
     /***********************************************************************
      * PLAIN STORAGE
      **********************************************************************/
@@ -1459,362 +1328,404 @@
     return Module;
   }());
 
-    /***********************************************************************
-     * MANAGER
-     **********************************************************************/
+  /***********************************************************************
+   * MANAGER
+   **********************************************************************/
 
-    m.Manager = (function () {
-        var Module = function (options) {
-            options || (options = {});
+  m.Manager = (function () {
+    var Module = function (options) {
+      this.options = options || (options = {});
 
-            this.CONF.url = options.url;
-            this.CONF.appname = options.appname;
+      this.storage = new m.Storage({
+        appname: options.appname,
+        Storage: options.Storage
+      });
+      this._attachListeners();
+      this.synchronising = false;
+    };
 
-            this.auth = new m.Auth({
-                appname: options.appname,
-                appsecret: options.appsecret,
-                survey_id: options.survey_id,
-                website_id: options.website_id
+    _.extend(Module.prototype, {
+      //storage functions
+      get: function (model, callback) {
+        this.storage.get(model, callback);
+      },
+      getAll: function (callback) {
+        this.storage.getAll(callback);
+      },
+      set: function (model, callback) {
+        this.storage.set(model, callback);
+      },
+      remove: function (model, callback) {
+        this.storage.remove(model, callback);
+      },
+      has: function (model, callback) {
+        this.storage.has(model, callback);
+      },
+      clear: function (callback) {
+        this.storage.clear(callback);
+      },
+
+      sync: function (model, callback) {
+        var that = this;
+
+        if (model instanceof m.Sample) {
+
+          if (!model.metadata.synchronising) {
+            model.metadata.synchronising = true;
+            that.sendStored(model, function (err) {
+              model.metadata.synchronising = false;
+              callback && callback(err);
             });
+          }
+          return;
+        }
 
-            this.storage = new m.Storage({
-                appname: options.appname,
-                Storage: options.Storage
+        this.get(model, function (err, sample) {
+          if (err) {
+            callback && callback(err);
+            return;
+          }
+
+          if (!sample.metadata.synchronising) {
+            sample.metadata.synchronising = true;
+            that.sendStored(sample, function (err) {
+              sample.metadata.synchronising = false;
+              callback && callback(err);
             });
-            this._attachListeners();
-            this.synchronising = false;
-        };
+          }
+        });
+      },
 
-        _.extend(Module.prototype, {
-            CONF: {
-                url: '',
-                appname: ''
-            },
+      syncAll: function (onSample, callback) {
+        var that = this;
+        if (!this.synchronising) {
+          this.synchronising = true;
+          this.sendAllStored(onSample, function (err) {
+            that.synchronising = false;
 
-            //storage functions
-            get: function (model, callback) {
-                this.storage.get(model, callback);
-            },
-            getAll: function (callback) {
-                this.storage.getAll(callback);
-            },
-            set: function (model, callback) {
-                this.storage.set(model, callback);
-            },
-            remove: function (model, callback) {
-                this.storage.remove(model, callback);
-            },
-            has: function (model, callback) {
-                this.storage.has(model, callback);
-            },
-            clear: function (callback) {
-                this.storage.clear(callback);
-            },
-
-            sync: function (model, callback) {
-                var that = this;
-
-                if (model instanceof m.Sample) {
-
-                    if (!model.synchronising) {
-                        model.synchronising = true;
-                        that.sendStored(model, function (err) {
-                            model.synchronising = false;
-                            callback && callback(err);
-                        });
-                    }
-                    return;
-                }
-
-                this.get(model, function (err, sample) {
-                    if (err) {
-                        callback && callback(err);
-                        return;
-                    }
-
-                    if (!sample.synchronising) {
-                        sample.synchronising = true;
-                        that.sendStored(sample, function (err) {
-                            sample.synchronising = false;
-                            callback && callback(err);
-                        });
-                    }
-                });
-            },
-
-            syncAll: function (onSample, callback) {
-                var that = this;
-                if (!this.synchronising) {
-                    this.synchronising = true;
-                    this.sendAllStored(onSample, function (err) {
-                        that.synchronising = false;
-
-                        callback && callback(err);
-                    });
-                } else {
-                    that.trigger('sync:done');
-                    callback && callback();
-                }
-            },
+            callback && callback(err);
+          });
+        } else {
+          that.trigger('sync:done');
+          callback && callback();
+        }
+      },
 
 
-            /**
-             * Sending all saved records.
-             *
-             * @returns {undefined}
-             */
-            sendAllStored: function (onSend, callback) {
-                var that = this;
-                this.getAll(function (err, samples) {
-                    if (err) {
-                        that.trigger('sync:error');
-                        callback(err);
-                        return;
-                    }
+      /**
+       * Sending all saved records.
+       *
+       * @returns {undefined}
+       */
+      sendAllStored: function (onSend, callback) {
+        var that = this;
+        this.getAll(function (err, samples) {
+          if (err) {
+            that.trigger('sync:error');
+            callback(err);
+            return;
+          }
 
-                    that.trigger('sync:request');
+          that.trigger('sync:request');
 
-                    //shallow copy
-                    var remainingSamples = _.extend([], samples.models);
+          //shallow copy
+          var remainingSamples = _.extend([], samples.models);
 
-                    //recursively loop through samples
-                    for (var i = 0; i < remainingSamples.length; i++) {
-                        var sample = remainingSamples[i];
-                        if (sample.getSyncStatus() === m.SYNCED) {
-                            remainingSamples.splice(i, 1);
-                            i--; //return the cursor
-                            continue;
-                        }
-
-                        onSend(sample);
-
-                        that.sendStored(sample, function (err, sample) {
-                            if (err) {
-                                that.trigger('sync:error');
-                                callback(err);
-                                return;
-                            }
-
-                            for (var k = 0; k < remainingSamples.length; k++) {
-                                if (remainingSamples[k].id === sample.id ||
-                                  remainingSamples[k].cid === sample.cid) {
-                                    remainingSamples.splice(k, 1);
-                                    break;
-                                }
-                            }
-
-                            if (remainingSamples.length === 0) {
-                                //finished
-                                that.trigger('sync:done');
-                                callback();
-                            }
-                        });
-                    }
-
-                    if (!remainingSamples.length) {
-                        that.trigger('sync:done');
-                        callback();
-                    }
-                })
-            },
-
-            sendStored: function (sample, callback) {
-                var that = this;
-
-                //don't resend
-                if (sample.getSyncStatus() === m.SYNCED) {
-                    sample.trigger('sync:done');
-                    callback && callback(null, sample);
-                    return;
-                }
-
-                sample.trigger('sync:request');
-                this.send(sample, function (err, sample) {
-                    if (err) {
-                        sample.trigger('sync:error');
-                        callback && callback(err);
-                        return;
-                    }
-
-                    //update sample
-                    sample.metadata.warehouse_id = 1;
-                    sample.metadata.server_on = new Date();
-                    sample.metadata.synced_on = new Date();
-
-                    //resize images to snapshots
-                    that._resizeImages(sample, function () {
-                        //save sample
-                        that.set(sample, function (err, sample) {
-                            sample.trigger('sync:done');
-                            callback && callback(null, sample);
-                        });
-                    });
-                });
-            },
-
-            /**
-             * Sends the saved record
-             *
-             * @param recordKey
-             * @param callback
-             * @param onError
-             * @param onSend
-             */
-            send: function (sample, callback) {
-                var flattened = sample.flatten(this._flattener),
-                    formData = new FormData();
-
-
-                //append images
-                var occCount = 0;
-                sample.occurrences.each(function (occurrence) {
-                    var imgCount = 0;
-                    occurrence.images.each(function (image) {
-                        var name = 'sc:' + occCount + '::photo' + imgCount;
-                        var blob = m.dataURItoBlob(image.data, image.type);
-                        var extension = image.type.split('/')[1];
-                        formData.append(name, blob, 'pic.' + extension);
-                    });
-                    occCount++;
-                });
-
-                //append attributes
-                var keys = Object.keys(flattened);
-                for (var i= 0; i < keys.length; i++) {
-                    formData.append(keys[i], flattened[keys[i]]);
-                }
-
-                //Add authentication
-                formData = this.auth.append(formData);
-
-                this._post(formData, function (err) {
-                    callback (err, sample);
-                });
-            },
-
-            /**
-             * Submits the record.
-             */
-            _post: function (formData, callback) {
-                var ajax = new XMLHttpRequest();
-
-                ajax.onreadystatechange = function () {
-                    var error = null;
-                    if (ajax.readyState === XMLHttpRequest.DONE) {
-                        switch (ajax.status) {
-                            case 200:
-                                callback && callback();
-                                break;
-                            case 400:
-                                error = new m.Error(ajax.response);
-                                callback && callback(error);
-                                break;
-                            default:
-                                error = new m.Error({
-                                    message: 'Unknown problem while sending request.',
-                                    number: ajax.status
-                                });
-                                callback && callback(error);
-                        }
-                    }
-                };
-
-                ajax.open('POST', this.CONF.url);
-                ajax.send(formData);
-            },
-
-            _attachListeners: function () {
-                var that = this;
-                this.storage.on('update', function () {
-                    that.trigger('update');
-                });
-            },
-
-            _flattener: function (keys, attributes, count) {
-                var flattened = {},
-                    attr = null,
-                    name = null,
-                    value = null,
-                    prefix = '',
-                    native = 'sample:',
-                    custom = 'smpAttr:';
-
-                if (this instanceof m.Occurrence) {
-                    prefix = 'sc:';
-                    native = '::occurrence:';
-                    custom = '::occAttr:';
-                }
-
-                for (attr in attributes) {
-                    if (!keys[attr]) {
-                        console.warn('morel.Manager: no such key: ' + attr);
-                        flattened[attr] = attributes;
-                        continue;
-                    }
-
-                    name = keys[attr].id;
-
-                    if (!name) {
-                        name = prefix + count + '::present'
-                    } else {
-                        if (parseInt(name, 10) >= 0) {
-                            name = custom + name;
-                        } else {
-                            name = native + name;
-                        }
-
-                        if (prefix) {
-                            name = prefix + count + name;
-                        }
-                    }
-
-                    value = attributes[attr];
-
-                    if (keys[attr].values) {
-                        value = keys[attr].values[value];
-                    }
-
-                    flattened[name] = value;
-                }
-
-                return flattened;
-            },
-
-            _resizeImages: function (sample, callback) {
-                var images_count = 0;
-                //get number of images to resize - synchronous
-                sample.occurrences.each(function (occurrence) {
-                    occurrence.images.each(function (image) {
-                        images_count++;
-                    });
-                });
-
-                if (!images_count) {
-                    callback();
-                    return;
-                }
-
-                //resize
-                //each occurrence
-                sample.occurrences.each(function (occurrence) {
-                    //each image
-                    occurrence.images.each(function (image) {
-                        image.resize(75, 75, function () {
-                            images_count--;
-                            if (images_count === 0) {
-                                callback();
-                            }
-                        });
-
-                    }, occurrence);
-                });
+          //recursively loop through samples
+          for (var i = 0; i < remainingSamples.length; i++) {
+            var sample = remainingSamples[i];
+            if (sample.getSyncStatus() === m.SYNCED) {
+              remainingSamples.splice(i, 1);
+              i--; //return the cursor
+              continue;
             }
+
+            //call user defined onSend function
+            onSend && onSend(sample);
+
+            that.sendStored(sample, function (err, sample) {
+              if (err) {
+                that.trigger('sync:error');
+                callback(err);
+                return;
+              }
+
+              for (var k = 0; k < remainingSamples.length; k++) {
+                if (remainingSamples[k].id === sample.id ||
+                  remainingSamples[k].cid === sample.cid) {
+                  remainingSamples.splice(k, 1);
+                  break;
+                }
+              }
+
+              if (remainingSamples.length === 0) {
+                //finished
+                that.trigger('sync:done');
+                callback();
+              }
+            });
+          }
+
+          if (!remainingSamples.length) {
+            that.trigger('sync:done');
+            callback();
+          }
+        })
+      },
+
+      sendStored: function (sample, callback) {
+        var that = this;
+
+        //don't resend
+        if (sample.getSyncStatus() === m.SYNCED) {
+          sample.trigger('sync:done');
+          callback && callback(null, sample);
+          return;
+        }
+
+        sample.metadata.synchronising = true;
+        sample.trigger('sync:request');
+
+        this.send(sample, function (err, sample) {
+          sample.metadata.synchronising = false;
+          if (err) {
+            sample.trigger('sync:error');
+            callback && callback(err);
+            return;
+          }
+
+          //update sample
+          sample.metadata.warehouse_id = 1;
+          sample.metadata.server_on = new Date();
+          sample.metadata.synced_on = new Date();
+
+          //resize images to snapshots
+          that._resizeImages(sample, function () {
+            //save sample
+            that.set(sample, function (err, sample) {
+              sample.trigger('sync:done');
+              callback && callback(null, sample);
+            });
+          });
+        });
+      },
+
+      /**
+       * Sends the saved record
+       *
+       * @param recordKey
+       * @param callback
+       * @param onError
+       * @param onSend
+       */
+      send: function (sample, callback) {
+        var flattened = sample.flatten(this._flattener),
+          formData = new FormData();
+
+
+        //append images
+        var occCount = 0;
+        sample.occurrences.each(function (occurrence) {
+          var imgCount = 0;
+          occurrence.images.each(function (image) {
+            var name = 'sc:' + occCount + '::photo' + imgCount;
+            var blob = m.dataURItoBlob(image.data, image.type);
+            var extension = image.type.split('/')[1];
+            formData.append(name, blob, 'pic.' + extension);
+          });
+          occCount++;
         });
 
-        _.extend(Module.prototype, m.Events);
+        //append attributes
+        var keys = Object.keys(flattened);
+        for (var i= 0; i < keys.length; i++) {
+          formData.append(keys[i], flattened[keys[i]]);
+        }
 
-        return Module;
-    }());
+        //Add authentication
+        formData = this.appendAuth(formData);
+
+        this._post(formData, function (err) {
+          callback (err, sample);
+        });
+      },
+
+      /**
+       * Submits the record.
+       */
+      _post: function (formData, callback) {
+        var ajax = new XMLHttpRequest();
+
+        ajax.onreadystatechange = function () {
+          var error = null;
+          if (ajax.readyState === XMLHttpRequest.DONE) {
+            switch (ajax.status) {
+              case 200:
+                callback && callback();
+                break;
+              case 400:
+                error = new m.Error(ajax.response);
+                callback && callback(error);
+                break;
+              default:
+                error = new m.Error({
+                  message: 'Unknown problem while sending request.',
+                  number: ajax.status
+                });
+                callback && callback(error);
+            }
+          }
+        };
+
+        ajax.open('POST', this.options.url);
+        ajax.send(formData);
+      },
+
+      _attachListeners: function () {
+        var that = this;
+        this.storage.on('update', function () {
+          that.trigger('update');
+        });
+      },
+
+      _flattener: function (keys, attributes, count) {
+        var flattened = {},
+          attr = null,
+          name = null,
+          value = null,
+          prefix = '',
+          native = 'sample:',
+          custom = 'smpAttr:';
+
+        if (this instanceof m.Occurrence) {
+          prefix = 'sc:';
+          native = '::occurrence:';
+          custom = '::occAttr:';
+        }
+
+        for (attr in attributes) {
+          if (!keys[attr]) {
+            console.warn('morel.Manager: no such key: ' + attr);
+            flattened[attr] = attributes;
+            continue;
+          }
+
+          name = keys[attr].id;
+
+          if (!name) {
+            name = prefix + count + '::present'
+          } else {
+            if (parseInt(name, 10) >= 0) {
+              name = custom + name;
+            } else {
+              name = native + name;
+            }
+
+            if (prefix) {
+              name = prefix + count + name;
+            }
+          }
+
+          value = attributes[attr];
+
+          if (keys[attr].values) {
+            if (typeof keys[attr].values === 'function') {
+              value = keys[attr].values(value);
+            } else {
+              value = keys[attr].values[value];
+            }
+          }
+
+          flattened[name] = value;
+        }
+
+        return flattened;
+      },
+
+      _resizeImages: function (sample, callback) {
+        var images_count = 0;
+        //get number of images to resize - synchronous
+        sample.occurrences.each(function (occurrence) {
+          occurrence.images.each(function (image) {
+            images_count++;
+          });
+        });
+
+        if (!images_count) {
+          callback();
+          return;
+        }
+
+        //resize
+        //each occurrence
+        sample.occurrences.each(function (occurrence) {
+          //each image
+          occurrence.images.each(function (image) {
+            image.resize(75, 75, function () {
+              images_count--;
+              if (images_count === 0) {
+                callback();
+              }
+            });
+
+          }, occurrence);
+        });
+      },
+
+      /**
+       * Appends user and app authentication to the passed data object.
+       * Note: object has to implement 'append' method.
+       *
+       * @param data An object to modify
+       * @returns {*} A data object
+       */
+      appendAuth: function (data) {
+        //app logins
+        this._appendAppAuth(data);
+        //warehouse data
+        this._appendWarehouseAuth(data);
+
+        return data;
+      },
+
+      /**
+       * Appends app authentication - Appname and Appsecret to
+       * the passed object.
+       * Note: object has to implement 'append' method.
+       *
+       * @param data An object to modify
+       * @returns {*} A data object
+       */
+      _appendAppAuth: function (data) {
+        data.append('appname', this.options.appname);
+        data.append('appsecret', this.options.appsecret);
+
+        return data;
+      },
+
+      /**
+       * Appends warehouse related information - website_id and survey_id to
+       * the passed data object.
+       * Note: object has to implement 'append' method.
+       *
+       * This is necessary because the data must be associated to some
+       * website and survey in the warehouse.
+       *
+       * @param data An object to modify
+       * @returns {*} An data object
+       */
+      _appendWarehouseAuth: function (data) {
+        data.append('website_id', this.options.website_id);
+        data.append('survey_id', this.options.survey_id);
+
+        return data;
+      }
+    });
+
+    _.extend(Module.prototype, Backbone.Events);
+
+    return Module;
+  }());
 
 
   /***********************************************************************
