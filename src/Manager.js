@@ -12,6 +12,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
 
       this.storage = new m.Storage({
         appname: options.appname,
+        Sample: options.Sample,
         Storage: options.Storage
       });
       this._attachListeners();
@@ -108,7 +109,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
           //recursively loop through samples
           for (var i = 0; i < remainingSamples.length; i++) {
             var sample = remainingSamples[i];
-            if (sample.getSyncStatus() === m.SYNCED) {
+            if (sample.validate() || sample.getSyncStatus() === m.SYNCED) {
               remainingSamples.splice(i, 1);
               i--; //return the cursor
               continue;

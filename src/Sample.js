@@ -14,8 +14,12 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
   m.Sample = (function () {
 
     var Module = Backbone.Model.extend({
+      Occurrence: m.Occurrence,
+
       constructor: function (attributes, options){
         var attrs = attributes || {};
+
+        var that = this;
 
         if (!attributes) {
           attrs = {
@@ -51,18 +55,18 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
         if (options.occurrences) {
           var occurrences = [];
           _.each(options.occurrences, function (occ) {
-            if (occ instanceof m.Occurrence) {
+            if (occ instanceof that.Occurrence) {
               occurrences.push(occ);
             } else {
-              occurrences.push(new m.Occurrence(occ.attributes, occ));
+              occurrences.push(new that.Occurrence(occ.attributes, occ));
             }
           });
           this.occurrences = new m.Collection(occurrences, {
-            model: m.Occurrence
+            model: this.Occurrence
           });
         } else {
           this.occurrences = new m.Collection([], {
-            model: m.Occurrence
+            model: this.Occurrence
           });
         }
 
