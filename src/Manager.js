@@ -203,9 +203,12 @@ define(['helpers', 'Sample', 'Storage'], function () {
         sample.occurrences.each(function (occurrence) {
           var imgCount = 0;
           occurrence.images.each(function (image) {
+            var data = image.get('data'),
+              type = image.get('type');
+
             var name = 'sc:' + occCount + '::photo' + imgCount;
-            var blob = m.dataURItoBlob(image.data, image.type);
-            var extension = image.type.split('/')[1];
+            var blob = m.dataURItoBlob(data, type);
+            var extension = type.split('/')[1];
             formData.append(name, blob, 'pic.' + extension);
           });
           occCount++;
@@ -280,8 +283,10 @@ define(['helpers', 'Sample', 'Storage'], function () {
 
         for (attr in attributes) {
           if (!keys[attr]) {
-            console.warn('morel.Manager: no such key: ' + attr);
-            flattened[attr] = attributes;
+            if (attr != 'email' && attr != 'usersecret') {
+              console.warn('morel.Manager: no such key: ' + attr);
+            }
+            flattened[attr] = attributes[attr];
             continue;
           }
 
