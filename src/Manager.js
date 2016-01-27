@@ -13,7 +13,8 @@ define(['helpers', 'Sample', 'Storage'], function () {
       this.storage = new m.Storage({
         appname: options.appname,
         Sample: options.Sample,
-        Storage: options.Storage
+        Storage: options.Storage,
+        manager: this
       });
       this._attachListeners();
       this.synchronising = false;
@@ -28,6 +29,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
         this.storage.getAll(callback);
       },
       set: function (model, callback) {
+        model._manager = this; // set the manager on new model
         this.storage.set(model, callback);
       },
       remove: function (model, callback) {

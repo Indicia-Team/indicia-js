@@ -74,6 +74,18 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
       },
 
       /**
+       * Saves the record to the record manager and if valid syncs it with DB
+       */
+      save: function (callback) {
+        //save
+        this._manager.set(this, function () {
+          //sync
+          //todo
+          callback && callback();
+        });
+      },
+
+      /**
        * Returns an object with attributes and their values flattened and
        * mapped for warehouse submission.
        *

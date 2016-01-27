@@ -484,6 +484,18 @@
       },
 
       /**
+       * Saves the record to the record manager and if valid syncs it with DB
+       */
+      save: function (callback) {
+        //save
+        this._manager.set(this, function () {
+          //sync
+          //todo
+          callback && callback();
+        });
+      },
+
+      /**
        * Returns an object with attributes and their values flattened and
        * mapped for warehouse submission.
        *
@@ -1190,6 +1202,7 @@
       var that = this;
 
       this.Sample = options.Sample || m.Sample;
+      this.manager = options.manager;
 
       //internal storage
       this.Storage = options.Storage || m.LocalStorage;
@@ -1211,6 +1224,7 @@
           var current = data[keys[i]];
           sample = new that.Sample(current.attributes, current);
           sample.cid = current.cid;
+          sample._manager = that.manager;
           samples.push(sample);
         }
         that.cache =  new m.Collection(samples, {
@@ -1343,7 +1357,8 @@
       this.storage = new m.Storage({
         appname: options.appname,
         Sample: options.Sample,
-        Storage: options.Storage
+        Storage: options.Storage,
+        manager: this
       });
       this._attachListeners();
       this.synchronising = false;
@@ -1358,6 +1373,7 @@
         this.storage.getAll(callback);
       },
       set: function (model, callback) {
+        model._manager = this; // set the manager on new model
         this.storage.set(model, callback);
       },
       remove: function (model, callback) {
