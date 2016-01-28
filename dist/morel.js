@@ -1271,7 +1271,7 @@
           key = model.id || model.cid;
         this.storage.set(key, model, function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.set(model, {remove: false});
@@ -1290,7 +1290,7 @@
           key = typeof model === 'object' ? model.id || model.cid : model;
         this.storage.remove(key, function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.remove(model);
@@ -1319,7 +1319,7 @@
         var that = this;
         this.storage.clear(function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.clear();
@@ -1583,11 +1583,12 @@
         ajax.onreadystatechange = function () {
           var error = null;
           if (ajax.readyState === XMLHttpRequest.DONE) {
-            switch (ajax.status) {
-              case 200:
+            var status = ajax.status + '';
+            switch (true) {
+              case /2\d\d/.test(status):
                 callback && callback();
                 break;
-              case 400:
+              case /4\d\d/.test(status):
                 error = new m.Error(ajax.response);
                 callback && callback(error);
                 break;

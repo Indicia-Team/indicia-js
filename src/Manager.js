@@ -239,11 +239,12 @@ define(['helpers', 'Sample', 'Storage'], function () {
         ajax.onreadystatechange = function () {
           var error = null;
           if (ajax.readyState === XMLHttpRequest.DONE) {
-            switch (ajax.status) {
-              case 200:
+            var status = ajax.status + '';
+            switch (true) {
+              case /2\d\d/.test(status):
                 callback && callback();
                 break;
-              case 400:
+              case /4\d\d/.test(status):
                 error = new m.Error(ajax.response);
                 callback && callback(error);
                 break;
