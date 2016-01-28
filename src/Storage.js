@@ -83,7 +83,7 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
           key = model.id || model.cid;
         this.storage.set(key, model, function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.set(model, {remove: false});
@@ -102,7 +102,7 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
           key = typeof model === 'object' ? model.id || model.cid : model;
         this.storage.remove(key, function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.remove(model);
@@ -131,7 +131,7 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
         var that = this;
         this.storage.clear(function (err) {
           if (err) {
-            callback(err);
+            callback && callback(err);
             return;
           }
           that.cache.clear();
