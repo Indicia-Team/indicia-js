@@ -79,7 +79,6 @@ define(['helpers', 'Sample', 'Storage'], function () {
           this.synchronising = true;
           this.sendAllStored(onSample, function (err) {
             that.synchronising = false;
-
             callback && callback(err);
           });
         } else {
@@ -180,6 +179,12 @@ define(['helpers', 'Sample', 'Storage'], function () {
           that._resizeImages(sample, function () {
             //save sample
             that.set(sample, function (err, sample) {
+              if (err) {
+                sample.trigger('sync:error');
+                callback && callback(err);
+                return;
+              }
+
               sample.trigger('sync:done');
               callback && callback(null, sample);
             });
