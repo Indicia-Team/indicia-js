@@ -1653,6 +1653,9 @@
             }
           }
 
+          //no need to send undefined
+          if (!attributes[attr]) continue;
+
           value = attributes[attr];
 
           if (keys[attr].values) {
