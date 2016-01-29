@@ -162,7 +162,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
         sample.metadata.synchronising = true;
         sample.trigger('sync:request');
 
-        this.send(sample, function (err, sample) {
+        this.send(sample, function (err) {
           sample.metadata.synchronising = false;
           if (err) {
             sample.trigger('sync:error');
@@ -178,7 +178,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
           //resize images to snapshots
           that._resizeImages(sample, function () {
             //save sample
-            that.set(sample, function (err, sample) {
+            that.set(sample, function (err) {
               if (err) {
                 sample.trigger('sync:error');
                 callback && callback(err);
