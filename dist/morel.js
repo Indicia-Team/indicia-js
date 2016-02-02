@@ -1360,6 +1360,7 @@
         Storage: options.Storage,
         manager: this
       });
+      this.onSend = options.onSend;
       this._attachListeners();
       this.synchronising = false;
     };
@@ -1417,11 +1418,11 @@
         });
       },
 
-      syncAll: function (onSample, callback) {
+      syncAll: function (callback) {
         var that = this;
         if (!this.synchronising) {
           this.synchronising = true;
-          this.sendAllStored(onSample, function (err) {
+          this.sendAllStored(function (err) {
             that.synchronising = false;
             callback && callback(err);
           });
@@ -1437,7 +1438,7 @@
        *
        * @returns {undefined}
        */
-      sendAllStored: function (onSend, callback) {
+      sendAllStored: function (callback) {
         var that = this;
         this.getAll(function (err, samples) {
           if (err) {
@@ -1459,9 +1460,6 @@
               i--; //return the cursor
               continue;
             }
-
-            //call user defined onSend function
-            onSend && onSend(sample);
 
             that.sendStored(sample, function (err, sample) {
               if (err) {
@@ -1503,6 +1501,9 @@
           return;
         }
 
+        //call user defined onSend function
+        this.onSend && this.onSend(sample);
+
         sample.metadata.synchronising = true;
         sample.trigger('sync:request');
 
@@ -1542,7 +1543,6 @@
        * @param recordKey
        * @param callback
        * @param onError
-       * @param onSend
        */
       send: function (sample, callback) {
         var flattened = sample.flatten(this._flattener),
