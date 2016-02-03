@@ -105,7 +105,8 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
             callback && callback(err);
             return;
           }
-          that.cache.remove(model);
+          delete model._manager;
+          model.destroy();
           callback && callback();
         });
       },
