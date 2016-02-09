@@ -86,10 +86,19 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
         }
 
         this._manager.set(this, function () {
-          //sync
-          //todo
+          //todo sync
           callback && callback();
         });
+      },
+
+      destroy: function (callback) {
+        if (this._manager) {
+          this._manager.remove(this, function () {
+
+          });
+        } else {
+          Backbone.Model.prototype.destroy.call(this);
+        }
       },
 
       /**
