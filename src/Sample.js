@@ -30,6 +30,7 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._manager = options._manager;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -56,9 +57,11 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
           var occurrences = [];
           _.each(options.occurrences, function (occ) {
             if (occ instanceof that.Occurrence) {
+              occ._sample = that;
               occurrences.push(occ);
             } else {
-              occurrences.push(new that.Occurrence(occ.attributes, occ));
+              var modelOptions = _.extend(occ, {_sample: that});
+              occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
             }
           });
           this.occurrences = new m.Collection(occurrences, {
@@ -77,7 +80,11 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
        * Saves the record to the record manager and if valid syncs it with DB
        */
       save: function (callback) {
-        //save
+        if (!this._manager) {
+          callback && callback(new Error({message: 'No manager.'}));
+          return;
+        }
+
         this._manager.set(this, function () {
           //sync
           //todo

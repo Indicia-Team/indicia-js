@@ -34,9 +34,8 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
 
         for (var i = 0; i < keys.length; i++) {
           var current = data[keys[i]];
-          sample = new that.Sample(current.attributes, current);
-          sample.cid = current.cid;
-          sample._manager = that.manager;
+          var modelOptions = _.extend(current, {_manager: that.manager});
+          sample = new that.Sample(current.attributes, modelOptions);
           samples.push(sample);
         }
         that.cache =  new m.Collection(samples, {

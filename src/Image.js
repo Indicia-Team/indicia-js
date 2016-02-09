@@ -31,6 +31,10 @@ define(['helpers'], function () {
         this.initialize.apply(this, arguments);
       },
 
+      destroy: function (){
+
+      },
+
       /**
        * Resizes itself.
        */

@@ -348,10 +348,12 @@
   m.Occurrence = (function () {
     var Module = Backbone.Model.extend({
       constructor: function (attributes, options){
+        var that = this;
         var attrs = attributes || {};
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._sample = options._sample;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -361,7 +363,17 @@
 
 
         if (options.images) {
-          this.images = new m.Collection(options.images, {
+          var images = [];
+          _.each(options.images, function (image) {
+            if (image instanceof m.Image) {
+              image._occurrence = that;
+              images.push(image);
+            } else {
+              var modelOptions = _.extend(image, {_occurrence: that});
+              images.push(new m.Image(image.attributes, modelOptions));
+            }
+          });
+          this.images = new m.Collection(images, {
             model: m.Image
           });
         } else {
@@ -371,6 +383,14 @@
         }
 
         this.initialize.apply(this, arguments);
+      },
+
+      save: function (callback) {
+        this._sample.save(callback);
+      },
+
+      destroy: function () {
+        //todo
       },
 
       toJSON: function () {
@@ -440,6 +460,7 @@
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._manager = options._manager;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -466,9 +487,11 @@
           var occurrences = [];
           _.each(options.occurrences, function (occ) {
             if (occ instanceof that.Occurrence) {
+              occ._sample = that;
               occurrences.push(occ);
             } else {
-              occurrences.push(new that.Occurrence(occ.attributes, occ));
+              var modelOptions = _.extend(occ, {_sample: that});
+              occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
             }
           });
           this.occurrences = new m.Collection(occurrences, {
@@ -487,7 +510,11 @@
        * Saves the record to the record manager and if valid syncs it with DB
        */
       save: function (callback) {
-        //save
+        if (!this._manager) {
+          callback && callback(new Error({message: 'No manager.'}));
+          return;
+        }
+
         this._manager.set(this, function () {
           //sync
           //todo
@@ -1222,9 +1249,8 @@
 
         for (var i = 0; i < keys.length; i++) {
           var current = data[keys[i]];
-          sample = new that.Sample(current.attributes, current);
-          sample.cid = current.cid;
-          sample._manager = that.manager;
+          var modelOptions = _.extend(current, {_manager: that.manager});
+          sample = new that.Sample(current.attributes, modelOptions);
           samples.push(sample);
         }
         that.cache =  new m.Collection(samples, {

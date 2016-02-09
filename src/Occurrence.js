@@ -9,10 +9,12 @@ define(['helpers', 'Image', 'Collection'], function () {
   m.Occurrence = (function () {
     var Module = Backbone.Model.extend({
       constructor: function (attributes, options){
+        var that = this;
         var attrs = attributes || {};
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._sample = options._sample;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -22,7 +24,17 @@ define(['helpers', 'Image', 'Collection'], function () {
 
 
         if (options.images) {
-          this.images = new m.Collection(options.images, {
+          var images = [];
+          _.each(options.images, function (image) {
+            if (image instanceof m.Image) {
+              image._occurrence = that;
+              images.push(image);
+            } else {
+              var modelOptions = _.extend(image, {_occurrence: that});
+              images.push(new m.Image(image.attributes, modelOptions));
+            }
+          });
+          this.images = new m.Collection(images, {
             model: m.Image
           });
         } else {
@@ -32,6 +44,14 @@ define(['helpers', 'Image', 'Collection'], function () {
         }
 
         this.initialize.apply(this, arguments);
+      },
+
+      save: function (callback) {
+        this._sample.save(callback);
+      },
+
+      destroy: function () {
+        //todo
       },
 
       toJSON: function () {
