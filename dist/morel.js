@@ -212,6 +212,7 @@
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._occurrence = options._occurrence;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -221,6 +222,26 @@
 
 
         this.initialize.apply(this, arguments);
+      },
+
+      save: function (callback) {
+        if (!this._occurrence) {
+          callback && callback(new Error({message: 'No occurrence.'}));
+          return;
+        }
+
+        this._occurrence.save(callback);
+      },
+
+      destroy: function (callback) {
+        if (this._occurrence) {
+          this._occurrence.images.remove(this);
+          this.save(function () {
+            callback && callback();
+          });
+        } else {
+          Backbone.Model.prototype.destroy.call(this);
+        }
       },
 
       /**
@@ -242,9 +263,7 @@
       toJSON: function () {
         var data = {
           id: this.id,
-          url: this.attributes.url,
-          type: this.attributes.type,
-          data: this.attributes.data
+          attributes: this.attributes
         };
         return data;
       }
@@ -386,11 +405,23 @@
       },
 
       save: function (callback) {
+        if (!this._sample) {
+          callback && callback(new Error({message: 'No sample.'}));
+          return;
+        }
+
         this._sample.save(callback);
       },
 
-      destroy: function () {
-        //todo
+      destroy: function (callback) {
+        if (this._sample) {
+          this._sample.occurrences.remove(this);
+          this.save(function () {
+            callback && callback();
+          });
+        } else {
+          Backbone.Model.prototype.destroy.call(this);
+        }
       },
 
       toJSON: function () {
@@ -400,7 +431,6 @@
           attributes: this.attributes,
           images: this.images.toJSON()
         };
-        //add occurrences
         return data;
       },
 

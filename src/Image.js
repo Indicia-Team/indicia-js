@@ -20,6 +20,7 @@ define(['helpers'], function () {
 
         options || (options = {});
         this.cid = options.cid || m.getNewUUID();
+        this._occurrence = options._occurrence;
         this.attributes = {};
         if (options.collection) this.collection = options.collection;
         if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -31,8 +32,24 @@ define(['helpers'], function () {
         this.initialize.apply(this, arguments);
       },
 
-      destroy: function (){
+      save: function (callback) {
+        if (!this._occurrence) {
+          callback && callback(new Error({message: 'No occurrence.'}));
+          return;
+        }
 
+        this._occurrence.save(callback);
+      },
+
+      destroy: function (callback) {
+        if (this._occurrence) {
+          this._occurrence.images.remove(this);
+          this.save(function () {
+            callback && callback();
+          });
+        } else {
+          Backbone.Model.prototype.destroy.call(this);
+        }
       },
 
       /**
@@ -54,9 +71,7 @@ define(['helpers'], function () {
       toJSON: function () {
         var data = {
           id: this.id,
-          url: this.attributes.url,
-          type: this.attributes.type,
-          data: this.attributes.data
+          attributes: this.attributes
         };
         return data;
       }

@@ -47,11 +47,23 @@ define(['helpers', 'Image', 'Collection'], function () {
       },
 
       save: function (callback) {
+        if (!this._sample) {
+          callback && callback(new Error({message: 'No sample.'}));
+          return;
+        }
+
         this._sample.save(callback);
       },
 
-      destroy: function () {
-        //todo
+      destroy: function (callback) {
+        if (this._sample) {
+          this._sample.occurrences.remove(this);
+          this.save(function () {
+            callback && callback();
+          });
+        } else {
+          Backbone.Model.prototype.destroy.call(this);
+        }
       },
 
       toJSON: function () {
@@ -61,7 +73,6 @@ define(['helpers', 'Image', 'Collection'], function () {
           attributes: this.attributes,
           images: this.images.toJSON()
         };
-        //add occurrences
         return data;
       },
 
