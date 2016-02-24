@@ -93,11 +93,11 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
 
       destroy: function (callback) {
         if (this._manager) {
-          this._manager.remove(this, function () {
-
-          });
+          this._manager.remove(this, callback);
         } else {
+          //remove from all collections it belongs
           Backbone.Model.prototype.destroy.call(this);
+          callback && callback();
         }
       },
 
@@ -109,7 +109,7 @@ define(['helpers', 'Occurrence', 'Collection'], function () {
        * @returns {*}
        */
       flatten: function (flattener) {
-        var flattened = flattener.apply(this, [Module.keys, this.attributes]);
+        var flattened = flattener.apply(this, [this.attributes, {keys: Module.keys}]);
 
         //occurrences
         _.extend(flattened, this.occurrences.flatten(flattener));

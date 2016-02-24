@@ -85,7 +85,7 @@ define(['helpers', 'Image', 'Collection'], function () {
        */
       flatten: function (flattener, count) {
         //images flattened separately
-        return flattener.apply(this, [Module.keys, this.attributes, count]);;
+        return flattener.apply(this, [this.attributes, {keys: Module.keys, count: count}]);
       }
     });
 

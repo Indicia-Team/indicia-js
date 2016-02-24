@@ -17,6 +17,6 @@
 
         //Browser global
     } else {
-        root.morel = factory(root, {}, (root.$ || root.jQuery));
+        root.morel = factory(root, {}, (root.jQuery || root.Zepto || root.ender || root.$));
     }
 }(function (root, m, $) {

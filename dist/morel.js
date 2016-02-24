@@ -27,7 +27,7 @@
 
         //Browser global
     } else {
-        root.morel = factory(root, {}, (root.$ || root.jQuery));
+        root.morel = factory(root, {}, (root.jQuery || root.Zepto || root.ender || root.$));
     }
 }(function (root, m, $) {
     'use strict';
@@ -443,7 +443,7 @@
        */
       flatten: function (flattener, count) {
         //images flattened separately
-        return flattener.apply(this, [Module.keys, this.attributes, count]);;
+        return flattener.apply(this, [this.attributes, {keys: Module.keys, count: count}]);
       }
     });
 
@@ -553,11 +553,11 @@
 
       destroy: function (callback) {
         if (this._manager) {
-          this._manager.remove(this, function () {
-
-          });
+          this._manager.remove(this, callback);
         } else {
+          //remove from all collections it belongs
           Backbone.Model.prototype.destroy.call(this);
+          callback && callback();
         }
       },
 
@@ -569,7 +569,7 @@
        * @returns {*}
        */
       flatten: function (flattener) {
-        var flattened = flattener.apply(this, [Module.keys, this.attributes]);
+        var flattened = flattener.apply(this, [this.attributes, {keys: Module.keys}]);
 
         //occurrences
         _.extend(flattened, this.occurrences.flatten(flattener));
@@ -1359,8 +1359,7 @@
             return;
           }
           delete model._manager;
-          model.destroy();
-          callback && callback();
+          model.destroy(callback); //removes from cache
         });
       },
 
@@ -1567,8 +1566,12 @@
           return;
         }
 
-        //call user defined onSend function
-        this.onSend && this.onSend(sample);
+        //call user defined onSend function to modify and validate
+        var stopSending = this.onSend && this.onSend(sample);
+        if (stopSending) {
+          callback && callback(null, sample);
+          return;
+        }
 
         sample.metadata.synchronising = true;
         sample.trigger('sync:request');
@@ -1612,7 +1615,7 @@
        */
       send: function (sample, callback) {
         var flattened = sample.flatten(this._flattener),
-          formData = new FormData();
+            formData = new FormData();
 
 
         //append images
@@ -1621,12 +1624,13 @@
           var imgCount = 0;
           occurrence.images.each(function (image) {
             var data = image.get('data'),
-              type = image.get('type');
+                type = image.get('type');
 
             var name = 'sc:' + occCount + '::photo' + imgCount;
             var blob = m.dataURItoBlob(data, type);
             var extension = type.split('/')[1];
             formData.append(name, blob, 'pic.' + extension);
+            imgCount++;
           });
           occCount++;
         });
@@ -1684,14 +1688,16 @@
         });
       },
 
-      _flattener: function (keys, attributes, count) {
-        var flattened = {},
-          attr = null,
-          name = null,
-          value = null,
-          prefix = '',
-          native = 'sample:',
-          custom = 'smpAttr:';
+      _flattener: function (attributes, options) {
+        var flattened = options.flattened || {},
+            keys = options.keys || {},
+            count = options.count,
+            attr = null,
+            name = null,
+            value = null,
+            prefix = '',
+            native = 'sample:',
+            custom = 'smpAttr:';
 
         if (this instanceof m.Occurrence) {
           prefix = 'sc:';
@@ -1729,9 +1735,16 @@
 
           value = attributes[attr];
 
+          //check if has values to choose from
           if (keys[attr].values) {
             if (typeof keys[attr].values === 'function') {
-              value = keys[attr].values(value);
+              var fullOptions = _.extend(options, {
+                flattener: m.Manager.prototype._flattener,
+                flattened: flattened
+              });
+
+              //get a value from a function
+              value = keys[attr].values(value, fullOptions);
             } else {
               value = keys[attr].values[value];
             }

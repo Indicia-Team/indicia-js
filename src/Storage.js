@@ -105,8 +105,7 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
             return;
           }
           delete model._manager;
-          model.destroy();
-          callback && callback();
+          model.destroy(callback); //removes from cache
         });
       },
 

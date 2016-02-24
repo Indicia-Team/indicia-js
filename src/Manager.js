@@ -157,8 +157,12 @@ define(['helpers', 'Sample', 'Storage'], function () {
           return;
         }
 
-        //call user defined onSend function
-        this.onSend && this.onSend(sample);
+        //call user defined onSend function to modify and validate
+        var stopSending = this.onSend && this.onSend(sample);
+        if (stopSending) {
+          callback && callback(null, sample);
+          return;
+        }
 
         sample.metadata.synchronising = true;
         sample.trigger('sync:request');
@@ -202,7 +206,7 @@ define(['helpers', 'Sample', 'Storage'], function () {
        */
       send: function (sample, callback) {
         var flattened = sample.flatten(this._flattener),
-          formData = new FormData();
+            formData = new FormData();
 
 
         //append images
@@ -211,12 +215,13 @@ define(['helpers', 'Sample', 'Storage'], function () {
           var imgCount = 0;
           occurrence.images.each(function (image) {
             var data = image.get('data'),
-              type = image.get('type');
+                type = image.get('type');
 
             var name = 'sc:' + occCount + '::photo' + imgCount;
             var blob = m.dataURItoBlob(data, type);
             var extension = type.split('/')[1];
             formData.append(name, blob, 'pic.' + extension);
+            imgCount++;
           });
           occCount++;
         });
@@ -274,14 +279,16 @@ define(['helpers', 'Sample', 'Storage'], function () {
         });
       },
 
-      _flattener: function (keys, attributes, count) {
-        var flattened = {},
-          attr = null,
-          name = null,
-          value = null,
-          prefix = '',
-          native = 'sample:',
-          custom = 'smpAttr:';
+      _flattener: function (attributes, options) {
+        var flattened = options.flattened || {},
+            keys = options.keys || {},
+            count = options.count,
+            attr = null,
+            name = null,
+            value = null,
+            prefix = '',
+            native = 'sample:',
+            custom = 'smpAttr:';
 
         if (this instanceof m.Occurrence) {
           prefix = 'sc:';
@@ -319,9 +326,16 @@ define(['helpers', 'Sample', 'Storage'], function () {
 
           value = attributes[attr];
 
+          //check if has values to choose from
           if (keys[attr].values) {
             if (typeof keys[attr].values === 'function') {
-              value = keys[attr].values(value);
+              var fullOptions = _.extend(options, {
+                flattener: m.Manager.prototype._flattener,
+                flattened: flattened
+              });
+
+              //get a value from a function
+              value = keys[attr].values(value, fullOptions);
             } else {
               value = keys[attr].values[value];
             }
