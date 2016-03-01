@@ -1387,7 +1387,7 @@
             callback && callback(err);
             return;
           }
-          that.cache.clear();
+          that.cache.reset();
           callback && callback();
         });
       },

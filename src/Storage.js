@@ -133,7 +133,7 @@ define(['helpers', 'Collection', 'Sample', 'PlainStorage',
             callback && callback(err);
             return;
           }
-          that.cache.clear();
+          that.cache.reset();
           callback && callback();
         });
       },
