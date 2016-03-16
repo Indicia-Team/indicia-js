@@ -16,20 +16,21 @@
 
     //AMD
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'exports'], function ($, exports) {
-            root.morel = factory(root, exports, $);
+        define(['jquery', 'backbone', 'exports'], function ($, Backbone, exports) {
+            root.morel = factory(root, exports, $, Backbone);
         });
 
         //Node.js or CommonJS
     } else if (typeof exports !== 'undefined') {
         try { $ = require('jquery');} catch (e) {}
-        factory(root, exports, $);
+        try { Backbone = require('backbone');} catch (e) {}
+        factory(root, exports, $, Backbone);
 
         //Browser global
     } else {
-        root.morel = factory(root, {}, (root.jQuery || root.Zepto || root.ender || root.$));
+        root.morel = factory(root, {}, (root.jQuery || root.Zepto || root.ender || root.$), root.Backbone);
     }
-}(function (root, m, $) {
+}(function (root, m, $, Backbone) {
     'use strict';
 
     m.VERSION = '3.0.2'; //library version, generated/replaced by grunt
