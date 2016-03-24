@@ -22,6 +22,13 @@ define(['helpers', 'Image', 'Collection'], function () {
         this.set(attrs, options);
         this.changed = {};
 
+        if (options.metadata) {
+          this.metadata = options.metadata;
+        } else {
+          this.metadata = {
+            created_on: new Date()
+          }
+        }
 
         if (options.images) {
           var images = [];
@@ -70,6 +77,7 @@ define(['helpers', 'Image', 'Collection'], function () {
         var data = {
           id: this.id,
           cid: this.cid,
+          metadata: this.metadata,
           attributes: this.attributes,
           images: this.images.toJSON()
         };

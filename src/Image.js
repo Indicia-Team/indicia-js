@@ -28,6 +28,13 @@ define(['helpers'], function () {
         this.set(attrs, options);
         this.changed = {};
 
+        if (options.metadata) {
+          this.metadata = options.metadata;
+        } else {
+          this.metadata = {
+            created_on: new Date()
+          }
+        }
 
         this.initialize.apply(this, arguments);
       },
@@ -71,6 +78,7 @@ define(['helpers'], function () {
       toJSON: function () {
         var data = {
           id: this.id,
+          metadata: this.metadata,
           attributes: this.attributes
         };
         return data;

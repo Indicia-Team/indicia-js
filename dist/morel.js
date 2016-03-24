@@ -221,6 +221,13 @@
         this.set(attrs, options);
         this.changed = {};
 
+        if (options.metadata) {
+          this.metadata = options.metadata;
+        } else {
+          this.metadata = {
+            created_on: new Date()
+          }
+        }
 
         this.initialize.apply(this, arguments);
       },
@@ -264,6 +271,7 @@
       toJSON: function () {
         var data = {
           id: this.id,
+          metadata: this.metadata,
           attributes: this.attributes
         };
         return data;
@@ -355,8 +363,12 @@
           _.extend(flattened, this.models[i].flatten(flattener, i))
         }
         return flattened;
+      },
+
+      comparator: function (a) {
+        return a.metadata.created_on;
       }
-    })
+    });
 
 
     return Module;
@@ -381,6 +393,13 @@
         this.set(attrs, options);
         this.changed = {};
 
+        if (options.metadata) {
+          this.metadata = options.metadata;
+        } else {
+          this.metadata = {
+            created_on: new Date()
+          }
+        }
 
         if (options.images) {
           var images = [];
@@ -429,6 +448,7 @@
         var data = {
           id: this.id,
           cid: this.cid,
+          metadata: this.metadata,
           attributes: this.attributes,
           images: this.images.toJSON()
         };
