@@ -16,8 +16,12 @@ define(['helpers', 'Occurrence'], function () {
           _.extend(flattened, this.models[i].flatten(flattener, i))
         }
         return flattened;
+      },
+
+      comparator: function (a) {
+        return a.metadata.created_on;
       }
-    })
+    });
 
 
     return Module;
