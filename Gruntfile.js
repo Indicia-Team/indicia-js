@@ -1,3 +1,5 @@
+const webpackConfig = require('./webpack.config.js');
+
 module.exports = function (grunt) {
   'use strict';
   var banner = "/*!\n" +
@@ -15,50 +17,6 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-
-    requirejs: {
-      compile: {
-        options: {
-          baseUrl: "src",
-          optimize: "none",
-          findNestedDependencies: true,
-          skipModuleInsertion: true,
-
-          include: [
-            "main",
-            "Manager"
-          ],
-
-          out: DIST_LOC + '<%= pkg.name %>.js',
-
-          pragmasOnSave: {
-            buildExclude: true
-          },
-
-          wrap: {
-            startFile: "src/wrap.start",
-            endFile: "src/wrap.end"
-          }
-        }
-      }
-    },
-
-    concat: {
-      options: {
-        // define a string to put between each file in the concatenated output
-        separator: '\n\n'
-      },
-      src: {
-        options: {
-          banner: banner
-        },
-        // the file to update
-        src: DIST_LOC + '<%= pkg.name %>.js',
-
-        // the location of the resulting JS file
-        dest: DIST_LOC + '<%= pkg.name %>.js'
-      }
-    },
 
     replace: {
       version: {
@@ -87,19 +45,26 @@ module.exports = function (grunt) {
 
     karma: {
       local: {
-        configFile: 'karma.conf.js'
+        configFile: 'test/karma.conf.js',
       },
       sauce: {
-        configFile: 'karma.conf-sauce.js'
-      }
-    }
+        configFile: 'test/karma.conf-sauce.js',
+      },
+    },
+
+    webpack: {
+      // Main run
+      main: webpackConfig,
+
+      build: {
+        // configuration for this build
+      },
+    },
   });
 
+  grunt.loadNpmTasks('grunt-webpack');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-text-replace');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-requirejs');
 
   // the default task can be run just by typing "grunt" on the command line
   grunt.registerTask('build', ['requirejs', 'concat', 'replace', 'uglify']);

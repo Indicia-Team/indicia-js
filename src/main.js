@@ -1,20 +1,21 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-define([], function () {
-//>>excludeEnd('buildExclude');
+import _ from 'underscore';
+import Manager from './Manager';
+import Sample from './Sample';
+import CONST from './constants';
+import Occurrence from './Occurrence';
+import Image from './Image';
+import Error from './Error';
 
-    'use strict';
+const Morel = {
+  VERSION: '0', // library version, generated/replaced by grunt
 
-    m.VERSION = '0'; //library version, generated/replaced by grunt
+  Manager,
+  Sample,
+  Occurrence,
+  Image,
+  Error,
+};
 
-    //CONSTANTS
-    m.SYNCHRONISING = 0;
-    m.SYNCED = 1;
-    m.LOCAL = 2;
-    m.SERVER = 3;
-    m.CHANGED_LOCALLY = 4;
-    m.CHANGED_SERVER = 5;
-    m.CONFLICT = -1;
+_.extend(Morel, CONST);
 
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-});
-//>>excludeEnd('buildExclude');
+export { Morel as default };

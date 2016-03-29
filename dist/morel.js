@@ -1,1868 +1,1897 @@
-/*!
- * morel 3.0.2
- * Mobile Recording Library for biological data collection. 
- *
- * https://github.com/NERC-CEH/morel
- *
- * Author 2016 Karolis Kazlauskis
- * Released under the GNU GPL v3 license.
- * http://www.gnu.org/licenses/gpl.html
- */
-(function (factory) {
-    // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
-    // We use `self` instead of `window` for `WebWorker` support.
-    var root = (typeof self === 'object' && self.self === self && self) ||
-        (typeof global === 'object' && global.global === global && global);
-
-    //AMD
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'backbone', 'exports'], function ($, Backbone, exports) {
-            root.morel = factory(root, exports, $, Backbone);
-        });
-
-        //Node.js or CommonJS
-    } else if (typeof exports !== 'undefined') {
-        try { $ = require('jquery');} catch (e) {}
-        try { Backbone = require('backbone');} catch (e) {}
-        factory(root, exports, $, Backbone);
-
-        //Browser global
-    } else {
-        root.morel = factory(root, {}, (root.jQuery || root.Zepto || root.ender || root.$), root.Backbone);
-    }
-}(function (root, m, $, Backbone) {
-    'use strict';
-
-    m.VERSION = '3.0.2'; //library version, generated/replaced by grunt
-
-    //CONSTANTS
-    m.SYNCHRONISING = 0;
-    m.SYNCED = 1;
-    m.LOCAL = 2;
-    m.SERVER = 3;
-    m.CHANGED_LOCALLY = 4;
-    m.CHANGED_SERVER = 5;
-    m.CONFLICT = -1;
-
-
-    /***********************************************************************
-     * HELPER FUNCTIONS
-     **********************************************************************/
-
-    /**
-     * Clones an object.
-     *
-     * @param obj
-     * @returns {*}
-     */
-    m.cloneDeep = function (obj) {
-        if (null === obj || 'object' !== typeof obj) {
-            return obj;
-        }
-        var copy = {};
-        for (var attr in obj) {
-            if (obj.hasOwnProperty(attr)) {
-                copy[attr] = m.objClone(obj[attr]);
-            }
-        }
-        return copy;
-    };
-
-
-    /**
-     * Generate UUID.
-     */
-    m.getNewUUID = function () {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
-
-    /**
-     * Converts DataURI object to a Blob.
-     *
-     * @param {type} dataURI
-     * @param {type} fileType
-     * @returns {undefined}
-     */
-    m.dataURItoBlob = function (dataURI, fileType) {
-        var binary = atob(dataURI.split(',')[1]);
-        var array = [];
-        for (var i = 0; i < binary.length; i++) {
-            array.push(binary.charCodeAt(i));
-        }
-        return new Blob([new Uint8Array(array)], {
-            type: fileType
-        });
-    };
-
-    // Detecting data URLs
-    // https://gist.github.com/bgrins/6194623
-
-    // data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
-    // The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
-    // Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
-    m.isDataURL = function (s) {
-        if (!s) {
-            return false;
-        }
-        s = s.toString(); //numbers
-
-        var regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
-        return !!s.match(regex);
-    };
-
-    //From jQuery 1.4.4 .
-    m.isPlainObject = function (obj) {
-        function type(obj) {
-            var class2type = {};
-            var types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
-            for (var i = 0; i < types.length; i++) {
-                class2type['[object ' + types[i] + ']'] = types[i].toLowerCase();
-            }
-            return obj == null ?
-                String(obj) :
-            class2type[toString.call(obj)] || 'object';
-        }
-
-        function isWindow(obj) {
-            return obj && typeof obj === 'object' && 'setInterval' in obj;
-        }
-
-        // Must be an Object.
-        // Because of IE, we also have to check the presence of the constructor property.
-        // Make sure that DOM nodes and window objects don't pass through, as well
-        if (!obj || type(obj) !== 'object' || obj.nodeType || isWindow(obj)) {
-            return false;
-        }
-
-        // Not own constructor property must be Object
-        if (obj.constructor && !hasOwn.call(obj, 'constructor') && !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')) {
-            return false;
-        }
-
-        // Own properties are enumerated firstly, so to speed up,
-        // if last one is own, then all properties are own.
-
-        var key;
-        for (key in obj) {
-        }
-
-        return key === undefined || hasOwn.call(obj, key);
-    };
-
-    //checks if the object has any elements.
-    m.isEmptyObject = function (obj) {
-        for (var key in obj) {
-            return false;
-        }
-        return true;
-    };
-
-  /**
-   * Formats the date to Indicia Warehouse format.
-   * @param date String or Date object
-   * @returns String formatted date
-   */
-    m.formatDate = function (date) {
-        var now = new Date(),
-            day = 0, month = 0,
-            reg = /\d{2}\/\d{2}\/\d{4}$/,
-            regDash = /\d{4}-\d{1,2}-\d{1,2}$/,
-            regDashInv = /\d{1,2}-\d{1,2}-\d{4}$/,
-            dateArray = [];
-
-        if (typeof date === 'string') {
-            dateArray = date.split('-');
-            //check if valid
-            if (reg.test(date)) {
-                return date;
-            //dashed
-            } else if (regDash.test(date)) {
-                date = new Date(parseInt(dateArray[0]), parseInt(dateArray[1]) - 1, parseInt(dateArray[2]));
-            //inversed dashed
-            } else if (regDashInv.test(date)) {
-                date = new Date(parseInt(dateArray[2]), parseInt(dateArray[1]) - 1, parseInt(dateArray[0]));
-            }
-        }
-
-        now = date || now;
-        day = ('0' + now.getDate()).slice(-2);
-        month = ('0' + (now.getMonth() + 1)).slice(-2);
-
-        return (day) + '/' + (month) + '/' + now.getFullYear();
-    };
-
-
-  /***********************************************************************
-   * IMAGE
-   **********************************************************************/
-
-  m.Image = (function (){
-
-    var Module = Backbone.Model.extend({
-      constructor: function (attributes, options) {
-
-        if (typeof attributes === 'string') {
-          var data = attributes;
-          attributes = {data: data};
-          return;
-        }
-        var attrs = attributes || {};
-
-        options || (options = {});
-        this.cid = options.cid || m.getNewUUID();
-        this._occurrence = options._occurrence;
-        this.attributes = {};
-        if (options.collection) this.collection = options.collection;
-        if (options.parse) attrs = this.parse(attrs, options) || {};
-        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
-        this.set(attrs, options);
-        this.changed = {};
-
-        if (options.metadata) {
-          this.metadata = options.metadata;
-        } else {
-          this.metadata = {
-            created_on: new Date()
-          }
-        }
-
-        this.initialize.apply(this, arguments);
-      },
-
-      save: function (callback) {
-        if (!this._occurrence) {
-          callback && callback(new Error({message: 'No occurrence.'}));
-          return;
-        }
-
-        this._occurrence.save(callback);
-      },
-
-      destroy: function (callback) {
-        if (this._occurrence) {
-          this._occurrence.images.remove(this);
-          this.save(function () {
-            callback && callback();
-          });
-        } else {
-          Backbone.Model.prototype.destroy.call(this);
-        }
-      },
-
-      /**
-       * Resizes itself.
-       */
-      resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
-        var that = this;
-        Module.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT,
-          function (err, image, data) {
-            if (err) {
-              callback && callback(err);
-              return;
-            }
-            that.attributes.data = data;
-            callback && callback(null, image, data);
-          });
-      },
-
-      toJSON: function () {
-        var data = {
-          id: this.id,
-          metadata: this.metadata,
-          attributes: this.attributes
-        };
-        return data;
-      }
-    });
-
-    _.extend(Module, {
-      /**
-       * Transforms and resizes an image file into a string.
-       *
-       * @param onError
-       * @param file
-       * @param onSaveSuccess
-       * @returns {number}
-       */
-      toString: function (file, callback) {
-        if (!window.FileReader) {
-          var message = 'No File Reader',
-            error = new m.Error(message);
-          console.error(message);
-
-          return callback(error);
-        }
-
-        var reader = new FileReader();
-        reader.onload = function (event) {
-          callback(null, event.target.result, file.type);
-        };
-        reader.readAsDataURL(file);
-      },
-
-      /**
-       * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
-       * @param data
-       * @param width
-       * @param height
-       * @param callback
-       */
-      resize: function(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-        var image = new Image();
-
-        image.onload = function() {
-          var width = image.width,
-            height = image.height,
-            canvas = null,
-            res = null;
-
-          //resizing
-          if (width > height) {
-            res = width / MAX_WIDTH;
-          } else {
-            res = height / MAX_HEIGHT;
-          }
-
-          width = width / res;
-          height = height / res;
-
-          // Create a canvas with the desired dimensions
-          canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-
-          // Scale and draw the source image to the canvas
-          canvas.getContext('2d').drawImage(image, 0, 0, width, height);
-
-          // Convert the canvas to a data URL in some format
-          callback(null, image, canvas.toDataURL(fileType));
-        };
-
-        image.src = data;
-      }
-    });
-
-    return Module;
-  }());
-
-
-  /***********************************************************************
-   * COLLECTION MODULE
-   **********************************************************************/
-
-  m.Collection = (function () {
-
-    var Module = Backbone.Collection.extend({
-      flatten: function (flattener) {
-        var flattened = {};
-
-        for (var i = 0; i < this.length; i++) {
-          _.extend(flattened, this.models[i].flatten(flattener, i))
-        }
-        return flattened;
-      },
-
-      comparator: function (a) {
-        return a.metadata.created_on;
-      }
-    });
-
-
-    return Module;
-  }());
-  /***********************************************************************
-   * OCCURRENCE
-   **********************************************************************/
-
-  m.Occurrence = (function () {
-    var Module = Backbone.Model.extend({
-      constructor: function (attributes, options){
-        var that = this;
-        var attrs = attributes || {};
-
-        options || (options = {});
-        this.cid = options.cid || m.getNewUUID();
-        this._sample = options._sample;
-        this.attributes = {};
-        if (options.collection) this.collection = options.collection;
-        if (options.parse) attrs = this.parse(attrs, options) || {};
-        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
-        this.set(attrs, options);
-        this.changed = {};
-
-        if (options.metadata) {
-          this.metadata = options.metadata;
-        } else {
-          this.metadata = {
-            created_on: new Date()
-          }
-        }
-
-        if (options.images) {
-          var images = [];
-          _.each(options.images, function (image) {
-            if (image instanceof m.Image) {
-              image._occurrence = that;
-              images.push(image);
-            } else {
-              var modelOptions = _.extend(image, {_occurrence: that});
-              images.push(new m.Image(image.attributes, modelOptions));
-            }
-          });
-          this.images = new m.Collection(images, {
-            model: m.Image
-          });
-        } else {
-          this.images = new m.Collection([], {
-            model: m.Image
-          });
-        }
-
-        this.initialize.apply(this, arguments);
-      },
-
-      save: function (callback) {
-        if (!this._sample) {
-          callback && callback(new Error({message: 'No sample.'}));
-          return;
-        }
-
-        this._sample.save(callback);
-      },
-
-      destroy: function (callback) {
-        if (this._sample) {
-          this._sample.occurrences.remove(this);
-          this.save(function () {
-            callback && callback();
-          });
-        } else {
-          Backbone.Model.prototype.destroy.call(this);
-        }
-      },
-
-      toJSON: function () {
-        var data = {
-          id: this.id,
-          cid: this.cid,
-          metadata: this.metadata,
-          attributes: this.attributes,
-          images: this.images.toJSON()
-        };
-        return data;
-      },
-
-      /**
-       * Returns an object with attributes and their values flattened and
-       * mapped for warehouse submission.
-       *
-       * @param flattener
-       * @returns {*}
-       */
-      flatten: function (flattener, count) {
-        //images flattened separately
-        return flattener.apply(this, [this.attributes, {keys: Module.keys, count: count}]);
-      }
-    });
-
-
-    /**
-     * Warehouse attributes and their values.
-     */
-    Module.keys = {
-      taxon: {
-        id: ''
-      },
-      comment: {
-        id: 'comment'
-      }
-    };
-
-    return Module;
-  }());
-  /***********************************************************************
-   * SAMPLE
-   *
-   * Refers to the event in which the sightings were observed, in other
-   * words it describes the place, date, people, environmental conditions etc.
-   * Within a sample, you can have zero or more occurrences which refer to each
-   * species sighted as part of the sample.
-   **********************************************************************/
-
-  m.Sample = (function () {
-
-    var Module = Backbone.Model.extend({
-      Occurrence: m.Occurrence,
-
-      constructor: function (attributes, options){
-        var attrs = attributes || {};
-
-        var that = this;
-
-        if (!attributes) {
-          attrs = {
-            date: new Date(),
-            location_type: 'latlon'
-          };
-        }
-
-        options || (options = {});
-        this.cid = options.cid || m.getNewUUID();
-        this._manager = options._manager;
-        this.attributes = {};
-        if (options.collection) this.collection = options.collection;
-        if (options.parse) attrs = this.parse(attrs, options) || {};
-        attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
-        this.set(attrs, options);
-        this.changed = {};
-
-
-        if (options.metadata) {
-          this.metadata = options.metadata;
-        } else {
-          this.metadata = {
-            created_on: new Date(),
-            updated_on: new Date(),
-
-            warehouse_id: null,
-
-            synced_on: null, //set when fully initialized only
-            server_on: null //updated on server
-          };
-        }
-
-        if (options.occurrences) {
-          var occurrences = [];
-          _.each(options.occurrences, function (occ) {
-            if (occ instanceof that.Occurrence) {
-              occ._sample = that;
-              occurrences.push(occ);
-            } else {
-              var modelOptions = _.extend(occ, {_sample: that});
-              occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
-            }
-          });
-          this.occurrences = new m.Collection(occurrences, {
-            model: this.Occurrence
-          });
-        } else {
-          this.occurrences = new m.Collection([], {
-            model: this.Occurrence
-          });
-        }
-
-        this.initialize.apply(this, arguments);
-      },
-
-      /**
-       * Saves the record to the record manager and if valid syncs it with DB
-       */
-      save: function (callback) {
-        var that = this;
-        if (!this._manager) {
-          callback && callback(new Error({message: 'No manager.'}));
-          return;
-        }
-
-        this._manager.set(this, function () {
-          //todo sync
-          callback && callback(null, that);
-        });
-      },
-
-      destroy: function (callback) {
-        if (this._manager) {
-          this._manager.remove(this, callback);
-        } else {
-          //remove from all collections it belongs
-          Backbone.Model.prototype.destroy.call(this);
-          callback && callback();
-        }
-      },
-
-      /**
-       * Returns an object with attributes and their values flattened and
-       * mapped for warehouse submission.
-       *
-       * @param flattener
-       * @returns {*}
-       */
-      flatten: function (flattener) {
-        var flattened = flattener.apply(this, [this.attributes, {keys: Module.keys}]);
-
-        //occurrences
-        _.extend(flattened, this.occurrences.flatten(flattener));
-        return flattened;
-      },
-
-      toJSON: function () {
-        var data = {
-          id: this.id,
-          cid: this.cid,
-          metadata: this.metadata,
-          attributes: this.attributes,
-          occurrences: this.occurrences.toJSON()
-        };
-
-        return data;
-      },
-
-      /**
-       * Sync statuses:
-       * synchronising, synced, local, server, changed_locally, changed_server, conflict
-       */
-      getSyncStatus: function () {
-        var meta = this.metadata;
-        //on server
-        if (meta.synchronising) {
-          return m.SYNCHRONISING;
-        }
-
-        if (meta.warehouse_id) {
-          //fully initialized
-          if (meta.synced_on) {
-            //changed_locally
-            if (meta.synced_on < meta.updated_on) {
-              //changed_server - conflict!
-              if (meta.synced_on < meta.server_on) {
-                return m.CONFLICT;
-              }
-              return m.CHANGED_LOCALLY;
-              //changed_server
-            } else if (meta.synced_on < meta.server_on) {
-              return m.CHANGED_SERVER;
-            } else {
-              return m.SYNCED;
-            }
-            //partially initialized - we know the record exists on
-            //server but has not yet been downloaded
-          } else {
-            return m.SERVER;
-          }
-          //local only
-        } else {
-          return m.LOCAL;
-        }
-      },
-
-      /**
-       * Detach all the listeners.
-       */
-      offAll: function () {
-        this._events = {};
-        this.occurrences.offAll();
-        for (var i = 0; i < this.occurrences.data.length; i++) {
-          this.occurrences.models[i].offAll();
-        }
-      }
-
-    });
-
-    /**
-     * Warehouse attributes and their values.
-     */
-    Module.keys =  {
-      id: { id: 'id' },
-      survey: { id: 'survey_id' },
-      date: { id: 'date' },
-      comment: { id: 'comment' },
-      image: { id: 'image' },
-      location: { id: 'entered_sref' },
-      location_type: {
-        id: 'entered_sref_system',
-        values: {
-          british: 'OSGB', //for British National Grid
-          irish: 'OSIE', //for Irish Grid
-          latlon: 4326 //for Latitude and Longitude in decimal form (WGS84 datum)
-        }
-      },
-      location_name: { id: 'location_name' },
-      deleted: { id: 'deleted' }
-    };
-
-    return Module;
-  }());
-    /***********************************************************************
-     * PLAIN STORAGE
-     **********************************************************************/
-
-    m.PlainStorage = (function () {
-
-        var Module = function () {
-            this.storage = {};
-        };
-
-        _.extend(Module.prototype, {
-            NAME: 'PlainStorage',
-
-            /**
-             * Gets an item from the storage.
-             *
-             * @param key
-             */
-            get: function (key, callback) {
-                var data = this.storage[key];
-                callback(null, data);
-            },
-
-            /**
-             * Returns all items from the storage;
-             *
-             * @returns {{}|*|m.Storage.storage}
-             */
-            getAll: function (callback) {
-                var data = this.storage;
-                callback(null, data);
-            },
-
-            /**
-             * Sets an item in the storage.
-             * Note: it overrides any existing key with the same name.
-             *
-             * @param key
-             * @param data
-             * @param callback
-             */
-            set: function (key, data, callback) {
-                this.storage[key] = data;
-                callback && callback(null, data);
-            },
-
-            /**
-             * Removes an item from the storage.
-             *
-             * @param key
-             */
-            remove: function (key, callback) {
-                delete this.storage[key];
-                callback && callback();
-            },
-
-            /**
-             * Checks if a key exists.
-             *
-             * @param key Input name
-             * @returns {boolean}
-             */
-            has: function (key, callback) {
-                var data = this.get(key, function (err, data) {
-                    callback(null, data !== undefined && data !== null);
-                });
-            },
-
-            /**
-             * Clears the storage.
-             */
-            clear: function (callback) {
-                this.storage = {};
-                callback && callback(null, this.storage);
-            },
-
-            /**
-             * Calculates current occupied the size of the storage.
-             * @param callback
-             */
-            size: function (callback) {
-                var data = Object.keys(this.storage).length;
-                callback(null, data);
-            }
-        });
-
-        return Module;
-    })();
-
-
-    /***********************************************************************
-     * LOCAL STORAGE
-     **********************************************************************/
-
-    m.LocalStorage = (function () {
-        /**
-         * options:
-         *  @appname String subdomain name to use for storage
-         */
-        var Module = function (options) {
-            options || (options = {});
-
-            this.storage = window.localStorage;
-
-            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
-        };
-
-        _.extend(Module.prototype, {
-            TYPE: 'LocalStorage',
-            NAME: 'morel',
-
-            /**
-             * Gets an item from the storage.
-             *
-             * @param key
-             */
-            get: function (key, callback) {
-                var data = this.storage.getItem(this._getKey(key));
-                data = JSON.parse(data);
-
-                callback(null, data);
-            },
-
-            /**
-             * Returns all items from the storage;
-             *
-             * @returns {{}|*|m.Storage.storage}
-             */
-            getAll: function (callback) {
-                var data = {};
-                var key = '';
-                for (var i = 0, len = this.storage.length; i < len; ++i ) {
-                    key = this.storage.key(i);
-                    //check if the key belongs to this storage
-                    if (key.indexOf(this._getPrefix()) !== -1) {
-                        var parsed = JSON.parse(this.storage.getItem(key));
-                        data[key] = parsed;
-                    }
-                }
-                callback(null, data);
-            },
-
-            /**
-             * Sets an item in the storage.
-             * Note: it overrides any existing key with the same name.
-             *
-             * @param key
-             * @param data JSON object
-             */
-            set: function (key, data, callback) {
-                data = JSON.stringify(data);
-                try {
-                    this.storage.setItem(this._getKey(key), data);
-                    callback && callback(null, data);
-                } catch (err) {
-                    var exceeded = this._isQuotaExceeded(err),
-                        message = exceeded ? 'Storage exceed.' : err.message;
-
-                    callback && callback(new m.Error(message), data);
-                }
-            },
-
-            /**
-             * Removes an item from the storage.
-             *
-             * @param key
-             */
-            remove: function (key, callback) {
-                this.storage.removeItem(this._getKey(key));
-                callback && callback();
-            },
-
-
-            /**
-             * Checks if a key exists.
-             *
-             * @param key Input name
-             * @returns {boolean}
-             */
-            has: function (key, callback) {
-                var data = null;
-                this.get(key, function (err, data) {
-                    callback(null, data !== undefined && data !== null);
-                });
-            },
-
-
-            /**
-             * Clears the storage.
-             */
-            clear: function (callback) {
-                this.storage.clear();
-                callback && callback();
-            },
-
-            /**
-             * Calculates current occupied the size of the storage.
-             *
-             * @param callback
-             */
-            size: function (callback) {
-                callback(null, this.storage.length);
-            },
-
-            /**
-             * Checks if there is enough space in the storage.
-             *
-             * @param size
-             * @returns {*}
-             */
-            hasSpace: function (size, callback) {
-                var taken = JSON.stringify(this.storage).length;
-                var left = 1024 * 1024 * 5 - taken;
-                if ((left - size) > 0) {
-                    callback(null, 1);
-                } else {
-                    callback(null, 0);
-                }
-            },
-
-            _getKey: function (key) {
-                return this._getPrefix() + key;
-            },
-
-            _getPrefix: function () {
-                return this.NAME + '-';
-            },
-
-            /**
-             * http://crocodillon.com/blog/always-catch-localstorage-security-and-quota-exceeded-errors
-             * @param e
-             * @returns {boolean}
-             * @private
-             */
-            _isQuotaExceeded: function(e) {
-                var quotaExceeded = false;
-                if (e) {
-                    if (e.code) {
-                        switch (e.code) {
-                            case 22:
-                                quotaExceeded = true;
-                                break;
-                            case 1014:
-                                // Firefox
-                                if (e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-                                    quotaExceeded = true;
-                                }
-                                break;
-                        }
-                    } else if (e.number === -2147024882) {
-                        // Internet Explorer 8
-                        quotaExceeded = true;
-                    }
-                }
-                return quotaExceeded;
-            }
-
-    });
-
-        return Module;
-    })();
-
-
-    /***********************************************************************
-     * ERROR
-     **********************************************************************/
-
-    m.Error = (function () {
-        var Module = function (options) {
-            if (typeof options === 'string') {
-                this.number = -1;
-                this.message = options;
-                return;
-            }
-
-            this.number = options.number || -1;
-            this.message = options.message || '';
-        };
-
-        return Module;
-    }());
-
-    /***********************************************************************
-     * DATABASE STORAGE
-     **********************************************************************/
-
-    m.DatabaseStorage = (function () {
-        /**
-         * options:
-         *  @appname String subdomain name to use for storage
-         */
-        var Module = function (options) {
-            options || (options = {});
-            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
-        };
-
-        _.extend(Module.prototype, {
-            //because of iOS8 bug on home screen: null & readonly window.indexedDB
-            indexedDB: window._indexedDB || window.indexedDB,
-            IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
-
-            VERSION: 1,
-            TYPE: 'DatabaseStorage',
-            NAME: 'morel',
-            STORE_NAME: 'samples',
-
-            /**
-             * Adds an item under a specified key to the database.
-             * Note: might be a good idea to move the key assignment away from
-             * the function parameters and rather auto assign one and return on callback.
-             *
-             * @param key
-             * @param data JSON or object having toJSON function
-             * @param callback
-             */
-            set: function (key, data, callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
-
-                        data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
-
-                        var req = store.put(data, key);
-
-                        req.onsuccess = function () {
-                            callback && callback(null, data);
-                        };
-
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
-
-            /**
-             * Gets a specific saved data from the database.
-             * @param key The stored data Id.
-             * @param callback
-             * @aram onError
-             * @returns {*}
-             */
-            get: function (key, callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback(err);
-                            return;
-                        }
-
-                        var req = store.index('id').get(key);
-                        req.onsuccess = function (e) {
-                            var data = e.target.result;
-                            callback(null, data);
-                        };
-
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback(err);
-                }
-            },
-
-            /**
-             * Removes a saved data from the database.
-             *
-             * @param key
-             * @param callback
-             * @param onError
-             */
-            remove: function (key, callback) {
-                var that = this;
-
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
-
-                        var req = store.openCursor(that.IDBKeyRange.only(key));
-                        req.onsuccess = function () {
-                            var cursor = req.result;
-                            if (cursor) {
-                                store.delete(cursor.primaryKey);
-                                cursor.continue();
-                            } else {
-                                callback && callback();
-                            }
-                        };
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
-
-            /**
-             * Brings back all saved data from the database.
-             */
-            getAll: function (callback) {
-                var that = this;
-
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback(err);
-                            return;
-                        }
-
-                        // Get everything in the store
-                        var keyRange = that.IDBKeyRange.lowerBound(0),
-                            req = store.openCursor(keyRange),
-                            data = {};
-
-                        req.onsuccess = function (e) {
-                            var result = e.target.result;
-
-                            // If there's data, add it to array
-                            if (result) {
-                                data[result.key] = result.value;
-                                result.continue();
-
-                                // Reach the end of the data
-                            } else {
-                                callback(null, data);
-                            }
-                        };
-
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback(err);
-                }
-            },
-
-            /**
-             * Checks whether the data under a provided key exists in the database.
-             *
-             * @param key
-             * @param callback
-             * @param onError
-             */
-            has: function (key, callback) {
-                this.get(key, function (err, data) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    callback(null, data !== undefined && data !== null);
-                });
-            },
-
-            /**
-             * Clears all the saved data.
-             */
-            clear: function (callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
-
-                        var req = store.clear();
-
-                        req.onsuccess = function () {
-                            callback && callback();
-                        };
-
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
-
-            size: function (callback) {
-               this.getAll(function(err, data) {
-                   if (err) {
-                       callback(err);
-                       return;
-                   }
-                   var size = JSON.stringify(data).length;
-                   callback(null, size);
-               });
-            },
-
-            /**
-             * Opens a database connection and returns a store.
-             *
-             * @param onError
-             * @param callback
-             */
-            open: function (callback) {
-                var that = this,
-                    req = null;
-
-                try {
-                    req = this.indexedDB.open(this.NAME, this.VERSION);
-
-                    /**
-                     * On Database opening success, returns the Records object store.
-                     *
-                     * @param e
-                     */
-                    req.onsuccess = function (e) {
-                        var db = e.target.result,
-                            transaction = db.transaction([that.STORE_NAME], 'readwrite'),
-                            store = null,
-                            err = null;
-                        if (transaction) {
-                            store = transaction.objectStore(that.STORE_NAME);
-                            if (store) {
-                                callback(null, store);
-                            } else {
-                                err = new m.Error('Database Problem: no such store');
-                                callback(err);
-                            }
-                        }
-                    };
-
-                    /**
-                     * If the Database needs an upgrade or is initialising.
-                     *
-                     * @param e
-                     */
-                    req.onupgradeneeded = function (e) {
-                        var db = e.target.result;
-                        db.createObjectStore(that.STORE_NAME);
-                    };
-
-                    /**
-                     * Error of opening the database.
-                     *
-                     * @param e
-                     */
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-
-                    /**
-                     * Error on database being blocked.
-                     *
-                     * @param e
-                     */
-                    req.onblocked = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                } catch (err) {
-                    callback(err);
-                }
-            }
-        });
-
-        return Module;
-    }());
-
-
-  /***********************************************************************
-   * STORAGE
-   **********************************************************************/
-
-  m.Storage = (function () {
-    var Module = function (options) {
-      options || (options = {});
-
-      var that = this;
-
-      this.Sample = options.Sample || m.Sample;
-      this.manager = options.manager;
-
-      //internal storage
-      this.Storage = options.Storage || m.LocalStorage;
-      this.storage = new this.Storage({
-        appname: options.appname
-      });
-
-      //initialize the cache
-      this.cache = {};
-      this.initialized = false;
-      this.storage.getAll(function (err, data) {
-        data || (data = {});
-
-        var samples = [],
-          sample = null,
-          keys = Object.keys(data);
-
-        for (var i = 0; i < keys.length; i++) {
-          var current = data[keys[i]];
-          var modelOptions = _.extend(current, {_manager: that.manager});
-          sample = new that.Sample(current.attributes, modelOptions);
-          samples.push(sample);
-        }
-        that.cache =  new m.Collection(samples, {
-          model: that.Sample
-        });
-        that._attachListeners();
-
-        that.initialized = true;
-        that.trigger('init');
-      });
-    };
-
-    _.extend(Module.prototype, {
-      get: function (model, callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.get(model, callback);
-          });
-          return;
-        }
-
-        var key = typeof model === 'object' ? model.id || model.cid : model;
-        callback(null, this.cache.get(key));
-      },
-
-      getAll: function (callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.getAll(callback);
-          });
-          return;
-        }
-        callback(null, this.cache);
-      },
-
-      set: function (model, callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.set(model, callback);
-          });
-          return;
-        }
-        var that = this,
-          key = model.id || model.cid;
-        this.storage.set(key, model, function (err) {
-          if (err) {
-            callback && callback(err);
-            return;
-          }
-          that.cache.set(model, {remove: false});
-          callback && callback(null, model);
-        });
-      },
-
-      remove: function (model, callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.remove(model, callback);
-          });
-          return;
-        }
-        var that = this,
-          key = typeof model === 'object' ? model.id || model.cid : model;
-        this.storage.remove(key, function (err) {
-          if (err) {
-            callback && callback(err);
-            return;
-          }
-          delete model._manager;
-          model.destroy(callback); //removes from cache
-        });
-      },
-
-      has: function (model, callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.has(model, callback);
-          }, this);
-          return;
-        }
-        var key = typeof model === 'object' ? model.id || model.cid : model;
-        this.cache.has(key, callback);
-      },
-
-      clear: function (callback) {
-        if (!this.initialized) {
-          this.on('init', function () {
-            this.clear(callback);
-          });
-          return;
-        }
-        var that = this;
-        this.storage.clear(function (err) {
-          if (err) {
-            callback && callback(err);
-            return;
-          }
-          that.cache.reset();
-          callback && callback();
-        });
-      },
-
-      size: function (callback) {
-        this.storage.size(callback);
-      },
-
-      _attachListeners: function () {
-        var that = this;
-        //listen on cache because it is last updated
-        this.cache.on('update', function () {
-          that.trigger('update');
-        });
-      }
-    });
-
-    //add events
-    _.extend(Module.prototype, Backbone.Events);
-
-    return Module;
-  }());
-
-  /***********************************************************************
-   * MANAGER
-   **********************************************************************/
-
-  m.Manager = (function () {
-    var Module = function (options) {
-      this.options = options || (options = {});
-
-      this.storage = new m.Storage({
-        appname: options.appname,
-        Sample: options.Sample,
-        Storage: options.Storage,
-        manager: this
-      });
-      this.onSend = options.onSend;
-      this._attachListeners();
-      this.synchronising = false;
-    };
-
-    _.extend(Module.prototype, {
-      //storage functions
-      get: function (model, callback) {
-        this.storage.get(model, callback);
-      },
-      getAll: function (callback) {
-        this.storage.getAll(callback);
-      },
-      set: function (model, callback) {
-        model._manager = this; // set the manager on new model
-        this.storage.set(model, callback);
-      },
-      remove: function (model, callback) {
-        this.storage.remove(model, callback);
-      },
-      has: function (model, callback) {
-        this.storage.has(model, callback);
-      },
-      clear: function (callback) {
-        this.storage.clear(callback);
-      },
-
-      sync: function (model, callback) {
-        var that = this;
-
-        if (model instanceof m.Sample) {
-
-          if (!model.metadata.synchronising) {
-            model.metadata.synchronising = true;
-            that.sendStored(model, function (err) {
-              model.metadata.synchronising = false;
-              callback && callback(err);
-            });
-          }
-          return;
-        }
-
-        this.get(model, function (err, sample) {
-          if (err) {
-            callback && callback(err);
-            return;
-          }
-
-          if (!sample.metadata.synchronising) {
-            sample.metadata.synchronising = true;
-            that.sendStored(sample, function (err) {
-              sample.metadata.synchronising = false;
-              callback && callback(err);
-            });
-          }
-        });
-      },
-
-      syncAll: function (callback) {
-        var that = this;
-        if (!this.synchronising) {
-          this.synchronising = true;
-          this.sendAllStored(function (err) {
-            that.synchronising = false;
-            callback && callback(err);
-          });
-        } else {
-          that.trigger('sync:done');
-          callback && callback();
-        }
-      },
-
-
-      /**
-       * Sending all saved records.
-       *
-       * @returns {undefined}
-       */
-      sendAllStored: function (callback) {
-        var that = this;
-        this.getAll(function (err, samples) {
-          if (err) {
-            that.trigger('sync:error');
-            callback(err);
-            return;
-          }
-
-          that.trigger('sync:request');
-
-          //shallow copy
-          var remainingSamples = _.extend([], samples.models);
-
-          //recursively loop through samples
-          for (var i = 0; i < remainingSamples.length; i++) {
-            var sample = remainingSamples[i];
-            if (sample.validate() || sample.getSyncStatus() === m.SYNCED) {
-              remainingSamples.splice(i, 1);
-              i--; //return the cursor
-              continue;
-            }
-
-            that.sendStored(sample, function (err, sample) {
-              if (err) {
-                that.trigger('sync:error');
-                callback(err);
-                return;
-              }
-
-              for (var k = 0; k < remainingSamples.length; k++) {
-                if (remainingSamples[k].id === sample.id ||
-                  remainingSamples[k].cid === sample.cid) {
-                  remainingSamples.splice(k, 1);
-                  break;
-                }
-              }
-
-              if (remainingSamples.length === 0) {
-                //finished
-                that.trigger('sync:done');
-                callback();
-              }
-            });
-          }
-
-          if (!remainingSamples.length) {
-            that.trigger('sync:done');
-            callback();
-          }
-        })
-      },
-
-      sendStored: function (sample, callback) {
-        var that = this;
-
-        //don't resend
-        if (sample.getSyncStatus() === m.SYNCED) {
-          sample.trigger('sync:done');
-          callback && callback(null, sample);
-          return;
-        }
-
-        //call user defined onSend function to modify and validate
-        var stopSending = this.onSend && this.onSend(sample);
-        if (stopSending) {
-          callback && callback(null, sample);
-          return;
-        }
-
-        sample.metadata.synchronising = true;
-        sample.trigger('sync:request');
-
-        this.send(sample, function (err) {
-          sample.metadata.synchronising = false;
-          if (err) {
-            sample.trigger('sync:error');
-            callback && callback(err);
-            return;
-          }
-
-          //update sample
-          sample.metadata.warehouse_id = 1;
-          sample.metadata.server_on = new Date();
-          sample.metadata.synced_on = new Date();
-
-          //resize images to snapshots
-          that._resizeImages(sample, function () {
-            //save sample
-            that.set(sample, function (err) {
-              if (err) {
-                sample.trigger('sync:error');
-                callback && callback(err);
-                return;
-              }
-
-              sample.trigger('sync:done');
-              callback && callback(null, sample);
-            });
-          });
-        });
-      },
-
-      /**
-       * Sends the saved record
-       *
-       * @param recordKey
-       * @param callback
-       * @param onError
-       */
-      send: function (sample, callback) {
-        var flattened = sample.flatten(this._flattener),
-            formData = new FormData();
-
-
-        //append images
-        var occCount = 0;
-        sample.occurrences.each(function (occurrence) {
-          var imgCount = 0;
-          occurrence.images.each(function (image) {
-            var data = image.get('data'),
-                type = image.get('type');
-
-            var name = 'sc:' + occCount + '::photo' + imgCount;
-            var blob = m.dataURItoBlob(data, type);
-            var extension = type.split('/')[1];
-            formData.append(name, blob, 'pic.' + extension);
-            imgCount++;
-          });
-          occCount++;
-        });
-
-        //append attributes
-        var keys = Object.keys(flattened);
-        for (var i= 0; i < keys.length; i++) {
-          formData.append(keys[i], flattened[keys[i]]);
-        }
-
-        //Add authentication
-        formData = this.appendAuth(formData);
-
-        this._post(formData, function (err) {
-          callback (err, sample);
-        });
-      },
-
-      /**
-       * Submits the record.
-       */
-      _post: function (formData, callback) {
-        var ajax = new XMLHttpRequest();
-
-        ajax.onreadystatechange = function () {
-          var error = null;
-          if (ajax.readyState === XMLHttpRequest.DONE) {
-            var status = ajax.status + '';
-            switch (true) {
-              case /2\d\d/.test(status):
-                callback && callback();
-                break;
-              case /4\d\d/.test(status):
-                error = new m.Error(ajax.response);
-                callback && callback(error);
-                break;
-              default:
-                error = new m.Error({
-                  message: 'Unknown problem while sending request.',
-                  number: ajax.status
-                });
-                callback && callback(error);
-            }
-          }
-        };
-
-        ajax.open('POST', this.options.url);
-        ajax.send(formData);
-      },
-
-      _attachListeners: function () {
-        var that = this;
-        this.storage.on('update', function () {
-          that.trigger('update');
-        });
-      },
-
-      _flattener: function (attributes, options) {
-        var flattened = options.flattened || {},
-            keys = options.keys || {},
-            count = options.count,
-            attr = null,
-            name = null,
-            value = null,
-            prefix = '',
-            native = 'sample:',
-            custom = 'smpAttr:';
-
-        if (this instanceof m.Occurrence) {
-          prefix = 'sc:';
-          native = '::occurrence:';
-          custom = '::occAttr:';
-        }
-
-        for (attr in attributes) {
-          if (!keys[attr]) {
-            if (attr != 'email' && attr != 'usersecret') {
-              console.warn('morel.Manager: no such key: ' + attr);
-            }
-            flattened[attr] = attributes[attr];
-            continue;
-          }
-
-          name = keys[attr].id;
-
-          if (!name) {
-            name = prefix + count + '::present'
-          } else {
-            if (parseInt(name, 10) >= 0) {
-              name = custom + name;
-            } else {
-              name = native + name;
-            }
-
-            if (prefix) {
-              name = prefix + count + name;
-            }
-          }
-
-          //no need to send undefined
-          if (!attributes[attr]) continue;
-
-          value = attributes[attr];
-
-          //check if has values to choose from
-          if (keys[attr].values) {
-            if (typeof keys[attr].values === 'function') {
-              var fullOptions = _.extend(options, {
-                flattener: m.Manager.prototype._flattener,
-                flattened: flattened
-              });
-
-              //get a value from a function
-              value = keys[attr].values(value, fullOptions);
-            } else {
-              value = keys[attr].values[value];
-            }
-          }
-
-          flattened[name] = value;
-        }
-
-        return flattened;
-      },
-
-      _resizeImages: function (sample, callback) {
-        var images_count = 0;
-        //get number of images to resize - synchronous
-        sample.occurrences.each(function (occurrence) {
-          occurrence.images.each(function (image) {
-            images_count++;
-          });
-        });
-
-        if (!images_count) {
-          callback();
-          return;
-        }
-
-        //resize
-        //each occurrence
-        sample.occurrences.each(function (occurrence) {
-          //each image
-          occurrence.images.each(function (image) {
-            image.resize(75, 75, function () {
-              images_count--;
-              if (images_count === 0) {
-                callback();
-              }
-            });
-
-          }, occurrence);
-        });
-      },
-
-      /**
-       * Appends user and app authentication to the passed data object.
-       * Note: object has to implement 'append' method.
-       *
-       * @param data An object to modify
-       * @returns {*} A data object
-       */
-      appendAuth: function (data) {
-        //app logins
-        this._appendAppAuth(data);
-        //warehouse data
-        this._appendWarehouseAuth(data);
-
-        return data;
-      },
-
-      /**
-       * Appends app authentication - Appname and Appsecret to
-       * the passed object.
-       * Note: object has to implement 'append' method.
-       *
-       * @param data An object to modify
-       * @returns {*} A data object
-       */
-      _appendAppAuth: function (data) {
-        data.append('appname', this.options.appname);
-        data.append('appsecret', this.options.appsecret);
-
-        return data;
-      },
-
-      /**
-       * Appends warehouse related information - website_id and survey_id to
-       * the passed data object.
-       * Note: object has to implement 'append' method.
-       *
-       * This is necessary because the data must be associated to some
-       * website and survey in the warehouse.
-       *
-       * @param data An object to modify
-       * @returns {*} An data object
-       */
-      _appendWarehouseAuth: function (data) {
-        data.append('website_id', this.options.website_id);
-        data.append('survey_id', this.options.survey_id);
-
-        return data;
-      }
-    });
-
-    _.extend(Module.prototype, Backbone.Events);
-
-    return Module;
-  }());
-
-
-    return m;
-}));
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory(require("underscore"), require("backbone"));
+	else if(typeof define === 'function' && define.amd)
+		define("Morel", ["underscore", "backbone"], factory);
+	else if(typeof exports === 'object')
+		exports["Morel"] = factory(require("underscore"), require("backbone"));
+	else
+		root["Morel"] = factory(root["underscore"], root["backbone"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_3__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+
+
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _Manager = __webpack_require__(2);
+
+	var _Manager2 = _interopRequireDefault(_Manager);
+
+	var _Sample = __webpack_require__(7);
+
+	var _Sample2 = _interopRequireDefault(_Sample);
+
+	var _constants = __webpack_require__(4);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	var _Occurrence = __webpack_require__(8);
+
+	var _Occurrence2 = _interopRequireDefault(_Occurrence);
+
+	var _Image = __webpack_require__(9);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var Morel = {
+	  VERSION: '0', // library version, generated/replaced by grunt
+
+	  Manager: _Manager2.default,
+	  Sample: _Sample2.default,
+	  Occurrence: _Occurrence2.default,
+	  Image: _Image2.default,
+	  Error: _Error2.default
+	};
+
+	_underscore2.default.extend(Morel, _constants2.default);
+
+	exports.default = Morel;
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * MANAGER
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
+
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _constants = __webpack_require__(4);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	var _Sample = __webpack_require__(7);
+
+	var _Sample2 = _interopRequireDefault(_Sample);
+
+	var _Occurrence = __webpack_require__(8);
+
+	var _Occurrence2 = _interopRequireDefault(_Occurrence);
+
+	var _Storage = __webpack_require__(11);
+
+	var _Storage2 = _interopRequireDefault(_Storage);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Manager = function () {
+	  function Manager() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    _classCallCheck(this, Manager);
+
+	    this.options = options;
+
+	    this.storage = new _Storage2.default({
+	      appname: options.appname,
+	      Sample: options.Sample,
+	      Storage: options.Storage,
+	      manager: this
+	    });
+	    this.onSend = options.onSend;
+	    this._attachListeners();
+	    this.synchronising = false;
+	  }
+
+	  // storage functions
+
+
+	  _createClass(Manager, [{
+	    key: 'get',
+	    value: function get(model, callback) {
+	      this.storage.get(model, callback);
+	    }
+	  }, {
+	    key: 'getAll',
+	    value: function getAll(callback) {
+	      this.storage.getAll(callback);
+	    }
+	  }, {
+	    key: 'set',
+	    value: function set(model, callback) {
+	      model._manager = this; // set the manager on new model
+	      this.storage.set(model, callback);
+	    }
+	  }, {
+	    key: 'remove',
+	    value: function remove(model, callback) {
+	      this.storage.remove(model, callback);
+	    }
+	  }, {
+	    key: 'has',
+	    value: function has(model, callback) {
+	      this.storage.has(model, callback);
+	    }
+	  }, {
+	    key: 'clear',
+	    value: function clear(callback) {
+	      this.storage.clear(callback);
+	    }
+	  }, {
+	    key: 'sync',
+	    value: function sync(model, callback) {
+	      var that = this;
+
+	      if (model instanceof _Sample2.default) {
+	        if (!model.metadata.synchronising) {
+	          model.metadata.synchronising = true;
+	          that.sendStored(model, function (err) {
+	            model.metadata.synchronising = false;
+	            callback && callback(err);
+	          });
+	        }
+	        return;
+	      }
+
+	      this.get(model, function (err, sample) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
+
+	        if (!sample.metadata.synchronising) {
+	          sample.metadata.synchronising = true;
+	          that.sendStored(sample, function (sendErr) {
+	            sample.metadata.synchronising = false;
+	            callback && callback(sendErr);
+	          });
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'syncAll',
+	    value: function syncAll(callback) {
+	      var that = this;
+	      if (!this.synchronising) {
+	        this.synchronising = true;
+	        this.sendAllStored(function (err) {
+	          that.synchronising = false;
+	          callback && callback(err);
+	        });
+	      } else {
+	        that.trigger('sync:done');
+	        callback && callback();
+	      }
+	    }
+
+	    /**
+	     * Sending all saved records.
+	     *
+	     * @returns {undefined}
+	     */
+
+	  }, {
+	    key: 'sendAllStored',
+	    value: function sendAllStored(callback) {
+	      var that = this;
+	      this.getAll(function (err, samples) {
+	        if (err) {
+	          that.trigger('sync:error');
+	          callback(err);
+	          return;
+	        }
+
+	        that.trigger('sync:request');
+
+	        // shallow copy
+	        var remainingSamples = _underscore2.default.extend([], samples.models);
+
+	        // recursively loop through samples
+	        for (var i = 0; i < remainingSamples.length; i++) {
+	          var sample = remainingSamples[i];
+	          if (sample.validate() || sample.getSyncStatus() === _constants2.default.SYNCED) {
+	            remainingSamples.splice(i, 1);
+	            i--; // return the cursor
+	            continue;
+	          }
+
+	          that.sendStored(sample, function (sendErr, sendSample) {
+	            if (sendErr) {
+	              that.trigger('sync:error');
+	              callback(sendErr);
+	              return;
+	            }
+
+	            for (var k = 0; k < remainingSamples.length; k++) {
+	              if (remainingSamples[k].id === sendSample.id || remainingSamples[k].cid === sendSample.cid) {
+	                remainingSamples.splice(k, 1);
+	                break;
+	              }
+	            }
+
+	            if (remainingSamples.length === 0) {
+	              // finished
+	              that.trigger('sync:done');
+	              callback();
+	            }
+	          });
+	        }
+
+	        if (!remainingSamples.length) {
+	          that.trigger('sync:done');
+	          callback();
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'sendStored',
+	    value: function sendStored(sample, callback) {
+	      var that = this;
+
+	      // don't resend
+	      if (sample.getSyncStatus() === _constants2.default.SYNCED) {
+	        sample.trigger('sync:done');
+	        callback && callback(null, sample);
+	        return;
+	      }
+
+	      // call user defined onSend function to modify and validate
+	      var stopSending = this.onSend && this.onSend(sample);
+	      if (stopSending) {
+	        callback && callback(null, sample);
+	        return;
+	      }
+
+	      sample.metadata.synchronising = true;
+	      sample.trigger('sync:request');
+
+	      this.send(sample, function (err) {
+	        sample.metadata.synchronising = false;
+	        if (err) {
+	          sample.trigger('sync:error');
+	          callback && callback(err);
+	          return;
+	        }
+
+	        // update sample
+	        sample.metadata.warehouse_id = 1;
+	        sample.metadata.server_on = new Date();
+	        sample.metadata.synced_on = new Date();
+
+	        // resize images to snapshots
+	        that._resizeImages(sample, function () {
+	          // save sample
+	          that.set(sample, function (setErr) {
+	            if (setErr) {
+	              sample.trigger('sync:error');
+	              callback && callback(setErr);
+	              return;
+	            }
+
+	            sample.trigger('sync:done');
+	            callback && callback(null, sample);
+	          });
+	        });
+	      });
+	    }
+
+	    /**
+	     * Sends the saved record
+	     *
+	     * @param recordKey
+	     * @param callback
+	     * @param onError
+	     */
+
+	  }, {
+	    key: 'send',
+	    value: function send(sample, callback) {
+	      var flattened = sample.flatten(this._flattener);
+	      var formData = new FormData();
+
+	      // append images
+	      var occCount = 0;
+	      sample.occurrences.each(function (occurrence) {
+	        var imgCount = 0;
+	        occurrence.images.each(function (image) {
+	          var data = image.get('data');
+	          var type = image.get('type');
+
+	          var name = 'sc:' + occCount + '::photo' + imgCount;
+	          var blob = _helpers2.default.dataURItoBlob(data, type);
+	          var extension = type.split('/')[1];
+	          formData.append(name, blob, 'pic.' + extension);
+	          imgCount++;
+	        });
+	        occCount++;
+	      });
+
+	      // append attributes
+	      var keys = Object.keys(flattened);
+	      for (var i = 0; i < keys.length; i++) {
+	        formData.append(keys[i], flattened[keys[i]]);
+	      }
+
+	      // Add authentication
+	      formData = this.appendAuth(formData);
+
+	      this._post(formData, function (err) {
+	        callback(err, sample);
+	      });
+	    }
+
+	    /**
+	     * Submits the record.
+	     */
+
+	  }, {
+	    key: '_post',
+	    value: function _post(formData, callback) {
+	      var ajax = new XMLHttpRequest();
+
+	      ajax.onreadystatechange = function () {
+	        var error = null;
+	        if (ajax.readyState === XMLHttpRequest.DONE) {
+	          var status = '' + ajax.status;
+	          switch (true) {
+	            case /2\d\d/.test(status):
+	              callback && callback();
+	              break;
+	            case /4\d\d/.test(status):
+	              error = new _Error2.default(ajax.response);
+	              callback && callback(error);
+	              break;
+	            default:
+	              error = new _Error2.default({
+	                message: 'Unknown problem while sending request.',
+	                number: ajax.status
+	              });
+	              callback && callback(error);
+	          }
+	        }
+	      };
+
+	      ajax.open('POST', this.options.url);
+	      ajax.send(formData);
+	    }
+	  }, {
+	    key: '_attachListeners',
+	    value: function _attachListeners() {
+	      var that = this;
+	      this.storage.on('update', function () {
+	        that.trigger('update');
+	      });
+	    }
+	  }, {
+	    key: '_flattener',
+	    value: function _flattener(attributes, options) {
+	      var flattened = options.flattened || {};
+	      var keys = options.keys || {};
+	      var count = options.count;
+	      var attr = null;
+	      var name = null;
+	      var value = null;
+	      var prefix = '';
+	      var native = 'sample:';
+	      var custom = 'smpAttr:';
+
+	      if (this instanceof _Occurrence2.default) {
+	        prefix = 'sc:';
+	        native = '::occurrence:';
+	        custom = '::occAttr:';
+	      }
+
+	      for (attr in attributes) {
+	        if (!keys[attr]) {
+	          if (attr !== 'email' && attr !== 'usersecret') {
+	            console.warn('morel.Manager: no such key: ' + attr);
+	          }
+	          flattened[attr] = attributes[attr];
+	          continue;
+	        }
+
+	        name = keys[attr].id;
+
+	        if (!name) {
+	          name = prefix + count + '::present';
+	        } else {
+	          if (parseInt(name, 10) >= 0) {
+	            name = custom + name;
+	          } else {
+	            name = native + name;
+	          }
+
+	          if (prefix) {
+	            name = prefix + count + name;
+	          }
+	        }
+
+	        // no need to send undefined
+	        if (!attributes[attr]) continue;
+
+	        value = attributes[attr];
+
+	        // check if has values to choose from
+	        if (keys[attr].values) {
+	          if (typeof keys[attr].values === 'function') {
+	            var fullOptions = _underscore2.default.extend(options, {
+	              flattener: Manager.prototype._flattener,
+	              flattened: flattened
+	            });
+
+	            // get a value from a function
+	            value = keys[attr].values(value, fullOptions);
+	          } else {
+	            value = keys[attr].values[value];
+	          }
+	        }
+
+	        flattened[name] = value;
+	      }
+
+	      return flattened;
+	    }
+	  }, {
+	    key: '_resizeImages',
+	    value: function _resizeImages(sample, callback) {
+	      var imagesCount = 0;
+	      // get number of images to resize - synchronous
+	      sample.occurrences.each(function (occurrence) {
+	        occurrence.images.each(function () {
+	          imagesCount++;
+	        });
+	      });
+
+	      if (!imagesCount) {
+	        callback();
+	        return;
+	      }
+
+	      // resize
+	      // each occurrence
+	      sample.occurrences.each(function (occurrence) {
+	        // each image
+	        occurrence.images.each(function (image) {
+	          image.resize(75, 75, function () {
+	            imagesCount--;
+	            if (imagesCount === 0) {
+	              callback();
+	            }
+	          });
+	        }, occurrence);
+	      });
+	    }
+
+	    /**
+	     * Appends user and app authentication to the passed data object.
+	     * Note: object has to implement 'append' method.
+	     *
+	     * @param data An object to modify
+	     * @returns {*} A data object
+	     */
+
+	  }, {
+	    key: 'appendAuth',
+	    value: function appendAuth(data) {
+	      // app logins
+	      this._appendAppAuth(data);
+	      // warehouse data
+	      this._appendWarehouseAuth(data);
+
+	      return data;
+	    }
+
+	    /**
+	     * Appends app authentication - Appname and Appsecret to
+	     * the passed object.
+	     * Note: object has to implement 'append' method.
+	     *
+	     * @param data An object to modify
+	     * @returns {*} A data object
+	     */
+
+	  }, {
+	    key: '_appendAppAuth',
+	    value: function _appendAppAuth(data) {
+	      data.append('appname', this.options.appname);
+	      data.append('appsecret', this.options.appsecret);
+
+	      return data;
+	    }
+
+	    /**
+	     * Appends warehouse related information - website_id and survey_id to
+	     * the passed data object.
+	     * Note: object has to implement 'append' method.
+	     *
+	     * This is necessary because the data must be associated to some
+	     * website and survey in the warehouse.
+	     *
+	     * @param data An object to modify
+	     * @returns {*} An data object
+	     */
+
+	  }, {
+	    key: '_appendWarehouseAuth',
+	    value: function _appendWarehouseAuth(data) {
+	      data.append('website_id', this.options.website_id);
+	      data.append('survey_id', this.options.survey_id);
+
+	      return data;
+	    }
+	  }]);
+
+	  return Manager;
+	}();
+
+	_underscore2.default.extend(Manager.prototype, _backbone2.default.Events);
+
+	exports.default = Manager;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = {
+	  SYNCHRONISING: 0,
+	  SYNCED: 1,
+	  LOCAL: 2,
+	  SERVER: 3,
+	  CHANGED_LOCALLY: 4,
+	  CHANGED_SERVER: 5,
+	  CONFLICT: -1
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+	/** *********************************************************************
+	 * HELPER FUNCTIONS
+	 **********************************************************************/
+
+	/**
+	 * Clones an object.
+	 *
+	 * @param obj
+	 * @returns {*}
+	 */
+	var cloneDeep = function cloneDeep(obj) {
+	  if (null === obj || 'object' !== (typeof obj === 'undefined' ? 'undefined' : _typeof(obj))) {
+	    return obj;
+	  }
+	  var copy = {};
+	  for (var attr in obj) {
+	    if (obj.hasOwnProperty(attr)) {
+	      copy[attr] = objClone(obj[attr]);
+	    }
+	  }
+	  return copy;
+	};
+
+	/**
+	 * Generate UUID.
+	 */
+	var getNewUUID = function getNewUUID() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+	    var r = Math.random() * 16 | 0;
+	    var v = c === 'x' ? r : r & 0x3 | 0x8;
+
+	    return v.toString(16);
+	  });
+	};
+
+	/**
+	 * Converts DataURI object to a Blob.
+	 *
+	 * @param {type} dataURI
+	 * @param {type} fileType
+	 * @returns {undefined}
+	 */
+	var dataURItoBlob = function dataURItoBlob(dataURI, fileType) {
+	  var binary = atob(dataURI.split(',')[1]);
+	  var array = [];
+	  for (var i = 0; i < binary.length; i++) {
+	    array.push(binary.charCodeAt(i));
+	  }
+	  return new Blob([new Uint8Array(array)], {
+	    type: fileType
+	  });
+	};
+
+	// Detecting data URLs
+	// https://gist.github.com/bgrins/6194623
+
+	// data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
+	// The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
+	// Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
+	var isDataURL = function isDataURL(string) {
+	  if (!string) {
+	    return false;
+	  }
+	  var normalized = string.toString(); // numbers
+
+	  var regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+	  return !!normalized.match(regex);
+	};
+
+	// From jQuery 1.4.4 .
+	var isPlainObject = function isPlainObject(obj) {
+	  function type(obj) {
+	    var class2type = {};
+	    var types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
+	    for (var i = 0; i < types.length; i++) {
+	      class2type['[object ' + types[i] + ']'] = types[i].toLowerCase();
+	    }
+	    return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
+	  }
+
+	  function isWindow(obj) {
+	    return obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && 'setInterval' in obj;
+	  }
+
+	  // Must be an Object.
+	  // Because of IE, we also have to check the presence of the constructor property.
+	  // Make sure that DOM nodes and window objects don't pass through, as well
+	  if (!obj || type(obj) !== 'object' || obj.nodeType || isWindow(obj)) {
+	    return false;
+	  }
+
+	  // Not own constructor property must be Object
+	  if (obj.constructor && !hasOwn.call(obj, 'constructor') && !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')) {
+	    return false;
+	  }
+
+	  // Own properties are enumerated firstly, so to speed up,
+	  // if last one is own, then all properties are own.
+
+	  var key = void 0;
+	  for (key in obj) {}
+
+	  return key === undefined || hasOwn.call(obj, key);
+	};
+
+	// checks if the object has any elements.
+	var isEmptyObject = function isEmptyObject(obj) {
+	  for (var key in obj) {
+	    return false;
+	  }
+	  return true;
+	};
+
+	/**
+	 * Formats the date to Indicia Warehouse format.
+	 * @param date String or Date object
+	 * @returns String formatted date
+	 */
+	var formatDate = function formatDate(dateToFormat) {
+	  var date = dateToFormat;
+	  var now = new Date();
+	  var day = 0;
+	  var month = 0;
+	  var reg = /\d{2}\/\d{2}\/\d{4}$/;
+	  var regDash = /\d{4}-\d{1,2}-\d{1,2}$/;
+	  var regDashInv = /\d{1,2}-\d{1,2}-\d{4}$/;
+	  var dateArray = [];
+
+	  if (typeof date === 'string') {
+	    dateArray = date.split('-');
+	    // check if valid
+	    if (reg.test(date)) {
+	      return date;
+	      // dashed
+	    } else if (regDash.test(date)) {
+	        date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
+	        // inversed dashed
+	      } else if (regDashInv.test(date)) {
+	          date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
+	        }
+	  }
+
+	  now = date || now;
+	  day = ('0' + now.getDate()).slice(-2);
+	  month = ('0' + (now.getMonth() + 1)).slice(-2);
+
+	  return day + '/' + month + '/' + now.getFullYear();
+	};
+
+	exports.default = {
+	  cloneDeep: cloneDeep,
+	  getNewUUID: getNewUUID,
+	  dataURItoBlob: dataURItoBlob,
+	  isDataURL: isDataURL,
+	  isPlainObject: isPlainObject,
+	  isEmptyObject: isEmptyObject,
+	  formatDate: formatDate
+	};
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/** *********************************************************************
+	 * ERROR
+	 **********************************************************************/
+
+	var Error = function Error(options) {
+	  _classCallCheck(this, Error);
+
+	  if (typeof options === 'string') {
+	    this.number = -1;
+	    this.message = options;
+	    return;
+	  }
+
+	  this.number = options.number || -1;
+	  this.message = options.message || '';
+	};
+
+	exports.default = Error;
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _constants = __webpack_require__(4);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Occurrence = __webpack_require__(8);
+
+	var _Occurrence2 = _interopRequireDefault(_Occurrence);
+
+	var _Collection = __webpack_require__(10);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * SAMPLE
+	 *
+	 * Refers to the event in which the sightings were observed, in other
+	 * words it describes the place, date, people, environmental conditions etc.
+	 * Within a sample, you can have zero or more occurrences which refer to each
+	 * species sighted as part of the sample.
+	 **********************************************************************/
+
+
+	var Sample = _backbone2.default.Model.extend({
+	  Occurrence: _Occurrence2.default,
+
+	  constructor: function constructor(attributes, options) {
+	    var _this = this;
+
+	    var that = this;
+	    var attrs = attributes;
+
+	    if (!attrs) {
+	      attrs = {
+	        date: new Date(),
+	        location_type: 'latlon'
+	      };
+	    }
+
+	    options || (options = {});
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this._manager = options._manager;
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date(),
+	        updated_on: new Date(),
+
+	        warehouse_id: null,
+
+	        synced_on: null, // set when fully initialized only
+	        server_on: null };
+	    }
+
+	    // updated on server
+	    if (options.occurrences) {
+	      (function () {
+	        var occurrences = [];
+	        _underscore2.default.each(options.occurrences, function (occ) {
+	          if (occ instanceof that.Occurrence) {
+	            occ._sample = that;
+	            occurrences.push(occ);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(occ, { _sample: that });
+	            occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
+	          }
+	        });
+	        _this.occurrences = new _Collection2.default(occurrences, {
+	          model: _this.Occurrence
+	        });
+	      })();
+	    } else {
+	      this.occurrences = new _Collection2.default([], {
+	        model: this.Occurrence
+	      });
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+
+
+	  /**
+	   * Saves the record to the record manager and if valid syncs it with DB
+	   */
+	  save: function save(callback) {
+	    var that = this;
+	    if (!this._manager) {
+	      callback && callback(new Error({ message: 'No manager.' }));
+	      return;
+	    }
+
+	    this._manager.set(this, function () {
+	      // todo sync
+	      callback && callback(null, that);
+	    });
+	  },
+	  destroy: function destroy(callback) {
+	    if (this._manager) {
+	      this._manager.remove(this, callback);
+	    } else {
+	      // remove from all collections it belongs
+	      _backbone2.default.Model.prototype.destroy.call(this);
+	      callback && callback();
+	    }
+	  },
+
+
+	  /**
+	   * Returns an object with attributes and their values flattened and
+	   * mapped for warehouse submission.
+	   *
+	   * @param flattener
+	   * @returns {*}
+	   */
+	  flatten: function flatten(flattener) {
+	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
+
+	    // occurrences
+	    _underscore2.default.extend(flattened, this.occurrences.flatten(flattener));
+	    return flattened;
+	  },
+	  toJSON: function toJSON() {
+	    var data = {
+	      id: this.id,
+	      cid: this.cid,
+	      metadata: this.metadata,
+	      attributes: this.attributes,
+	      occurrences: this.occurrences.toJSON()
+	    };
+
+	    return data;
+	  },
+
+
+	  /**
+	   * Sync statuses:
+	   * synchronising, synced, local, server, changed_locally, changed_server, conflict
+	   */
+	  getSyncStatus: function getSyncStatus() {
+	    var meta = this.metadata;
+	    // on server
+	    if (meta.synchronising) {
+	      return _constants2.default.SYNCHRONISING;
+	    }
+
+	    if (meta.warehouse_id) {
+	      // fully initialized
+	      if (meta.synced_on) {
+	        // changed_locally
+	        if (meta.synced_on < meta.updated_on) {
+	          // changed_server - conflict!
+	          if (meta.synced_on < meta.server_on) {
+	            return _constants2.default.CONFLICT;
+	          }
+	          return _constants2.default.CHANGED_LOCALLY;
+	          // changed_server
+	        } else if (meta.synced_on < meta.server_on) {
+	            return _constants2.default.CHANGED_SERVER;
+	          }
+	        return _constants2.default.SYNCED;
+
+	        // partially initialized - we know the record exists on
+	        // server but has not yet been downloaded
+	      }
+	      return _constants2.default.SERVER;
+
+	      // local only
+	    }
+	    return _constants2.default.LOCAL;
+	  },
+
+
+	  /**
+	   * Detach all the listeners.
+	   */
+	  offAll: function offAll() {
+	    this._events = {};
+	    this.occurrences.offAll();
+	    for (var i = 0; i < this.occurrences.data.length; i++) {
+	      this.occurrences.models[i].offAll();
+	    }
+	  }
+	});
+
+	/**
+	 * Warehouse attributes and their values.
+	 */
+	Sample.keys = {
+	  id: { id: 'id' },
+	  survey: { id: 'survey_id' },
+	  date: { id: 'date' },
+	  comment: { id: 'comment' },
+	  image: { id: 'image' },
+	  location: { id: 'entered_sref' },
+	  location_type: {
+	    id: 'entered_sref_system',
+	    values: {
+	      british: 'OSGB', // for British National Grid
+	      irish: 'OSIE', // for Irish Grid
+	      latlon: 4326 }
+	  },
+	  // for Latitude and Longitude in decimal form (WGS84 datum)
+	  location_name: { id: 'location_name' },
+	  deleted: { id: 'deleted' }
+	};
+
+	exports.default = Sample;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Image = __webpack_require__(9);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Collection = __webpack_require__(10);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var Occurrence = _backbone2.default.Model.extend({
+	  constructor: function constructor(attributes) {
+	    var _this = this;
+
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var that = this;
+	    var attrs = attributes || {};
+
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this._sample = options._sample;
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date()
+	      };
+	    }
+
+	    if (options.images) {
+	      (function () {
+	        var images = [];
+	        _underscore2.default.each(options.images, function (image) {
+	          if (image instanceof _Image2.default) {
+	            image._occurrence = that;
+	            images.push(image);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(image, { _occurrence: that });
+	            images.push(new _Image2.default(image.attributes, modelOptions));
+	          }
+	        });
+	        _this.images = new _Collection2.default(images, {
+	          model: _Image2.default
+	        });
+	      })();
+	    } else {
+	      this.images = new _Collection2.default([], {
+	        model: _Image2.default
+	      });
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+	  save: function save(callback) {
+	    if (!this._sample) {
+	      callback && callback(new Error({ message: 'No sample.' }));
+	      return;
+	    }
+
+	    this._sample.save(callback);
+	  },
+	  destroy: function destroy(callback) {
+	    if (this._sample) {
+	      this._sample.occurrences.remove(this);
+	      this.save(function () {
+	        callback && callback();
+	      });
+	    } else {
+	      _backbone2.default.Model.prototype.destroy.call(this);
+	    }
+	  },
+	  toJSON: function toJSON() {
+	    var data = {
+	      id: this.id,
+	      cid: this.cid,
+	      metadata: this.metadata,
+	      attributes: this.attributes,
+	      images: this.images.toJSON()
+	    };
+	    return data;
+	  },
+
+
+	  /**
+	   * Returns an object with attributes and their values flattened and
+	   * mapped for warehouse submission.
+	   *
+	   * @param flattener
+	   * @returns {*}
+	   */
+	  flatten: function flatten(flattener, count) {
+	    // images flattened separately
+	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
+	  }
+	});
+
+	/**
+	 * Warehouse attributes and their values.
+	 */
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
+	Occurrence.keys = {
+	  taxon: {
+	    id: ''
+	  },
+	  comment: {
+	    id: 'comment'
+	  }
+	};
+
+	exports.default = Occurrence;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * IMAGE
+	 **********************************************************************/
+
+
+	var Image = _backbone2.default.Model.extend({
+	  constructor: function constructor() {
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var attrs = attributes;
+	    if (typeof attributes === 'string') {
+	      var data = attributes;
+	      attrs = { data: data };
+	      return;
+	    }
+
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this._occurrence = options._occurrence;
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date()
+	      };
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+	  save: function save(callback) {
+	    if (!this._occurrence) {
+	      callback && callback(new _Error2.default({ message: 'No occurrence.' }));
+	      return;
+	    }
+
+	    this._occurrence.save(callback);
+	  },
+	  destroy: function destroy(callback) {
+	    if (this._occurrence) {
+	      this._occurrence.images.remove(this);
+	      this.save(function () {
+	        callback && callback();
+	      });
+	    } else {
+	      _backbone2.default.Model.prototype.destroy.call(this);
+	    }
+	  },
+
+
+	  /**
+	   * Resizes itself.
+	   */
+	  resize: function resize(MAX_WIDTH, MAX_HEIGHT, callback) {
+	    var that = this;
+	    Image.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
+	      if (err) {
+	        callback && callback(err);
+	        return;
+	      }
+	      that.attributes.data = data;
+	      callback && callback(null, image, data);
+	    });
+	  },
+	  toJSON: function toJSON() {
+	    var data = {
+	      id: this.id,
+	      metadata: this.metadata,
+	      attributes: this.attributes
+	    };
+	    return data;
+	  }
+	});
+
+	_underscore2.default.extend(Image, {
+	  /**
+	   * Transforms and resizes an image file into a string.
+	   *
+	   * @param onError
+	   * @param file
+	   * @param onSaveSuccess
+	   * @returns {number}
+	   */
+
+	  toString: function toString(file, callback) {
+	    if (!window.FileReader) {
+	      var message = 'No File Reader';
+	      var error = new _Error2.default(message);
+	      console.error(message);
+
+	      return callback(error);
+	    }
+
+	    var reader = new FileReader();
+	    reader.onload = function (event) {
+	      callback(null, event.target.result, file.type);
+	    };
+	    reader.readAsDataURL(file);
+	    return null;
+	  },
+
+
+	  /**
+	   * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
+	   * @param data
+	   * @param width
+	   * @param height
+	   * @param callback
+	   */
+	  resize: function resize(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
+	    var image = new Image();
+
+	    image.onload = function () {
+	      var width = image.width;
+	      var height = image.height;
+	      var canvas = null;
+	      var res = null;
+
+	      // resizing
+	      if (width > height) {
+	        res = width / MAX_WIDTH;
+	      } else {
+	        res = height / MAX_HEIGHT;
+	      }
+
+	      width = width / res;
+	      height = height / res;
+
+	      // Create a canvas with the desired dimensions
+	      canvas = document.createElement('canvas');
+	      canvas.width = width;
+	      canvas.height = height;
+
+	      // Scale and draw the source image to the canvas
+	      canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+
+	      // Convert the canvas to a data URL in some format
+	      callback(null, image, canvas.toDataURL(fileType));
+	    };
+
+	    image.src = data;
+	  }
+	});
+
+	exports.default = Image;
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * COLLECTION MODULE
+	 **********************************************************************/
+
+
+	var Collection = _backbone2.default.Collection.extend({
+	  flatten: function flatten(flattener) {
+	    var flattened = {};
+
+	    for (var i = 0; i < this.length; i++) {
+	      _underscore2.default.extend(flattened, this.models[i].flatten(flattener, i));
+	    }
+	    return flattened;
+	  },
+	  comparator: function comparator(a) {
+	    return a.metadata.created_on;
+	  }
+	});
+
+	exports.default = Collection;
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * STORAGE
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
+
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _Sample = __webpack_require__(7);
+
+	var _Sample2 = _interopRequireDefault(_Sample);
+
+	var _Collection = __webpack_require__(10);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	var _LocalStorage = __webpack_require__(12);
+
+	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Storage = function () {
+	  function Storage() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    _classCallCheck(this, Storage);
+
+	    var that = this;
+
+	    this.Sample = options.Sample || _Sample2.default;
+	    this.manager = options.manager;
+
+	    // internal storage
+	    this.Storage = options.Storage || _LocalStorage2.default;
+	    this.storage = new this.Storage({
+	      appname: options.appname
+	    });
+
+	    // initialize the cache
+	    this.cache = {};
+	    this.initialized = false;
+	    this.storage.getAll(function (err, data) {
+	      data || (data = {});
+
+	      var samples = [];
+	      var sample = null;
+	      var keys = Object.keys(data);
+
+	      for (var i = 0; i < keys.length; i++) {
+	        var current = data[keys[i]];
+	        var modelOptions = _underscore2.default.extend(current, { _manager: that.manager });
+	        sample = new that.Sample(current.attributes, modelOptions);
+	        samples.push(sample);
+	      }
+	      that.cache = new _Collection2.default(samples, {
+	        model: that.Sample
+	      });
+	      that._attachListeners();
+
+	      that.initialized = true;
+	      that.trigger('init');
+	    });
+	  }
+
+	  _createClass(Storage, [{
+	    key: 'get',
+	    value: function get(model, callback) {
+	      var _this = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this.get(model, callback);
+	        });
+	        return;
+	      }
+
+	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+	      callback(null, this.cache.get(key));
+	    }
+	  }, {
+	    key: 'getAll',
+	    value: function getAll(callback) {
+	      var _this2 = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this2.getAll(callback);
+	        });
+	        return;
+	      }
+	      callback(null, this.cache);
+	    }
+	  }, {
+	    key: 'set',
+	    value: function set(model, callback) {
+	      var _this3 = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this3.set(model, callback);
+	        });
+	        return;
+	      }
+	      var that = this;
+	      var key = model.id || model.cid;
+	      this.storage.set(key, model, function (err) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
+	        that.cache.set(model, { remove: false });
+	        callback && callback(null, model);
+	      });
+	    }
+	  }, {
+	    key: 'remove',
+	    value: function remove(model, callback) {
+	      var _this4 = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this4.remove(model, callback);
+	        });
+	        return;
+	      }
+	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+	      this.storage.remove(key, function (err) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
+	        delete model._manager;
+	        model.destroy(callback); // removes from cache
+	      });
+	    }
+	  }, {
+	    key: 'has',
+	    value: function has(model, callback) {
+	      var _this5 = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this5.has(model, callback);
+	        }, this);
+	        return;
+	      }
+	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+	      this.cache.has(key, callback);
+	    }
+	  }, {
+	    key: 'clear',
+	    value: function clear(callback) {
+	      var _this6 = this;
+
+	      if (!this.initialized) {
+	        this.on('init', function () {
+	          _this6.clear(callback);
+	        });
+	        return;
+	      }
+	      var that = this;
+	      this.storage.clear(function (err) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
+	        that.cache.reset();
+	        callback && callback();
+	      });
+	    }
+	  }, {
+	    key: 'size',
+	    value: function size(callback) {
+	      this.storage.size(callback);
+	    }
+	  }, {
+	    key: '_attachListeners',
+	    value: function _attachListeners() {
+	      var that = this;
+	      // listen on cache because it is last updated
+	      this.cache.on('update', function () {
+	        that.trigger('update');
+	      });
+	    }
+	  }]);
+
+	  return Storage;
+	}();
+
+	// add events
+
+
+	_underscore2.default.extend(Storage.prototype, _backbone2.default.Events);
+
+	exports.default = Storage;
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var LocalStorage = function () {
+	  function LocalStorage() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    _classCallCheck(this, LocalStorage);
+
+	    this.TYPE = 'LocalStorage';
+	    this.NAME = 'morel';
+	    this.storage = window.localStorage;
+
+	    this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
+	  }
+
+	  /**
+	   * Gets an item from the storage.
+	   *
+	   * @param key
+	   */
+
+
+	  _createClass(LocalStorage, [{
+	    key: 'get',
+	    value: function get(key, callback) {
+	      var data = this.storage.getItem(this._getKey(key));
+	      data = JSON.parse(data);
+
+	      callback(null, data);
+	    }
+
+	    /**
+	     * Returns all items from the storage;
+	     *
+	     * @returns {{}|*|m.Storage.storage}
+	     */
+
+	  }, {
+	    key: 'getAll',
+	    value: function getAll(callback) {
+	      var data = {};
+	      var key = '';
+	      for (var i = 0, len = this.storage.length; i < len; ++i) {
+	        key = this.storage.key(i);
+	        // check if the key belongs to this storage
+	        if (key.indexOf(this._getPrefix()) !== -1) {
+	          var parsed = JSON.parse(this.storage.getItem(key));
+	          data[key] = parsed;
+	        }
+	      }
+	      callback(null, data);
+	    }
+
+	    /**
+	     * Sets an item in the storage.
+	     * Note: it overrides any existing key with the same name.
+	     *
+	     * @param key
+	     * @param data JSON object
+	     */
+
+	  }, {
+	    key: 'set',
+	    value: function set(key, data, callback) {
+	      var stringifiedData = JSON.stringify(data);
+	      try {
+	        this.storage.setItem(this._getKey(key), stringifiedData);
+	        callback && callback(null, stringifiedData);
+	      } catch (err) {
+	        var exceeded = this._isQuotaExceeded(err);
+	        var message = exceeded ? 'Storage exceed.' : err.message;
+
+	        callback && callback(new _Error2.default(message), stringifiedData);
+	      }
+	    }
+
+	    /**
+	     * Removes an item from the storage.
+	     *
+	     * @param key
+	     */
+
+	  }, {
+	    key: 'remove',
+	    value: function remove(key, callback) {
+	      this.storage.removeItem(this._getKey(key));
+	      callback && callback();
+	    }
+
+	    /**
+	     * Checks if a key exists.
+	     *
+	     * @param key Input name
+	     * @returns {boolean}
+	     */
+
+	  }, {
+	    key: 'has',
+	    value: function has(key, callback) {
+	      this.get(key, function (err, data) {
+	        callback(null, data !== undefined && data !== null);
+	      });
+	    }
+
+	    /**
+	     * Clears the storage.
+	     */
+
+	  }, {
+	    key: 'clear',
+	    value: function clear(callback) {
+	      this.storage.clear();
+	      callback && callback();
+	    }
+
+	    /**
+	     * Calculates current occupied the size of the storage.
+	     *
+	     * @param callback
+	     */
+
+	  }, {
+	    key: 'size',
+	    value: function size(callback) {
+	      callback(null, this.storage.length);
+	    }
+
+	    /**
+	     * Checks if there is enough space in the storage.
+	     *
+	     * @param size
+	     * @returns {*}
+	     */
+
+	  }, {
+	    key: 'hasSpace',
+	    value: function hasSpace(size, callback) {
+	      var taken = JSON.stringify(this.storage).length;
+	      var left = 1024 * 1024 * 5 - taken;
+	      if (left - size > 0) {
+	        callback(null, 1);
+	      } else {
+	        callback(null, 0);
+	      }
+	    }
+	  }, {
+	    key: '_getKey',
+	    value: function _getKey(key) {
+	      return this._getPrefix() + key;
+	    }
+	  }, {
+	    key: '_getPrefix',
+	    value: function _getPrefix() {
+	      return this.NAME + '-';
+	    }
+
+	    /**
+	     * http://crocodillon.com/blog/always-catch-localstorage-security-and-quota-exceeded-errors
+	     * @param e
+	     * @returns {boolean}
+	     * @private
+	     */
+
+	  }, {
+	    key: '_isQuotaExceeded',
+	    value: function _isQuotaExceeded(e) {
+	      var quotaExceeded = false;
+	      if (e) {
+	        if (e.code) {
+	          switch (e.code) {
+	            case 22:
+	              quotaExceeded = true;
+	              break;
+	            case 1014:
+	              // Firefox
+	              if (e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+	                quotaExceeded = true;
+	              }
+	              break;
+	            default:
+	          }
+	        } else if (e.number === -2147024882) {
+	          // Internet Explorer 8
+	          quotaExceeded = true;
+	        }
+	      }
+	      return quotaExceeded;
+	    }
+	  }]);
+
+	  return LocalStorage;
+	}();
+
+	exports.default = LocalStorage;
+
+/***/ }
+/******/ ])
+});
+;

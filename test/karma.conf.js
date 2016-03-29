@@ -2,19 +2,22 @@ module.exports = function(config) {
   config.set({
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
 
     frameworks: ['mocha', 'chai'],
 
     plugins : [
       'karma-mocha',
       'karma-chai',
+      'karma-chrome-launcher',
       'karma-phantomjs-launcher'
     ],
 
     // list of files / patterns to load in the browser
     files: [
       'test/vendor/indexeddbshim.min.js',
+      'test/vendor/underscore.js',
+      'test/vendor/backbone.js',
       'dist/morel.js',
       'test/*.js'
     ],
@@ -35,7 +38,7 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true
+    singleRun: false
   });
 };
 

@@ -1,31 +1,22 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-/*global m, define, */
-define(['helpers', 'Occurrence'], function () {
-//>>excludeEnd('buildExclude');
-  /***********************************************************************
-   * COLLECTION MODULE
-   **********************************************************************/
+/** *********************************************************************
+ * COLLECTION MODULE
+ **********************************************************************/
+import Backbone from 'backbone';
+import _ from 'underscore';
 
-  m.Collection = (function () {
+const Collection = Backbone.Collection.extend({
+  flatten(flattener) {
+    const flattened = {};
 
-    var Module = Backbone.Collection.extend({
-      flatten: function (flattener) {
-        var flattened = {};
+    for (let i = 0; i < this.length; i++) {
+      _.extend(flattened, this.models[i].flatten(flattener, i));
+    }
+    return flattened;
+  },
 
-        for (var i = 0; i < this.length; i++) {
-          _.extend(flattened, this.models[i].flatten(flattener, i))
-        }
-        return flattened;
-      },
-
-      comparator: function (a) {
-        return a.metadata.created_on;
-      }
-    });
-
-
-    return Module;
-  }());
-//>>excludeStart('buildExclude', pragmas.buildExclude);
+  comparator(a) {
+    return a.metadata.created_on;
+  },
 });
-//>>excludeEnd('buildExclude');
+
+export { Collection as default };

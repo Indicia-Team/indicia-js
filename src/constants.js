@@ -1,0 +1,9 @@
+export default {
+  SYNCHRONISING: 0,
+  SYNCED: 1,
+  LOCAL: 2,
+  SERVER: 3,
+  CHANGED_LOCALLY: 4,
+  CHANGED_SERVER: 5,
+  CONFLICT: -1,
+};
