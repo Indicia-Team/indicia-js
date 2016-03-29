@@ -561,6 +561,7 @@
        * Saves the record to the record manager and if valid syncs it with DB
        */
       save: function (callback) {
+        var that = this;
         if (!this._manager) {
           callback && callback(new Error({message: 'No manager.'}));
           return;
@@ -568,7 +569,7 @@
 
         this._manager.set(this, function () {
           //todo sync
-          callback && callback();
+          callback && callback(null, that);
         });
       },
 
