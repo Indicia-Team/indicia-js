@@ -23,7 +23,7 @@ var sauceBrowsers = _.reduce([
   ['internet explorer', '9', 'Windows 7'],
   ['internet explorer', '8'],
 
-  ['android', '6'],
+  ['android', '5.1'],
   ['android', '5'],
   ['android', '4.4'],
   ['android', '4.3'],
