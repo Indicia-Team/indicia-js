@@ -4,6 +4,7 @@
 import _ from 'underscore';
 import Backbone from 'backbone';
 
+import Error from './Error';
 import Sample from './Sample';
 import Collection from './Collection';
 import LocalStorage from './LocalStorage';
@@ -69,13 +70,22 @@ class Storage {
     callback(null, this.cache);
   }
 
-  set(model, callback) {
+  set(model = {}, callback) {
+    // early return if no id or cid
+    if (!model.id && !model.cid) {
+      const error = new Error('Invalid model passed to storage');
+      callback(error);
+      return;
+    }
+
+    // needs to be on and running
     if (!this.initialized) {
       this.on('init', () => {
         this.set(model, callback);
       });
       return;
     }
+
     const that = this;
     const key = model.id || model.cid;
     this.storage.set(key, model, (err) => {
@@ -113,8 +123,10 @@ class Storage {
       }, this);
       return;
     }
-    const key = typeof model === 'object' ? model.id || model.cid : model;
-    this.cache.has(key, callback);
+    this.get(model, (err, data) => {
+      const found = typeof data === 'object';
+      callback(null, found);
+    });
   }
 
   clear(callback) {

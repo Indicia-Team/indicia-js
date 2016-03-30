@@ -1,26 +1,47 @@
-module.exports = function(config) {
+var path = require('path');
+
+module.exports = function exports(config) {
   config.set({
+    basePath: '../',
+
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
     frameworks: ['mocha', 'chai'],
 
-    plugins : [
-      'karma-mocha',
-      'karma-chai',
-      'karma-chrome-launcher',
-      'karma-phantomjs-launcher'
+    files: [
+      { pattern: 'tests.webpack.js', watched: false },
     ],
 
-    // list of files / patterns to load in the browser
-    files: [
-      'test/vendor/indexeddbshim.min.js',
-      'test/vendor/underscore.js',
-      'test/vendor/backbone.js',
-      'dist/morel.js',
-      'test/*.js'
-    ],
+    preprocessors: {
+      'tests.webpack.js': ['webpack'],
+    },
+
+    webpack: {
+      resolve: {
+        root: [
+          path.resolve('./test/vendor'),
+        ],
+        alias: {
+          backbone: 'backbone',
+          underscore: 'underscore',
+        },
+      },
+      module: {
+        loaders: [
+          {
+            // test: /^\.js$/,
+            exclude: /(node_modules|bower_components|vendor)/,
+            loader: 'babel-loader',
+          },
+        ],
+      },
+    },
+
+    webpackServer: {
+      noInfo: true,
+    },
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
@@ -38,11 +59,14 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false
+    singleRun: true,
+
+    plugins: [
+      require('karma-webpack'),
+      require('karma-mocha'),
+      require('karma-chai'),
+      require('karma-phantomjs-launcher'),
+      require('karma-chrome-launcher'),
+    ],
   });
 };
-
-
-
-
-

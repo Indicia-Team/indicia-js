@@ -51,6 +51,7 @@
     "karma-phantomjs-launcher": "latest",
     "karma-sauce-launcher": "latest",
     "mocha": "latest",
+    "chai": "latest",
     "phantomjs-prebuilt": "latest",
     "core-js": "latest"
   },

@@ -229,7 +229,7 @@ class DatabaseStorage {
         callback(err);
         return;
       }
-      const size = JSON.stringify(data).length;
+      const size = Object.keys(data).length;
       callback(null, size);
     });
   }
