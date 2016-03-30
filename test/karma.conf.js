@@ -11,6 +11,7 @@ module.exports = function exports(config) {
     frameworks: ['mocha', 'chai'],
 
     files: [
+      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
       { pattern: 'tests.webpack.js', watched: false },
     ],
 

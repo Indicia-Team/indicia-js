@@ -7,16 +7,15 @@ var path = require('path');
 
 // Browsers to run on Sauce Labs platforms
 var sauceBrowsers = _.reduce([
-  ['firefox', '35'],
-  ['firefox', '30'],
-  ['firefox', '21'],
-  ['firefox', '11'],
-  ['firefox', '4'],
+  ['firefox', '45'],
+  ['firefox', '44'],
+  ['firefox', '43'],
+  ['firefox', '42'],
+  ['firefox', '41'],
 
   ['chrome', '40'],
   ['chrome', '39'],
-  ['chrome', '31'],
-  ['chrome', '26'],
+  ['chrome', '30'],
 
   ['microsoftedge', '20.10240', 'Windows 10'],
   ['internet explorer', '11', 'Windows 10'],
@@ -24,20 +23,15 @@ var sauceBrowsers = _.reduce([
   ['internet explorer', '9', 'Windows 7'],
   ['internet explorer', '8'],
 
-  ['opera', '12'],
-  ['opera', '11'],
-
+  ['android', '6'],
   ['android', '5'],
   ['android', '4.4'],
-
   ['android', '4.3'],
+  ['android', '4.1'],
 
-  ['android', '4.0'],
-
+  ['safari', '9'],
   ['safari', '8.0', 'OS X 10.10'],
-  ['safari', '7'],
-  ['safari', '6'],
-  ['safari', '5']
+
 ], function (memo, platform) {
   // internet explorer -> ie
   var label = platform[0].split(' ');
@@ -72,6 +66,7 @@ module.exports = function (config) {
     frameworks: ['mocha', 'chai'],
 
     files: [
+      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
       { pattern: 'tests.webpack.js', watched: false },
     ],
 
