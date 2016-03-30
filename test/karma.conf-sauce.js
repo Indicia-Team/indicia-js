@@ -20,8 +20,6 @@ var sauceBrowsers = _.reduce([
   ['microsoftedge', '20.10240', 'Windows 10'],
   ['internet explorer', '11', 'Windows 10'],
   ['internet explorer', '10', 'Windows 8'],
-  ['internet explorer', '9', 'Windows 7'],
-  ['internet explorer', '8'],
 
   ['android', '5.1'],
   ['android', '5'],
@@ -29,6 +27,7 @@ var sauceBrowsers = _.reduce([
   ['android', '4.3'],
   ['android', '4.1'],
 
+  ['safari', '9.2'],
   ['safari', '9'],
   ['safari', '8.0', 'OS X 10.10'],
 
