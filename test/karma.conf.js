@@ -60,7 +60,7 @@ module.exports = function exports(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    singleRun: false,
 
     plugins: [
       require('karma-webpack'),
@@ -69,5 +69,6 @@ module.exports = function exports(config) {
       require('karma-phantomjs-launcher'),
       require('karma-chrome-launcher'),
     ],
+    logLevel: config.LOG_INFO,
   });
 };
