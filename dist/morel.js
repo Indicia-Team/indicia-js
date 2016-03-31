@@ -81,6 +81,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
+	var _DatabaseStorage = __webpack_require__(13);
+
+	var _DatabaseStorage2 = _interopRequireDefault(_DatabaseStorage);
+
+	var _LocalStorage = __webpack_require__(12);
+
+	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
+
+	var _PlainStorage = __webpack_require__(14);
+
+	var _PlainStorage2 = _interopRequireDefault(_PlainStorage);
+
 	var _Image = __webpack_require__(9);
 
 	var _Image2 = _interopRequireDefault(_Image);
@@ -92,11 +104,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Morel = {
-	  VERSION: '0', // library version, generated/replaced by grunt
+	  VERSION: '3.1.0', // library version, generated/replaced by grunt
 
 	  Manager: _Manager2.default,
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
+	  DatabaseStorage: _DatabaseStorage2.default,
+	  LocalStorage: _LocalStorage2.default,
+	  PlainStorage: _PlainStorage2.default,
 	  Image: _Image2.default,
 	  Error: _Error2.default
 	};
@@ -1486,6 +1501,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
 	var _Sample = __webpack_require__(7);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
@@ -1575,15 +1594,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, {
 	    key: 'set',
-	    value: function set(model, callback) {
+	    value: function set() {
 	      var _this3 = this;
 
+	      var model = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	      var callback = arguments[1];
+
+	      // early return if no id or cid
+	      if (!model.id && !model.cid) {
+	        var error = new _Error2.default('Invalid model passed to storage');
+	        callback(error);
+	        return;
+	      }
+
+	      // needs to be on and running
 	      if (!this.initialized) {
 	        this.on('init', function () {
 	          _this3.set(model, callback);
 	        });
 	        return;
 	      }
+
 	      var that = this;
 	      var key = model.id || model.cid;
 	      this.storage.set(key, model, function (err) {
@@ -1627,8 +1658,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }, this);
 	        return;
 	      }
-	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
-	      this.cache.has(key, callback);
+	      this.get(model, function (err, data) {
+	        var found = (typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object';
+	        callback(null, found);
+	      });
 	    }
 	  }, {
 	    key: 'clear',
@@ -1890,6 +1923,494 @@ return /******/ (function(modules) { // webpackBootstrap
 	}();
 
 	exports.default = LocalStorage;
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * DATABASE STORAGE
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
+
+
+	var _Error = __webpack_require__(6);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/**
+	 * options:
+	 *  @appname String subdomain name to use for storage
+	 */
+
+	var DatabaseStorage = function () {
+	  function DatabaseStorage() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    _classCallCheck(this, DatabaseStorage);
+
+	    // because of iOS8 bug on home screen: null & readonly window.indexedDB
+	    this.indexedDB = window._indexedDB || window.indexedDB;
+	    this.IDBKeyRange = window._IDBKeyRange || window.IDBKeyRange;
+
+	    this.VERSION = 1;
+	    this.TYPE = 'DatabaseStorage';
+	    this.NAME = 'morel';
+	    this.STORE_NAME = 'samples';
+
+	    this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
+	  }
+
+	  /**
+	   * Adds an item under a specified key to the database.
+	   * Note: might be a good idea to move the key assignment away from
+	   * the function parameters and rather auto assign one and return on callback.
+	   *
+	   * @param key
+	   * @param data JSON or object having toJSON function
+	   * @param callback
+	   */
+
+
+	  _createClass(DatabaseStorage, [{
+	    key: 'set',
+	    value: function set(key, data, callback) {
+	      try {
+	        this.open(function (err, store) {
+	          if (err) {
+	            callback && callback(err);
+	            return;
+	          }
+
+	          var dataJSON = typeof data.toJSON === 'function' ? data.toJSON() : data;
+
+	          var req = store.put(dataJSON, key);
+
+	          req.onsuccess = function () {
+	            callback && callback(null, dataJSON);
+	          };
+
+	          req.onerror = function (e) {
+	            var message = 'Database Problem: ' + e.target.error.message;
+	            var error = new _Error2.default(message);
+	            console.error(message);
+	            callback && callback(error);
+	          };
+	        });
+	      } catch (err) {
+	        callback && callback(err);
+	      }
+	    }
+
+	    /**
+	     * Gets a specific saved data from the database.
+	     * @param key The stored data Id.
+	     * @param callback
+	     * @aram onError
+	     * @returns {*}
+	     */
+
+	  }, {
+	    key: 'get',
+	    value: function get(key, callback) {
+	      try {
+	        this.open(function (err, store) {
+	          if (err) {
+	            callback(err);
+	            return;
+	          }
+
+	          var req = store.index('id').get(key);
+	          req.onsuccess = function (e) {
+	            var data = e.target.result;
+	            callback(null, data);
+	          };
+
+	          req.onerror = function (e) {
+	            var message = 'Database Problem: ' + e.target.error.message;
+	            var error = new _Error2.default(message);
+	            console.error(message);
+	            callback(error);
+	          };
+	        });
+	      } catch (err) {
+	        callback(err);
+	      }
+	    }
+
+	    /**
+	     * Removes a saved data from the database.
+	     *
+	     * @param key
+	     * @param callback
+	     * @param onError
+	     */
+
+	  }, {
+	    key: 'remove',
+	    value: function remove(key, callback) {
+	      var that = this;
+
+	      try {
+	        this.open(function (err, store) {
+	          if (err) {
+	            callback && callback(err);
+	            return;
+	          }
+
+	          var req = store.openCursor(that.IDBKeyRange.only(key));
+	          req.onsuccess = function () {
+	            var cursor = req.result;
+	            if (cursor) {
+	              store.delete(cursor.primaryKey);
+	              cursor.continue();
+	            } else {
+	              callback && callback();
+	            }
+	          };
+	          req.onerror = function (e) {
+	            var message = 'Database Problem: ' + e.target.error.message;
+	            var error = new _Error2.default(message);
+
+	            console.error(message);
+	            callback && callback(error);
+	          };
+	        });
+	      } catch (err) {
+	        callback && callback(err);
+	      }
+	    }
+
+	    /**
+	     * Brings back all saved data from the database.
+	     */
+
+	  }, {
+	    key: 'getAll',
+	    value: function getAll(callback) {
+	      var that = this;
+
+	      try {
+	        this.open(function (err, store) {
+	          if (err) {
+	            callback(err);
+	            return;
+	          }
+
+	          // Get everything in the store
+	          var keyRange = that.IDBKeyRange.lowerBound(0);
+	          var req = store.openCursor(keyRange);
+	          var data = {};
+
+	          req.onsuccess = function (e) {
+	            var result = e.target.result;
+
+	            // If there's data, add it to array
+	            if (result) {
+	              data[result.key] = result.value;
+	              result.continue();
+
+	              // Reach the end of the data
+	            } else {
+	                callback(null, data);
+	              }
+	          };
+
+	          req.onerror = function (e) {
+	            var message = 'Database Problem: ' + e.target.error.message;
+	            var error = new _Error2.default(message);
+
+	            console.error(message);
+	            callback(error);
+	          };
+	        });
+	      } catch (err) {
+	        callback(err);
+	      }
+	    }
+
+	    /**
+	     * Checks whether the data under a provided key exists in the database.
+	     *
+	     * @param key
+	     * @param callback
+	     * @param onError
+	     */
+
+	  }, {
+	    key: 'has',
+	    value: function has(key, callback) {
+	      this.get(key, function (err, data) {
+	        if (err) {
+	          callback(err);
+	          return;
+	        }
+	        callback(null, data !== undefined && data !== null);
+	      });
+	    }
+
+	    /**
+	     * Clears all the saved data.
+	     */
+
+	  }, {
+	    key: 'clear',
+	    value: function clear(callback) {
+	      try {
+	        this.open(function (err, store) {
+	          if (err) {
+	            callback && callback(err);
+	            return;
+	          }
+
+	          var req = store.clear();
+
+	          req.onsuccess = function () {
+	            callback && callback();
+	          };
+
+	          req.onerror = function (e) {
+	            var message = 'Database Problem: ' + e.target.error.message;
+	            var error = new _Error2.default(message);
+	            console.error(message);
+
+	            callback && callback(error);
+	          };
+	        });
+	      } catch (err) {
+	        callback && callback(err);
+	      }
+	    }
+	  }, {
+	    key: 'size',
+	    value: function size(callback) {
+	      this.getAll(function (err, data) {
+	        if (err) {
+	          callback(err);
+	          return;
+	        }
+	        var size = Object.keys(data).length;
+	        callback(null, size);
+	      });
+	    }
+
+	    /**
+	     * Opens a database connection and returns a store.
+	     *
+	     * @param onError
+	     * @param callback
+	     */
+
+	  }, {
+	    key: 'open',
+	    value: function open(callback) {
+	      var that = this;
+	      var req = null;
+
+	      try {
+	        req = this.indexedDB.open(this.NAME, this.VERSION);
+
+	        /**
+	         * On Database opening success, returns the Records object store.
+	         *
+	         * @param e
+	         */
+	        req.onsuccess = function (e) {
+	          var db = e.target.result;
+	          var transaction = db.transaction([that.STORE_NAME], 'readwrite');
+	          if (transaction) {
+	            var store = transaction.objectStore(that.STORE_NAME);
+	            if (store) {
+	              callback(null, store);
+	            } else {
+	              var err = new _Error2.default('Database Problem: no such store');
+	              callback(err);
+	            }
+	          }
+	        };
+
+	        /**
+	         * If the Database needs an upgrade or is initialising.
+	         *
+	         * @param e
+	         */
+	        req.onupgradeneeded = function (e) {
+	          var db = e.target.result;
+	          db.createObjectStore(that.STORE_NAME);
+	        };
+
+	        /**
+	         * Error of opening the database.
+	         *
+	         * @param e
+	         */
+	        req.onerror = function (e) {
+	          var message = 'Database Problem: ' + e.target.error.message;
+	          var error = new _Error2.default(message);
+
+	          console.error(message);
+	          callback(error);
+	        };
+
+	        /**
+	         * Error on database being blocked.
+	         *
+	         * @param e
+	         */
+	        req.onblocked = function (e) {
+	          var message = 'Database Problem: ' + e.target.error.message;
+	          var error = new _Error2.default(message);
+
+	          console.error(message);
+	          callback(error);
+	        };
+	      } catch (err) {
+	        callback(err);
+	      }
+	    }
+	  }]);
+
+	  return DatabaseStorage;
+	}();
+
+	exports.default = DatabaseStorage;
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/** *********************************************************************
+	 * PLAIN STORAGE
+	 **********************************************************************/
+
+	var PlainStorage = function () {
+	  function PlainStorage() {
+	    _classCallCheck(this, PlainStorage);
+
+	    this.NAME = 'PlainStorage';
+
+	    this.storage = {};
+	  }
+
+	  /**
+	   * Gets an item from the storage.
+	   *
+	   * @param key
+	   */
+
+
+	  _createClass(PlainStorage, [{
+	    key: 'get',
+	    value: function get(key, callback) {
+	      var data = this.storage[key];
+	      callback(null, data);
+	    }
+
+	    /**
+	     * Returns all items from the storage;
+	     *
+	     * @returns {{}|*|m.Storage.storage}
+	     */
+
+	  }, {
+	    key: 'getAll',
+	    value: function getAll(callback) {
+	      var data = this.storage;
+	      callback(null, data);
+	    }
+
+	    /**
+	     * Sets an item in the storage.
+	     * Note: it overrides any existing key with the same name.
+	     *
+	     * @param key
+	     * @param data
+	     * @param callback
+	     */
+
+	  }, {
+	    key: 'set',
+	    value: function set(key, data, callback) {
+	      this.storage[key] = data;
+	      callback && callback(null, data);
+	    }
+
+	    /**
+	     * Removes an item from the storage.
+	     *
+	     * @param key
+	     */
+
+	  }, {
+	    key: 'remove',
+	    value: function remove(key, callback) {
+	      delete this.storage[key];
+	      callback && callback();
+	    }
+
+	    /**
+	     * Checks if a key exists.
+	     *
+	     * @param key Input name
+	     * @returns {boolean}
+	     */
+
+	  }, {
+	    key: 'has',
+	    value: function has(key, callback) {
+	      this.get(key, function (err, data) {
+	        callback(null, data !== undefined && data !== null);
+	      });
+	    }
+
+	    /**
+	     * Clears the storage.
+	     */
+
+	  }, {
+	    key: 'clear',
+	    value: function clear(callback) {
+	      this.storage = {};
+	      callback && callback(null, this.storage);
+	    }
+
+	    /**
+	     * Calculates current occupied the size of the storage.
+	     * @param callback
+	     */
+
+	  }, {
+	    key: 'size',
+	    value: function size(callback) {
+	      var data = Object.keys(this.storage).length;
+	      callback(null, data);
+	    }
+	  }]);
+
+	  return PlainStorage;
+	}();
+
+	exports.default = PlainStorage;
 
 /***/ }
 /******/ ])

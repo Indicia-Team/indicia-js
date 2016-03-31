@@ -25,22 +25,10 @@ module.exports = function (grunt) {
         ],
         overwrite: true,     // overwrite matched source files
         replacements: [{
-          from: /(m\.VERSION =) \'0\';/g,     // string replacement
-          to: '$1 \'<%= pkg.version %>\';'
-        }]
-      }
-    },
-
-    uglify: {
-      options: {
-        // the banner is inserted at the top of the output
-        banner: banner
+          from: /(VERSION:) \'0\',/g,     // string replacement
+          to: '$1 \'<%= pkg.version %>\','
+        }],
       },
-      dist: {
-        files: {
-          'dist/<%= pkg.name %>.min.js': ['<%= concat.src.dest %>']
-        }
-      }
     },
 
     karma: {
@@ -67,7 +55,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-text-replace');
 
   // the default task can be run just by typing "grunt" on the command line
-  grunt.registerTask('build', ['requirejs', 'concat', 'replace', 'uglify']);
+  grunt.registerTask('build', ['webpack:main', 'replace']);
   grunt.registerTask('test', ['karma:local']);
   grunt.registerTask('default', ['build']);
 

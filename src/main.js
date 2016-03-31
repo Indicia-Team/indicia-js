@@ -3,6 +3,9 @@ import Manager from './Manager';
 import Sample from './Sample';
 import CONST from './constants';
 import Occurrence from './Occurrence';
+import DatabaseStorage from './DatabaseStorage';
+import LocalStorage from './LocalStorage';
+import PlainStorage from './PlainStorage';
 import Image from './Image';
 import Error from './Error';
 
@@ -12,6 +15,9 @@ const Morel = {
   Manager,
   Sample,
   Occurrence,
+  DatabaseStorage,
+  LocalStorage,
+  PlainStorage,
   Image,
   Error,
 };

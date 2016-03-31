@@ -2,7 +2,7 @@
   "name": "morel",
   "title": "morel",
   "description": "Mobile Recording Library for biological data collection.",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "homepage": "https://github.com/NERC-CEH/morel",
   "author": {
     "name": "Karolis Kazlauskis",
