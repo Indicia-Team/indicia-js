@@ -1397,7 +1397,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param callback
 	   */
 	  resize: function resize(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-	    var image = new Image();
+	    var image = new window.Image(); // native one
 
 	    image.onload = function () {
 	      var width = image.width;

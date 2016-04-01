@@ -116,7 +116,7 @@ _.extend(Image, {
    * @param callback
    */
   resize(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-    const image = new Image();
+    const image = new window.Image(); // native one
 
     image.onload = () => {
       let width = image.width;
