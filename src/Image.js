@@ -7,7 +7,7 @@ import _ from 'underscore';
 import helpers from './helpers';
 import Error from './Error';
 
-const Image = Backbone.Model.extend({
+const ImageModel = Backbone.Model.extend({
   constructor(attributes = {}, options = {}) {
     let attrs = attributes;
     if (typeof attributes === 'string') {
@@ -61,7 +61,7 @@ const Image = Backbone.Model.extend({
    */
   resize(MAX_WIDTH, MAX_HEIGHT, callback) {
     const that = this;
-    Image.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT,
+    ImageModel.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT,
       (err, image, data) => {
         if (err) {
           callback && callback(err);
@@ -82,7 +82,7 @@ const Image = Backbone.Model.extend({
   },
 });
 
-_.extend(Image, {
+_.extend(ImageModel, {
   /**
    * Transforms and resizes an image file into a string.
    *
@@ -150,4 +150,4 @@ _.extend(Image, {
   },
 });
 
-export { Image as default };
+export { ImageModel as default };

@@ -1286,7 +1286,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 **********************************************************************/
 
 
-	var Image = _backbone2.default.Model.extend({
+	var ImageModel = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
 	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
@@ -1342,7 +1342,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  resize: function resize(MAX_WIDTH, MAX_HEIGHT, callback) {
 	    var that = this;
-	    Image.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
+	    ImageModel.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
 	      if (err) {
 	        callback && callback(err);
 	        return;
@@ -1361,7 +1361,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	});
 
-	_underscore2.default.extend(Image, {
+	_underscore2.default.extend(ImageModel, {
 	  /**
 	   * Transforms and resizes an image file into a string.
 	   *
@@ -1431,7 +1431,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	});
 
-	exports.default = Image;
+	exports.default = ImageModel;
 
 /***/ },
 /* 10 */
