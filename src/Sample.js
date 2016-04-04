@@ -16,16 +16,16 @@ import Collection from './Collection';
 const Sample = Backbone.Model.extend({
   Occurrence,
 
-  constructor(attributes, options) {
+  constructor(attributes = {}, options) {
     const that = this;
     let attrs = attributes;
 
-    if (!attrs) {
-      attrs = {
-        date: new Date(),
-        location_type: 'latlon',
-      };
-    }
+    const defaultAttrs = {
+      date: new Date(),
+      location_type: 'latlon',
+    };
+
+    attrs = _.extend(defaultAttrs, attrs);
 
     options || (options = {});
     this.cid = options.cid || helpers.getNewUUID();
@@ -99,6 +99,56 @@ const Sample = Backbone.Model.extend({
       Backbone.Model.prototype.destroy.call(this);
       callback && callback();
     }
+  },
+
+  validate(attributes) {
+    const attrs = _.extend({}, this.attributes, attributes);
+
+    const sample = {};
+    const occurrences = {};
+
+    // location
+    if (!attrs.location) {
+      sample.location = 'can\'t be blank';
+    }
+
+    // location type
+    if (!attrs.location_type) {
+      sample.location_type = 'can\'t be blank';
+    }
+
+    // date
+    if (!attrs.date) {
+      sample.date = 'can\'t be blank';
+    } else {
+      const date = new Date(attrs.date);
+      if (date === 'Invalid Date' || date > new Date()) {
+        sample.date = (new Date(date) > new Date) ? 'future date' : 'invalid';
+      }
+    }
+
+    // occurrences
+    if (this.occurrences.length === 0) {
+      sample.occurrences = 'no occurrences';
+    } else {
+      this.occurrences.each((occurrence) => {
+        const errors = occurrence.validate();
+        if (errors) {
+          const occurrenceID = occurrence.id || occurrence.cid;
+          occurrences[occurrenceID] = errors;
+        }
+      });
+    }
+
+    if (! _.isEmpty(sample) || ! _.isEmpty(occurrences)) {
+      const errors = {
+        sample,
+        occurrences,
+      };
+      return errors;
+    }
+
+    return null;
   },
 
   /**

@@ -72,6 +72,23 @@ const Occurrence = Backbone.Model.extend({
     }
   },
 
+  validate(attributes) {
+    const attrs = _.extend({}, this.attributes, attributes);
+
+    const errors = {};
+
+    // location
+    if (!attrs.taxa_taxon_list_id) {
+      errors.taxa_taxon_list_id = 'can\'t be blank';
+    }
+
+    if (! _.isEmpty(errors)) {
+      return errors;
+    }
+
+    return null;
+  },
+
   toJSON() {
     const data = {
       id: this.id,

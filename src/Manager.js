@@ -119,7 +119,7 @@ class Manager {
       // recursively loop through samples
       for (let i = 0; i < remainingSamples.length; i++) {
         const sample = remainingSamples[i];
-        if (sample.validate() || sample.getSyncStatus() === CONST.SYNCED) {
+        if (!sample.isValid() || sample.getSyncStatus() === CONST.SYNCED) {
           remainingSamples.splice(i, 1);
           i--; // return the cursor
           continue;
@@ -165,7 +165,15 @@ class Manager {
       return;
     }
 
-    // call user defined onSend function to modify and validate
+    // this will be reached only when calling the function directly
+    // sendAllStored pre validates so does not reach this point
+    if (!sample.isValid()) {
+      const invalids = sample.validate();
+      callback && callback(invalids);
+      return;
+    }
+
+    // call user defined onSend function to modify
     const stopSending = this.onSend && this.onSend(sample);
     if (stopSending) {
       callback && callback(null, sample);
@@ -251,32 +259,23 @@ class Manager {
    * Submits the record.
    */
   _post(formData, callback) {
-    const ajax = new XMLHttpRequest();
-
-    ajax.onreadystatechange = () => {
-      let error = null;
-      if (ajax.readyState === XMLHttpRequest.DONE) {
-        const status = `${ajax.status}`;
-        switch (true) {
-          case /2\d\d/.test(status):
-            callback && callback();
-            break;
-          case /4\d\d/.test(status):
-            error = new Error(ajax.response);
-            callback && callback(error);
-            break;
-          default:
-            error = new Error({
-              message: 'Unknown problem while sending request.',
-              number: ajax.status,
-            });
-            callback && callback(error);
-        }
-      }
-    };
-
-    ajax.open('POST', this.options.url);
-    ajax.send(formData);
+    Backbone.ajax({
+      url: this.options.url,
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: (val) => {
+        callback && callback(null, val);
+      },
+      error: (jqXHR, textStatus, errorThrown) => {
+        const error = new Error({
+          number: jqXHR.status,
+          message: errorThrown,
+        });
+        callback && callback(error);
+      },
+    });
   }
 
   _attachListeners() {

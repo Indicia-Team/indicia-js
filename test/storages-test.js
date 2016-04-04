@@ -134,13 +134,13 @@ describe('Storage', () => {
     });
   });
 
-  describe('plain', () => {
+  describe('(plain)', () => {
     tests(storage);
   });
-  describe('local:', () => {
+  describe('(local)', () => {
     tests(localStorage);
   });
-  describe('database:', () => {
+  describe('(database)', () => {
     tests(databaseStorage);
   });
 });

@@ -6,9 +6,9 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
 
-    frameworks: ['mocha', 'chai'],
+    frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
       { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
@@ -45,12 +45,12 @@ module.exports = function exports(config) {
     },
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: false,
+    autoWatch: true,
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: ['mocha'],
 
     // web server port
     port: 9876,
@@ -60,11 +60,13 @@ module.exports = function exports(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    singleRun: false,
 
     plugins: [
       require('karma-webpack'),
+      require('karma-sinon'),
       require('karma-mocha'),
+      require('karma-mocha-reporter'),
       require('karma-chai'),
       require('karma-phantomjs-launcher'),
       require('karma-chrome-launcher'),
