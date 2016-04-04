@@ -197,7 +197,7 @@ class Manager {
       sample.metadata.synced_on = new Date();
 
       // resize images to snapshots
-      that._resizeImages(sample, () => {
+      sample.resizeImages(() => {
         // save sample
         that.set(sample, (setErr) => {
           if (setErr) {
@@ -351,35 +351,6 @@ class Manager {
     }
 
     return flattened;
-  }
-
-  _resizeImages(sample, callback) {
-    let imagesCount = 0;
-    // get number of images to resize - synchronous
-    sample.occurrences.each((occurrence) => {
-      occurrence.images.each(() => {
-        imagesCount++;
-      });
-    });
-
-    if (!imagesCount) {
-      callback();
-      return;
-    }
-
-    // resize
-    // each occurrence
-    sample.occurrences.each((occurrence) => {
-      // each image
-      occurrence.images.each((image) => {
-        image.resize(75, 75, () => {
-          imagesCount--;
-          if (imagesCount === 0) {
-            callback();
-          }
-        });
-      }, occurrence);
-    });
   }
 
   /**

@@ -129,68 +129,6 @@ function tests(manager) {
       });
     });
   });
-
-  describe('Synchronisation', () => {
-    let server;
-
-    const okResponse = [200, { 'Content-Type': 'text/html' }, ''];
-    const errResponse = [502, { 'Content-Type': 'text/html' }, ''];
-
-    before(() => {
-      server = sinon.fakeServer.create();
-    });
-
-    after(() => {
-      server.restore();
-    });
-
-    it('should send a record', (done) => {
-      const occurrence = new Occurrence({
-        taxa_taxon_list_id: 1234,
-      });
-      const sample = new Sample({
-        location: ' 12.12, -0.23',
-      }, {
-        occurrences: [occurrence],
-      });
-
-      manager.sync(sample, done);
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
-    });
-
-    it('should validate the record before sending it', (done) => {
-      const occurrence = new Occurrence();
-      const sample = new Sample(null, {
-        occurrences: [occurrence],
-      });
-
-      manager.sync(sample, (err) => {
-        expect(err).to.not.be.null;
-        done();
-      });
-    });
-
-    it('should return error upon unsuccessful sync', (done) => {
-      const occurrence = new Occurrence({
-        taxa_taxon_list_id: 1234,
-      });
-      const sample = new Sample({
-        location: ' 12.12, -0.23',
-      }, {
-        occurrences: [occurrence],
-      });
-
-      manager.sync(sample, (err) => {
-        expect(err).to.be.an('object');
-        done();
-      });
-
-      server.respondWith('POST', '/mobile/submit', errResponse);
-      server.respond();
-    });
-  });
 }
 
 describe('Manager', () => {

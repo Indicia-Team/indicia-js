@@ -1,5 +1,6 @@
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
+import Image from '../src/Image';
 import Collection from '../src/Collection';
 import helpers from '../src/helpers';
 
@@ -28,7 +29,7 @@ describe('Sample', () => {
     const occurrence = new Occurrence();
     const sample = new Sample();
 
-    var json = sample.toJSON();
+    let json = sample.toJSON();
 
     expect(json).to.be.an.object;
     expect(json.occurrences.length).to.be.equal(0);
@@ -61,5 +62,43 @@ describe('Sample', () => {
     invalids = allInvalids.sample;
     expect(invalids.occurrences).to.be.undefined;
     expect(allInvalids.occurrences).to.not.be.empty;
+  });
+
+  it('can resize all occurrence images', (done) => {
+    const sample = new Sample();
+    expect(sample.resizeImages).to.be.a('function');
+
+    // create random image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(100, 100); //px
+
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      imgData.data[i] = (Math.random() * 100).toFixed(0);
+      imgData.data[i + 1] = (Math.random() * 100).toFixed(0);
+      imgData.data[i + 2] = (Math.random() * 100).toFixed(0);
+      imgData.data[i + 3] = 105;
+    }
+    ctx.putImageData(imgData, 10, 10);
+    const data = canvas.toDataURL('jpeg');
+    const originalImageSize = data.length;
+
+    const image = new Image({
+      data,
+      type: 'image/png',
+    });
+
+    // create occurrence
+    const occurrence = new Occurrence();
+    occurrence.images.set(image);
+    sample.occurrences.set(occurrence);
+
+    sample.resizeImages((err) => {
+      if (err) throw err.message;
+
+      const resizedImage = sample.occurrences.at(0).images.at(0).get('data');
+      expect(resizedImage.length).to.be.below(originalImageSize);
+      done();
+    });
   });
 });

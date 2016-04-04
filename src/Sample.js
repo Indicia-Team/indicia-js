@@ -152,6 +152,39 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
+   * Resizes all the images to thubnails.
+   * @param callback
+   */
+  resizeImages(callback) {
+    let imagesCount = 0;
+    // get number of images to resize - synchronous
+    this.occurrences.each((occurrence) => {
+      occurrence.images.each(() => {
+        imagesCount++;
+      });
+    });
+
+    if (!imagesCount) {
+      callback();
+      return;
+    }
+
+    // resize
+    // each occurrence
+    this.occurrences.each((occurrence) => {
+      // each image
+      occurrence.images.each((image) => {
+        image.resize(75, 75, () => {
+          imagesCount--;
+          if (imagesCount === 0) {
+            callback();
+          }
+        });
+      }, occurrence);
+    });
+  },
+
+  /**
    * Returns an object with attributes and their values flattened and
    * mapped for warehouse submission.
    *
