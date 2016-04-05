@@ -7,7 +7,7 @@
 		exports["Morel"] = factory(require("underscore"), require("backbone"));
 	else
 		root["Morel"] = factory(root["underscore"], root["backbone"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_3__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -61,94 +61,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _Manager = __webpack_require__(2);
-
-	var _Manager2 = _interopRequireDefault(_Manager);
-
-	var _Sample = __webpack_require__(7);
-
-	var _Sample2 = _interopRequireDefault(_Sample);
-
-	var _constants = __webpack_require__(4);
-
-	var _constants2 = _interopRequireDefault(_constants);
-
-	var _Occurrence = __webpack_require__(8);
-
-	var _Occurrence2 = _interopRequireDefault(_Occurrence);
-
-	var _DatabaseStorage = __webpack_require__(13);
-
-	var _DatabaseStorage2 = _interopRequireDefault(_DatabaseStorage);
-
-	var _LocalStorage = __webpack_require__(12);
-
-	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
-
-	var _PlainStorage = __webpack_require__(14);
-
-	var _PlainStorage2 = _interopRequireDefault(_PlainStorage);
-
-	var _Image = __webpack_require__(9);
-
-	var _Image2 = _interopRequireDefault(_Image);
-
-	var _Error = __webpack_require__(6);
-
-	var _Error2 = _interopRequireDefault(_Error);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var Morel = {
-	  VERSION: '3.1.0', // library version, generated/replaced by grunt
-
-	  Manager: _Manager2.default,
-	  Sample: _Sample2.default,
-	  Occurrence: _Occurrence2.default,
-	  DatabaseStorage: _DatabaseStorage2.default,
-	  LocalStorage: _LocalStorage2.default,
-	  PlainStorage: _PlainStorage2.default,
-	  Image: _Image2.default,
-	  Error: _Error2.default
-	};
-
-	_underscore2.default.extend(Morel, _constants2.default);
-
-	exports.default = Morel;
-
-/***/ },
-/* 1 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = undefined;
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * MANAGER
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
-
-
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(1);
+	var _Sample = __webpack_require__(3);
 
-	var _underscore2 = _interopRequireDefault(_underscore);
+	var _Sample2 = _interopRequireDefault(_Sample);
+
+	var _Occurrence = __webpack_require__(6);
+
+	var _Occurrence2 = _interopRequireDefault(_Occurrence);
+
+	var _Storage = __webpack_require__(10);
+
+	var _Storage2 = _interopRequireDefault(_Storage);
+
+	var _DatabaseStorage = __webpack_require__(12);
+
+	var _DatabaseStorage2 = _interopRequireDefault(_DatabaseStorage);
+
+	var _LocalStorage = __webpack_require__(11);
+
+	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
+
+	var _PlainStorage = __webpack_require__(13);
+
+	var _PlainStorage2 = _interopRequireDefault(_PlainStorage);
+
+	var _Image = __webpack_require__(7);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Error = __webpack_require__(8);
+
+	var _Error2 = _interopRequireDefault(_Error);
 
 	var _constants = __webpack_require__(4);
 
@@ -158,31 +111,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(6);
-
-	var _Error2 = _interopRequireDefault(_Error);
-
-	var _Sample = __webpack_require__(7);
-
-	var _Sample2 = _interopRequireDefault(_Sample);
-
-	var _Occurrence = __webpack_require__(8);
-
-	var _Occurrence2 = _interopRequireDefault(_Occurrence);
-
-	var _Storage = __webpack_require__(11);
-
-	var _Storage2 = _interopRequireDefault(_Storage);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Manager = function () {
-	  function Manager() {
+	var Morel = function () {
+	  function Morel() {
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    _classCallCheck(this, Manager);
+	    _classCallCheck(this, Morel);
 
 	    this.options = options;
 
@@ -200,212 +137,184 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // storage functions
 
 
-	  _createClass(Manager, [{
+	  _createClass(Morel, [{
 	    key: 'get',
-	    value: function get(model, callback) {
-	      this.storage.get(model, callback);
+	    value: function get(model, callback, options) {
+	      this.storage.get(model, callback, options);
 	    }
 	  }, {
 	    key: 'getAll',
-	    value: function getAll(callback) {
-	      this.storage.getAll(callback);
+	    value: function getAll(callback, options) {
+	      this.storage.getAll(callback, options);
 	    }
 	  }, {
 	    key: 'set',
-	    value: function set(model, callback) {
-	      model._manager = this; // set the manager on new model
-	      this.storage.set(model, callback);
+	    value: function set(model, callback, options) {
+	      model.manager = this; // set the manager on new model
+	      this.storage.set(model, callback, options);
 	    }
 	  }, {
 	    key: 'remove',
-	    value: function remove(model, callback) {
-	      this.storage.remove(model, callback);
+	    value: function remove(model, callback, options) {
+	      this.storage.remove(model, callback, options);
 	    }
 	  }, {
 	    key: 'has',
-	    value: function has(model, callback) {
-	      this.storage.has(model, callback);
+	    value: function has(model, callback, options) {
+	      this.storage.has(model, callback, options);
 	    }
 	  }, {
 	    key: 'clear',
-	    value: function clear(callback) {
-	      this.storage.clear(callback);
-	    }
-	  }, {
-	    key: 'sync',
-	    value: function sync(model, callback) {
-	      var that = this;
-
-	      if (model instanceof _Sample2.default) {
-	        if (!model.metadata.synchronising) {
-	          model.metadata.synchronising = true;
-	          that.sendStored(model, function (err) {
-	            model.metadata.synchronising = false;
-	            callback && callback(err);
-	          });
-	        }
-	        return;
-	      }
-
-	      this.get(model, function (err, sample) {
-	        if (err) {
-	          callback && callback(err);
-	          return;
-	        }
-
-	        if (!sample.metadata.synchronising) {
-	          sample.metadata.synchronising = true;
-	          that.sendStored(sample, function (sendErr) {
-	            sample.metadata.synchronising = false;
-	            callback && callback(sendErr);
-	          });
-	        }
-	      });
+	    value: function clear(callback, options) {
+	      this.storage.clear(callback, options);
 	    }
 	  }, {
 	    key: 'syncAll',
-	    value: function syncAll(callback) {
-	      var that = this;
-	      if (!this.synchronising) {
-	        this.synchronising = true;
-	        this.sendAllStored(function (err) {
-	          that.synchronising = false;
-	          callback && callback(err);
+	    value: function syncAll(collection) {
+	      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	      function syncEach(collection) {
+	        var toWait = [];
+	        collection.each(function (model) {
+	          var promise = model.save(null, { remote: true });
+	          toWait.push(promise);
 	        });
-	      } else {
-	        that.trigger('sync:done');
-	        callback && callback();
+
+	        var $ = _backbone2.default.$;
+	        $.when.apply($, toWait).done(function () {
+	          options.success && options.success();
+	        });
 	      }
-	    }
 
-	    /**
-	     * Sending all saved records.
-	     *
-	     * @returns {undefined}
-	     */
+	      if (collection) {
+	        syncEach(collection);
+	        return;
+	      }
 
-	  }, {
-	    key: 'sendAllStored',
-	    value: function sendAllStored(callback) {
-	      var that = this;
-	      this.getAll(function (err, samples) {
+	      // get all models to submit
+	      this.getAll(function (err, receivedCollection) {
 	        if (err) {
-	          that.trigger('sync:error');
-	          callback(err);
+	          callback && callback(err);
 	          return;
 	        }
 
-	        that.trigger('sync:request');
-
-	        // shallow copy
-	        var remainingSamples = _underscore2.default.extend([], samples.models);
-
-	        // recursively loop through samples
-	        for (var i = 0; i < remainingSamples.length; i++) {
-	          var sample = remainingSamples[i];
-	          if (sample.validate() || sample.getSyncStatus() === _constants2.default.SYNCED) {
-	            remainingSamples.splice(i, 1);
-	            i--; // return the cursor
-	            continue;
-	          }
-
-	          that.sendStored(sample, function (sendErr, sendSample) {
-	            if (sendErr) {
-	              that.trigger('sync:error');
-	              callback(sendErr);
-	              return;
-	            }
-
-	            for (var k = 0; k < remainingSamples.length; k++) {
-	              if (remainingSamples[k].id === sendSample.id || remainingSamples[k].cid === sendSample.cid) {
-	                remainingSamples.splice(k, 1);
-	                break;
-	              }
-	            }
-
-	            if (remainingSamples.length === 0) {
-	              // finished
-	              that.trigger('sync:done');
-	              callback();
-	            }
-	          });
-	        }
-
-	        if (!remainingSamples.length) {
-	          that.trigger('sync:done');
-	          callback();
-	        }
+	        syncEach(receivedCollection);
 	      });
 	    }
-	  }, {
-	    key: 'sendStored',
-	    value: function sendStored(sample, callback) {
-	      var that = this;
 
+	    /**
+	     * Synchronises the model with the remote server.
+	     * @param method
+	     * @param model
+	     * @param options
+	     */
+
+	  }, {
+	    key: 'sync',
+	    value: function sync(method, model, options) {
 	      // don't resend
-	      if (sample.getSyncStatus() === _constants2.default.SYNCED) {
-	        sample.trigger('sync:done');
-	        callback && callback(null, sample);
-	        return;
+	      if (model.getSyncStatus() === _constants2.default.SYNCED || model.getSyncStatus() === _constants2.default.SYNCHRONISING) {
+	        return false;
 	      }
 
-	      // call user defined onSend function to modify and validate
-	      var stopSending = this.onSend && this.onSend(sample);
-	      if (stopSending) {
-	        callback && callback(null, sample);
-	        return;
-	      }
+	      options.url = model.manager.options.url; // get the URL
 
-	      sample.metadata.synchronising = true;
-	      sample.trigger('sync:request');
-
-	      this.send(sample, function (err) {
-	        sample.metadata.synchronising = false;
-	        if (err) {
-	          sample.trigger('sync:error');
-	          callback && callback(err);
-	          return;
-	        }
-
-	        // update sample
-	        sample.metadata.warehouse_id = 1;
-	        sample.metadata.server_on = new Date();
-	        sample.metadata.synced_on = new Date();
-
+	      // on success update the model and save to local storage
+	      var _success = options.success;
+	      options.success = function (successModel, request, successOptions) {
 	        // resize images to snapshots
-	        that._resizeImages(sample, function () {
-	          // save sample
-	          that.set(sample, function (setErr) {
-	            if (setErr) {
-	              sample.trigger('sync:error');
-	              callback && callback(setErr);
-	              return;
+	        successModel.resizeImages(function () {
+	          // save model
+	          successModel.save(null, {
+	            success: function success() {
+	              successModel.trigger('sync');
+	              _success && _success(model, null, successOptions);
+	            },
+	            error: function error(saveErr) {
+	              successModel.trigger('error');
+	              successOptions.error && successOptions.error(saveErr);
 	            }
-
-	            sample.trigger('sync:done');
-	            callback && callback(null, sample);
 	          });
 	        });
-	      });
+	      };
+
+	      var xhr = Morel.prototype.post.apply(model.manager, [model, options]);
+	      return xhr;
 	    }
 
 	    /**
-	     * Sends the saved record
-	     *
-	     * @param recordKey
-	     * @param callback
-	     * @param onError
+	     * Posts a record to remote server.
+	     * @param model
+	     * @param options
 	     */
 
 	  }, {
-	    key: 'send',
-	    value: function send(sample, callback) {
-	      var flattened = sample.flatten(this._flattener);
+	    key: 'post',
+	    value: function post(model, options) {
+	      // call user defined onSend function to modify
+	      var stopSending = this.onSend && this.onSend(model);
+	      if (stopSending) {
+	        // return since user says invalid
+	        return false;
+	      }
+
+	      model.metadata.synchronising = true;
+
+	      // on success
+	      var success = options.success;
+	      options.success = function () {
+	        model.metadata.synchronising = false;
+
+	        // update model
+	        model.metadata.warehouse_id = 1;
+	        model.metadata.server_on = new Date();
+	        model.metadata.synced_on = new Date();
+
+	        success && success(model, null, options);
+	      };
+
+	      // on error
+	      var error = options.error;
+	      options.error = function (xhr, textStatus, errorThrown) {
+	        model.metadata.synchronising = false;
+	        model.trigger('error');
+
+	        options.textStatus = textStatus;
+	        options.errorThrown = errorThrown;
+	        if (error) error.call(options.context, xhr, textStatus, errorThrown);
+	      };
+
+	      // AJAX post
+	      var formData = this._getModelFormData(model);
+	      var xhr = options.xhr = _backbone2.default.ajax({
+	        url: options.url,
+	        type: 'POST',
+	        data: formData,
+	        processData: false,
+	        contentType: false,
+	        success: options.success,
+	        error: options.error
+	      });
+	      model.trigger('request', model, xhr, options);
+	      return xhr;
+	    }
+	  }, {
+	    key: '_attachListeners',
+	    value: function _attachListeners() {
+	      var that = this;
+	      this.storage.on('update', function () {
+	        that.trigger('update');
+	      });
+	    }
+	  }, {
+	    key: '_getModelFormData',
+	    value: function _getModelFormData(model) {
+	      var flattened = model.flatten(this._flattener);
 	      var formData = new FormData();
 
 	      // append images
 	      var occCount = 0;
-	      sample.occurrences.each(function (occurrence) {
+	      model.occurrences.each(function (occurrence) {
 	        var imgCount = 0;
 	        occurrence.images.each(function (image) {
 	          var data = image.get('data');
@@ -428,53 +337,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // Add authentication
 	      formData = this.appendAuth(formData);
-
-	      this._post(formData, function (err) {
-	        callback(err, sample);
-	      });
-	    }
-
-	    /**
-	     * Submits the record.
-	     */
-
-	  }, {
-	    key: '_post',
-	    value: function _post(formData, callback) {
-	      var ajax = new XMLHttpRequest();
-
-	      ajax.onreadystatechange = function () {
-	        var error = null;
-	        if (ajax.readyState === XMLHttpRequest.DONE) {
-	          var status = '' + ajax.status;
-	          switch (true) {
-	            case /2\d\d/.test(status):
-	              callback && callback();
-	              break;
-	            case /4\d\d/.test(status):
-	              error = new _Error2.default(ajax.response);
-	              callback && callback(error);
-	              break;
-	            default:
-	              error = new _Error2.default({
-	                message: 'Unknown problem while sending request.',
-	                number: ajax.status
-	              });
-	              callback && callback(error);
-	          }
-	        }
-	      };
-
-	      ajax.open('POST', this.options.url);
-	      ajax.send(formData);
-	    }
-	  }, {
-	    key: '_attachListeners',
-	    value: function _attachListeners() {
-	      var that = this;
-	      this.storage.on('update', function () {
-	        that.trigger('update');
-	      });
+	      return formData;
 	    }
 	  }, {
 	    key: '_flattener',
@@ -498,7 +361,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      for (attr in attributes) {
 	        if (!keys[attr]) {
 	          if (attr !== 'email' && attr !== 'usersecret') {
-	            console.warn('morel.Manager: no such key: ' + attr);
+	            console.warn('Morel: no such key: ' + attr);
 	          }
 	          flattened[attr] = attributes[attr];
 	          continue;
@@ -529,7 +392,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (keys[attr].values) {
 	          if (typeof keys[attr].values === 'function') {
 	            var fullOptions = _underscore2.default.extend(options, {
-	              flattener: Manager.prototype._flattener,
+	              flattener: Morel.prototype._flattener,
 	              flattened: flattened
 	            });
 
@@ -544,36 +407,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      return flattened;
-	    }
-	  }, {
-	    key: '_resizeImages',
-	    value: function _resizeImages(sample, callback) {
-	      var imagesCount = 0;
-	      // get number of images to resize - synchronous
-	      sample.occurrences.each(function (occurrence) {
-	        occurrence.images.each(function () {
-	          imagesCount++;
-	        });
-	      });
-
-	      if (!imagesCount) {
-	        callback();
-	        return;
-	      }
-
-	      // resize
-	      // each occurrence
-	      sample.occurrences.each(function (occurrence) {
-	        // each image
-	        occurrence.images.each(function (image) {
-	          image.resize(75, 75, function () {
-	            imagesCount--;
-	            if (imagesCount === 0) {
-	              callback();
-	            }
-	          });
-	        }, occurrence);
-	      });
 	    }
 
 	    /**
@@ -635,18 +468,386 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }]);
 
-	  return Manager;
+	  return Morel;
 	}();
 
-	_underscore2.default.extend(Manager.prototype, _backbone2.default.Events);
+	_underscore2.default.extend(Morel.prototype, _backbone2.default.Events);
 
-	exports.default = Manager;
+	_underscore2.default.extend(Morel, _constants2.default, {
+	  VERSION: '3.1.0', // library version, generated/replaced by grunt
+
+	  Sample: _Sample2.default,
+	  Occurrence: _Occurrence2.default,
+	  DatabaseStorage: _DatabaseStorage2.default,
+	  LocalStorage: _LocalStorage2.default,
+	  PlainStorage: _PlainStorage2.default,
+	  Image: _Image2.default,
+	  Error: _Error2.default
+	});
+
+	exports.default = Morel;
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _backbone = __webpack_require__(2);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _constants = __webpack_require__(4);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Occurrence = __webpack_require__(6);
+
+	var _Occurrence2 = _interopRequireDefault(_Occurrence);
+
+	var _Collection = __webpack_require__(9);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * SAMPLE
+	 *
+	 * Refers to the event in which the sightings were observed, in other
+	 * words it describes the place, date, people, environmental conditions etc.
+	 * Within a sample, you can have zero or more occurrences which refer to each
+	 * species sighted as part of the sample.
+	 **********************************************************************/
+
+
+	var Sample = _backbone2.default.Model.extend({
+	  Occurrence: _Occurrence2.default,
+
+	  constructor: function constructor() {
+	    var _this = this;
+
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments[1];
+
+	    var that = this;
+	    var attrs = attributes;
+
+	    var defaultAttrs = {
+	      date: new Date(),
+	      location_type: 'latlon'
+	    };
+
+	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
+
+	    options || (options = {});
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    if (options.manager) {
+	      this.manager = options.manager;
+	      this.sync = this.manager.sync;
+	    } else if (this.manager) {
+	      this.sync = this.manager.sync;
+	    }
+
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date(),
+	        updated_on: new Date(),
+
+	        warehouse_id: null,
+
+	        synced_on: null, // set when fully initialized only
+	        server_on: null };
+	    }
+
+	    // updated on server
+	    if (options.occurrences) {
+	      (function () {
+	        var occurrences = [];
+	        _underscore2.default.each(options.occurrences, function (occ) {
+	          if (occ instanceof that.Occurrence) {
+	            occ._sample = that;
+	            occurrences.push(occ);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(occ, { _sample: that });
+	            occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
+	          }
+	        });
+	        _this.occurrences = new _Collection2.default(occurrences, {
+	          model: _this.Occurrence
+	        });
+	      })();
+	    } else {
+	      this.occurrences = new _Collection2.default([], {
+	        model: this.Occurrence
+	      });
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+
+
+	  /**
+	   * Saves the record to the record manager and if valid syncs it with DB
+	   * Returns on success: model, response, options
+	   */
+	  save: function save(attrs) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var model = this;
+
+	    if (!this.manager) {
+	      // invalid - we need manager
+	      return false;
+	    }
+
+	    // only update local cache and DB
+	    if (!options.remote) {
+	      // todo: add attrs if passed to model
+	      var req = this.manager.set(this, function (err) {
+	        if (err) {
+	          options.error & options.error(err);
+	          return;
+	        }
+	        options.success && options.success(model, {}, options);
+	      });
+	      // todo should return a promise
+	      //return req;
+	      return true;
+	    }
+
+	    // remote
+	    var xhr = _backbone2.default.Model.prototype.save.apply(this, arguments);
+	    return xhr;
+	  },
+	  destroy: function destroy(callback) {
+	    if (this.manager) {
+	      this.manager.remove(this, callback);
+	    } else {
+	      // remove from all collections it belongs
+	      _backbone2.default.Model.prototype.destroy.call(this);
+	      callback && callback();
+	    }
+	  },
+	  validate: function validate(attributes) {
+	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
+
+	    var sample = {};
+	    var occurrences = {};
+
+	    // location
+	    if (!attrs.location) {
+	      sample.location = 'can\'t be blank';
+	    }
+
+	    // location type
+	    if (!attrs.location_type) {
+	      sample.location_type = 'can\'t be blank';
+	    }
+
+	    // date
+	    if (!attrs.date) {
+	      sample.date = 'can\'t be blank';
+	    } else {
+	      var date = new Date(attrs.date);
+	      if (date === 'Invalid Date' || date > new Date()) {
+	        sample.date = new Date(date) > new Date() ? 'future date' : 'invalid';
+	      }
+	    }
+
+	    // occurrences
+	    if (this.occurrences.length === 0) {
+	      sample.occurrences = 'no occurrences';
+	    } else {
+	      this.occurrences.each(function (occurrence) {
+	        var errors = occurrence.validate();
+	        if (errors) {
+	          var occurrenceID = occurrence.id || occurrence.cid;
+	          occurrences[occurrenceID] = errors;
+	        }
+	      });
+	    }
+
+	    if (!_underscore2.default.isEmpty(sample) || !_underscore2.default.isEmpty(occurrences)) {
+	      var errors = {
+	        sample: sample,
+	        occurrences: occurrences
+	      };
+	      return errors;
+	    }
+
+	    return null;
+	  },
+
+
+	  /**
+	   * Resizes all the images to thubnails.
+	   * @param callback
+	   */
+	  resizeImages: function resizeImages(callback) {
+	    var imagesCount = 0;
+	    // get number of images to resize - synchronous
+	    this.occurrences.each(function (occurrence) {
+	      occurrence.images.each(function () {
+	        imagesCount++;
+	      });
+	    });
+
+	    if (!imagesCount) {
+	      callback();
+	      return;
+	    }
+
+	    // resize
+	    // each occurrence
+	    this.occurrences.each(function (occurrence) {
+	      // each image
+	      occurrence.images.each(function (image) {
+	        image.resize(75, 75, function () {
+	          imagesCount--;
+	          if (imagesCount === 0) {
+	            callback();
+	          }
+	        });
+	      }, occurrence);
+	    });
+	  },
+
+
+	  /**
+	   * Returns an object with attributes and their values flattened and
+	   * mapped for warehouse submission.
+	   *
+	   * @param flattener
+	   * @returns {*}
+	   */
+	  flatten: function flatten(flattener) {
+	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
+
+	    // occurrences
+	    _underscore2.default.extend(flattened, this.occurrences.flatten(flattener));
+	    return flattened;
+	  },
+	  toJSON: function toJSON() {
+	    var data = {
+	      id: this.id,
+	      cid: this.cid,
+	      metadata: this.metadata,
+	      attributes: this.attributes,
+	      occurrences: this.occurrences.toJSON()
+	    };
+
+	    return data;
+	  },
+
+
+	  /**
+	   * Sync statuses:
+	   * synchronising, synced, local, server, changed_locally, changed_server, conflict
+	   */
+	  getSyncStatus: function getSyncStatus() {
+	    var meta = this.metadata;
+	    // on server
+	    if (meta.synchronising) {
+	      return _constants2.default.SYNCHRONISING;
+	    }
+
+	    if (meta.warehouse_id) {
+	      // fully initialized
+	      if (meta.synced_on) {
+	        // changed_locally
+	        if (meta.synced_on < meta.updated_on) {
+	          // changed_server - conflict!
+	          if (meta.synced_on < meta.server_on) {
+	            return _constants2.default.CONFLICT;
+	          }
+	          return _constants2.default.CHANGED_LOCALLY;
+	          // changed_server
+	        } else if (meta.synced_on < meta.server_on) {
+	            return _constants2.default.CHANGED_SERVER;
+	          }
+	        return _constants2.default.SYNCED;
+
+	        // partially initialized - we know the record exists on
+	        // server but has not yet been downloaded
+	      }
+	      return _constants2.default.SERVER;
+
+	      // local only
+	    }
+	    return _constants2.default.LOCAL;
+	  },
+
+
+	  /**
+	   * Detach all the listeners.
+	   */
+	  offAll: function offAll() {
+	    this._events = {};
+	    this.occurrences.offAll();
+	    for (var i = 0; i < this.occurrences.data.length; i++) {
+	      this.occurrences.models[i].offAll();
+	    }
+	  }
+	});
+
+	/**
+	 * Warehouse attributes and their values.
+	 */
+	Sample.keys = {
+	  id: { id: 'id' },
+	  survey: { id: 'survey_id' },
+	  date: { id: 'date' },
+	  comment: { id: 'comment' },
+	  image: { id: 'image' },
+	  location: { id: 'entered_sref' },
+	  location_type: {
+	    id: 'entered_sref_system',
+	    values: {
+	      british: 'OSGB', // for British National Grid
+	      irish: 'OSIE', // for Irish Grid
+	      latlon: 4326 }
+	  },
+	  // for Latitude and Longitude in decimal form (WGS84 datum)
+	  location_name: { id: 'location_name' },
+	  deleted: { id: 'deleted' }
+	};
+
+	exports.default = Sample;
 
 /***/ },
 /* 4 */
@@ -840,37 +1041,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 6 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	/** *********************************************************************
-	 * ERROR
-	 **********************************************************************/
-
-	var Error = function Error(options) {
-	  _classCallCheck(this, Error);
-
-	  if (typeof options === 'string') {
-	    this.number = -1;
-	    this.message = options;
-	    return;
-	  }
-
-	  this.number = options.number || -1;
-	  this.message = options.message || '';
-	};
-
-	exports.default = Error;
-
-/***/ },
-/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -880,247 +1050,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(3);
-
-	var _backbone2 = _interopRequireDefault(_backbone);
-
-	var _underscore = __webpack_require__(1);
-
-	var _underscore2 = _interopRequireDefault(_underscore);
-
-	var _constants = __webpack_require__(4);
-
-	var _constants2 = _interopRequireDefault(_constants);
-
-	var _helpers = __webpack_require__(5);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	var _Occurrence = __webpack_require__(8);
-
-	var _Occurrence2 = _interopRequireDefault(_Occurrence);
-
-	var _Collection = __webpack_require__(10);
-
-	var _Collection2 = _interopRequireDefault(_Collection);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/** *********************************************************************
-	 * SAMPLE
-	 *
-	 * Refers to the event in which the sightings were observed, in other
-	 * words it describes the place, date, people, environmental conditions etc.
-	 * Within a sample, you can have zero or more occurrences which refer to each
-	 * species sighted as part of the sample.
-	 **********************************************************************/
-
-
-	var Sample = _backbone2.default.Model.extend({
-	  Occurrence: _Occurrence2.default,
-
-	  constructor: function constructor(attributes, options) {
-	    var _this = this;
-
-	    var that = this;
-	    var attrs = attributes;
-
-	    if (!attrs) {
-	      attrs = {
-	        date: new Date(),
-	        location_type: 'latlon'
-	      };
-	    }
-
-	    options || (options = {});
-	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    this._manager = options._manager;
-	    this.attributes = {};
-	    if (options.collection) this.collection = options.collection;
-	    if (options.parse) attrs = this.parse(attrs, options) || {};
-	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
-	    this.set(attrs, options);
-	    this.changed = {};
-
-	    if (options.metadata) {
-	      this.metadata = options.metadata;
-	    } else {
-	      this.metadata = {
-	        created_on: new Date(),
-	        updated_on: new Date(),
-
-	        warehouse_id: null,
-
-	        synced_on: null, // set when fully initialized only
-	        server_on: null };
-	    }
-
-	    // updated on server
-	    if (options.occurrences) {
-	      (function () {
-	        var occurrences = [];
-	        _underscore2.default.each(options.occurrences, function (occ) {
-	          if (occ instanceof that.Occurrence) {
-	            occ._sample = that;
-	            occurrences.push(occ);
-	          } else {
-	            var modelOptions = _underscore2.default.extend(occ, { _sample: that });
-	            occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
-	          }
-	        });
-	        _this.occurrences = new _Collection2.default(occurrences, {
-	          model: _this.Occurrence
-	        });
-	      })();
-	    } else {
-	      this.occurrences = new _Collection2.default([], {
-	        model: this.Occurrence
-	      });
-	    }
-
-	    this.initialize.apply(this, arguments);
-	  },
-
-
-	  /**
-	   * Saves the record to the record manager and if valid syncs it with DB
-	   */
-	  save: function save(callback) {
-	    var that = this;
-	    if (!this._manager) {
-	      callback && callback(new Error({ message: 'No manager.' }));
-	      return;
-	    }
-
-	    this._manager.set(this, function () {
-	      // todo sync
-	      callback && callback(null, that);
-	    });
-	  },
-	  destroy: function destroy(callback) {
-	    if (this._manager) {
-	      this._manager.remove(this, callback);
-	    } else {
-	      // remove from all collections it belongs
-	      _backbone2.default.Model.prototype.destroy.call(this);
-	      callback && callback();
-	    }
-	  },
-
-
-	  /**
-	   * Returns an object with attributes and their values flattened and
-	   * mapped for warehouse submission.
-	   *
-	   * @param flattener
-	   * @returns {*}
-	   */
-	  flatten: function flatten(flattener) {
-	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
-
-	    // occurrences
-	    _underscore2.default.extend(flattened, this.occurrences.flatten(flattener));
-	    return flattened;
-	  },
-	  toJSON: function toJSON() {
-	    var data = {
-	      id: this.id,
-	      cid: this.cid,
-	      metadata: this.metadata,
-	      attributes: this.attributes,
-	      occurrences: this.occurrences.toJSON()
-	    };
-
-	    return data;
-	  },
-
-
-	  /**
-	   * Sync statuses:
-	   * synchronising, synced, local, server, changed_locally, changed_server, conflict
-	   */
-	  getSyncStatus: function getSyncStatus() {
-	    var meta = this.metadata;
-	    // on server
-	    if (meta.synchronising) {
-	      return _constants2.default.SYNCHRONISING;
-	    }
-
-	    if (meta.warehouse_id) {
-	      // fully initialized
-	      if (meta.synced_on) {
-	        // changed_locally
-	        if (meta.synced_on < meta.updated_on) {
-	          // changed_server - conflict!
-	          if (meta.synced_on < meta.server_on) {
-	            return _constants2.default.CONFLICT;
-	          }
-	          return _constants2.default.CHANGED_LOCALLY;
-	          // changed_server
-	        } else if (meta.synced_on < meta.server_on) {
-	            return _constants2.default.CHANGED_SERVER;
-	          }
-	        return _constants2.default.SYNCED;
-
-	        // partially initialized - we know the record exists on
-	        // server but has not yet been downloaded
-	      }
-	      return _constants2.default.SERVER;
-
-	      // local only
-	    }
-	    return _constants2.default.LOCAL;
-	  },
-
-
-	  /**
-	   * Detach all the listeners.
-	   */
-	  offAll: function offAll() {
-	    this._events = {};
-	    this.occurrences.offAll();
-	    for (var i = 0; i < this.occurrences.data.length; i++) {
-	      this.occurrences.models[i].offAll();
-	    }
-	  }
-	});
-
-	/**
-	 * Warehouse attributes and their values.
-	 */
-	Sample.keys = {
-	  id: { id: 'id' },
-	  survey: { id: 'survey_id' },
-	  date: { id: 'date' },
-	  comment: { id: 'comment' },
-	  image: { id: 'image' },
-	  location: { id: 'entered_sref' },
-	  location_type: {
-	    id: 'entered_sref_system',
-	    values: {
-	      british: 'OSGB', // for British National Grid
-	      irish: 'OSIE', // for Irish Grid
-	      latlon: 4326 }
-	  },
-	  // for Latitude and Longitude in decimal form (WGS84 datum)
-	  location_name: { id: 'location_name' },
-	  deleted: { id: 'deleted' }
-	};
-
-	exports.default = Sample;
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = undefined;
-
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
@@ -1132,11 +1062,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(9);
+	var _Image = __webpack_require__(7);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Collection = __webpack_require__(10);
+	var _Collection = __webpack_require__(9);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
@@ -1210,6 +1140,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	      _backbone2.default.Model.prototype.destroy.call(this);
 	    }
 	  },
+	  validate: function validate(attributes) {
+	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
+
+	    var errors = {};
+
+	    // location
+	    if (!attrs.taxon) {
+	      errors.taxon = 'can\'t be blank';
+	    }
+
+	    if (!_underscore2.default.isEmpty(errors)) {
+	      return errors;
+	    }
+
+	    return null;
+	  },
 	  toJSON: function toJSON() {
 	    var data = {
 	      id: this.id,
@@ -1253,7 +1199,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Occurrence;
 
 /***/ },
-/* 9 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1263,7 +1209,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
@@ -1275,7 +1221,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(6);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1434,7 +1380,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
-/* 10 */
+/* 8 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/** *********************************************************************
+	 * ERROR
+	 **********************************************************************/
+
+	var Error = function Error(options) {
+	  _classCallCheck(this, Error);
+
+	  if (typeof options === 'string') {
+	    this.number = -1;
+	    this.message = options;
+	    return;
+	  }
+
+	  this.number = options.number || -1;
+	  this.message = options.message || '';
+	};
+
+	exports.default = Error;
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1444,7 +1421,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
@@ -1476,7 +1453,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Collection;
 
 /***/ },
-/* 11 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1497,23 +1474,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Error = __webpack_require__(6);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _Sample = __webpack_require__(7);
+	var _Sample = __webpack_require__(3);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Collection = __webpack_require__(10);
+	var _Collection = __webpack_require__(9);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
-	var _LocalStorage = __webpack_require__(12);
+	var _LocalStorage = __webpack_require__(11);
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
@@ -1550,7 +1527,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      for (var i = 0; i < keys.length; i++) {
 	        var current = data[keys[i]];
-	        var modelOptions = _underscore2.default.extend(current, { _manager: that.manager });
+	        var modelOptions = _underscore2.default.extend(current, { manager: that.manager });
 	        sample = new that.Sample(current.attributes, modelOptions);
 	        samples.push(sample);
 	      }
@@ -1569,14 +1546,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function get(model, callback) {
 	      var _this = this;
 
+	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+	      var that = this;
 	      if (!this.initialized) {
 	        this.on('init', function () {
-	          _this.get(model, callback);
+	          _this.get(model, callback, options);
 	        });
 	        return;
 	      }
 
 	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+
+	      // a non cached version straight from storage medium
+	      if (options.nonCached) {
+	        this.storage.get(key, function (err, data) {
+	          if (err) {
+	            callback(err);
+	            return;
+	          }
+	          var modelOptions = _underscore2.default.extend(data, { manager: that.manager });
+	          var sample = new that.Sample(data.attributes, modelOptions);
+	          callback(null, sample);
+	        });
+	        return;
+	      }
+
 	      callback(null, this.cache.get(key));
 	    }
 	  }, {
@@ -1643,7 +1638,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          callback && callback(err);
 	          return;
 	        }
-	        delete model._manager;
+	        delete model.manager;
 	        model.destroy(callback); // removes from cache
 	      });
 	    }
@@ -1711,7 +1706,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Storage;
 
 /***/ },
-/* 12 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1723,7 +1718,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Error = __webpack_require__(6);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1925,7 +1920,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = LocalStorage;
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1940,7 +1935,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _Error = __webpack_require__(6);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2286,7 +2281,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = DatabaseStorage;
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports) {
 
 	'use strict';

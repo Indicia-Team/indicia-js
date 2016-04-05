@@ -61,7 +61,7 @@ module.exports = function (config) {
   config.set({
     basePath: '../',
 
-    frameworks: ['mocha', 'chai'],
+    frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
       { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
@@ -127,6 +127,7 @@ module.exports = function (config) {
 
     plugins: [
       require('karma-webpack'),
+      require('karma-sinon'),
       require('karma-mocha'),
       require('karma-chai'),
       require('karma-phantomjs-launcher'),

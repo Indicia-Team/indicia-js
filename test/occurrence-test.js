@@ -26,16 +26,14 @@ describe('Occurrence', () => {
     expect(occurrence.validate).to.be.a('function');
   });
 
-  it('should validate taxa_taxon_list_id', () => {
+  it('should validate taxon', () => {
     const occurrence = new Occurrence();
     let invalids = occurrence.validate();
 
     expect(invalids).to.be.an('object');
-    expect(invalids.taxa_taxon_list_id).to.be.a('string');
+    expect(invalids.taxon).to.be.a('string');
 
-    occurrence.set('taxa_taxon_list_id', 1234);
-
-    console.error(occurrence.attributes)
+    occurrence.set('taxon', 1234);
 
     invalids = occurrence.validate();
     expect(invalids).to.be.null;

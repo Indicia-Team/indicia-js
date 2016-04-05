@@ -1,10 +1,26 @@
+import _ from 'underscore';
+
+import Morel from '../src/main';
+import DatabaseStorage from '../src/DatabaseStorage';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import Image from '../src/Image';
+import Error from '../src/Error';
 import Collection from '../src/Collection';
 import helpers from '../src/helpers';
 
+const options = {
+  url: '/mobile/submit',
+  appname: 'test',
+  appsecret: 'mytest',
+  website_id: 23,
+  survey_id: 42,
+};
+
 describe('Sample', () => {
+
+  const morel = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+
   it('new', () => {
     const sample = new Sample();
     expect(sample.id).to.be.a.string;

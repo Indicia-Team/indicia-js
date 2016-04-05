@@ -29,14 +29,19 @@ const Sample = Backbone.Model.extend({
 
     options || (options = {});
     this.cid = options.cid || helpers.getNewUUID();
-    this._manager = options._manager;
+    if (options.manager) {
+      this.manager = options.manager;
+      this.sync = this.manager.sync;
+    } else if (this.manager) {
+      this.sync = this.manager.sync;
+    }
+
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
     attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
     this.changed = {};
-
 
     if (options.metadata) {
       this.metadata = options.metadata;
@@ -77,23 +82,39 @@ const Sample = Backbone.Model.extend({
 
   /**
    * Saves the record to the record manager and if valid syncs it with DB
+   * Returns on success: model, response, options
    */
-  save(callback) {
-    const that = this;
-    if (!this._manager) {
-      callback && callback(new Error({ message: 'No manager.' }));
-      return;
+  save(attrs, options = {}) {
+    const model = this;
+
+    if (!this.manager) {
+      // invalid - we need manager
+      return false;
     }
 
-    this._manager.set(this, () => {
-      // todo sync
-      callback && callback(null, that);
-    });
+    // only update local cache and DB
+    if (!options.remote) {
+      // todo: add attrs if passed to model
+      const req = this.manager.set(this, (err) => {
+        if (err) {
+          options.error & options.error(err);
+          return;
+        }
+        options.success && options.success(model, {}, options);
+      });
+      // todo should return a promise
+      //return req;
+      return true;
+    }
+
+    // remote
+    const xhr = Backbone.Model.prototype.save.apply(this, arguments);
+    return xhr;
   },
 
   destroy(callback) {
-    if (this._manager) {
-      this._manager.remove(this, callback);
+    if (this.manager) {
+      this.manager.remove(this, callback);
     } else {
       // remove from all collections it belongs
       Backbone.Model.prototype.destroy.call(this);

@@ -78,8 +78,8 @@ const Occurrence = Backbone.Model.extend({
     const errors = {};
 
     // location
-    if (!attrs.taxa_taxon_list_id) {
-      errors.taxa_taxon_list_id = 'can\'t be blank';
+    if (!attrs.taxon) {
+      errors.taxon = 'can\'t be blank';
     }
 
     if (! _.isEmpty(errors)) {

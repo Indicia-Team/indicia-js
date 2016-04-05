@@ -34,7 +34,7 @@ class Storage {
 
       for (let i = 0; i < keys.length; i++) {
         const current = data[keys[i]];
-        const modelOptions = _.extend(current, { _manager: that.manager });
+        const modelOptions = _.extend(current, { manager: that.manager });
         sample = new that.Sample(current.attributes, modelOptions);
         samples.push(sample);
       }
@@ -48,15 +48,31 @@ class Storage {
     });
   }
 
-  get(model, callback) {
+  get(model, callback, options = {}) {
+    const that = this;
     if (!this.initialized) {
       this.on('init', () => {
-        this.get(model, callback);
+        this.get(model, callback, options);
       });
       return;
     }
 
     const key = typeof model === 'object' ? model.id || model.cid : model;
+
+    // a non cached version straight from storage medium
+    if (options.nonCached) {
+      this.storage.get(key, (err, data) => {
+        if (err) {
+          callback(err);
+          return;
+        }
+        const modelOptions = _.extend(data, { manager: that.manager });
+        const sample = new that.Sample(data.attributes, modelOptions);
+        callback(null, sample);
+      });
+      return;
+    }
+
     callback(null, this.cache.get(key));
   }
 
@@ -111,7 +127,7 @@ class Storage {
         callback && callback(err);
         return;
       }
-      delete model._manager;
+      delete model.manager;
       model.destroy(callback); // removes from cache
     });
   }

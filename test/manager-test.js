@@ -1,26 +1,21 @@
 import _ from 'underscore';
-import Manager from '../src/Manager';
+import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import PlainStorage from '../src/PlainStorage';
 import DatabaseStorage from '../src/DatabaseStorage';
 
-const URL = '/mobile/submit';
-const APPNAME = 'test';
-const APPSECRET = 'mytest';
-const WEBSITE_ID = 23;
-const SURVEY_ID = 42;
-
 const options = {
-  url: URL,
-  appname: APPNAME,
-  appsecret: APPSECRET,
-  website_id: WEBSITE_ID,
-  survey_id: SURVEY_ID,
+  url: '/mobile/submit',
+  appname: 'test',
+  appsecret: 'mytest',
+  website_id: 23,
+  survey_id: 42,
 };
 
 function tests(manager) {
   it('should have URL passed through options', () => {
+    const URL = options.url;
     expect(manager.options.url).to.be.equal(URL);
   });
 
@@ -129,12 +124,217 @@ function tests(manager) {
       });
     });
   });
+
+
+  describe('Synchronisation', () => {
+    let server;
+
+    const okResponse = [200, { 'Content-Type': 'text/html' }, ''];
+    const errResponse = [502, { 'Content-Type': 'text/html' }, ''];
+
+
+    function getRandomSample() {
+      const occurrence = new Occurrence({
+        taxon: 1234,
+      });
+      const sample = new Sample({
+        location: ' 12.12, -0.23',
+      }, {
+        occurrences: [occurrence],
+        manager,
+      });
+
+      return sample;
+    }
+
+    before(() => {
+      server = sinon.fakeServer.create();
+    });
+
+    after(() => {
+      server.restore();
+    });
+
+    afterEach((done) => {
+      manager.clear(done);
+    });
+
+    it('should return error if no manager', () => {
+      const sample = new Sample();
+      sample.save(null, {
+        error: (err) => {
+          expect(err).to.not.be.null;
+        },
+      });
+    });
+
+    it('should only save locally if not passed remote', (done) => {
+      const sample = getRandomSample();
+
+      sinon.spy(manager, 'sync');
+
+      const valid = sample.save(null, {
+        success: () => {
+          expect(manager.sync.calledOnce).to.be.false;
+          manager.sync.restore();
+          done();
+        },
+      });
+
+      expect(valid).to.be.true;
+    });
+
+    it('should send a record', (done) => {
+      const sample = getRandomSample();
+
+      const valid = sample.save(null, {
+        remote: true,
+        success: () => {
+          done();
+        },
+      });
+
+      expect(valid).to.be.an('object');
+
+      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respond();
+    });
+//
+//    it('should update remotely synced record', (done) => {
+//      const occurrence = new Occurrence({
+//        taxon: 1234,
+//      });
+//      const sample = new Sample({
+//        location: ' 12.12, -0.23',
+//      }, {
+//        occurrences: [occurrence],
+//        manager,
+//      });
+//
+//      sample.save(null, {
+//        remote: true,
+//        success: () => {
+//          manager.get(sample,
+//            (err, savedSample) => {
+//              expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
+//              done(err);
+//            },
+//            { nonCached: true }
+//          );
+//        },
+//      });
+//
+//      server.respondWith('POST', '/mobile/submit', okResponse);
+//      server.respond();
+//    });
+
+    it('should validate the record before remote sending it', () => {
+      const occurrence = new Occurrence();
+      const sample = new Sample(null, {
+        occurrences: [occurrence],
+        manager,
+      });
+
+      const valid = sample.save(null, { remote: true });
+      expect(valid).to.be.false;
+    });
+
+    it('should return error upon unsuccessful remote sync', (done) => {
+      const sample = getRandomSample();
+
+      const valid = sample.save(null, {
+        remote: true,
+        error: (model, xhr, errorThrown) => {
+          expect(errorThrown).to.not.be.null;
+          done();
+        },
+      });
+
+      expect(valid).to.be.an('object');
+
+      server.respondWith('POST', '/mobile/submit', errResponse);
+      server.respond();
+    });
+
+    it('should not double sync', (done) => {
+      const sample = getRandomSample();
+
+      let valid = sample.save(null, {
+        remote: true,
+        success: () => {
+          done();
+        },
+      });
+
+      expect(valid).to.be.an('object');
+
+      valid = sample.save(null, {
+        remote: true,
+        // should not be called
+        success: () => { expect(true).to.be.false; },
+        error: () => { expect(true).to.be.false; },
+      });
+
+      expect(valid).to.be.false;
+
+      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respond();
+    });
+
+    it('should sync all', (done) => {
+      manager.getAll((err, models) => {
+        // check if collection is empty
+        expect(models.length).to.be.equal(0);
+
+        // add two valid samples
+        const sample = getRandomSample();
+        const sample2 = getRandomSample();
+
+//        const req = sample.save();
+//        req.done(() => {
+//          const req2 = sample2.save();
+//          req.done(() => {
+//            expect(models.length).to.be.equal(0);
+//            done();
+//          });
+//        });
+        sinon.spy(manager, 'sync');
+
+        sample.save(null, {
+          success: () => {
+            sample2.save(null, {
+              success: () => {
+                expect(models.length).to.be.equal(2);
+                // synchronise collection
+                manager.syncAll(null, {
+                  success: () => {
+                   // expect(manager.sync.calledTwice).to.be.true;
+                    manager.sync.restore();
+
+                    // check sample status
+                    models.each((model) => {
+                      const status = model.getSyncStatus();
+                      expect(status).to.be.equal(Morel.SYNCED);
+                    });
+                    done();
+                  },
+                });
+
+                server.respondWith('POST', '/mobile/submit', okResponse);
+                server.respond();
+              },
+            });
+          },
+        });
+      });
+    });
+  });
 }
 
 describe('Manager', () => {
-  const manager = new Manager(options);
-  const plainStorageManager = new Manager(_.extend(options, { Storage: PlainStorage }));
-  const databaseStorageManager = new Manager(_.extend(options, { Storage: DatabaseStorage }));
+  const manager = new Morel(options);
+  const plainStorageManager = new Morel(_.extend(options, { Storage: PlainStorage }));
+  const databaseStorageManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
 
   // clean up
   after((done) => {
