@@ -151,8 +151,16 @@ function tests(manager) {
       server = sinon.fakeServer.create();
     });
 
+    beforeEach(() => {
+      sinon.spy(manager, 'sync');
+    });
+
     after(() => {
       server.restore();
+    });
+
+    afterEach(() => {
+      manager.sync.restore();
     });
 
     afterEach((done) => {
@@ -168,15 +176,12 @@ function tests(manager) {
       });
     });
 
-    it('should only save locally if not passed remote', (done) => {
+    it('should save locally', (done) => {
       const sample = getRandomSample();
-
-      sinon.spy(manager, 'sync');
 
       const valid = sample.save(null, {
         success: () => {
-          expect(manager.sync.calledOnce).to.be.false;
-          manager.sync.restore();
+          expect(manager.sync.called).to.be.false;
           done();
         },
       });
@@ -184,12 +189,13 @@ function tests(manager) {
       expect(valid).to.be.true;
     });
 
-    it('should send a record', (done) => {
+    it('should post with remote option', (done) => {
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
         remote: true,
         success: () => {
+          expect(manager.sync.calledOnce).to.be.true;
           done();
         },
       });
@@ -228,7 +234,7 @@ function tests(manager) {
 //      server.respond();
 //    });
 
-    it('should validate the record before remote sending it', () => {
+    it('should validate before remote sending', () => {
       const occurrence = new Occurrence();
       const sample = new Sample(null, {
         occurrences: [occurrence],
@@ -239,12 +245,13 @@ function tests(manager) {
       expect(valid).to.be.false;
     });
 
-    it('should return error upon unsuccessful remote sync', (done) => {
+    it('should return error if unsuccessful remote sync', (done) => {
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
         remote: true,
         error: (model, xhr, errorThrown) => {
+          expect(manager.sync.calledOnce).to.be.true;
           expect(errorThrown).to.not.be.null;
           done();
         },
@@ -298,7 +305,6 @@ function tests(manager) {
 //            done();
 //          });
 //        });
-        sinon.spy(manager, 'sync');
 
         sample.save(null, {
           success: () => {
@@ -308,8 +314,7 @@ function tests(manager) {
                 // synchronise collection
                 manager.syncAll(null, {
                   success: () => {
-                   // expect(manager.sync.calledTwice).to.be.true;
-                    manager.sync.restore();
+                     expect(manager.sync.calledTwice).to.be.true;
 
                     // check sample status
                     models.each((model) => {
