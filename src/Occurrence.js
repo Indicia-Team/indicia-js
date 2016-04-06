@@ -61,8 +61,8 @@ const Occurrence = Backbone.Model.extend({
     this._sample.save(callback);
   },
 
-  destroy(callback) {
-    if (this._sample) {
+  destroy(callback, options = {}) {
+    if (this._sample && !options.noSave) {
       this._sample.occurrences.remove(this);
       this.save(() => {
         callback && callback();

@@ -53,15 +53,16 @@ class Morel {
   }
 
   syncAll(collection, options = {}) {
-    function syncEach(collection) {
+    // sync all in collection
+    function syncEach(collectionToSync) {
       const toWait = [];
-      collection.each((model) => {
+      collectionToSync.each((model) => {
         const promise = model.save(null, { remote: true });
         toWait.push(promise);
       });
 
       const $ = Backbone.$;
-      $.when.apply($, toWait).done(() => {
+      $.when.apply($, toWait).then(() => {
         options.success && options.success();
       });
     }

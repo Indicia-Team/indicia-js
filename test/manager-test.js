@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
@@ -151,11 +152,16 @@ function tests(manager) {
       server = sinon.fakeServer.create();
     });
 
+    beforeEach(() => {
+      sinon.spy(manager, 'sync');
+    });
+
     after(() => {
       server.restore();
     });
 
     afterEach((done) => {
+      manager.sync.restore();
       manager.clear(done);
     });
 
@@ -168,28 +174,26 @@ function tests(manager) {
       });
     });
 
-    it('should only save locally if not passed remote', (done) => {
+    it('should save locally', (done) => {
       const sample = getRandomSample();
-
-      sinon.spy(manager, 'sync');
 
       const valid = sample.save(null, {
         success: () => {
-          expect(manager.sync.calledOnce).to.be.false;
-          manager.sync.restore();
+          expect(manager.sync.called).to.be.false;
           done();
         },
       });
 
-      expect(valid).to.be.true;
+      expect(valid).to.be.not.false;
     });
 
-    it('should send a record', (done) => {
+    it('should post with remote option', (done) => {
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
         remote: true,
         success: () => {
+          expect(manager.sync.calledOnce).to.be.true;
           done();
         },
       });
@@ -228,7 +232,7 @@ function tests(manager) {
 //      server.respond();
 //    });
 
-    it('should validate the record before remote sending it', () => {
+    it('should validate before remote sending', () => {
       const occurrence = new Occurrence();
       const sample = new Sample(null, {
         occurrences: [occurrence],
@@ -239,12 +243,13 @@ function tests(manager) {
       expect(valid).to.be.false;
     });
 
-    it('should return error upon unsuccessful remote sync', (done) => {
+    it('should return error if unsuccessful remote sync', (done) => {
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
         remote: true,
         error: (model, xhr, errorThrown) => {
+          expect(manager.sync.calledOnce).to.be.true;
           expect(errorThrown).to.not.be.null;
           done();
         },
@@ -258,10 +263,14 @@ function tests(manager) {
 
     it('should not double sync', (done) => {
       const sample = getRandomSample();
+      sinon.spy(Morel.prototype, 'post');
 
       let valid = sample.save(null, {
         remote: true,
         success: () => {
+          expect(manager.sync.calledTwice).to.be.true;
+          expect(Morel.prototype.post.calledOnce).to.be.true;
+          Morel.prototype.post.restore();
           done();
         },
       });
@@ -281,7 +290,7 @@ function tests(manager) {
       server.respond();
     });
 
-    it('should sync all', (done) => {
+    it('should post all', (done) => {
       manager.getAll((err, models) => {
         // check if collection is empty
         expect(models.length).to.be.equal(0);
@@ -289,45 +298,76 @@ function tests(manager) {
         // add two valid samples
         const sample = getRandomSample();
         const sample2 = getRandomSample();
+        const sample3 = getRandomSample();
+        _.each(_.clone(sample3.occurrences.models), (model) => {
+          model.destroy(null, { noSave: true });
+        });
 
-//        const req = sample.save();
-//        req.done(() => {
-//          const req2 = sample2.save();
-//          req.done(() => {
-//            expect(models.length).to.be.equal(0);
-//            done();
-//          });
-//        });
-        sinon.spy(manager, 'sync');
-
-        sample.save(null, {
-          success: () => {
-            sample2.save(null, {
+        server.respondWith('POST', '/mobile/submit', okResponse);
+        $.when(sample.save(), sample2.save(), sample3.save())
+          .then(() => {
+            expect(models.length).to.be.equal(3);
+            // synchronise collection
+            manager.syncAll(null, {
               success: () => {
-                expect(models.length).to.be.equal(2);
-                // synchronise collection
-                manager.syncAll(null, {
-                  success: () => {
-                   // expect(manager.sync.calledTwice).to.be.true;
-                    manager.sync.restore();
+                expect(manager.sync.calledTwice).to.be.true;
 
-                    // check sample status
-                    models.each((model) => {
-                      const status = model.getSyncStatus();
-                      expect(status).to.be.equal(Morel.SYNCED);
-                    });
-                    done();
-                  },
+                // check sample status
+                models.each((model) => {
+                  const status = model.getSyncStatus();
+                  if (model.cid === sample3.cid) {
+                    // invalid record (without occurrences)
+                    // should not be synced
+                    expect(status).to.be.equal(Morel.LOCAL);
+                  } else {
+                    expect(status).to.be.equal(Morel.SYNCED);
+                  }
                 });
-
-                server.respondWith('POST', '/mobile/submit', okResponse);
-                server.respond();
+                done();
               },
             });
-          },
-        });
+            server.respond();
+          });
       });
     });
+
+//
+//    it('should not double sync all', (done) => {
+//      // add two valid samples
+//      const sample = getRandomSample();
+//      const sample2 = getRandomSample();
+//
+//      server.respondWith('POST', '/mobile/submit', okResponse);
+//      sample.save(null, {
+//        success: () => {
+//          sample2.save(null, {
+//            success: () => {
+//              expect(models.length).to.be.equal(3);
+//              // synchronise collection
+//              manager.syncAll(null, {
+//                success: () => {
+//                  expect(manager.sync.calledTwice).to.be.true;
+//
+//                  // check sample status
+//                  models.each((model) => {
+//                    const status = model.getSyncStatus();
+//                    if (model.cid === sample3.cid) {
+//                      // invalid record (without occurrences)
+//                      // should not be synced
+//                      expect(status).to.be.equal(Morel.LOCAL);
+//                    } else {
+//                      expect(status).to.be.equal(Morel.SYNCED);
+//                    }
+//                  });
+//                  done();
+//                },
+//              });
+//              server.respond();
+//            },
+//          });
+//        },
+//      });
+//    });
   });
 }
 
