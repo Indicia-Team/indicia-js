@@ -36,6 +36,10 @@ const Sample = Backbone.Model.extend({
       this.sync = this.manager.sync;
     }
 
+    if (options.onSend) {
+      this.onSend = options.onSend;
+    }
+
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};

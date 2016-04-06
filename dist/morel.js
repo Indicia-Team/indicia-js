@@ -282,7 +282,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'post',
 	    value: function post(model, options) {
 	      // call user defined onSend function to modify
-	      var stopSending = this.onSend && this.onSend(model);
+	      var onSend = model.onSend || this.onSend;
+	      var stopSending = onSend && onSend(model);
 	      if (stopSending) {
 	        // return since user says invalid
 	        return false;
@@ -608,6 +609,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.sync = this.manager.sync;
 	    } else if (this.manager) {
 	      this.sync = this.manager.sync;
+	    }
+
+	    if (options.onSend) {
+	      this.onSend = options.onSend;
 	    }
 
 	    this.attributes = {};

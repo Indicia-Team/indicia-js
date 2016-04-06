@@ -150,7 +150,8 @@ class Morel {
    */
   post(model, options) {
     // call user defined onSend function to modify
-    const stopSending = this.onSend && this.onSend(model);
+    const onSend = model.onSend || this.onSend;
+    const stopSending = onSend && onSend(model);
     if (stopSending) {
       // return since user says invalid
       return false;
