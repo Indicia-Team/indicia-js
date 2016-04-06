@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("underscore"), require("backbone"));
+		module.exports = factory(require("jquery"), require("underscore"), require("backbone"));
 	else if(typeof define === 'function' && define.amd)
-		define("Morel", ["underscore", "backbone"], factory);
+		define("Morel", ["jquery", "underscore", "backbone"], factory);
 	else if(typeof exports === 'object')
-		exports["Morel"] = factory(require("underscore"), require("backbone"));
+		exports["Morel"] = factory(require("jquery"), require("underscore"), require("backbone"));
 	else
-		root["Morel"] = factory(root["underscore"], root["backbone"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__) {
+		root["Morel"] = factory(root["jquery"], root["underscore"], root["backbone"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_3__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -63,51 +63,55 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _underscore = __webpack_require__(1);
+	var _jquery = __webpack_require__(1);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(2);
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Sample = __webpack_require__(3);
+	var _Sample = __webpack_require__(4);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(6);
+	var _Occurrence = __webpack_require__(7);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
-	var _Storage = __webpack_require__(10);
+	var _Storage = __webpack_require__(11);
 
 	var _Storage2 = _interopRequireDefault(_Storage);
 
-	var _DatabaseStorage = __webpack_require__(12);
+	var _DatabaseStorage = __webpack_require__(13);
 
 	var _DatabaseStorage2 = _interopRequireDefault(_DatabaseStorage);
 
-	var _LocalStorage = __webpack_require__(11);
+	var _LocalStorage = __webpack_require__(12);
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
-	var _PlainStorage = __webpack_require__(13);
+	var _PlainStorage = __webpack_require__(14);
 
 	var _PlainStorage2 = _interopRequireDefault(_PlainStorage);
 
-	var _Image = __webpack_require__(7);
+	var _Image = __webpack_require__(8);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(9);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _constants = __webpack_require__(4);
+	var _constants = __webpack_require__(5);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -168,38 +172,62 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function clear(callback, options) {
 	      this.storage.clear(callback, options);
 	    }
+
+	    /**
+	     * Synchronises a collection
+	     * @param collection
+	     * @param options
+	     * @returns {*}
+	     */
+
 	  }, {
 	    key: 'syncAll',
-	    value: function syncAll(collection) {
-	      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    value: function syncAll(method, collection) {
+	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
-	      function syncEach(collection) {
+	      var returnPromise = new _jquery2.default.Deferred();
+
+	      // sync all in collection
+	      function syncEach(collectionToSync) {
 	        var toWait = [];
-	        collection.each(function (model) {
+	        collectionToSync.each(function (model) {
 	          var promise = model.save(null, { remote: true });
-	          toWait.push(promise);
+	          var passingPromise = new _jquery2.default.Deferred();
+	          if (!promise) {
+	            // model was invalid
+	            passingPromise.resolve();
+	          } else {
+	            // valid model, but in case it fails sync carry on
+	            promise.always(function () {
+	              passingPromise.resolve();
+	            });
+	          }
+	          toWait.push(passingPromise);
 	        });
 
-	        var $ = _backbone2.default.$;
-	        $.when.apply($, toWait).done(function () {
+	        var dfd = _jquery2.default.when.apply(_jquery2.default, toWait);
+	        dfd.then(function () {
+	          returnPromise.resolve();
 	          options.success && options.success();
 	        });
 	      }
 
 	      if (collection) {
 	        syncEach(collection);
-	        return;
+	        return returnPromise.promise();
 	      }
 
 	      // get all models to submit
 	      this.getAll(function (err, receivedCollection) {
 	        if (err) {
+	          returnPromise.reject();
 	          callback && callback(err);
 	          return;
 	        }
 
 	        syncEach(receivedCollection);
 	      });
+	      return returnPromise.promise();
 	    }
 
 	    /**
@@ -211,7 +239,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  }, {
 	    key: 'sync',
-	    value: function sync(method, model, options) {
+	    value: function sync(method, model) {
+	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
 	      // don't resend
 	      if (model.getSyncStatus() === _constants2.default.SYNCED || model.getSyncStatus() === _constants2.default.SYNCHRONISING) {
 	        return false;
@@ -501,6 +531,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -510,41 +546,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(2);
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
+	                                                                                                                                                                                                                                                   * SAMPLE
+	                                                                                                                                                                                                                                                   *
+	                                                                                                                                                                                                                                                   * Refers to the event in which the sightings were observed, in other
+	                                                                                                                                                                                                                                                   * words it describes the place, date, people, environmental conditions etc.
+	                                                                                                                                                                                                                                                   * Within a sample, you can have zero or more occurrences which refer to each
+	                                                                                                                                                                                                                                                   * species sighted as part of the sample.
+	                                                                                                                                                                                                                                                   **********************************************************************/
+
+
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(1);
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _constants = __webpack_require__(4);
+	var _constants = __webpack_require__(5);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Occurrence = __webpack_require__(6);
+	var _Occurrence = __webpack_require__(7);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
-	var _Collection = __webpack_require__(9);
+	var _Collection = __webpack_require__(10);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/** *********************************************************************
-	 * SAMPLE
-	 *
-	 * Refers to the event in which the sightings were observed, in other
-	 * words it describes the place, date, people, environmental conditions etc.
-	 * Within a sample, you can have zero or more occurrences which refer to each
-	 * species sighted as part of the sample.
-	 **********************************************************************/
-
 
 	var Sample = _backbone2.default.Model.extend({
 	  Occurrence: _Occurrence2.default,
@@ -626,6 +662,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * Returns on success: model, response, options
 	   */
 	  save: function save(attrs) {
+	    var _this2 = this;
+
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var model = this;
@@ -637,17 +675,25 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // only update local cache and DB
 	    if (!options.remote) {
-	      // todo: add attrs if passed to model
-	      var req = this.manager.set(this, function (err) {
-	        if (err) {
-	          options.error & options.error(err);
-	          return;
-	        }
-	        options.success && options.success(model, {}, options);
-	      });
-	      // todo should return a promise
-	      //return req;
-	      return true;
+	      var _ret2 = function () {
+	        // todo: add attrs if passed to model
+	        var deferred = _backbone2.default.$.Deferred();
+
+	        _this2.manager.set(_this2, function (err) {
+	          if (err) {
+	            deferred.reject(err);
+	            options.error && options.error(err);
+	            return;
+	          }
+	          deferred.resolve(model, {}, options);
+	          options.success && options.success(model, {}, options);
+	        });
+	        return {
+	          v: deferred.promise()
+	        };
+	      }();
+
+	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
 	    }
 
 	    // remote
@@ -850,7 +896,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Sample;
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -869,7 +915,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1040,7 +1086,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1050,23 +1096,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(2);
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(1);
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(7);
+	var _Image = __webpack_require__(8);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Collection = __webpack_require__(9);
+	var _Collection = __webpack_require__(10);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
@@ -1131,7 +1177,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this._sample.save(callback);
 	  },
 	  destroy: function destroy(callback) {
-	    if (this._sample) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    if (this._sample && !options.noSave) {
 	      this._sample.occurrences.remove(this);
 	      this.save(function () {
 	        callback && callback();
@@ -1199,7 +1247,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Occurrence;
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1209,19 +1257,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(2);
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(1);
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(9);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1380,7 +1428,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1411,7 +1459,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Error;
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1421,11 +1469,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(2);
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(1);
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -1453,7 +1501,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Collection;
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1470,27 +1518,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _underscore = __webpack_require__(1);
+	var _underscore = __webpack_require__(2);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(2);
+	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(9);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _Sample = __webpack_require__(3);
+	var _Sample = __webpack_require__(4);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Collection = __webpack_require__(9);
+	var _Collection = __webpack_require__(10);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
-	var _LocalStorage = __webpack_require__(11);
+	var _LocalStorage = __webpack_require__(12);
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
@@ -1706,7 +1754,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Storage;
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1718,7 +1766,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(9);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1920,7 +1968,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = LocalStorage;
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1935,7 +1983,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(9);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2281,7 +2329,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = DatabaseStorage;
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 	'use strict';
