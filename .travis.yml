@@ -10,7 +10,6 @@ before_script:
   - sleep 3 # give xvfb some time to start
 script:
   - grunt
-  - grunt karma:local
   - grunt karma:sauce
 notifications:
   email: false
