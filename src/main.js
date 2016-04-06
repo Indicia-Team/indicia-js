@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import Backbone from 'backbone';
 import Sample from './Sample';
@@ -52,35 +53,56 @@ class Morel {
     this.storage.clear(callback, options);
   }
 
-  syncAll(collection, options = {}) {
+  /**
+   * Synchronises a collection
+   * @param collection
+   * @param options
+   * @returns {*}
+   */
+  syncAll(method, collection, options = {}) {
+    const returnPromise = new $.Deferred();
+
     // sync all in collection
     function syncEach(collectionToSync) {
       const toWait = [];
       collectionToSync.each((model) => {
         const promise = model.save(null, { remote: true });
-        toWait.push(promise);
+        const passingPromise = new $.Deferred();
+        if (!promise) {
+          // model was invalid
+          passingPromise.resolve();
+        } else {
+          // valid model, but in case it fails sync carry on
+          promise.always(() => {
+            passingPromise.resolve();
+          });
+        }
+        toWait.push(passingPromise);
       });
 
-      const $ = Backbone.$;
-      $.when.apply($, toWait).then(() => {
+      const dfd = $.when.apply($, toWait);
+      dfd.then(() => {
+        returnPromise.resolve();
         options.success && options.success();
       });
     }
 
     if (collection) {
       syncEach(collection);
-      return;
+      return returnPromise.promise();
     }
 
     // get all models to submit
     this.getAll((err, receivedCollection) => {
       if (err) {
+        returnPromise.reject();
         callback && callback(err);
         return;
       }
 
       syncEach(receivedCollection);
     });
+    return returnPromise.promise();
   }
 
   /**
@@ -89,7 +111,7 @@ class Morel {
    * @param model
    * @param options
    */
-  sync(method, model, options) {
+  sync(method, model, options = {}) {
     // don't resend
     if (model.getSyncStatus() === CONST.SYNCED ||
       model.getSyncStatus() === CONST.SYNCHRONISING) {
