@@ -13,6 +13,7 @@ module.exports = {
     umdNamedDefine: true,
   },
   externals: {
+    jquery: 'jquery',
     backbone: 'backbone',
     underscore: 'underscore',
   },
