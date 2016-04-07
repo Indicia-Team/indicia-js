@@ -72,6 +72,22 @@ const ImageModel = Backbone.Model.extend({
       });
   },
 
+  /**
+   * Adds a thumbnail to image model.
+   * @param callback
+   * @param options
+   */
+  addThumbnail(callback, options = {}) {
+    const that = this;
+    ImageModel.getDataURI(this.attributes.data, (err, data) => {
+      that.set('thumbnail', data);
+      callback && callback();
+    }, {
+      width: 60 || options.width,
+      height: 60 || options.height,
+    });
+  },
+
   toJSON() {
     const data = {
       id: this.id,
@@ -91,21 +107,40 @@ _.extend(ImageModel, {
    * @param onSaveSuccess
    * @returns {number}
    */
-  toString(file, callback) {
+  getDataURI(file, callback, options = {}) {
+    // file paths
+    if (typeof file === 'string') {
+      // get extension
+      const fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+      ImageModel.resize(file, fileType, options.width, options.height, (err, image, dataURI) => {
+        callback(null, dataURI, fileType);
+      });
+      return;
+    }
+
+    // file inputs
     if (!window.FileReader) {
       const message = 'No File Reader';
       const error = new Error(message);
       console.error(message);
 
-      return callback(error);
+      callback(error);
+      return;
     }
 
     const reader = new FileReader();
     reader.onload = function (event) {
-      callback(null, event.target.result, file.type);
+      if (options.width || options.height) {
+        // resize
+        ImageModel.resize(file, file.type, options.width, options.height, (err, image, dataURI) => {
+          callback(null, dataURI, file.type);
+        });
+      } else {
+        callback(null, event.target.result, file.type);
+      }
     };
     reader.readAsDataURL(file);
-    return null;
+    return;
   },
 
   /**

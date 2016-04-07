@@ -1262,6 +1262,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
+	                                                                                                                                                                                                                                                   * IMAGE
+	                                                                                                                                                                                                                                                   **********************************************************************/
+
+
 	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -1279,11 +1284,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _Error2 = _interopRequireDefault(_Error);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/** *********************************************************************
-	 * IMAGE
-	 **********************************************************************/
-
 
 	var ImageModel = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
@@ -1350,6 +1350,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	      callback && callback(null, image, data);
 	    });
 	  },
+
+
+	  /**
+	   * Adds a thumbnail to image model.
+	   * @param callback
+	   * @param options
+	   */
+	  addThumbnail: function addThumbnail(callback) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var that = this;
+	    ImageModel.getDataURI(this.attributes.data, function (err, data) {
+	      that.set('thumbnail', data);
+	      callback && callback();
+	    }, {
+	      width: 60 || options.width,
+	      height: 60 || options.height
+	    });
+	  },
 	  toJSON: function toJSON() {
 	    var data = {
 	      id: this.id,
@@ -1370,21 +1389,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {number}
 	   */
 
-	  toString: function toString(file, callback) {
+	  getDataURI: function getDataURI(file, callback) {
+	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+	    // file paths
+	    if (typeof file === 'string') {
+	      var _ret = function () {
+	        // get extension
+	        var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+	        ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
+	          callback(null, dataURI, fileType);
+	        });
+	        return {
+	          v: void 0
+	        };
+	      }();
+
+	      if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	    }
+
+	    // file inputs
 	    if (!window.FileReader) {
 	      var message = 'No File Reader';
 	      var error = new _Error2.default(message);
 	      console.error(message);
 
-	      return callback(error);
+	      callback(error);
+	      return;
 	    }
 
 	    var reader = new FileReader();
 	    reader.onload = function (event) {
-	      callback(null, event.target.result, file.type);
+	      if (options.width || options.height) {
+	        // resize
+	        ImageModel.resize(file, file.type, options.width, options.height, function (err, image, dataURI) {
+	          callback(null, dataURI, file.type);
+	        });
+	      } else {
+	        callback(null, event.target.result, file.type);
+	      }
 	    };
 	    reader.readAsDataURL(file);
-	    return null;
+	    return;
 	  },
 
 
