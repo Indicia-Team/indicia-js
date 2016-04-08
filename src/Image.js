@@ -7,6 +7,9 @@ import _ from 'underscore';
 import helpers from './helpers';
 import Error from './Error';
 
+const THUMBNAIL_WIDTH = 100; // px
+const THUMBNAIL_HEIGHT = 100; // px
+
 const ImageModel = Backbone.Model.extend({
   constructor(attributes = {}, options = {}) {
     let attrs = attributes;
@@ -79,12 +82,28 @@ const ImageModel = Backbone.Model.extend({
    */
   addThumbnail(callback, options = {}) {
     const that = this;
+    // check if data source is dataURI
+
+    const re = /^data:/i;
+    if (re.test(this.attributes.data)) {
+      ImageModel.resize(
+        this.attributes.data,
+        this.attributes.type,
+        THUMBNAIL_WIDTH || options.width,
+        THUMBNAIL_WIDTH || options.width,
+        (err, image, data) => {
+          that.set('thumbnail', data);
+          callback && callback();
+        });
+      return;
+    }
+
     ImageModel.getDataURI(this.attributes.data, (err, data) => {
       that.set('thumbnail', data);
       callback && callback();
     }, {
-      width: 60 || options.width,
-      height: 60 || options.height,
+      width: THUMBNAIL_WIDTH || options.width,
+      height: THUMBNAIL_HEIGHT || options.height,
     });
   },
 
@@ -101,6 +120,7 @@ const ImageModel = Backbone.Model.extend({
 _.extend(ImageModel, {
   /**
    * Transforms and resizes an image file into a string.
+   * Can accept file image path and a file input file.
    *
    * @param onError
    * @param file
@@ -132,7 +152,7 @@ _.extend(ImageModel, {
     reader.onload = function (event) {
       if (options.width || options.height) {
         // resize
-        ImageModel.resize(file, file.type, options.width, options.height, (err, image, dataURI) => {
+        ImageModel.resize(event.target.result, file.type, options.width, options.height, (err, image, dataURI) => {
           callback(null, dataURI, file.type);
         });
       } else {

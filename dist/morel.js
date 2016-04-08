@@ -250,22 +250,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      options.url = model.manager.options.url; // get the URL
 
 	      // on success update the model and save to local storage
-	      var _success = options.success;
+	      var success = options.success;
 	      options.success = function (successModel, request, successOptions) {
-	        // resize images to snapshots
-	        successModel.resizeImages(function () {
-	          // save model
-	          successModel.save(null, {
-	            success: function success() {
-	              successModel.trigger('sync');
-	              _success && _success(model, null, successOptions);
-	            },
-	            error: function error(saveErr) {
-	              successModel.trigger('error');
-	              successOptions.error && successOptions.error(saveErr);
-	            }
-	          });
-	        });
+	        successModel.trigger('sync');
+	        success && success(model, null, successOptions);
 	      };
 
 	      var xhr = Morel.prototype.post.apply(model.manager, [model, options]);
@@ -766,40 +754,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Resizes all the images to thubnails.
-	   * @param callback
-	   */
-	  resizeImages: function resizeImages(callback) {
-	    var imagesCount = 0;
-	    // get number of images to resize - synchronous
-	    this.occurrences.each(function (occurrence) {
-	      occurrence.images.each(function () {
-	        imagesCount++;
-	      });
-	    });
-
-	    if (!imagesCount) {
-	      callback();
-	      return;
-	    }
-
-	    // resize
-	    // each occurrence
-	    this.occurrences.each(function (occurrence) {
-	      // each image
-	      occurrence.images.each(function (image) {
-	        image.resize(75, 75, function () {
-	          imagesCount--;
-	          if (imagesCount === 0) {
-	            callback();
-	          }
-	        });
-	      }, occurrence);
-	    });
-	  },
-
-
-	  /**
 	   * Returns an object with attributes and their values flattened and
 	   * mapped for warehouse submission.
 	   *
@@ -1285,6 +1239,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var THUMBNAIL_WIDTH = 100; // px
+	var THUMBNAIL_HEIGHT = 100; // px
+
 	var ImageModel = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
 	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
@@ -1361,12 +1318,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
+	    // check if data source is dataURI
+
+	    var re = /^data:/i;
+	    if (re.test(this.attributes.data)) {
+	      ImageModel.resize(this.attributes.data, this.attributes.type, THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width, function (err, image, data) {
+	        that.set('thumbnail', data);
+	        callback && callback();
+	      });
+	      return;
+	    }
+
 	    ImageModel.getDataURI(this.attributes.data, function (err, data) {
 	      that.set('thumbnail', data);
 	      callback && callback();
 	    }, {
-	      width: 60 || options.width,
-	      height: 60 || options.height
+	      width: THUMBNAIL_WIDTH || options.width,
+	      height: THUMBNAIL_HEIGHT || options.height
 	    });
 	  },
 	  toJSON: function toJSON() {
@@ -1382,6 +1350,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	_underscore2.default.extend(ImageModel, {
 	  /**
 	   * Transforms and resizes an image file into a string.
+	   * Can accept file image path and a file input file.
 	   *
 	   * @param onError
 	   * @param file
@@ -1422,7 +1391,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    reader.onload = function (event) {
 	      if (options.width || options.height) {
 	        // resize
-	        ImageModel.resize(file, file.type, options.width, options.height, function (err, image, dataURI) {
+	        ImageModel.resize(event.target.result, file.type, options.width, options.height, function (err, image, dataURI) {
 	          callback(null, dataURI, file.type);
 	        });
 	      } else {

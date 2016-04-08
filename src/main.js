@@ -123,20 +123,8 @@ class Morel {
     // on success update the model and save to local storage
     const success = options.success;
     options.success = (successModel, request, successOptions) => {
-      // resize images to snapshots
-      successModel.resizeImages(() => {
-        // save model
-        successModel.save(null, {
-          success: () => {
-            successModel.trigger('sync');
-            success && success(model, null, successOptions);
-          },
-          error: (saveErr) => {
-            successModel.trigger('error');
-            successOptions.error && successOptions.error(saveErr);
-          },
-        });
-      });
+      successModel.trigger('sync');
+      success && success(model, null, successOptions);
     };
 
     const xhr = Morel.prototype.post.apply(model.manager, [model, options]);
