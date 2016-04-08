@@ -128,7 +128,7 @@ class Storage {
         return;
       }
       delete model.manager;
-      model.destroy(callback); // removes from cache
+      model.destroy().then(callback); // removes from cache
     });
   }
 

@@ -545,6 +545,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
+	var _jquery = __webpack_require__(1);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
 	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -591,12 +595,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    if (options.manager) {
-	      this.manager = options.manager;
-	      this.sync = this.manager.sync;
-	    } else if (this.manager) {
-	      this.sync = this.manager.sync;
-	    }
+	    this.manager = options.manager || this.manager;
+	    if (this.manager) this.sync = this.manager.sync;
 
 	    if (options.Occurrence) this.Occurrence = options.Occurrence;
 	    if (options.onSend) this.onSend = options.onSend;
@@ -627,10 +627,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var occurrences = [];
 	        _underscore2.default.each(options.occurrences, function (occ) {
 	          if (occ instanceof that.Occurrence) {
-	            occ._sample = that;
+	            occ.setSample(that);
 	            occurrences.push(occ);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(occ, { _sample: that });
+	            var modelOptions = _underscore2.default.extend(occ, { sample: that });
 	            occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
 	          }
 	        });
@@ -659,10 +659,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var model = this;
 
-	    if (!this.manager) {
-	      // invalid - we need manager
-	      return false;
-	    }
+	    if (!this.manager) return false;
 
 	    // only update local cache and DB
 	    if (!options.remote) {
@@ -691,14 +688,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var xhr = _backbone2.default.Model.prototype.save.apply(this, arguments);
 	    return xhr;
 	  },
-	  destroy: function destroy(callback) {
-	    if (this.manager) {
-	      this.manager.remove(this, callback);
+	  destroy: function destroy() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    var dfd = new _jquery2.default.Deferred();
+
+	    if (this.manager && !options.noSave) {
+	      // save the changes permanentely
+	      this.manager.remove(this, function (err) {
+	        if (err) {
+	          options.error && options.error(err);
+	          return;
+	        }
+	        dfd.resolve();
+	        options.success && options.success();
+	      });
 	    } else {
-	      // remove from all collections it belongs
-	      _backbone2.default.Model.prototype.destroy.call(this);
-	      callback && callback();
+	      // removes from all collections etc
+	      this.stopListening();
+	      this.trigger('destroy', this, this.collection, options);
+
+	      dfd.resolve();
+	      options.success && options.success();
 	    }
+
+	    return dfd.promise();
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
@@ -1053,6 +1067,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
+	var _jquery = __webpack_require__(1);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
 	var _backbone = __webpack_require__(3);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -1075,6 +1093,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
+
+
 	var Occurrence = _backbone2.default.Model.extend({
 	  Image: _Image2.default,
 	  constructor: function constructor() {
@@ -1087,7 +1110,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var attrs = attributes;
 
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    this.sample = options.sample;
+	    this.setSample(options.sample || this.sample);
 
 	    if (options.Image) this.Image = options.Image;
 
@@ -1111,10 +1134,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var images = [];
 	        _underscore2.default.each(options.images, function (image) {
 	          if (image instanceof _this.Image) {
-	            image._occurrence = that;
+	            image.setOccurrence(that);
 	            images.push(image);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(image, { _occurrence: that });
+	            var modelOptions = _underscore2.default.extend(image, { occurrence: that });
 	            images.push(new _this.Image(image.attributes, modelOptions));
 	          }
 	        });
@@ -1130,25 +1153,55 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.initialize.apply(this, arguments);
 	  },
-	  save: function save(callback) {
-	    if (!this.sample) {
-	      callback && callback(new Error({ message: 'No sample.' }));
-	      return;
-	    }
-
-	    this.sample.save(callback);
-	  },
-	  destroy: function destroy(callback) {
+	  save: function save(attrs) {
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
+	    if (!this.sample) return false;
+	    return this.sample.save(attrs, options);
+	  },
+	  destroy: function destroy() {
+	    var _this2 = this;
+
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    var dfd = new _jquery2.default.Deferred();
+
+	    // removes from all collections etc
+	    this.stopListening();
+	    this.trigger('destroy', this, this.collection, options);
+
 	    if (this.sample && !options.noSave) {
-	      this.sample.occurrences.remove(this);
-	      this.save(function () {
-	        callback && callback();
-	      });
+	      (function () {
+	        var success = options.success;
+	        options.success = function () {
+	          dfd.resolve();
+	          success && success();
+	        };
+
+	        // save the changes permanentely
+	        _this2.save(null, options);
+	      })();
 	    } else {
-	      _backbone2.default.Model.prototype.destroy.call(this);
+	      dfd.resolve();
+	      options.success && options.success();
 	    }
+
+	    return dfd.promise();
+	  },
+
+
+	  /**
+	   * Sets parent Sample.
+	   * @param occurrence
+	   */
+	  setSample: function setSample(sample) {
+	    if (!sample) return;
+
+	    var that = this;
+	    this.sample = sample;
+	    this.sample.on('destroy', function () {
+	      that.destroy({ noSave: true });
+	    });
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
@@ -1194,9 +1247,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Warehouse attributes and their values.
 	 */
-	/** *********************************************************************
-	 * OCCURRENCE
-	 **********************************************************************/
 	Occurrence.keys = {
 	  taxon: {
 	    id: ''
@@ -1223,6 +1273,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   * IMAGE
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
+
+	var _jquery = __webpack_require__(1);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
 
 	var _backbone = __webpack_require__(3);
 
@@ -1258,7 +1312,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    this._occurrence = options._occurrence;
+	    this.setOccurrence(options.occurrence || this.occurrence);
+
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
 	    if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -1276,23 +1331,55 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.initialize.apply(this, arguments);
 	  },
-	  save: function save(callback) {
-	    if (!this._occurrence) {
-	      callback && callback(new _Error2.default({ message: 'No occurrence.' }));
-	      return;
+	  save: function save(attrs) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    if (!this.occurrence) return false;
+	    return this.occurrence.save(attrs, options);
+	  },
+	  destroy: function destroy() {
+	    var _this = this;
+
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    var dfd = new _jquery2.default.Deferred();
+
+	    // removes from all collections etc
+	    this.stopListening();
+	    this.trigger('destroy', this, this.collection, options);
+
+	    if (this.occurrence && !options.noSave) {
+	      (function () {
+	        var success = options.success;
+	        options.success = function () {
+	          dfd.resolve();
+	          success && success();
+	        };
+
+	        // save the changes permanentely
+	        _this.save(null, options);
+	      })();
+	    } else {
+	      dfd.resolve();
+	      options.success && options.success();
 	    }
 
-	    this._occurrence.save(callback);
+	    return dfd.promise();
 	  },
-	  destroy: function destroy(callback) {
-	    if (this._occurrence) {
-	      this._occurrence.images.remove(this);
-	      this.save(function () {
-	        callback && callback();
-	      });
-	    } else {
-	      _backbone2.default.Model.prototype.destroy.call(this);
-	    }
+
+
+	  /**
+	   * Sets parent Occurrence.
+	   * @param occurrence
+	   */
+	  setOccurrence: function setOccurrence(occurrence) {
+	    if (!occurrence) return;
+
+	    var that = this;
+	    this.occurrence = occurrence;
+	    this.occurrence.on('destroy', function () {
+	      that.destroy({ noSave: true });
+	    });
 	  },
 
 
@@ -1366,7 +1453,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // file paths
 	    if (typeof file === 'string') {
-	      var _ret = function () {
+	      var _ret2 = function () {
 	        // get extension
 	        var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
 	        ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
@@ -1377,7 +1464,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	      }();
 
-	      if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
 	    }
 
 	    // file inputs
@@ -1710,7 +1797,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          return;
 	        }
 	        delete model.manager;
-	        model.destroy(callback); // removes from cache
+	        model.destroy().then(callback); // removes from cache
 	      });
 	    }
 	  }, {

@@ -1,6 +1,7 @@
 /** *********************************************************************
  * IMAGE
  **********************************************************************/
+import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 
@@ -20,7 +21,8 @@ const ImageModel = Backbone.Model.extend({
     }
 
     this.cid = options.cid || helpers.getNewUUID();
-    this._occurrence = options._occurrence;
+    this.setOccurrence(options.occurrence || this.occurrence);
+
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -39,24 +41,47 @@ const ImageModel = Backbone.Model.extend({
     this.initialize.apply(this, arguments);
   },
 
-  save(callback) {
-    if (!this._occurrence) {
-      callback && callback(new Error({ message: 'No occurrence.' }));
-      return;
-    }
-
-    this._occurrence.save(callback);
+  save(attrs, options = {}) {
+    if (!this.occurrence) return false;
+    return this.occurrence.save(attrs, options);
   },
 
-  destroy(callback) {
-    if (this._occurrence) {
-      this._occurrence.images.remove(this);
-      this.save(() => {
-        callback && callback();
-      });
+  destroy(options = {}) {
+    const dfd = new $.Deferred();
+
+    // removes from all collections etc
+    this.stopListening();
+    this.trigger('destroy', this, this.collection, options);
+
+    if (this.occurrence && !options.noSave) {
+      const success = options.success;
+      options.success = () => {
+        dfd.resolve();
+        success && success();
+      };
+
+      // save the changes permanentely
+      this.save(null, options);
     } else {
-      Backbone.Model.prototype.destroy.call(this);
+      dfd.resolve();
+      options.success && options.success();
     }
+
+    return dfd.promise();
+  },
+
+  /**
+   * Sets parent Occurrence.
+   * @param occurrence
+   */
+  setOccurrence(occurrence) {
+    if (!occurrence) return;
+
+    const that = this;
+    this.occurrence = occurrence;
+    this.occurrence.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
   },
 
   /**

@@ -1,6 +1,7 @@
 /** *********************************************************************
  * OCCURRENCE
  **********************************************************************/
+import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 import helpers from './helpers';
@@ -14,7 +15,7 @@ const Occurrence = Backbone.Model.extend({
     let attrs = attributes;
 
     this.cid = options.cid || helpers.getNewUUID();
-    this.sample = options.sample;
+    this.setSample(options.sample || this.sample);
 
     if (options.Image) this.Image = options.Image;
 
@@ -37,10 +38,10 @@ const Occurrence = Backbone.Model.extend({
       const images = [];
       _.each(options.images, (image) => {
         if (image instanceof this.Image) {
-          image._occurrence = that;
+          image.setOccurrence(that);
           images.push(image);
         } else {
-          const modelOptions = _.extend(image, { _occurrence: that });
+          const modelOptions = _.extend(image, { occurrence: that });
           images.push(new this.Image(image.attributes, modelOptions));
         }
       });
@@ -56,24 +57,47 @@ const Occurrence = Backbone.Model.extend({
     this.initialize.apply(this, arguments);
   },
 
-  save(callback) {
-    if (!this.sample) {
-      callback && callback(new Error({ message: 'No sample.' }));
-      return;
-    }
-
-    this.sample.save(callback);
+  save(attrs, options = {}) {
+    if (!this.sample) return false;
+    return this.sample.save(attrs, options);
   },
 
-  destroy(callback, options = {}) {
+  destroy(options = {}) {
+    const dfd = new $.Deferred();
+
+    // removes from all collections etc
+    this.stopListening();
+    this.trigger('destroy', this, this.collection, options);
+
     if (this.sample && !options.noSave) {
-      this.sample.occurrences.remove(this);
-      this.save(() => {
-        callback && callback();
-      });
+      const success = options.success;
+      options.success = () => {
+        dfd.resolve();
+        success && success();
+      };
+
+      // save the changes permanentely
+      this.save(null, options);
     } else {
-      Backbone.Model.prototype.destroy.call(this);
+      dfd.resolve();
+      options.success && options.success();
     }
+
+    return dfd.promise();
+  },
+
+  /**
+   * Sets parent Sample.
+   * @param occurrence
+   */
+  setSample(sample) {
+    if (!sample) return;
+
+    const that = this;
+    this.sample = sample;
+    this.sample.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
   },
 
   validate(attributes) {

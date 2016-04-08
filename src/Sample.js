@@ -6,6 +6,7 @@
  * Within a sample, you can have zero or more occurrences which refer to each
  * species sighted as part of the sample.
  **********************************************************************/
+import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 import CONST from './constants';
@@ -28,12 +29,8 @@ const Sample = Backbone.Model.extend({
     attrs = _.extend(defaultAttrs, attrs);
 
     this.cid = options.cid || helpers.getNewUUID();
-    if (options.manager) {
-      this.manager = options.manager;
-      this.sync = this.manager.sync;
-    } else if (this.manager) {
-      this.sync = this.manager.sync;
-    }
+    this.manager = options.manager || this.manager;
+    if (this.manager) this.sync = this.manager.sync;
 
     if (options.Occurrence) this.Occurrence = options.Occurrence;
     if (options.onSend) this.onSend = options.onSend;
@@ -63,10 +60,10 @@ const Sample = Backbone.Model.extend({
       const occurrences = [];
       _.each(options.occurrences, (occ) => {
         if (occ instanceof that.Occurrence) {
-          occ._sample = that;
+          occ.setSample(that);
           occurrences.push(occ);
         } else {
-          const modelOptions = _.extend(occ, { _sample: that });
+          const modelOptions = _.extend(occ, { sample: that });
           occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
         }
       });
@@ -89,10 +86,7 @@ const Sample = Backbone.Model.extend({
   save(attrs, options = {}) {
     const model = this;
 
-    if (!this.manager) {
-      // invalid - we need manager
-      return false;
-    }
+    if (!this.manager) return false;
 
     // only update local cache and DB
     if (!options.remote) {
@@ -116,14 +110,29 @@ const Sample = Backbone.Model.extend({
     return xhr;
   },
 
-  destroy(callback) {
-    if (this.manager) {
-      this.manager.remove(this, callback);
+  destroy(options = {}) {
+    const dfd = new $.Deferred();
+
+    if (this.manager && !options.noSave) {
+      // save the changes permanentely
+      this.manager.remove(this, (err) => {
+        if (err) {
+          options.error && options.error(err);
+          return;
+        }
+        dfd.resolve();
+        options.success && options.success();
+      });
     } else {
-      // remove from all collections it belongs
-      Backbone.Model.prototype.destroy.call(this);
-      callback && callback();
+      // removes from all collections etc
+      this.stopListening();
+      this.trigger('destroy', this, this.collection, options);
+
+      dfd.resolve();
+      options.success && options.success();
     }
+
+    return dfd.promise();
   },
 
   validate(attributes) {

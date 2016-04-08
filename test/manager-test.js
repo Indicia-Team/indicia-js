@@ -300,7 +300,7 @@ function tests(manager) {
         const sample2 = getRandomSample();
         const sample3 = getRandomSample();
         _.each(_.clone(sample3.occurrences.models), (model) => {
-          model.destroy(null, { noSave: true });
+          model.destroy({ noSave: true });
         });
 
         server.respondWith('POST', '/mobile/submit', okResponse);
