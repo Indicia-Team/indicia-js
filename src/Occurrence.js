@@ -8,12 +8,16 @@ import Image from './Image';
 import Collection from './Collection';
 
 const Occurrence = Backbone.Model.extend({
-  constructor(attributes, options = {}) {
+  Image,
+  constructor(attributes = {}, options = {}) {
     const that = this;
-    let attrs = attributes || {};
+    let attrs = attributes;
 
     this.cid = options.cid || helpers.getNewUUID();
-    this._sample = options._sample;
+    this.sample = options.sample;
+
+    if (options.Image) this.Image = options.Image;
+
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -32,20 +36,20 @@ const Occurrence = Backbone.Model.extend({
     if (options.images) {
       const images = [];
       _.each(options.images, (image) => {
-        if (image instanceof Image) {
+        if (image instanceof this.Image) {
           image._occurrence = that;
           images.push(image);
         } else {
           const modelOptions = _.extend(image, { _occurrence: that });
-          images.push(new Image(image.attributes, modelOptions));
+          images.push(new this.Image(image.attributes, modelOptions));
         }
       });
       this.images = new Collection(images, {
-        model: Image,
+        model: this.Image,
       });
     } else {
       this.images = new Collection([], {
-        model: Image,
+        model: this.Image,
       });
     }
 
@@ -53,17 +57,17 @@ const Occurrence = Backbone.Model.extend({
   },
 
   save(callback) {
-    if (!this._sample) {
+    if (!this.sample) {
       callback && callback(new Error({ message: 'No sample.' }));
       return;
     }
 
-    this._sample.save(callback);
+    this.sample.save(callback);
   },
 
   destroy(callback, options = {}) {
-    if (this._sample && !options.noSave) {
-      this._sample.occurrences.remove(this);
+    if (this.sample && !options.noSave) {
+      this.sample.occurrences.remove(this);
       this.save(() => {
         callback && callback();
       });

@@ -578,7 +578,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _this = this;
 
 	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments[1];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
 	    var attrs = attributes;
@@ -590,7 +590,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
-	    options || (options = {});
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    if (options.manager) {
 	      this.manager = options.manager;
@@ -599,9 +598,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.sync = this.manager.sync;
 	    }
 
-	    if (options.onSend) {
-	      this.onSend = options.onSend;
-	    }
+	    if (options.Occurrence) this.Occurrence = options.Occurrence;
+	    if (options.onSend) this.onSend = options.onSend;
 
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
@@ -1078,16 +1076,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Occurrence = _backbone2.default.Model.extend({
-	  constructor: function constructor(attributes) {
+	  Image: _Image2.default,
+	  constructor: function constructor() {
 	    var _this = this;
 
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
-	    var attrs = attributes || {};
+	    var attrs = attributes;
 
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    this._sample = options._sample;
+	    this.sample = options.sample;
+
+	    if (options.Image) this.Image = options.Image;
+
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
 	    if (options.parse) attrs = this.parse(attrs, options) || {};
@@ -1107,39 +1110,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	      (function () {
 	        var images = [];
 	        _underscore2.default.each(options.images, function (image) {
-	          if (image instanceof _Image2.default) {
+	          if (image instanceof _this.Image) {
 	            image._occurrence = that;
 	            images.push(image);
 	          } else {
 	            var modelOptions = _underscore2.default.extend(image, { _occurrence: that });
-	            images.push(new _Image2.default(image.attributes, modelOptions));
+	            images.push(new _this.Image(image.attributes, modelOptions));
 	          }
 	        });
 	        _this.images = new _Collection2.default(images, {
-	          model: _Image2.default
+	          model: _this.Image
 	        });
 	      })();
 	    } else {
 	      this.images = new _Collection2.default([], {
-	        model: _Image2.default
+	        model: this.Image
 	      });
 	    }
 
 	    this.initialize.apply(this, arguments);
 	  },
 	  save: function save(callback) {
-	    if (!this._sample) {
+	    if (!this.sample) {
 	      callback && callback(new Error({ message: 'No sample.' }));
 	      return;
 	    }
 
-	    this._sample.save(callback);
+	    this.sample.save(callback);
 	  },
 	  destroy: function destroy(callback) {
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	    if (this._sample && !options.noSave) {
-	      this._sample.occurrences.remove(this);
+	    if (this.sample && !options.noSave) {
+	      this.sample.occurrences.remove(this);
 	      this.save(function () {
 	        callback && callback();
 	      });

@@ -16,7 +16,7 @@ import Collection from './Collection';
 const Sample = Backbone.Model.extend({
   Occurrence,
 
-  constructor(attributes = {}, options) {
+  constructor(attributes = {}, options = {}) {
     const that = this;
     let attrs = attributes;
 
@@ -27,7 +27,6 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
-    options || (options = {});
     this.cid = options.cid || helpers.getNewUUID();
     if (options.manager) {
       this.manager = options.manager;
@@ -36,9 +35,8 @@ const Sample = Backbone.Model.extend({
       this.sync = this.manager.sync;
     }
 
-    if (options.onSend) {
-      this.onSend = options.onSend;
-    }
+    if (options.Occurrence) this.Occurrence = options.Occurrence;
+    if (options.onSend) this.onSend = options.onSend;
 
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
