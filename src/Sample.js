@@ -135,6 +135,16 @@ const Sample = Backbone.Model.extend({
     return dfd.promise();
   },
 
+  /**
+   * Adds an occurrence to sample and sets the occurrence's sample to this.
+   * @param occurrence
+   */
+  addOccurrence(occurrence) {
+    if (!occurrence) return;
+    occurrence.setSample(this);
+    this.occurrences.push(occurrence);
+  },
+
   validate(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 

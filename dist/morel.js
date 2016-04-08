@@ -714,6 +714,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    return dfd.promise();
 	  },
+
+
+	  /**
+	   * Adds an occurrence to sample and sets the occurrence's sample to this.
+	   * @param occurrence
+	   */
+	  addOccurrence: function addOccurrence(occurrence) {
+	    if (!occurrence) return;
+	    occurrence.setSample(this);
+	    this.occurrences.push(occurrence);
+	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
 
@@ -1202,6 +1213,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.sample.on('destroy', function () {
 	      that.destroy({ noSave: true });
 	    });
+	  },
+
+
+	  /**
+	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * @param image
+	   */
+	  addImage: function addImage(image) {
+	    if (!image) return;
+	    image.setOccurrence(this);
+	    this.images.add(image);
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);

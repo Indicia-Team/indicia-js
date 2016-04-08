@@ -100,6 +100,16 @@ const Occurrence = Backbone.Model.extend({
     });
   },
 
+  /**
+   * Adds an image to occurrence and sets the images's occurrence to this.
+   * @param image
+   */
+  addImage(image) {
+    if (!image) return;
+    image.setOccurrence(this);
+    this.images.add(image);
+  },
+
   validate(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
