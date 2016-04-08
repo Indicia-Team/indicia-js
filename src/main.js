@@ -96,7 +96,7 @@ class Morel {
     this.getAll((err, receivedCollection) => {
       if (err) {
         returnPromise.reject();
-        callback && callback(err);
+        options.error && options.error(err);
         return;
       }
 
@@ -123,8 +123,10 @@ class Morel {
     // on success update the model and save to local storage
     const success = options.success;
     options.success = (successModel, request, successOptions) => {
-      successModel.trigger('sync');
-      success && success(model, null, successOptions);
+      successModel.save().then(() => {
+        successModel.trigger('sync');
+        success && success(model, null, successOptions);
+      });
     };
 
     const xhr = Morel.prototype.post.apply(model.manager, [model, options]);
@@ -171,19 +173,29 @@ class Morel {
       if (error) error.call(options.context, xhr, textStatus, errorThrown);
     };
 
-    // AJAX post
-    const formData = this._getModelFormData(model);
-    const xhr = options.xhr = Backbone.ajax({
-      url: options.url,
-      type: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      success: options.success,
-      error: options.error,
+    const dfd = new $.Deferred();
+    this._getModelFormData(model, (err, formData) => {
+      // AJAX post
+      const xhr = options.xhr = Backbone.ajax({
+        url: options.url,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: options.success,
+        error: options.error,
+      });
+
+      xhr.done((data, textStatus, jqXHR) => {
+        dfd.resolve(data, textStatus, jqXHR);
+      });
+      xhr.fail((jqXHR, textStatus, errorThrown) => {
+        dfd.reject(jqXHR, textStatus, errorThrown);
+      });
+      model.trigger('request', model, xhr, options);
     });
-    model.trigger('request', model, xhr, options);
-    return xhr;
+
+    return dfd.promise();
   }
 
   _attachListeners() {
@@ -193,36 +205,75 @@ class Morel {
     });
   }
 
-  _getModelFormData(model) {
+  _getModelFormData(model, callback) {
     const flattened = model.flatten(this._flattener);
     let formData = new FormData();
 
     // append images
     let occCount = 0;
+    const occurrenceProcesses = [];
     model.occurrences.each((occurrence) => {
       let imgCount = 0;
+
+      const imageProcesses = [];
+
       occurrence.images.each((image) => {
+        const imageDfd = new $.Deferred();
+        imageProcesses.push(imageDfd);
+
         const data = image.get('data');
         const type = image.get('type');
 
-        const name = `sc:${occCount}::photo${imgCount}`;
-        const blob = helpers.dataURItoBlob(data, type);
-        const extension = type.split('/')[1];
-        formData.append(name, blob, `pic.${extension}`);
-        imgCount++;
+        function onSuccess(err, img, dataURI) {
+          const name = `sc:${occCount}::photo${imgCount}`;
+          const blob = helpers.dataURItoBlob(dataURI, type);
+          const extension = type.split('/')[1];
+          formData.append(name, blob, `pic.${extension}`);
+          imgCount++;
+          imageDfd.resolve();
+        }
+
+        if (!helpers.isDataURL(data)) {
+          const img = new window.Image(); // native one
+
+          img.onload = () => {
+            const width = img.width;
+            const height = img.height;
+            let canvas = null;
+
+            // Create a canvas with the desired dimensions
+            canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            // Scale and draw the source image to the canvas
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+            // Convert the canvas to a data URL in some format
+            onSuccess(null, img, canvas.toDataURL(type));
+          };
+
+          image.src = data;
+        } else {
+          onSuccess(null, null, data);
+        }
       });
+
+      occurrenceProcesses.push($.when.apply($, imageProcesses));
       occCount++;
     });
 
-    // append attributes
-    const keys = Object.keys(flattened);
-    for (let i = 0; i < keys.length; i++) {
-      formData.append(keys[i], flattened[keys[i]]);
-    }
+    $.when.apply($, occurrenceProcesses).then(() => {
+      // append attributes
+      const keys = Object.keys(flattened);
+      for (let i = 0; i < keys.length; i++) {
+        formData.append(keys[i], flattened[keys[i]]);
+      }
 
-    // Add authentication
-    formData = this.appendAuth(formData);
-    return formData;
+      // Add authentication
+      formData = this.appendAuth(formData);
+      callback(null, formData);
+    });
   }
 
   _flattener(attributes, options) {
