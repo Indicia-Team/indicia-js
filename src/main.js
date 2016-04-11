@@ -213,6 +213,8 @@ class Morel {
     let occCount = 0;
     const occurrenceProcesses = [];
     model.occurrences.each((occurrence) => {
+      // on async run occCount will be incremented before used for image name
+      const localOccCount = occCount;
       let imgCount = 0;
 
       const imageProcesses = [];
@@ -225,9 +227,20 @@ class Morel {
         const type = image.get('type');
 
         function onSuccess(err, img, dataURI) {
-          const name = `sc:${occCount}::photo${imgCount}`;
-          const blob = helpers.dataURItoBlob(dataURI, type);
-          formData.append(name, blob, `pic.${type}`);
+          const name = `sc:${localOccCount}::photo${imgCount}`;
+
+          // can provide both image/jpeg and jpeg
+          let extension = type;
+          let mediaType = type;
+          if (type.match(/image.*/)) {
+            extension = type.split('/')[1];
+          } else {
+            mediaType = `image/${mediaType}`;
+          }
+
+          const blob = helpers.dataURItoBlob(dataURI, mediaType);
+
+          formData.append(name, blob, `pic.${extension}`);
           imgCount++;
           imageDfd.resolve();
         }

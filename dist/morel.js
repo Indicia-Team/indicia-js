@@ -349,6 +349,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var occCount = 0;
 	      var occurrenceProcesses = [];
 	      model.occurrences.each(function (occurrence) {
+	        var localOccCount = occCount;
 	        var imgCount = 0;
 
 	        var imageProcesses = [];
@@ -361,9 +362,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var type = image.get('type');
 
 	          function onSuccess(err, img, dataURI) {
-	            var name = 'sc:' + occCount + '::photo' + imgCount;
-	            var blob = _helpers2.default.dataURItoBlob(dataURI, type);
-	            formData.append(name, blob, 'pic.' + type);
+	            var name = 'sc:' + localOccCount + '::photo' + imgCount;
+
+	            // can provide both image/jpeg and jpeg
+	            var extension = type;
+	            var mediaType = type;
+	            if (type.match(/image.*/)) {
+	              extension = type.split('/')[1];
+	            } else {
+	              mediaType = 'image/' + mediaType;
+	            }
+
+	            var blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
+
+	            formData.append(name, blob, 'pic.' + extension);
 	            imgCount++;
 	            imageDfd.resolve();
 	          }
