@@ -390,7 +390,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                onSuccess(null, img, canvas.toDataURL(type));
 	              };
 
-	              image.src = data;
+	              img.src = data;
 	            })();
 	          } else {
 	            onSuccess(null, null, data);

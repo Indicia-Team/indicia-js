@@ -7,7 +7,7 @@ import Storage from './Storage';
 import DatabaseStorage from './DatabaseStorage';
 import LocalStorage from './LocalStorage';
 import PlainStorage from './PlainStorage';
-import Image from './Image';
+import ImageModel from './Image';
 import Error from './Error';
 import CONST from './constants';
 import helpers from './helpers';
@@ -253,7 +253,7 @@ class Morel {
             onSuccess(null, img, canvas.toDataURL(type));
           };
 
-          image.src = data;
+          img.src = data;
         } else {
           onSuccess(null, null, data);
         }
@@ -404,7 +404,7 @@ _.extend(Morel, CONST, {
   DatabaseStorage,
   LocalStorage,
   PlainStorage,
-  Image,
+  Image: ImageModel,
   Error,
 });
 
