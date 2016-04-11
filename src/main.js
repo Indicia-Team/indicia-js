@@ -227,8 +227,7 @@ class Morel {
         function onSuccess(err, img, dataURI) {
           const name = `sc:${occCount}::photo${imgCount}`;
           const blob = helpers.dataURItoBlob(dataURI, type);
-          const extension = type.split('/')[1];
-          formData.append(name, blob, `pic.${extension}`);
+          formData.append(name, blob, `pic.${type}`);
           imgCount++;
           imageDfd.resolve();
         }

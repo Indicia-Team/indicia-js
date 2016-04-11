@@ -363,8 +363,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          function onSuccess(err, img, dataURI) {
 	            var name = 'sc:' + occCount + '::photo' + imgCount;
 	            var blob = _helpers2.default.dataURItoBlob(dataURI, type);
-	            var extension = type.split('/')[1];
-	            formData.append(name, blob, 'pic.' + extension);
+	            formData.append(name, blob, 'pic.' + type);
 	            imgCount++;
 	            imageDfd.resolve();
 	          }
