@@ -156,9 +156,11 @@ _.extend(ImageModel, {
     // file paths
     if (typeof file === 'string') {
       // get extension
-      const fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+      let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+      if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
+
       ImageModel.resize(file, fileType, options.width, options.height, (err, image, dataURI) => {
-        callback(null, dataURI, fileType);
+        callback(null, dataURI, fileType, image.width, image.height);
       });
       return;
     }
@@ -178,10 +180,16 @@ _.extend(ImageModel, {
       if (options.width || options.height) {
         // resize
         ImageModel.resize(event.target.result, file.type, options.width, options.height, (err, image, dataURI) => {
-          callback(null, dataURI, file.type);
+          callback(null, dataURI, file.type, image.width, image.height);
         });
       } else {
-        callback(null, event.target.result, file.type);
+        const image = new window.Image(); // native one
+
+        image.onload = () => {
+          const type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
+          callback(null, event.target.result, type, image.width, image.height);
+        };
+        image.src = event.target.result;
       }
     };
     reader.readAsDataURL(file);
@@ -201,14 +209,17 @@ _.extend(ImageModel, {
     image.onload = () => {
       let width = image.width;
       let height = image.height;
+      const maxWidth = MAX_WIDTH || width;
+      const maxHeight = MAX_HEIGHT || height;
+
       let canvas = null;
       let res = null;
 
       // resizing
       if (width > height) {
-        res = width / MAX_WIDTH;
+        res = width / maxWidth;
       } else {
-        res = height / MAX_HEIGHT;
+        res = height / maxHeight;
       }
 
       width = width / res;

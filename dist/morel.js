@@ -349,6 +349,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var occCount = 0;
 	      var occurrenceProcesses = [];
 	      model.occurrences.each(function (occurrence) {
+	        // on async run occCount will be incremented before used for image name
 	        var localOccCount = occCount;
 	        var imgCount = 0;
 
@@ -1544,8 +1545,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _ret2 = function () {
 	        // get extension
 	        var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+	        if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
+
 	        ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
-	          callback(null, dataURI, fileType);
+	          callback(null, dataURI, fileType, image.width, image.height);
 	        });
 	        return {
 	          v: void 0
@@ -1570,10 +1573,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (options.width || options.height) {
 	        // resize
 	        ImageModel.resize(event.target.result, file.type, options.width, options.height, function (err, image, dataURI) {
-	          callback(null, dataURI, file.type);
+	          callback(null, dataURI, file.type, image.width, image.height);
 	        });
 	      } else {
-	        callback(null, event.target.result, file.type);
+	        (function () {
+	          var image = new window.Image(); // native one
+
+	          image.onload = function () {
+	            var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
+	            callback(null, event.target.result, type, image.width, image.height);
+	          };
+	          image.src = event.target.result;
+	        })();
 	      }
 	    };
 	    reader.readAsDataURL(file);
@@ -1594,14 +1605,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    image.onload = function () {
 	      var width = image.width;
 	      var height = image.height;
+	      var maxWidth = MAX_WIDTH || width;
+	      var maxHeight = MAX_HEIGHT || height;
+
 	      var canvas = null;
 	      var res = null;
 
 	      // resizing
 	      if (width > height) {
-	        res = width / MAX_WIDTH;
+	        res = width / maxWidth;
 	      } else {
-	        res = height / MAX_HEIGHT;
+	        res = height / maxHeight;
 	      }
 
 	      width = width / res;

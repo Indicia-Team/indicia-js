@@ -13,6 +13,7 @@ module.exports = function exports(config) {
     files: [
       { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
       { pattern: 'tests.webpack.js', watched: false },
+      { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
 
     preprocessors: {
