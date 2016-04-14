@@ -181,6 +181,7 @@ class Morel {
         data: formData,
         processData: false,
         contentType: false,
+        timeout: options.ajaxTimeout || 30000, // 30s
         success: options.success,
         error: options.error,
       });

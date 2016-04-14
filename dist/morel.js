@@ -95,10 +95,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
-	var _PlainStorage = __webpack_require__(14);
-
-	var _PlainStorage2 = _interopRequireDefault(_PlainStorage);
-
 	var _Image = __webpack_require__(8);
 
 	var _Image2 = _interopRequireDefault(_Image);
@@ -314,6 +310,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          data: formData,
 	          processData: false,
 	          contentType: false,
+	          timeout: options.ajaxTimeout || 30000, // 30s
 	          success: options.success,
 	          error: options.error
 	        });
@@ -566,7 +563,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Occurrence: _Occurrence2.default,
 	  DatabaseStorage: _DatabaseStorage2.default,
 	  LocalStorage: _LocalStorage2.default,
-	  PlainStorage: _PlainStorage2.default,
 	  Image: _Image2.default,
 	  Error: _Error2.default
 	});
@@ -2539,133 +2535,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}();
 
 	exports.default = DatabaseStorage;
-
-/***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	/** *********************************************************************
-	 * PLAIN STORAGE
-	 **********************************************************************/
-
-	var PlainStorage = function () {
-	  function PlainStorage() {
-	    _classCallCheck(this, PlainStorage);
-
-	    this.NAME = 'PlainStorage';
-
-	    this.storage = {};
-	  }
-
-	  /**
-	   * Gets an item from the storage.
-	   *
-	   * @param key
-	   */
-
-
-	  _createClass(PlainStorage, [{
-	    key: 'get',
-	    value: function get(key, callback) {
-	      var data = this.storage[key];
-	      callback(null, data);
-	    }
-
-	    /**
-	     * Returns all items from the storage;
-	     *
-	     * @returns {{}|*|m.Storage.storage}
-	     */
-
-	  }, {
-	    key: 'getAll',
-	    value: function getAll(callback) {
-	      var data = this.storage;
-	      callback(null, data);
-	    }
-
-	    /**
-	     * Sets an item in the storage.
-	     * Note: it overrides any existing key with the same name.
-	     *
-	     * @param key
-	     * @param data
-	     * @param callback
-	     */
-
-	  }, {
-	    key: 'set',
-	    value: function set(key, data, callback) {
-	      this.storage[key] = data;
-	      callback && callback(null, data);
-	    }
-
-	    /**
-	     * Removes an item from the storage.
-	     *
-	     * @param key
-	     */
-
-	  }, {
-	    key: 'remove',
-	    value: function remove(key, callback) {
-	      delete this.storage[key];
-	      callback && callback();
-	    }
-
-	    /**
-	     * Checks if a key exists.
-	     *
-	     * @param key Input name
-	     * @returns {boolean}
-	     */
-
-	  }, {
-	    key: 'has',
-	    value: function has(key, callback) {
-	      this.get(key, function (err, data) {
-	        callback(null, data !== undefined && data !== null);
-	      });
-	    }
-
-	    /**
-	     * Clears the storage.
-	     */
-
-	  }, {
-	    key: 'clear',
-	    value: function clear(callback) {
-	      this.storage = {};
-	      callback && callback(null, this.storage);
-	    }
-
-	    /**
-	     * Calculates current occupied the size of the storage.
-	     * @param callback
-	     */
-
-	  }, {
-	    key: 'size',
-	    value: function size(callback) {
-	      var data = Object.keys(this.storage).length;
-	      callback(null, data);
-	    }
-	  }]);
-
-	  return PlainStorage;
-	}();
-
-	exports.default = PlainStorage;
 
 /***/ }
 /******/ ])

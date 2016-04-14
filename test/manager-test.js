@@ -340,6 +340,22 @@ function tests(manager) {
           server.respond();
         });
     });
+
+    it('should timeout', () => {
+      const clock = sinon.useFakeTimers();
+      const errorCallback = sinon.spy();
+      const sample = getRandomSample();
+
+      sample.save(null, {
+        remote: true,
+        error: errorCallback,
+      });
+
+      clock.tick(29000);
+      expect(errorCallback.calledOnce).to.be.false;
+      clock.tick(2000);
+      expect(errorCallback.calledOnce).to.be.true;
+    });
   });
 }
 
