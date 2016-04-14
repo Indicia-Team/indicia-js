@@ -359,7 +359,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var data = image.get('data');
 	          var type = image.get('type');
 
-	          function onSuccess(err, img, dataURI) {
+	          function onSuccess(err, img, dataURI, blob) {
 	            var name = 'sc:' + localOccCount + '::photo' + imgCount;
 
 	            // can provide both image/jpeg and jpeg
@@ -371,7 +371,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	              mediaType = 'image/' + mediaType;
 	            }
 
-	            var blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
+	            if (!blob) {
+	              blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
+	            }
 
 	            formData.append(name, blob, 'pic.' + extension);
 	            imgCount++;
@@ -379,28 +381,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 
 	          if (!_helpers2.default.isDataURL(data)) {
-	            (function () {
-	              var img = new window.Image(); // native one
-
-	              img.onload = function () {
-	                var width = img.width;
-	                var height = img.height;
-	                var canvas = null;
-
-	                // Create a canvas with the desired dimensions
-	                canvas = document.createElement('canvas');
-	                canvas.width = width;
-	                canvas.height = height;
-
-	                // Scale and draw the source image to the canvas
-	                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-	                // Convert the canvas to a data URL in some format
-	                onSuccess(null, img, canvas.toDataURL(type));
-	              };
-
-	              img.src = data;
-	            })();
+	            // load image
+	            var xhr = new XMLHttpRequest();
+	            xhr.open('GET', data, true);
+	            xhr.responseType = 'blob';
+	            xhr.onload = function (e) {
+	              onSuccess(null, null, null, this.response);
+	            };
+	            xhr.send();
 	          } else {
 	            onSuccess(null, null, data);
 	          }

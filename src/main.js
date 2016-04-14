@@ -226,7 +226,7 @@ class Morel {
         const data = image.get('data');
         const type = image.get('type');
 
-        function onSuccess(err, img, dataURI) {
+        function onSuccess(err, img, dataURI, blob) {
           const name = `sc:${localOccCount}::photo${imgCount}`;
 
           // can provide both image/jpeg and jpeg
@@ -238,7 +238,9 @@ class Morel {
             mediaType = `image/${mediaType}`;
           }
 
-          const blob = helpers.dataURItoBlob(dataURI, mediaType);
+          if (!blob) {
+            blob = helpers.dataURItoBlob(dataURI, mediaType);
+          }
 
           formData.append(name, blob, `pic.${extension}`);
           imgCount++;
@@ -246,26 +248,14 @@ class Morel {
         }
 
         if (!helpers.isDataURL(data)) {
-          const img = new window.Image(); // native one
-
-          img.onload = () => {
-            const width = img.width;
-            const height = img.height;
-            let canvas = null;
-
-            // Create a canvas with the desired dimensions
-            canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-
-            // Scale and draw the source image to the canvas
-            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-            // Convert the canvas to a data URL in some format
-            onSuccess(null, img, canvas.toDataURL(type));
+          // load image
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', data, true);
+          xhr.responseType = 'blob';
+          xhr.onload = function(e) {
+            onSuccess(null, null, null, this.response);
           };
-
-          img.src = data;
+          xhr.send();
         } else {
           onSuccess(null, null, data);
         }
