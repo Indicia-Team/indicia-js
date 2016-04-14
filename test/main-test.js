@@ -4,7 +4,6 @@ import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
-import PlainStorage from '../src/PlainStorage';
 import DatabaseStorage from '../src/DatabaseStorage';
 
 const options = {

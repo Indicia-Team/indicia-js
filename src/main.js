@@ -6,7 +6,6 @@ import Occurrence from './Occurrence';
 import Storage from './Storage';
 import DatabaseStorage from './DatabaseStorage';
 import LocalStorage from './LocalStorage';
-import PlainStorage from './PlainStorage';
 import ImageModel from './Image';
 import Error from './Error';
 import CONST from './constants';
@@ -415,7 +414,6 @@ _.extend(Morel, CONST, {
   Occurrence,
   DatabaseStorage,
   LocalStorage,
-  PlainStorage,
   Image: ImageModel,
   Error,
 });

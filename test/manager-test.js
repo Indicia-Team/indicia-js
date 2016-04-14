@@ -3,7 +3,6 @@ import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
-import PlainStorage from '../src/PlainStorage';
 import DatabaseStorage from '../src/DatabaseStorage';
 
 const options = {
@@ -205,34 +204,26 @@ function tests(manager) {
       server.respondWith('POST', '/mobile/submit', okResponse);
       server.respond();
     });
-//
-//    it('should update remotely synced record', (done) => {
-//      const occurrence = new Occurrence({
-//        taxon: 1234,
-//      });
-//      const sample = new Sample({
-//        location: ' 12.12, -0.23',
-//      }, {
-//        occurrences: [occurrence],
-//        manager,
-//      });
-//
-//      sample.save(null, {
-//        remote: true,
-//        success: () => {
-//          manager.get(sample,
-//            (err, savedSample) => {
-//              expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
-//              done(err);
-//            },
-//            { nonCached: true }
-//          );
-//        },
-//      });
-//
-//      server.respondWith('POST', '/mobile/submit', okResponse);
-//      server.respond();
-//    });
+
+    it('should update remotely synced record', (done) => {
+      const sample = getRandomSample();
+
+      sample.save(null, {
+        remote: true,
+        success: () => {
+          // get new manager without cached samples
+          const Storage = manager.storage.Storage;
+          const newManager = new Morel(_.extend(options, { Storage }));
+          newManager.get(sample, (err, savedSample) => {
+            expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
+            done(err);
+          });
+        },
+      });
+
+      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respond();
+    });
 
     it('should validate before remote sending', () => {
       const occurrence = new Occurrence();
@@ -354,24 +345,17 @@ function tests(manager) {
 
 describe('Manager', () => {
   const manager = new Morel(options);
-  const plainStorageManager = new Morel(_.extend(options, { Storage: PlainStorage }));
   const databaseStorageManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
 
   // clean up
   after((done) => {
     manager.clear(() => {
-      plainStorageManager.clear(() => {
-        databaseStorageManager.clear(done);
-      });
+      databaseStorageManager.clear(done);
     });
   });
 
   describe('(default)', () => {
     tests(manager);
-  });
-
-  describe('(plain storage)', () => {
-    tests(plainStorageManager);
   });
 
   describe('(database storage)', () => {

@@ -1,7 +1,6 @@
 import helpers from '../src/helpers';
 import Collection from '../src/Collection';
 import Storage from '../src/Storage';
-import PlainStorage from '../src/PlainStorage';
 import DatabaseStorage from '../src/DatabaseStorage';
 import LocalStorage from '../src/LocalStorage';
 
@@ -121,21 +120,14 @@ function tests(storage) {
 }
 
 describe('Storage', () => {
-  const storage = new Storage({ Storage: PlainStorage });
   const localStorage = new Storage({ Storage: LocalStorage });
   const databaseStorage = new Storage({ Storage: DatabaseStorage });
 
   // clean up
   after((done) => {
-    storage.clear(() => {
-      localStorage.clear(() => {
-        databaseStorage.clear(done);
-      });
+    localStorage.clear(() => {
+      databaseStorage.clear(done);
     });
-  });
-
-  describe('(plain)', () => {
-    tests(storage);
   });
   describe('(local)', () => {
     tests(localStorage);
