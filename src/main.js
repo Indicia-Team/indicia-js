@@ -65,7 +65,11 @@ class Morel {
     function syncEach(collectionToSync) {
       const toWait = [];
       collectionToSync.each((model) => {
-        const promise = model.save(null, { remote: true });
+        // todo: reuse the passed options model
+        const promise = model.save(null, {
+          remote: true,
+          timeout: options.timeout,
+        });
         const passingPromise = new $.Deferred();
         if (!promise) {
           // model was invalid
@@ -181,7 +185,7 @@ class Morel {
         data: formData,
         processData: false,
         contentType: false,
-        timeout: options.ajaxTimeout || 30000, // 30s
+        timeout: options.timeout || 30000, // 30s
         success: options.success,
         error: options.error,
       });

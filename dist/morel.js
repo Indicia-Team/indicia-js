@@ -187,7 +187,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      function syncEach(collectionToSync) {
 	        var toWait = [];
 	        collectionToSync.each(function (model) {
-	          var promise = model.save(null, { remote: true });
+	          // todo: reuse the passed options model
+	          var promise = model.save(null, {
+	            remote: true,
+	            timeout: options.timeout
+	          });
 	          var passingPromise = new _jquery2.default.Deferred();
 	          if (!promise) {
 	            // model was invalid
@@ -310,7 +314,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          data: formData,
 	          processData: false,
 	          contentType: false,
-	          timeout: options.ajaxTimeout || 30000, // 30s
+	          timeout: options.timeout || 30000, // 30s
 	          success: options.success,
 	          error: options.error
 	        });
@@ -842,12 +846,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return flattened;
 	  },
 	  toJSON: function toJSON() {
+	    var occurrences = void 0;
+	    var occurrencesCollection = this.occurrences;
+	    if (!occurrencesCollection) {
+	      occurrences = [];
+	      console.warn('toJSON occurrences missing');
+	    } else {
+	      occurrences = occurrencesCollection.toJSON();
+	    }
+
 	    var data = {
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      occurrences: this.occurrences.toJSON()
+	      occurrences: occurrences
 	    };
 
 	    return data;
@@ -1293,12 +1306,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return null;
 	  },
 	  toJSON: function toJSON() {
+	    var images = void 0;
+	    var imagesCollection = this.images;
+	    if (!imagesCollection) {
+	      images = [];
+	      console.warn('toJSON images missing');
+	    } else {
+	      images = imagesCollection.toJSON();
+	    }
 	    var data = {
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      images: this.images.toJSON()
+	      images: images
 	    };
 	    return data;
 	  },
