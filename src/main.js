@@ -125,10 +125,10 @@ class Morel {
 
     // on success update the model and save to local storage
     const success = options.success;
-    options.success = (successModel, request, successOptions) => {
+    options.success = (successModel) => {
       successModel.save().then(() => {
         successModel.trigger('sync');
-        success && success(model, null, successOptions);
+        success && success();
       });
     };
 

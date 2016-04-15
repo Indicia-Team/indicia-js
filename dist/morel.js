@@ -251,10 +251,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // on success update the model and save to local storage
 	      var success = options.success;
-	      options.success = function (successModel, request, successOptions) {
+	      options.success = function (successModel) {
 	        successModel.save().then(function () {
 	          successModel.trigger('sync');
-	          success && success(model, null, successOptions);
+	          success && success();
 	        });
 	      };
 
