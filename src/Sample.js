@@ -211,12 +211,21 @@ const Sample = Backbone.Model.extend({
   },
 
   toJSON() {
+    let occurrences;
+    const occurrencesCollection = this.occurrences;
+    if (!occurrencesCollection) {
+      occurrences = [];
+      console.warn('toJSON occurrences missing');
+    } else {
+      occurrences = occurrencesCollection.toJSON();
+    }
+
     const data = {
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
-      occurrences: this.occurrences.toJSON(),
+      occurrences,
     };
 
     return data;

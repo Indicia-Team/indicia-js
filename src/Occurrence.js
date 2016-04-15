@@ -128,12 +128,20 @@ const Occurrence = Backbone.Model.extend({
   },
 
   toJSON() {
+    let images;
+    const imagesCollection = this.images;
+    if (!imagesCollection) {
+      images = [];
+      console.warn('toJSON images missing');
+    } else {
+      images = imagesCollection.toJSON();
+    }
     const data = {
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
-      images: this.images.toJSON(),
+      images,
     };
     return data;
   },
