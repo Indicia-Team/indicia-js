@@ -150,12 +150,12 @@ class Morel {
       return false;
     }
 
-    model.metadata.synchronising = true;
+    model.synchronising = true;
 
     // on success
     const success = options.success;
     options.success = () => {
-      model.metadata.synchronising = false;
+      model.synchronising = false;
 
       // update model
       model.metadata.warehouse_id = 1;
@@ -168,7 +168,7 @@ class Morel {
     // on error
     const error = options.error;
     options.error = (xhr, textStatus, errorThrown) => {
-      model.metadata.synchronising = false;
+      model.synchronising = false;
       model.trigger('error');
 
       options.textStatus = textStatus;

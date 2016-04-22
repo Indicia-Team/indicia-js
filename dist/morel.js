@@ -279,12 +279,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return false;
 	      }
 
-	      model.metadata.synchronising = true;
+	      model.synchronising = true;
 
 	      // on success
 	      var success = options.success;
 	      options.success = function () {
-	        model.metadata.synchronising = false;
+	        model.synchronising = false;
 
 	        // update model
 	        model.metadata.warehouse_id = 1;
@@ -297,7 +297,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // on error
 	      var error = options.error;
 	      options.error = function (xhr, textStatus, errorThrown) {
-	        model.metadata.synchronising = false;
+	        model.synchronising = false;
 	        model.trigger('error');
 
 	        options.textStatus = textStatus;
@@ -874,7 +874,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  getSyncStatus: function getSyncStatus() {
 	    var meta = this.metadata;
 	    // on server
-	    if (meta.synchronising) {
+	    if (this.synchronising) {
 	      return _constants2.default.SYNCHRONISING;
 	    }
 

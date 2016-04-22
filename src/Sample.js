@@ -238,7 +238,7 @@ const Sample = Backbone.Model.extend({
   getSyncStatus() {
     const meta = this.metadata;
     // on server
-    if (meta.synchronising) {
+    if (this.synchronising) {
       return CONST.SYNCHRONISING;
     }
 

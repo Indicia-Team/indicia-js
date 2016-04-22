@@ -140,6 +140,14 @@ export default function (manager) {
       server.respond();
     });
 
+    it('should set synchronising flag on sample', () => {
+      const sample = getRandomSample();
+
+      sample.save(null, { remote: true });
+      expect(sample.synchronising).to.be.true;
+    });
+
+
     it('should not double sync', (done) => {
       const sample = getRandomSample();
 
