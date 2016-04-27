@@ -182,6 +182,7 @@ define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
                 }
             },
             location_name: { id: 'location_name' },
+            group: { id: 'group_id' },
             deleted: { id: 'deleted' }
         };
 
