@@ -227,7 +227,7 @@ class Morel {
         const imageDfd = new $.Deferred();
         imageProcesses.push(imageDfd);
 
-        const data = image.get('data');
+        const url = image.getURL();
         const type = image.get('type');
 
         function onSuccess(err, img, dataURI, blob) {
@@ -251,17 +251,17 @@ class Morel {
           imageDfd.resolve();
         }
 
-        if (!helpers.isDataURL(data)) {
+        if (!helpers.isDataURL(url)) {
           // load image
           const xhr = new XMLHttpRequest();
-          xhr.open('GET', data, true);
+          xhr.open('GET', url, true);
           xhr.responseType = 'blob';
           xhr.onload = function(e) {
             onSuccess(null, null, null, this.response);
           };
           xhr.send();
         } else {
-          onSuccess(null, null, data);
+          onSuccess(null, null, url);
         }
       });
 

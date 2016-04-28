@@ -3,6 +3,7 @@ import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
+import ImageModel from '../src/Image';
 
 const options = {
   url: '/mobile/submit',
@@ -190,5 +191,42 @@ export default function (manager) {
       clock.tick(2000);
       expect(errorCallback.calledOnce).to.be.true;
     });
+
+    describe('occurrences with images', (done) => {
+      it('should send both dataURI and absolute pathed images', () => {
+        const image1 = new ImageModel({
+          data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
+          type: 'png',
+        });
+
+        const image2 = new ImageModel({
+          data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
+          type: 'png',
+        });
+
+        const occurrence = new Occurrence({
+          taxon: 1234,
+        },{
+          images: [image1, image2],
+        });
+        const sample = new Sample({
+          location: ' 12.12, -0.23',
+        }, {
+          occurrences: [occurrence],
+          manager,
+        });
+
+        sample.save(null, {
+          remote: true,
+          success: () => {
+            done();
+          },
+        });
+
+        server.respondWith('POST', '/mobile/submit', okResponse);
+        server.respond();
+      });
+    });
+
   });
 }

@@ -31,5 +31,14 @@ describe('Image', () => {
       };
       xhr.send();
     });
+
+    it('should return its absolute URL', () => {
+      const URL = 'http://domain.com/image.jpeg';
+      const image = new ImageModel({
+        data: URL,
+      });
+      expect(image.getURL).to.be.a.function;
+      expect(image.getURL()).to.be.equal(URL);
+    });
   });
 });

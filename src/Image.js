@@ -71,6 +71,13 @@ const ImageModel = Backbone.Model.extend({
   },
 
   /**
+   * Returns image's absolute URL or dataURI.
+   */
+  getURL() {
+    return this.get('data');
+  },
+
+  /**
    * Sets parent Occurrence.
    * @param occurrence
    */
