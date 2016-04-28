@@ -96,13 +96,13 @@ const ImageModel = Backbone.Model.extend({
    */
   resize(MAX_WIDTH, MAX_HEIGHT, callback) {
     const that = this;
-    ImageModel.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT,
+    ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT,
       (err, image, data) => {
         if (err) {
           callback && callback(err);
           return;
         }
-        that.attributes.data = data;
+        that.set('data', data);
         callback && callback(null, image, data);
       });
   },
@@ -117,10 +117,10 @@ const ImageModel = Backbone.Model.extend({
     // check if data source is dataURI
 
     const re = /^data:/i;
-    if (re.test(this.attributes.data)) {
+    if (re.test(this.getURL())) {
       ImageModel.resize(
-        this.attributes.data,
-        this.attributes.type,
+        this.getURL(),
+        this.get('type'),
         THUMBNAIL_WIDTH || options.width,
         THUMBNAIL_WIDTH || options.width,
         (err, image, data) => {
@@ -130,7 +130,7 @@ const ImageModel = Backbone.Model.extend({
       return;
     }
 
-    ImageModel.getDataURI(this.attributes.data, (err, data) => {
+    ImageModel.getDataURI(this.getURL(), (err, data) => {
       that.set('thumbnail', data);
       callback && callback();
     }, {
