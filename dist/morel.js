@@ -360,7 +360,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var imageDfd = new _jquery2.default.Deferred();
 	          imageProcesses.push(imageDfd);
 
-	          var data = image.get('data');
+	          var url = image.getURL();
 	          var type = image.get('type');
 
 	          function onSuccess(err, img, dataURI, blob) {
@@ -384,17 +384,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	            imageDfd.resolve();
 	          }
 
-	          if (!_helpers2.default.isDataURL(data)) {
+	          if (!_helpers2.default.isDataURL(url)) {
 	            // load image
 	            var xhr = new XMLHttpRequest();
-	            xhr.open('GET', data, true);
+	            xhr.open('GET', url, true);
 	            xhr.responseType = 'blob';
 	            xhr.onload = function (e) {
 	              onSuccess(null, null, null, this.response);
 	            };
 	            xhr.send();
 	          } else {
-	            onSuccess(null, null, data);
+	            onSuccess(null, null, url);
 	          }
 	        });
 
@@ -936,6 +936,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // for Latitude and Longitude in decimal form (WGS84 datum)
 	  location_name: { id: 'location_name' },
+	  group: { id: 'group_id' },
 	  deleted: { id: 'deleted' }
 	};
 
@@ -1463,6 +1464,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
+	   * Returns image's absolute URL or dataURI.
+	   */
+	  getURL: function getURL() {
+	    return this.get('data');
+	  },
+
+
+	  /**
 	   * Sets parent Occurrence.
 	   * @param occurrence
 	   */
@@ -1482,12 +1491,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  resize: function resize(MAX_WIDTH, MAX_HEIGHT, callback) {
 	    var that = this;
-	    ImageModel.resize(this.attributes.data, this.attributes.type, MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
+	    ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
 	      if (err) {
 	        callback && callback(err);
 	        return;
 	      }
-	      that.attributes.data = data;
+	      that.set('data', data);
 	      callback && callback(null, image, data);
 	    });
 	  },
@@ -1505,15 +1514,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // check if data source is dataURI
 
 	    var re = /^data:/i;
-	    if (re.test(this.attributes.data)) {
-	      ImageModel.resize(this.attributes.data, this.attributes.type, THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width, function (err, image, data) {
+	    if (re.test(this.getURL())) {
+	      ImageModel.resize(this.getURL(), this.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width, function (err, image, data) {
 	        that.set('thumbnail', data);
 	        callback && callback();
 	      });
 	      return;
 	    }
 
-	    ImageModel.getDataURI(this.attributes.data, function (err, data) {
+	    ImageModel.getDataURI(this.getURL(), function (err, data) {
 	      that.set('thumbnail', data);
 	      callback && callback();
 	    }, {
