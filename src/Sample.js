@@ -182,6 +182,7 @@ define(['helpers', 'Occurrence', 'Collection', 'Events'], function () {
                 }
             },
             location_name: { id: 'location_name' },
+            form: { id: 'input_form' },
             deleted: { id: 'deleted' }
         };
 
