@@ -478,7 +478,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 	        }
 
-	        flattened[name] = value;
+	        // don't need to send null or undefined
+	        if (value) {
+	          flattened[name] = value;
+	        }
 	      }
 
 	      return flattened;
