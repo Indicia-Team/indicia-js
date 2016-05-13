@@ -299,6 +299,7 @@ Sample.keys = {
     },
   },
   location_name: { id: 'location_name' },
+  form: { id: 'input_form' },
   group: { id: 'group_id' },
   deleted: { id: 'deleted' },
 };

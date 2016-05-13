@@ -936,6 +936,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // for Latitude and Longitude in decimal form (WGS84 datum)
 	  location_name: { id: 'location_name' },
+	  form: { id: 'input_form' },
 	  group: { id: 'group_id' },
 	  deleted: { id: 'deleted' }
 	};
