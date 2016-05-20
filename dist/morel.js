@@ -668,9 +668,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (options.metadata) {
 	      this.metadata = options.metadata;
 	    } else {
+	      var today = new Date();
 	      this.metadata = {
-	        created_on: new Date(),
-	        updated_on: new Date(),
+	        created_on: today,
+	        updated_on: today,
 
 	        warehouse_id: null,
 

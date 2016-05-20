@@ -45,9 +45,10 @@ const Sample = Backbone.Model.extend({
     if (options.metadata) {
       this.metadata = options.metadata;
     } else {
+      const today = new Date();
       this.metadata = {
-        created_on: new Date(),
-        updated_on: new Date(),
+        created_on: today,
+        updated_on: today,
 
         warehouse_id: null,
 
