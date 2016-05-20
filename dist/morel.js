@@ -288,8 +288,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        // update model
 	        model.metadata.warehouse_id = 1;
-	        model.metadata.server_on = new Date();
-	        model.metadata.synced_on = new Date();
+	        model.metadata.server_on = model.metadata.updated_on = model.metadata.synced_on = new Date();
 
 	        success && success(model, null, options);
 	      };
