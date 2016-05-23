@@ -1,162 +1,182 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-/*global m, define */
-define(['helpers', 'Events', 'Collection', 'Sample', 'PlainStorage',
-    'LocalStorage', 'DatabaseStorage'], function () {
-//>>excludeEnd('buildExclude');
-    /***********************************************************************
-     * STORAGE
-     **********************************************************************/
+/** *********************************************************************
+ * STORAGE
+ **********************************************************************/
+import _ from 'underscore';
+import Backbone from 'backbone';
 
-    m.Storage = (function () {
-        var Module = function (options) {
-            options || (options = {});
+import Error from './Error';
+import Sample from './Sample';
+import Collection from './Collection';
+import LocalStorage from './LocalStorage';
 
-            var that = this;
+class Storage {
+  constructor(options = {}) {
+    const that = this;
 
-            this.Sample = options.Sample || m.Sample;
+    this.Sample = options.Sample || Sample;
+    this.manager = options.manager;
 
-            //internal storage
-            this.Storage = options.Storage || m.LocalStorage;
-            this.storage = new this.Storage({
-                appname: options.appname
-            });
+    // internal storage
+    this.Storage = options.Storage || LocalStorage;
+    this.storage = new this.Storage({
+      appname: options.appname,
+    });
 
-            //initialize the cache
-            this.cache = {};
-            this.initialized = false;
-            this.storage.getAll(function (err, data) {
-                data || (data = {});
+    // initialize the cache
+    this.cache = {};
+    this.initialized = false;
+    this.storage.getAll((err, data) => {
+      data || (data = {});
 
-                var samples = [],
-                    sample = null,
-                    keys = Object.keys(data);
+      const samples = [];
+      let sample = null;
+      const keys = Object.keys(data);
 
-                for (var i = 0; i < keys.length; i++) {
-                    sample = new that.Sample(m.extend(data[keys[i]], {
-                        plainAttributes: true
-                    }));
-                    samples.push(sample);
-                }
-                that.cache =  new m.Collection({
-                    Model: that.Sample,
-                    data: samples
-                });
-                that._attachListeners();
+      for (let i = 0; i < keys.length; i++) {
+        const current = data[keys[i]];
+        const modelOptions = _.extend(current, { manager: that.manager });
+        sample = new that.Sample(current.attributes, modelOptions);
+        samples.push(sample);
+      }
+      that.cache = new Collection(samples, {
+        model: that.Sample,
+      });
+      that._attachListeners();
 
-                that.initialized = true;
-                that.trigger('init');
-            });
-        };
+      that.initialized = true;
+      that.trigger('init');
+    });
+  }
 
-        m.extend(Module.prototype, {
-            get: function (item, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.get(item, callback);
-                    });
-                    return;
-                }
+  get(model, callback, options = {}) {
+    const that = this;
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.get(model, callback, options);
+      });
+      return;
+    }
 
-                var key = typeof item === 'object' ? item.id : item;
-                callback(null, this.cache.get(key));
-            },
+    const key = typeof model === 'object' ? model.id || model.cid : model;
 
-            getAll: function (callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.getAll(callback);
-                    });
-                    return;
-                }
-                callback(null, this.cache);
-            },
+    // a non cached version straight from storage medium
+    if (options.nonCached) {
+      this.storage.get(key, (err, data) => {
+        if (err) {
+          callback(err);
+          return;
+        }
+        const modelOptions = _.extend(data, { manager: that.manager });
+        const sample = new that.Sample(data.attributes, modelOptions);
+        callback(null, sample);
+      });
+      return;
+    }
 
-            set: function (item, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.set(item, callback);
-                    });
-                    return;
-                }
-                var that = this,
-                    key = item.id;
-                this.storage.set(key, item, function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.set(item);
-                    callback && callback(null, item);
-                });
-            },
+    callback(null, this.cache.get(key));
+  }
 
-            remove: function (item, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.remove(item, callback);
-                    });
-                    return;
-                }
-                var that = this,
-                    key = typeof item === 'object' ? item.id : item;
-                this.storage.remove(key, function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.remove(item);
-                    callback && callback();
-                });
-            },
+  getAll(callback) {
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.getAll(callback);
+      });
+      return;
+    }
+    callback(null, this.cache);
+  }
 
-            has: function (item, callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.has(item, callback);
-                    }, this);
-                    return;
-                }
-                var key = typeof item === 'object' ? item.id : item;
-                this.cache.has(key, callback);
-            },
+  set(model = {}, callback) {
+    // early return if no id or cid
+    if (!model.id && !model.cid) {
+      const error = new Error('Invalid model passed to storage');
+      callback(error);
+      return;
+    }
 
-            clear: function (callback) {
-                if (!this.initialized) {
-                    this.on('init', function () {
-                        this.clear(callback);
-                    });
-                    return;
-                }
-                var that = this;
-                this.storage.clear(function (err) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    that.cache.clear();
-                    callback && callback();
-                });
-            },
+    // needs to be on and running
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.set(model, callback);
+      });
+      return;
+    }
 
-            size: function (callback) {
-              this.storage.size(callback);
-            },
+    const that = this;
+    const key = model.id || model.cid;
+    this.storage.set(key, model, (err) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
+      that.cache.set(model, { remove: false });
+      callback && callback(null, model);
+    });
+  }
 
-            _attachListeners: function () {
-                var that = this;
-                //listen on cache because it is last updated
-                this.cache.on('update', function () {
-                    that.trigger('update');
-                });
-            }
-        });
+  remove(model, callback) {
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.remove(model, callback);
+      });
+      return;
+    }
+    const key = typeof model === 'object' ? model.id || model.cid : model;
+    this.storage.remove(key, (err) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
+      delete model.manager;
+      model.destroy().then(callback); // removes from cache
+    });
+  }
 
-        //add events
-        m.extend(Module.prototype, m.Events);
+  has(model, callback) {
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.has(model, callback);
+      }, this);
+      return;
+    }
+    this.get(model, (err, data) => {
+      const found = typeof data === 'object';
+      callback(null, found);
+    });
+  }
 
-        return Module;
-    }());
+  clear(callback) {
+    if (!this.initialized) {
+      this.on('init', () => {
+        this.clear(callback);
+      });
+      return;
+    }
+    const that = this;
+    this.storage.clear((err) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
+      that.cache.reset();
+      callback && callback();
+    });
+  }
 
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-});
-//>>excludeEnd('buildExclude');
+  size(callback) {
+    this.storage.size(callback);
+  }
+
+  _attachListeners() {
+    const that = this;
+    // listen on cache because it is last updated
+    this.cache.on('update', () => {
+      that.trigger('update');
+    });
+  }
+}
+
+// add events
+_.extend(Storage.prototype, Backbone.Events);
+
+export { Storage as default };

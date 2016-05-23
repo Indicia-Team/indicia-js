@@ -1,129 +1,251 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-/*global m, define */
-define(['helpers'], function () {
-//>>excludeEnd('buildExclude');
-    /***********************************************************************
-     * IMAGE
-     **********************************************************************/
+/** *********************************************************************
+ * IMAGE
+ **********************************************************************/
+import $ from 'jquery';
+import Backbone from 'backbone';
+import _ from 'underscore';
 
-    m.Image = (function (){
+import helpers from './helpers';
+import Error from './Error';
 
-        var Module = function (options) {
-            options || (options = {});
+const THUMBNAIL_WIDTH = 100; // px
+const THUMBNAIL_HEIGHT = 100; // px
 
-            this.id = options.id || m.getNewUUID();
+const ImageModel = Backbone.Model.extend({
+  constructor(attributes = {}, options = {}) {
+    let attrs = attributes;
+    if (typeof attributes === 'string') {
+      const data = attributes;
+      attrs = { data };
+      return;
+    }
 
-            if (typeof options === 'string') {
-                this.data = options;
-                return;
-            }
+    this.cid = options.cid || helpers.getNewUUID();
+    this.setOccurrence(options.occurrence || this.occurrence);
 
-            this.type = options.type || '';
-            this.url = options.url || '';
-            this.data = options.data || '';
-        };
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+    this.set(attrs, options);
+    this.changed = {};
 
-        m.extend(Module.prototype, {
-            /**
-             * Resizes itself.
-             */
-            resize: function (MAX_WIDTH, MAX_HEIGHT, callback) {
-                var that = this;
-                Module.resize(this.data, this.type, MAX_WIDTH, MAX_HEIGHT,
-                    function (err, image, data) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
-                        that.data = data;
-                        callback && callback(null, image, data);
-                    });
-            },
+    if (options.metadata) {
+      this.metadata = options.metadata;
+    } else {
+      this.metadata = {
+        created_on: new Date(),
+      };
+    }
 
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    url: this.url,
-                    type: this.type,
-                    data: this.data
-                };
-                return data;
-            }
+    this.initialize.apply(this, arguments);
+  },
+
+  save(attrs, options = {}) {
+    if (!this.occurrence) return false;
+    return this.occurrence.save(attrs, options);
+  },
+
+  destroy(options = {}) {
+    const dfd = new $.Deferred();
+
+    // removes from all collections etc
+    this.stopListening();
+    this.trigger('destroy', this, this.collection, options);
+
+    if (this.occurrence && !options.noSave) {
+      const success = options.success;
+      options.success = () => {
+        dfd.resolve();
+        success && success();
+      };
+
+      // save the changes permanentely
+      this.save(null, options);
+    } else {
+      dfd.resolve();
+      options.success && options.success();
+    }
+
+    return dfd.promise();
+  },
+
+  /**
+   * Returns image's absolute URL or dataURI.
+   */
+  getURL() {
+    return this.get('data');
+  },
+
+  /**
+   * Sets parent Occurrence.
+   * @param occurrence
+   */
+  setOccurrence(occurrence) {
+    if (!occurrence) return;
+
+    const that = this;
+    this.occurrence = occurrence;
+    this.occurrence.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
+  },
+
+  /**
+   * Resizes itself.
+   */
+  resize(MAX_WIDTH, MAX_HEIGHT, callback) {
+    const that = this;
+    ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT,
+      (err, image, data) => {
+        if (err) {
+          callback && callback(err);
+          return;
+        }
+        that.set('data', data);
+        callback && callback(null, image, data);
+      });
+  },
+
+  /**
+   * Adds a thumbnail to image model.
+   * @param callback
+   * @param options
+   */
+  addThumbnail(callback, options = {}) {
+    const that = this;
+    // check if data source is dataURI
+
+    const re = /^data:/i;
+    if (re.test(this.getURL())) {
+      ImageModel.resize(
+        this.getURL(),
+        this.get('type'),
+        THUMBNAIL_WIDTH || options.width,
+        THUMBNAIL_WIDTH || options.width,
+        (err, image, data) => {
+          that.set('thumbnail', data);
+          callback && callback();
         });
+      return;
+    }
 
-        //add events
-        m.extend(Module.prototype, m.Events);
+    ImageModel.getDataURI(this.getURL(), (err, data) => {
+      that.set('thumbnail', data);
+      callback && callback();
+    }, {
+      width: THUMBNAIL_WIDTH || options.width,
+      height: THUMBNAIL_HEIGHT || options.height,
+    });
+  },
 
-        m.extend(Module, {
-            /**
-             * Transforms and resizes an image file into a string.
-             *
-             * @param onError
-             * @param file
-             * @param onSaveSuccess
-             * @returns {number}
-             */
-            toString: function (file, callback) {
-                if (!window.FileReader) {
-                    var message = 'No File Reader',
-                        error = new m.Error(message);
-                    console.error(message);
-
-                    return callback(error);
-                }
-
-                var reader = new FileReader();
-                reader.onload = function (event) {
-                    callback(null, event.target.result, file.type);
-                };
-                reader.readAsDataURL(file);
-            },
-
-            /**
-             * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
-             * @param data
-             * @param width
-             * @param height
-             * @param callback
-             */
-            resize: function(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-                var image = new Image();
-
-                image.onload = function() {
-                    var width = image.width,
-                        height = image.height,
-                        canvas = null,
-                        res = null;
-
-                    //resizing
-                    if (width > height) {
-                        res = width / MAX_WIDTH;
-                    } else {
-                        res = height / MAX_HEIGHT;
-                    }
-
-                    width = width / res;
-                    height = height / res;
-
-                    // Create a canvas with the desired dimensions
-                    canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    // Scale and draw the source image to the canvas
-                    canvas.getContext('2d').drawImage(image, 0, 0, width, height);
-
-                    // Convert the canvas to a data URL in some format
-                    callback(null, image, canvas.toDataURL(fileType));
-                };
-
-                image.src = data;
-            }
-        });
-
-        return Module;
-    }());
-
-//>>excludeStart('buildExclude', pragmas.buildExclude);
+  toJSON() {
+    const data = {
+      id: this.id,
+      metadata: this.metadata,
+      attributes: this.attributes,
+    };
+    return data;
+  },
 });
-//>>excludeEnd('buildExclude');
+
+_.extend(ImageModel, {
+  /**
+   * Transforms and resizes an image file into a string.
+   * Can accept file image path and a file input file.
+   *
+   * @param onError
+   * @param file
+   * @param onSaveSuccess
+   * @returns {number}
+   */
+  getDataURI(file, callback, options = {}) {
+    // file paths
+    if (typeof file === 'string') {
+      // get extension
+      let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+      if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
+
+      ImageModel.resize(file, fileType, options.width, options.height, (err, image, dataURI) => {
+        callback(null, dataURI, fileType, image.width, image.height);
+      });
+      return;
+    }
+
+    // file inputs
+    if (!window.FileReader) {
+      const message = 'No File Reader';
+      const error = new Error(message);
+      console.error(message);
+
+      callback(error);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      if (options.width || options.height) {
+        // resize
+        ImageModel.resize(event.target.result, file.type, options.width, options.height, (err, image, dataURI) => {
+          callback(null, dataURI, file.type, image.width, image.height);
+        });
+      } else {
+        const image = new window.Image(); // native one
+
+        image.onload = () => {
+          const type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
+          callback(null, event.target.result, type, image.width, image.height);
+        };
+        image.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+    return;
+  },
+
+  /**
+   * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
+   * @param data
+   * @param width
+   * @param height
+   * @param callback
+   */
+  resize(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
+    const image = new window.Image(); // native one
+
+    image.onload = () => {
+      let width = image.width;
+      let height = image.height;
+      const maxWidth = MAX_WIDTH || width;
+      const maxHeight = MAX_HEIGHT || height;
+
+      let canvas = null;
+      let res = null;
+
+      // resizing
+      if (width > height) {
+        res = width / maxWidth;
+      } else {
+        res = height / maxHeight;
+      }
+
+      width = width / res;
+      height = height / res;
+
+      // Create a canvas with the desired dimensions
+      canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      // Scale and draw the source image to the canvas
+      canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+
+      // Convert the canvas to a data URL in some format
+      callback(null, image, canvas.toDataURL(fileType));
+    };
+
+    image.src = data;
+  },
+});
+
+export { ImageModel as default };

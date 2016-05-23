@@ -1,0 +1,18 @@
+{
+  "extends": "airbnb/base",
+  "rules": {
+    "no-param-reassign": 0,
+    "prefer-rest-params": 0,
+    "no-unused-expressions": 0
+  },
+  "globals": {
+    "sinon": true,
+    "before": true,
+    "beforeEach": true,
+    "after": true,
+    "afterEach": true,
+    "describe": true,
+    "it": true,
+    "expect": true,
+  }
+}

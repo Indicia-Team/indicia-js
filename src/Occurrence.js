@@ -1,105 +1,175 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-/*global m, define, */
-define(['helpers', 'Image', 'Events', 'Collection'], function () {
-//>>excludeEnd('buildExclude');
-    /***********************************************************************
-     * OCCURRENCE
-     **********************************************************************/
+/** *********************************************************************
+ * OCCURRENCE
+ **********************************************************************/
+import $ from 'jquery';
+import Backbone from 'backbone';
+import _ from 'underscore';
+import helpers from './helpers';
+import Image from './Image';
+import Collection from './Collection';
 
-    m.Occurrence = (function () {
+const Occurrence = Backbone.Model.extend({
+  Image,
+  constructor(attributes = {}, options = {}) {
+    const that = this;
+    let attrs = attributes;
 
-        var Module = function (options) {
-            options || (options = {});
+    this.cid = options.cid || helpers.getNewUUID();
+    this.setSample(options.sample || this.sample);
 
-            this.id = options.id || m.getNewUUID();
-            this.attributes = options.attributes || {};
+    if (options.Image) this.Image = options.Image;
 
-            if (options.images) {
-                this.images = new m.Collection({
-                    Model: m.Image,
-                    data: options.images
-                });
-            } else {
-                this.images = new m.Collection({
-                    Model: m.Image
-                });
-            }
-        };
+    this.attributes = {};
+    if (options.collection) this.collection = options.collection;
+    if (options.parse) attrs = this.parse(attrs, options) || {};
+    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+    this.set(attrs, options);
+    this.changed = {};
 
-        m.extend(Module.prototype, {
-            set: function (name, data) {
-                var changed = false;
+    if (options.metadata) {
+      this.metadata = options.metadata;
+    } else {
+      this.metadata = {
+        created_on: new Date(),
+      };
+    }
 
-                if (this.attributes[name] !== data) {
-                    changed = true;
-                }
+    if (options.images) {
+      const images = [];
+      _.each(options.images, (image) => {
+        if (image instanceof this.Image) {
+          image.setOccurrence(that);
+          images.push(image);
+        } else {
+          const modelOptions = _.extend(image, { occurrence: that });
+          images.push(new this.Image(image.attributes, modelOptions));
+        }
+      });
+      this.images = new Collection(images, {
+        model: this.Image,
+      });
+    } else {
+      this.images = new Collection([], {
+        model: this.Image,
+      });
+    }
 
-                this.attributes[name] = data;
+    this.initialize.apply(this, arguments);
+  },
 
-                if (changed) {
-                    this.trigger('change:' + name);
-                }
-            },
+  save(attrs, options = {}) {
+    if (!this.sample) return false;
+    return this.sample.save(attrs, options);
+  },
 
-            get: function (name) {
-                return this.attributes[name];
-            },
+  destroy(options = {}) {
+    const dfd = new $.Deferred();
 
-            remove: function (name) {
-                delete this.attributes[name];
-                this.trigger('change:' + name);
-            },
+    // removes from all collections etc
+    this.stopListening();
+    this.trigger('destroy', this, this.collection, options);
 
-            clear: function () {
-                this.attributes = {};
-                this.trigger('change');
-            },
+    if (this.sample && !options.noSave) {
+      const success = options.success;
+      options.success = () => {
+        dfd.resolve();
+        success && success();
+      };
 
-            has: function(name) {
-                var data = this.get(name);
-                return data !== undefined && data !== null;
-            },
+      // save the changes permanentely
+      this.save(null, options);
+    } else {
+      dfd.resolve();
+      options.success && options.success();
+    }
 
-            toJSON: function () {
-                var data = {
-                    id: this.id,
-                    attributes: this.attributes,
-                    images: this.images.toJSON()
-                };
-                //add occurrences
-                return data;
-            },
+    return dfd.promise();
+  },
 
-            /**
-             * Returns an object with attributes and their values flattened and
-             * mapped for warehouse submission.
-             *
-             * @param flattener
-             * @returns {*}
-             */
-            flatten: function (flattener, count) {
-                //images flattened separately
-                return flattener.apply(this, [Module.keys, this.attributes, count]);;
-            }
-        });
+  /**
+   * Sets parent Sample.
+   * @param occurrence
+   */
+  setSample(sample) {
+    if (!sample) return;
 
-        //add events
-        m.extend(Module.prototype, m.Events);
+    const that = this;
+    this.sample = sample;
+    this.sample.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
+  },
 
-        /**
-         * Warehouse attributes and their values.
-         */
-        Module.keys = {
-            taxon: {
-                id: ''
-            },
-            comment: {
-                id: 'comment'
-            }
-        };
+  /**
+   * Adds an image to occurrence and sets the images's occurrence to this.
+   * @param image
+   */
+  addImage(image) {
+    if (!image) return;
+    image.setOccurrence(this);
+    this.images.add(image);
+  },
 
-        return Module;
-    }());
-//>>excludeStart('buildExclude', pragmas.buildExclude);
+  validate(attributes) {
+    const attrs = _.extend({}, this.attributes, attributes);
+
+    const errors = {};
+
+    // location
+    if (!attrs.taxon) {
+      errors.taxon = 'can\'t be blank';
+    }
+
+    if (! _.isEmpty(errors)) {
+      return errors;
+    }
+
+    return null;
+  },
+
+  toJSON() {
+    let images;
+    const imagesCollection = this.images;
+    if (!imagesCollection) {
+      images = [];
+      console.warn('toJSON images missing');
+    } else {
+      images = imagesCollection.toJSON();
+    }
+    const data = {
+      id: this.id,
+      cid: this.cid,
+      metadata: this.metadata,
+      attributes: this.attributes,
+      images,
+    };
+    return data;
+  },
+
+  /**
+   * Returns an object with attributes and their values flattened and
+   * mapped for warehouse submission.
+   *
+   * @param flattener
+   * @returns {*}
+   */
+  flatten(flattener, count) {
+    // images flattened separately
+    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count }]);
+  },
 });
-//>>excludeEnd('buildExclude');
+
+
+/**
+ * Warehouse attributes and their values.
+ */
+Occurrence.keys = {
+  taxon: {
+    id: '',
+  },
+  comment: {
+    id: 'comment',
+  },
+};
+
+export { Occurrence as default };

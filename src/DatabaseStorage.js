@@ -1,318 +1,310 @@
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-/*global m, define, isEmptyObject, isPlainObject, IDBKeyRange, indexedDB */
-define(['helpers', 'Error'], function () {
-//>>excludeEnd('buildExclude');
-    /***********************************************************************
-     * DATABASE STORAGE
-     **********************************************************************/
+/** *********************************************************************
+ * DATABASE STORAGE
+ **********************************************************************/
+import Error from './Error';
 
-    m.DatabaseStorage = (function () {
-        /**
-         * options:
-         *  @appname String subdomain name to use for storage
-         */
-        var Module = function (options) {
-            options || (options = {});
-            this.NAME = options.appname ? this.NAME + '-' + options.appname : this.NAME;
+/**
+ * options:
+ *  @appname String subdomain name to use for storage
+ */
+class DatabaseStorage {
+  constructor(options = {}) {
+    // because of iOS8 bug on home screen: null & readonly window.indexedDB
+    this.indexedDB = window._indexedDB || window.indexedDB;
+    this.IDBKeyRange = window._IDBKeyRange || window.IDBKeyRange;
+
+    this.VERSION = 1;
+    this.TYPE = 'DatabaseStorage';
+    this.NAME = 'morel';
+    this.STORE_NAME = 'samples';
+
+    this.NAME = options.appname ? `${this.NAME}-${options.appname}` : this.NAME;
+  }
+
+  /**
+   * Adds an item under a specified key to the database.
+   * Note: might be a good idea to move the key assignment away from
+   * the function parameters and rather auto assign one and return on callback.
+   *
+   * @param key
+   * @param data JSON or object having toJSON function
+   * @param callback
+   */
+  set(key, data, callback) {
+    try {
+      this.open((err, store) => {
+        if (err) {
+          callback && callback(err);
+          return;
+        }
+
+        const dataJSON = (typeof data.toJSON === 'function') ? data.toJSON() : data;
+
+        const req = store.put(dataJSON, key);
+
+        req.onsuccess = () => {
+          callback && callback(null, dataJSON);
         };
 
-        m.extend(Module.prototype, {
-            //because of iOS8 bug on home screen: null & readonly window.indexedDB
-            indexedDB: window._indexedDB || window.indexedDB,
-            IDBKeyRange: window._IDBKeyRange || window.IDBKeyRange,
+        req.onerror = (e) => {
+          const message = `Database Problem: ${e.target.error.message}`;
+          const error = new Error(message);
+          console.error(message);
+          callback && callback(error);
+        };
+      });
+    } catch (err) {
+      callback && callback(err);
+    }
+  }
 
-            VERSION: 1,
-            TYPE: 'DatabaseStorage',
-            NAME: 'morel',
-            STORE_NAME: 'samples',
+  /**
+   * Gets a specific saved data from the database.
+   * @param key The stored data Id.
+   * @param callback
+   * @aram onError
+   * @returns {*}
+   */
+  get(key, callback) {
+    try {
+      this.open((err, store) => {
+        if (err) {
+          callback(err);
+          return;
+        }
 
-            /**
-             * Adds an item under a specified key to the database.
-             * Note: might be a good idea to move the key assignment away from
-             * the function parameters and rather auto assign one and return on callback.
-             *
-             * @param key
-             * @param data JSON or object having toJSON function
-             * @param callback
-             */
-            set: function (key, data, callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
+        const req = store.index('id').get(key);
+        req.onsuccess = (e) => {
+          const data = e.target.result;
+          callback(null, data);
+        };
 
-                        data = (typeof data.toJSON === 'function') ? data.toJSON() : data;
+        req.onerror = (e) => {
+          const message = `Database Problem: ${e.target.error.message}`;
+          const error = new Error(message);
+          console.error(message);
+          callback(error);
+        };
+      });
+    } catch (err) {
+      callback(err);
+    }
+  }
 
-                        var req = store.put(data, key);
+  /**
+   * Removes a saved data from the database.
+   *
+   * @param key
+   * @param callback
+   * @param onError
+   */
+  remove(key, callback) {
+    const that = this;
 
-                        req.onsuccess = function () {
-                            callback && callback(null, data);
-                        };
+    try {
+      this.open((err, store) => {
+        if (err) {
+          callback && callback(err);
+          return;
+        }
 
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
+        const req = store.openCursor(that.IDBKeyRange.only(key));
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            store.delete(cursor.primaryKey);
+            cursor.continue();
+          } else {
+            callback && callback();
+          }
+        };
+        req.onerror = (e) => {
+          const message = `Database Problem: ${e.target.error.message}`;
+          const error = new Error(message);
 
-            /**
-             * Gets a specific saved data from the database.
-             * @param key The stored data Id.
-             * @param callback
-             * @aram onError
-             * @returns {*}
-             */
-            get: function (key, callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback(err);
-                            return;
-                        }
+          console.error(message);
+          callback && callback(error);
+        };
+      });
+    } catch (err) {
+      callback && callback(err);
+    }
+  }
 
-                        var req = store.index('id').get(key);
-                        req.onsuccess = function (e) {
-                            var data = e.target.result;
-                            callback(null, data);
-                        };
+  /**
+   * Brings back all saved data from the database.
+   */
+  getAll(callback) {
+    const that = this;
 
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback(err);
-                }
-            },
+    try {
+      this.open((err, store) => {
+        if (err) {
+          callback(err);
+          return;
+        }
 
-            /**
-             * Removes a saved data from the database.
-             *
-             * @param key
-             * @param callback
-             * @param onError
-             */
-            remove: function (key, callback) {
-                var that = this;
+        // Get everything in the store
+        const keyRange = that.IDBKeyRange.lowerBound(0);
+        const req = store.openCursor(keyRange);
+        const data = {};
 
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
+        req.onsuccess = (e) => {
+          const result = e.target.result;
 
-                        var req = store.openCursor(that.IDBKeyRange.only(key));
-                        req.onsuccess = function () {
-                            var cursor = req.result;
-                            if (cursor) {
-                                store.delete(cursor.primaryKey);
-                                cursor.continue();
-                            } else {
-                                callback && callback();
-                            }
-                        };
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
+          // If there's data, add it to array
+          if (result) {
+            data[result.key] = result.value;
+            result.continue();
 
-            /**
-             * Brings back all saved data from the database.
-             */
-            getAll: function (callback) {
-                var that = this;
+            // Reach the end of the data
+          } else {
+            callback(null, data);
+          }
+        };
 
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback(err);
-                            return;
-                        }
+        req.onerror = (e) => {
+          const message = `Database Problem: ${e.target.error.message}`;
+          const error = new Error(message);
 
-                        // Get everything in the store
-                        var keyRange = that.IDBKeyRange.lowerBound(0),
-                            req = store.openCursor(keyRange),
-                            data = {};
+          console.error(message);
+          callback(error);
+        };
+      });
+    } catch (err) {
+      callback(err);
+    }
+  }
 
-                        req.onsuccess = function (e) {
-                            var result = e.target.result;
+  /**
+   * Checks whether the data under a provided key exists in the database.
+   *
+   * @param key
+   * @param callback
+   * @param onError
+   */
+  has(key, callback) {
+    this.get(key, (err, data) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      callback(null, data !== undefined && data !== null);
+    });
+  }
 
-                            // If there's data, add it to array
-                            if (result) {
-                                data[result.key] = result.value;
-                                result.continue();
+  /**
+   * Clears all the saved data.
+   */
+  clear(callback) {
+    try {
+      this.open((err, store) => {
+        if (err) {
+          callback && callback(err);
+          return;
+        }
 
-                                // Reach the end of the data
-                            } else {
-                                callback(null, data);
-                            }
-                        };
+        const req = store.clear();
 
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
-                            callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback(err);
-                }
-            },
+        req.onsuccess = () => {
+          callback && callback();
+        };
 
-            /**
-             * Checks whether the data under a provided key exists in the database.
-             *
-             * @param key
-             * @param callback
-             * @param onError
-             */
-            has: function (key, callback) {
-                this.get(key, function (err, data) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    callback(null, data !== undefined && data !== null);
-                });
-            },
+        req.onerror = (e) => {
+          const message = `Database Problem: ${e.target.error.message}`;
+          const error = new Error(message);
+          console.error(message);
 
-            /**
-             * Clears all the saved data.
-             */
-            clear: function (callback) {
-                try {
-                    this.open(function (err, store) {
-                        if (err) {
-                            callback && callback(err);
-                            return;
-                        }
+          callback && callback(error);
+        };
+      });
+    } catch (err) {
+      callback && callback(err);
+    }
+  }
 
-                        var req = store.clear();
+  size(callback) {
+    this.getAll((err, data) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      const size = Object.keys(data).length;
+      callback(null, size);
+    });
+  }
 
-                        req.onsuccess = function () {
-                            callback && callback();
-                        };
+  /**
+   * Opens a database connection and returns a store.
+   *
+   * @param onError
+   * @param callback
+   */
+  open(callback) {
+    const that = this;
+    let req = null;
 
-                        req.onerror = function (e) {
-                            var message = 'Database Problem: ' + e.target.error.message,
-                                error = new m.Error(message);
-                            console.error(message);
+    try {
+      req = this.indexedDB.open(this.NAME, this.VERSION);
 
-                            callback && callback(error);
-                        };
-                    });
-                } catch (err) {
-                    callback && callback(err);
-                }
-            },
+      /**
+       * On Database opening success, returns the Records object store.
+       *
+       * @param e
+       */
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const transaction = db.transaction([that.STORE_NAME], 'readwrite');
+        if (transaction) {
+          const store = transaction.objectStore(that.STORE_NAME);
+          if (store) {
+            callback(null, store);
+          } else {
+            const err = new Error('Database Problem: no such store');
+            callback(err);
+          }
+        }
+      };
 
-            size: function (callback) {
-               this.getAll(function(err, data) {
-                   if (err) {
-                       callback(err);
-                       return;
-                   }
-                   var size = JSON.stringify(data).length;
-                   callback(null, size);
-               });
-            },
+      /**
+       * If the Database needs an upgrade or is initialising.
+       *
+       * @param e
+       */
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        db.createObjectStore(that.STORE_NAME);
+      };
 
-            /**
-             * Opens a database connection and returns a store.
-             *
-             * @param onError
-             * @param callback
-             */
-            open: function (callback) {
-                var that = this,
-                    req = null;
+      /**
+       * Error of opening the database.
+       *
+       * @param e
+       */
+      req.onerror = (e) => {
+        const message = `Database Problem: ${e.target.error.message}`;
+        const error = new Error(message);
 
-                try {
-                    req = this.indexedDB.open(this.NAME, this.VERSION);
+        console.error(message);
+        callback(error);
+      };
 
-                    /**
-                     * On Database opening success, returns the Records object store.
-                     *
-                     * @param e
-                     */
-                    req.onsuccess = function (e) {
-                        var db = e.target.result,
-                            transaction = db.transaction([that.STORE_NAME], 'readwrite'),
-                            store = null,
-                            err = null;
-                        if (transaction) {
-                            store = transaction.objectStore(that.STORE_NAME);
-                            if (store) {
-                                callback(null, store);
-                            } else {
-                                err = new m.Error('Database Problem: no such store');
-                                callback(err);
-                            }
-                        }
-                    };
+      /**
+       * Error on database being blocked.
+       *
+       * @param e
+       */
+      req.onblocked = (e) => {
+        const message = `Database Problem: ${e.target.error.message}`;
+        const error = new Error(message);
 
-                    /**
-                     * If the Database needs an upgrade or is initialising.
-                     *
-                     * @param e
-                     */
-                    req.onupgradeneeded = function (e) {
-                        var db = e.target.result;
-                        db.createObjectStore(that.STORE_NAME);
-                    };
+        console.error(message);
+        callback(error);
+      };
+    } catch (err) {
+      callback(err);
+    }
+  }
+}
 
-                    /**
-                     * Error of opening the database.
-                     *
-                     * @param e
-                     */
-                    req.onerror = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-
-                    /**
-                     * Error on database being blocked.
-                     *
-                     * @param e
-                     */
-                    req.onblocked = function (e) {
-                        var message = 'Database Problem: ' + e.target.error.message,
-                            error = new m.Error(message);
-                        console.error(message);
-                        callback(error);
-                    };
-                } catch (err) {
-                    callback(err);
-                }
-            }
-        });
-
-        return Module;
-    }());
-
-//>>excludeStart('buildExclude', pragmas.buildExclude);
-});
-//>>excludeEnd('buildExclude');
+export { DatabaseStorage as default };
