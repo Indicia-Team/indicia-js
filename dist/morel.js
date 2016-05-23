@@ -384,15 +384,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 
 	          if (!_helpers2.default.isDataURL(url)) {
-	            // load image
-	            var xhr = new XMLHttpRequest();
-	            xhr.open('GET', url, true);
-	            xhr.responseType = 'blob';
-	            xhr.onload = function (e) {
-	              onSuccess(null, null, null, this.response);
-	            };
+	            (function () {
+	              // load image
+	              var xhr = new XMLHttpRequest();
+	              xhr.open('GET', url, true);
+	              xhr.responseType = 'blob';
+	              xhr.onload = function () {
+	                onSuccess(null, null, null, xhr.response);
+	              };
 
-	            xhr.send();
+	              xhr.send();
+	            })();
 	          } else {
 	            onSuccess(null, null, url);
 	          }
@@ -419,7 +421,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function _flattener(attributes, options) {
 	      var flattened = options.flattened || {};
 	      var keys = options.keys || {};
-	      var count = options.count || '';
+	      var count = options.count;
 	      var attr = null;
 	      var name = null;
 	      var value = null;

@@ -242,7 +242,6 @@ class Morel {
           } else {
             mediaType = `image/${mediaType}`;
           }
-
           if (!blob) {
             blob = helpers.dataURItoBlob(dataURI, mediaType);
           }
@@ -257,8 +256,8 @@ class Morel {
           const xhr = new XMLHttpRequest();
           xhr.open('GET', url, true);
           xhr.responseType = 'blob';
-          xhr.onload = function(e) {
-            onSuccess(null, null, null, this.response);
+          xhr.onload = () => {
+            onSuccess(null, null, null, xhr.response);
           };
 
           xhr.send();
@@ -287,7 +286,7 @@ class Morel {
   _flattener(attributes, options) {
     const flattened = options.flattened || {};
     const keys = options.keys || {};
-    const count = options.count || '';
+    const count = options.count;
     let attr = null;
     let name = null;
     let value = null;
