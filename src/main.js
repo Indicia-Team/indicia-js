@@ -257,9 +257,8 @@ class Morel {
           const xhr = new XMLHttpRequest();
           xhr.open('GET', url, true);
           xhr.responseType = 'blob';
-
-          xhr.onload = () => {
-            onSuccess(null, null, null, xhr.response);
+          xhr.onload = function(e) {
+            onSuccess(null, null, null, this.response);
           };
 
           xhr.send();

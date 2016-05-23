@@ -384,18 +384,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 
 	          if (!_helpers2.default.isDataURL(url)) {
-	            (function () {
-	              // load image
-	              var xhr = new XMLHttpRequest();
-	              xhr.open('GET', url, true);
-	              xhr.responseType = 'blob';
+	            // load image
+	            var xhr = new XMLHttpRequest();
+	            xhr.open('GET', url, true);
+	            xhr.responseType = 'blob';
+	            xhr.onload = function (e) {
+	              onSuccess(null, null, null, this.response);
+	            };
 
-	              xhr.onload = function () {
-	                onSuccess(null, null, null, xhr.response);
-	              };
-
-	              xhr.send();
-	            })();
+	            xhr.send();
 	          } else {
 	            onSuccess(null, null, url);
 	          }
