@@ -257,9 +257,11 @@ class Morel {
           const xhr = new XMLHttpRequest();
           xhr.open('GET', url, true);
           xhr.responseType = 'blob';
-          xhr.onload = function(e) {
-            onSuccess(null, null, null, this.response);
+
+          xhr.onload = () => {
+            onSuccess(null, null, null, xhr.response);
           };
+
           xhr.send();
         } else {
           onSuccess(null, null, url);
@@ -286,7 +288,7 @@ class Morel {
   _flattener(attributes, options) {
     const flattened = options.flattened || {};
     const keys = options.keys || {};
-    const count = options.count;
+    const count = options.count || '';
     let attr = null;
     let name = null;
     let value = null;
@@ -298,6 +300,16 @@ class Morel {
       prefix = 'sc:';
       native = '::occurrence:';
       custom = '::occAttr:';
+    }
+
+    // add external ID
+    const id = this.cid || this.id;
+    if (id) {
+      if (this instanceof Occurrence) {
+        flattened[`${prefix + count + native}external_key`] = id;
+      } else {
+        flattened[`${native}external_key`] = this.cid || this.id;
+      }
     }
 
     for (attr in attributes) {

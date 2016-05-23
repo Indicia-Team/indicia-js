@@ -384,14 +384,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 
 	          if (!_helpers2.default.isDataURL(url)) {
-	            // load image
-	            var xhr = new XMLHttpRequest();
-	            xhr.open('GET', url, true);
-	            xhr.responseType = 'blob';
-	            xhr.onload = function (e) {
-	              onSuccess(null, null, null, this.response);
-	            };
-	            xhr.send();
+	            (function () {
+	              // load image
+	              var xhr = new XMLHttpRequest();
+	              xhr.open('GET', url, true);
+	              xhr.responseType = 'blob';
+
+	              xhr.onload = function () {
+	                onSuccess(null, null, null, xhr.response);
+	              };
+
+	              xhr.send();
+	            })();
 	          } else {
 	            onSuccess(null, null, url);
 	          }
@@ -418,7 +422,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function _flattener(attributes, options) {
 	      var flattened = options.flattened || {};
 	      var keys = options.keys || {};
-	      var count = options.count;
+	      var count = options.count || '';
 	      var attr = null;
 	      var name = null;
 	      var value = null;
@@ -430,6 +434,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        prefix = 'sc:';
 	        native = '::occurrence:';
 	        custom = '::occAttr:';
+	      }
+
+	      // add external ID
+	      var id = this.cid || this.id;
+	      if (id) {
+	        if (this instanceof _Occurrence2.default) {
+	          flattened[prefix + count + native + 'external_key'] = id;
+	        } else {
+	          flattened[native + 'external_key'] = this.cid || this.id;
+	        }
 	      }
 
 	      for (attr in attributes) {
