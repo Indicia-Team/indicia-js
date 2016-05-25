@@ -136,11 +136,11 @@ It uses Backbone Models and Collections, so each Sample and Occurrence has also 
 
 ***Sample:***
 
-* constructor()
 * addOccurrence(occurrence)
-* constructor()
 * destroy()
 * getSyncStatus()
+* set(attr, value)
+* get(attr)
 * save(attrs)
 * toJSON()
 * validate(attributes)
@@ -148,8 +148,9 @@ It uses Backbone Models and Collections, so each Sample and Occurrence has also 
 ***Occurrence:***
 
 * addImage(image)
-* constructor()
 * destroy()
+* set(attr, value)
+* get(attr)
 * save(attrs)
 * setSample(sample)
 * toJSON()
@@ -161,6 +162,8 @@ It uses Backbone Models and Collections, so each Sample and Occurrence has also 
 * destroy()
 * getURL()
 * resize(MAX_WIDTH, MAX_HEIGHT, callback)
+* set(attr, value)
+* get(attr)
 * save(attrs)
 * setOccurrence(occurrence)
 * toJSON()
