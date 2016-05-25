@@ -9,6 +9,13 @@ Biological record management and communication with Indicia Drupal API (mobile_a
 - Offline storage (LocalStorage, IndexedDB and easily added more)
 - Synchronisation with the cloud (Drupal mobile_auth module)
 
+## Requirements
+
+[Backbone](http://backbonejs.org/) - used as Morel core to structure the data and its management.
+
+[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) - optional, if no IndexedDB 
+is not in use or is fully supported by targeted browsers, or localStorage is enough.
+
 ## Usage
 
 ```javascript
@@ -157,13 +164,6 @@ It uses Backbone Models and Collections, so each Sample and Occurrence has also 
 * save(attrs)
 * setOccurrence(occurrence)
 * toJSON()
-
-## Requirements
-
-[Backbone](http://backbone.org) 
-
-[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) - optional if no IndexedDB 
-is not in use or is fully supported by targeted browsers, or localStorage is enough.
 
 ## Building
 
