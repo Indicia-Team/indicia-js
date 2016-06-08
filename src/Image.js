@@ -20,7 +20,7 @@ const ImageModel = Backbone.Model.extend({
       return;
     }
 
-    this.cid = options.cid || helpers.getNewUUID();
+    this.cid = options.cid || options.id || helpers.getNewUUID();
     this.setOccurrence(options.occurrence || this.occurrence);
 
     this.attributes = {};

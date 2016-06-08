@@ -28,7 +28,7 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
-    this.cid = options.cid || helpers.getNewUUID();
+    this.cid = options.cid || options.id || helpers.getNewUUID();
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
 

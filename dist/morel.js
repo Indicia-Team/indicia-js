@@ -373,7 +373,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	              mediaType = 'image/' + mediaType;
 	            }
-
 	            if (!blob) {
 	              blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
 	            }
@@ -664,7 +663,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
-	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
@@ -1202,7 +1201,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 	    var attrs = attributes;
 
-	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
 	    this.setSample(options.sample || this.sample);
 
 	    if (options.Image) this.Image = options.Image;
@@ -1423,7 +1422,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return;
 	    }
 
-	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
 	    this.setOccurrence(options.occurrence || this.occurrence);
 
 	    this.attributes = {};
