@@ -5,7 +5,11 @@ import DatabaseStorage from '../src/DatabaseStorage';
 import LocalStorage from '../src/LocalStorage';
 
 function tests(storage) {
-  it('should have a cache', (done) => {
+  beforeEach(done => {
+    storage.clear(done);
+  });
+
+  it('should have a cache', done => {
     expect(storage.cache).to.not.be.null;
 
     if (!storage.initialized) {
@@ -20,31 +24,85 @@ function tests(storage) {
     done();
   });
 
-  it('should return error if no id or cid has been passed', (done) => {
+  it('should return error if no id or cid has been passed', done => {
     storage.set(12345, (err) => {
       expect(err).to.be.an('object');
       done();
     });
   });
 
-  it('should set get has', (done) => {
+  it('should set get has', done => {
     const item = {
       id: helpers.getNewUUID(),
     };
 
-    storage.clear((err) => {
-      if (err) throw err.message;
+    storage.set(item, (setErr) => {
+      if (setErr) throw setErr.message;
+
+      storage.get(item, (getErr, data) => {
+        if (getErr) throw getErr.message;
+
+        expect(data.id).to.be.equal(item.id);
+
+        storage.has(item, (hasErr, contains) => {
+          expect(contains).to.be.true;
+          done();
+        });
+      });
+    });
+  });
+
+  it('should size', done => {
+    storage.size((sizeErr, size) => {
+      if (sizeErr) throw sizeErr.message;
+
+      const item = {
+        id: helpers.getNewUUID(),
+      };
+
+      expect(size).to.be.equal(0);
 
       storage.set(item, (setErr) => {
         if (setErr) throw setErr.message;
 
-        storage.get(item, (getErr, data) => {
-          if (getErr) throw getErr.message;
+        storage.size((newSizeErr, newSize) => {
+          if (newSizeErr) throw newSizeErr.message;
 
-          expect(data.id).to.be.equal(item.id);
+          expect(newSize).to.be.equal(1);
+          storage.clear((clearErr) => {
+            if (clearErr) throw clearErr.message;
 
-          storage.has(item, (hasErr, contains) => {
-            expect(contains).to.be.true;
+            storage.size((finalSizeErr, finalSize) => {
+              if (finalSizeErr) throw finalSizeErr.message;
+
+              expect(finalSize).to.be.equal(0);
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  it('should getAll', done => {
+    storage.getAll((getAllErr, allItems) => {
+      if (getAllErr) throw getAllErr.message;
+
+      const item = {
+        id: helpers.getNewUUID(),
+      };
+      expect(allItems).to.be.an.object;
+
+      storage.set(item, (setErr) => {
+        if (setErr) throw setErr.message;
+
+        storage.getAll((finalGetAllErr, newAllItems) => {
+          if (finalGetAllErr) throw finalGetAllErr.message;
+
+          storage.size((sizeErr, size) => {
+            if (sizeErr) throw sizeErr.message;
+
+            expect(size).to.be.equal(newAllItems.length);
             done();
           });
         });
@@ -52,69 +110,15 @@ function tests(storage) {
     });
   });
 
-  it('should size, clear', (done) => {
-    storage.clear((err) => {
-      if (err) throw err.message;
+  it('should pass error object to on database error', done => {
+    const item = {
+      id: helpers.getNewUUID(),
+      corruptedAttribute: () => {},
+    };
 
-      storage.size((sizeErr, size) => {
-        if (sizeErr) throw sizeErr.message;
-
-        const item = {
-          id: helpers.getNewUUID(),
-        };
-
-        expect(size).to.be.equal(0);
-
-        storage.set(item, (setErr) => {
-          if (setErr) throw setErr.message;
-
-          storage.size((newSizeErr, newSize) => {
-            if (newSizeErr) throw newSizeErr.message;
-
-            expect(newSize).to.be.equal(1);
-            storage.clear((clearErr) => {
-              if (clearErr) throw clearErr.message;
-
-              storage.size((finalSizeErr, finalSize) => {
-                if (finalSizeErr) throw finalSizeErr.message;
-
-                expect(finalSize).to.be.equal(0);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
-  it('should getAll', (done) => {
-    storage.clear((err) => {
-      if (err) throw err.message;
-
-      storage.getAll((getAllErr, allItems) => {
-        if (getAllErr) throw getAllErr.message;
-
-        const item = {
-          id: helpers.getNewUUID(),
-        };
-        expect(allItems).to.be.an.object;
-
-        storage.set(item, (setErr) => {
-          if (setErr) throw setErr.message;
-
-          storage.getAll((finalGetAllErr, newAllItems) => {
-            if (finalGetAllErr) throw finalGetAllErr.message;
-
-            storage.size((sizeErr, size) => {
-              if (sizeErr) throw sizeErr.message;
-
-              expect(size).to.be.equal(newAllItems.length);
-              done();
-            });
-          });
-        });
-      });
+    storage.set(item, (setErr) => {
+      expect(setErr).to.be.not.null;
+      done();
     });
   });
 }
@@ -124,7 +128,7 @@ describe('Storage', () => {
   const databaseStorage = new Storage({ Storage: DatabaseStorage });
 
   // clean up
-  after((done) => {
+  after(done => {
     localStorage.clear(() => {
       databaseStorage.clear(done);
     });

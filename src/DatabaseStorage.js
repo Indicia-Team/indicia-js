@@ -31,17 +31,16 @@ class DatabaseStorage {
    * @param callback
    */
   set(key, data, callback) {
-    try {
-      this.open((err, store) => {
-        if (err) {
-          callback && callback(err);
-          return;
-        }
+    this.open((err, store) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
 
+      try {
         const dataJSON = (typeof data.toJSON === 'function') ? data.toJSON() : data;
 
         const req = store.put(dataJSON, key);
-
         req.onsuccess = () => {
           callback && callback(null, dataJSON);
         };
@@ -52,10 +51,10 @@ class DatabaseStorage {
           console.error(message);
           callback && callback(error);
         };
-      });
-    } catch (err) {
-      callback && callback(err);
-    }
+      } catch (err) {
+        callback && callback(err);
+      }
+    });
   }
 
   /**
@@ -66,13 +65,13 @@ class DatabaseStorage {
    * @returns {*}
    */
   get(key, callback) {
-    try {
-      this.open((err, store) => {
-        if (err) {
-          callback(err);
-          return;
-        }
+    this.open((err, store) => {
+      if (err) {
+        callback(err);
+        return;
+      }
 
+      try {
         const req = store.index('id').get(key);
         req.onsuccess = (e) => {
           const data = e.target.result;
@@ -85,10 +84,10 @@ class DatabaseStorage {
           console.error(message);
           callback(error);
         };
-      });
-    } catch (err) {
-      callback(err);
-    }
+      } catch (err) {
+        callback && callback(err);
+      }
+    });
   }
 
   /**
@@ -101,21 +100,25 @@ class DatabaseStorage {
   remove(key, callback) {
     const that = this;
 
-    try {
-      this.open((err, store) => {
-        if (err) {
-          callback && callback(err);
-          return;
-        }
+    this.open((err, store) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
 
+      try {
         const req = store.openCursor(that.IDBKeyRange.only(key));
         req.onsuccess = () => {
-          const cursor = req.result;
-          if (cursor) {
-            store.delete(cursor.primaryKey);
-            cursor.continue();
-          } else {
-            callback && callback();
+          try {
+            const cursor = req.result;
+            if (cursor) {
+              store.delete(cursor.primaryKey);
+              cursor.continue();
+            } else {
+              callback && callback();
+            }
+          } catch (err) {
+            callback && callback(err);
           }
         };
         req.onerror = (e) => {
@@ -125,10 +128,10 @@ class DatabaseStorage {
           console.error(message);
           callback && callback(error);
         };
-      });
-    } catch (err) {
-      callback && callback(err);
-    }
+      } catch (err) {
+        callback && callback(err);
+      }
+    });
   }
 
   /**
@@ -136,30 +139,32 @@ class DatabaseStorage {
    */
   getAll(callback) {
     const that = this;
-
-    try {
-      this.open((err, store) => {
-        if (err) {
-          callback(err);
-          return;
-        }
-
+    this.open((err, store) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      try {
         // Get everything in the store
         const keyRange = that.IDBKeyRange.lowerBound(0);
         const req = store.openCursor(keyRange);
         const data = {};
 
         req.onsuccess = (e) => {
-          const result = e.target.result;
+          try {
+            const result = e.target.result;
 
-          // If there's data, add it to array
-          if (result) {
-            data[result.key] = result.value;
-            result.continue();
+            // If there's data, add it to array
+            if (result) {
+              data[result.key] = result.value;
+              result.continue();
 
-            // Reach the end of the data
-          } else {
-            callback(null, data);
+              // Reach the end of the data
+            } else {
+              callback(null, data);
+            }
+          } catch (err) {
+            callback && callback(err);
           }
         };
 
@@ -170,10 +175,10 @@ class DatabaseStorage {
           console.error(message);
           callback(error);
         };
-      });
-    } catch (err) {
-      callback(err);
-    }
+      } catch (err) {
+        callback && callback(err);
+      }
+    });
   }
 
   /**
@@ -197,13 +202,13 @@ class DatabaseStorage {
    * Clears all the saved data.
    */
   clear(callback) {
-    try {
-      this.open((err, store) => {
-        if (err) {
-          callback && callback(err);
-          return;
-        }
+    this.open((err, store) => {
+      if (err) {
+        callback && callback(err);
+        return;
+      }
 
+      try {
         const req = store.clear();
 
         req.onsuccess = () => {
@@ -217,10 +222,10 @@ class DatabaseStorage {
 
           callback && callback(error);
         };
-      });
-    } catch (err) {
-      callback && callback(err);
-    }
+      } catch (err) {
+        callback && callback(err);
+      }
+    });
   }
 
   size(callback) {
@@ -253,16 +258,20 @@ class DatabaseStorage {
        * @param e
        */
       req.onsuccess = (e) => {
-        const db = e.target.result;
-        const transaction = db.transaction([that.STORE_NAME], 'readwrite');
-        if (transaction) {
-          const store = transaction.objectStore(that.STORE_NAME);
-          if (store) {
-            callback(null, store);
-          } else {
-            const err = new Error('Database Problem: no such store');
-            callback(err);
+        try {
+          const db = e.target.result;
+          const transaction = db.transaction([that.STORE_NAME], 'readwrite');
+          if (transaction) {
+            const store = transaction.objectStore(that.STORE_NAME);
+            if (store) {
+              callback(null, store);
+            } else {
+              const err = new Error('Database Problem: no such store');
+              callback(err);
+            }
           }
+        } catch (err) {
+          callback(err);
         }
       };
 
@@ -272,8 +281,12 @@ class DatabaseStorage {
        * @param e
        */
       req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        db.createObjectStore(that.STORE_NAME);
+        try {
+          const db = e.target.result;
+          db.createObjectStore(that.STORE_NAME);
+        } catch (err) {
+          callback && callback(err);
+        }
       };
 
       /**
