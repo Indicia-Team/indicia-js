@@ -563,7 +563,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	_underscore2.default.extend(Morel.prototype, _backbone2.default.Events);
 
 	_underscore2.default.extend(Morel, _constants2.default, {
-	  VERSION: '3.1.0', // library version, generated/replaced by grunt
+	  VERSION: '3.1.2', // library version, generated/replaced by grunt
 
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
@@ -2270,31 +2270,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(DatabaseStorage, [{
 	    key: 'set',
 	    value: function set(key, data, callback) {
-	      try {
-	        this.open(function (err, store) {
-	          if (err) {
-	            callback && callback(err);
-	            return;
-	          }
+	      this.open(function (err, store) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
 
-	          var dataJSON = typeof data.toJSON === 'function' ? data.toJSON() : data;
+	        try {
+	          (function () {
+	            var dataJSON = typeof data.toJSON === 'function' ? data.toJSON() : data;
 
-	          var req = store.put(dataJSON, key);
+	            var req = store.put(dataJSON, key);
+	            req.onsuccess = function () {
+	              callback && callback(null, dataJSON);
+	            };
 
-	          req.onsuccess = function () {
-	            callback && callback(null, dataJSON);
-	          };
-
-	          req.onerror = function (e) {
-	            var message = 'Database Problem: ' + e.target.error.message;
-	            var error = new _Error2.default(message);
-	            console.error(message);
-	            callback && callback(error);
-	          };
-	        });
-	      } catch (err) {
-	        callback && callback(err);
-	      }
+	            req.onerror = function (e) {
+	              var message = 'Database Problem: ' + e.target.error.message;
+	              var error = new _Error2.default(message);
+	              console.error(message);
+	              callback && callback(error);
+	            };
+	          })();
+	        } catch (err) {
+	          callback && callback(err);
+	        }
+	      });
 	    }
 
 	    /**
@@ -2308,13 +2309,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'get',
 	    value: function get(key, callback) {
-	      try {
-	        this.open(function (err, store) {
-	          if (err) {
-	            callback(err);
-	            return;
-	          }
+	      this.open(function (err, store) {
+	        if (err) {
+	          callback(err);
+	          return;
+	        }
 
+	        try {
 	          var req = store.index('id').get(key);
 	          req.onsuccess = function (e) {
 	            var data = e.target.result;
@@ -2327,10 +2328,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            console.error(message);
 	            callback(error);
 	          };
-	        });
-	      } catch (err) {
-	        callback(err);
-	      }
+	        } catch (err) {
+	          callback && callback(err);
+	        }
+	      });
 	    }
 
 	    /**
@@ -2346,34 +2347,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function remove(key, callback) {
 	      var that = this;
 
-	      try {
-	        this.open(function (err, store) {
-	          if (err) {
-	            callback && callback(err);
-	            return;
-	          }
+	      this.open(function (err, store) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
 
-	          var req = store.openCursor(that.IDBKeyRange.only(key));
-	          req.onsuccess = function () {
-	            var cursor = req.result;
-	            if (cursor) {
-	              store.delete(cursor.primaryKey);
-	              cursor.continue();
-	            } else {
-	              callback && callback();
-	            }
-	          };
-	          req.onerror = function (e) {
-	            var message = 'Database Problem: ' + e.target.error.message;
-	            var error = new _Error2.default(message);
+	        try {
+	          (function () {
+	            var req = store.openCursor(that.IDBKeyRange.only(key));
+	            req.onsuccess = function () {
+	              try {
+	                var cursor = req.result;
+	                if (cursor) {
+	                  store.delete(cursor.primaryKey);
+	                  cursor.continue();
+	                } else {
+	                  callback && callback();
+	                }
+	              } catch (err) {
+	                callback && callback(err);
+	              }
+	            };
+	            req.onerror = function (e) {
+	              var message = 'Database Problem: ' + e.target.error.message;
+	              var error = new _Error2.default(message);
 
-	            console.error(message);
-	            callback && callback(error);
-	          };
-	        });
-	      } catch (err) {
-	        callback && callback(err);
-	      }
+	              console.error(message);
+	              callback && callback(error);
+	            };
+	          })();
+	        } catch (err) {
+	          callback && callback(err);
+	        }
+	      });
 	    }
 
 	    /**
@@ -2384,44 +2391,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'getAll',
 	    value: function getAll(callback) {
 	      var that = this;
+	      this.open(function (err, store) {
+	        if (err) {
+	          callback(err);
+	          return;
+	        }
+	        try {
+	          (function () {
+	            // Get everything in the store
+	            var keyRange = that.IDBKeyRange.lowerBound(0);
+	            var req = store.openCursor(keyRange);
+	            var data = {};
 
-	      try {
-	        this.open(function (err, store) {
-	          if (err) {
-	            callback(err);
-	            return;
-	          }
+	            req.onsuccess = function (e) {
+	              try {
+	                var result = e.target.result;
 
-	          // Get everything in the store
-	          var keyRange = that.IDBKeyRange.lowerBound(0);
-	          var req = store.openCursor(keyRange);
-	          var data = {};
+	                // If there's data, add it to array
+	                if (result) {
+	                  data[result.key] = result.value;
+	                  result.continue();
 
-	          req.onsuccess = function (e) {
-	            var result = e.target.result;
-
-	            // If there's data, add it to array
-	            if (result) {
-	              data[result.key] = result.value;
-	              result.continue();
-
-	              // Reach the end of the data
-	            } else {
-	                callback(null, data);
+	                  // Reach the end of the data
+	                } else {
+	                    callback(null, data);
+	                  }
+	              } catch (err) {
+	                callback && callback(err);
 	              }
-	          };
+	            };
 
-	          req.onerror = function (e) {
-	            var message = 'Database Problem: ' + e.target.error.message;
-	            var error = new _Error2.default(message);
+	            req.onerror = function (e) {
+	              var message = 'Database Problem: ' + e.target.error.message;
+	              var error = new _Error2.default(message);
 
-	            console.error(message);
-	            callback(error);
-	          };
-	        });
-	      } catch (err) {
-	        callback(err);
-	      }
+	              console.error(message);
+	              callback(error);
+	            };
+	          })();
+	        } catch (err) {
+	          callback && callback(err);
+	        }
+	      });
 	    }
 
 	    /**
@@ -2451,13 +2462,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'clear',
 	    value: function clear(callback) {
-	      try {
-	        this.open(function (err, store) {
-	          if (err) {
-	            callback && callback(err);
-	            return;
-	          }
+	      this.open(function (err, store) {
+	        if (err) {
+	          callback && callback(err);
+	          return;
+	        }
 
+	        try {
 	          var req = store.clear();
 
 	          req.onsuccess = function () {
@@ -2471,10 +2482,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            callback && callback(error);
 	          };
-	        });
-	      } catch (err) {
-	        callback && callback(err);
-	      }
+	        } catch (err) {
+	          callback && callback(err);
+	        }
+	      });
 	    }
 	  }, {
 	    key: 'size',
@@ -2511,16 +2522,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @param e
 	         */
 	        req.onsuccess = function (e) {
-	          var db = e.target.result;
-	          var transaction = db.transaction([that.STORE_NAME], 'readwrite');
-	          if (transaction) {
-	            var store = transaction.objectStore(that.STORE_NAME);
-	            if (store) {
-	              callback(null, store);
-	            } else {
-	              var err = new _Error2.default('Database Problem: no such store');
-	              callback(err);
+	          try {
+	            var db = e.target.result;
+	            var transaction = db.transaction([that.STORE_NAME], 'readwrite');
+	            if (transaction) {
+	              var store = transaction.objectStore(that.STORE_NAME);
+	              if (store) {
+	                callback(null, store);
+	              } else {
+	                var err = new _Error2.default('Database Problem: no such store');
+	                callback(err);
+	              }
 	            }
+	          } catch (err) {
+	            callback(err);
 	          }
 	        };
 
@@ -2530,8 +2545,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @param e
 	         */
 	        req.onupgradeneeded = function (e) {
-	          var db = e.target.result;
-	          db.createObjectStore(that.STORE_NAME);
+	          try {
+	            var db = e.target.result;
+	            db.createObjectStore(that.STORE_NAME);
+	          } catch (err) {
+	            callback && callback(err);
+	          }
 	        };
 
 	        /**
