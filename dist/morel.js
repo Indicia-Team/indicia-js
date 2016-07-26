@@ -563,7 +563,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	_underscore2.default.extend(Morel.prototype, _backbone2.default.Events);
 
 	_underscore2.default.extend(Morel, _constants2.default, {
-	  VERSION: '3.1.2', // library version, generated/replaced by grunt
+	  VERSION: '3.1.3', // library version, generated/replaced by grunt
 
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
