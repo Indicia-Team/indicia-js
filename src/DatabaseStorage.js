@@ -46,9 +46,9 @@ class DatabaseStorage {
         };
 
         req.onerror = (e) => {
-          const message = `Database Problem: ${e.target.error.message}`;
-          const error = new Error(message);
-          console.error(message);
+          console.error('Database error.');
+          console.error(e.target.error);
+          const error = new Error(e.target.error);
           callback && callback(error);
         };
       } catch (err) {
@@ -79,9 +79,9 @@ class DatabaseStorage {
         };
 
         req.onerror = (e) => {
-          const message = `Database Problem: ${e.target.error.message}`;
-          const error = new Error(message);
-          console.error(message);
+          console.error('Database error.');
+          console.error(e.target.error);
+          const error = new Error(e.target.error);
           callback(error);
         };
       } catch (err) {
@@ -122,10 +122,9 @@ class DatabaseStorage {
           }
         };
         req.onerror = (e) => {
-          const message = `Database Problem: ${e.target.error.message}`;
-          const error = new Error(message);
-
-          console.error(message);
+          console.error('Database error.');
+          console.error(e.target.error);
+          const error = new Error(e.target.error);
           callback && callback(error);
         };
       } catch (err) {
@@ -169,10 +168,9 @@ class DatabaseStorage {
         };
 
         req.onerror = (e) => {
-          const message = `Database Problem: ${e.target.error.message}`;
-          const error = new Error(message);
-
-          console.error(message);
+          console.error('Database error.');
+          console.error(e.target.error);
+          const error = new Error(e.target.error);
           callback(error);
         };
       } catch (err) {
@@ -216,10 +214,9 @@ class DatabaseStorage {
         };
 
         req.onerror = (e) => {
-          const message = `Database Problem: ${e.target.error.message}`;
-          const error = new Error(message);
-          console.error(message);
-
+          console.error('Database error.');
+          console.error(e.target.error);
+          const error = new Error(e.target.error);
           callback && callback(error);
         };
       } catch (err) {
@@ -295,10 +292,9 @@ class DatabaseStorage {
        * @param e
        */
       req.onerror = (e) => {
-        const message = `Database Problem: ${e.target.error.message}`;
-        const error = new Error(message);
-
-        console.error(message);
+        console.error('Database error.');
+        console.error(e.target.error);
+        const error = new Error(e.target.error);
         callback(error);
       };
 
@@ -308,10 +304,9 @@ class DatabaseStorage {
        * @param e
        */
       req.onblocked = (e) => {
-        const message = `Database Problem: ${e.target.error.message}`;
-        const error = new Error(message);
-
-        console.error(message);
+        console.error('Database error.');
+        console.error(e.target.error);
+        const error = new Error(e.target.error);
         callback(error);
       };
     } catch (err) {

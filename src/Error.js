@@ -2,14 +2,14 @@
  * ERROR
  **********************************************************************/
 class Error {
-  constructor(options) {
+  constructor(options = {}) {
     if (typeof options === 'string') {
-      this.number = -1;
+      this.code = -1;
       this.message = options;
       return;
     }
 
-    this.number = options.number || -1;
+    this.code = options.code || -1;
     this.message = options.message || '';
   }
 }

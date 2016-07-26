@@ -1685,16 +1685,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * ERROR
 	 **********************************************************************/
 
-	var Error = function Error(options) {
+	var Error = function Error() {
+	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
 	  _classCallCheck(this, Error);
 
 	  if (typeof options === 'string') {
-	    this.number = -1;
+	    this.code = -1;
 	    this.message = options;
 	    return;
 	  }
 
-	  this.number = options.number || -1;
+	  this.code = options.code || -1;
 	  this.message = options.message || '';
 	};
 
@@ -2286,9 +2288,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            };
 
 	            req.onerror = function (e) {
-	              var message = 'Database Problem: ' + e.target.error.message;
-	              var error = new _Error2.default(message);
-	              console.error(message);
+	              console.error('Database error.');
+	              console.error(e.target.error);
+	              var error = new _Error2.default(e.target.error);
 	              callback && callback(error);
 	            };
 	          })();
@@ -2323,9 +2325,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	          };
 
 	          req.onerror = function (e) {
-	            var message = 'Database Problem: ' + e.target.error.message;
-	            var error = new _Error2.default(message);
-	            console.error(message);
+	            console.error('Database error.');
+	            console.error(e.target.error);
+	            var error = new _Error2.default(e.target.error);
 	            callback(error);
 	          };
 	        } catch (err) {
@@ -2370,10 +2372,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	              }
 	            };
 	            req.onerror = function (e) {
-	              var message = 'Database Problem: ' + e.target.error.message;
-	              var error = new _Error2.default(message);
-
-	              console.error(message);
+	              console.error('Database error.');
+	              console.error(e.target.error);
+	              var error = new _Error2.default(e.target.error);
 	              callback && callback(error);
 	            };
 	          })();
@@ -2422,10 +2423,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            };
 
 	            req.onerror = function (e) {
-	              var message = 'Database Problem: ' + e.target.error.message;
-	              var error = new _Error2.default(message);
-
-	              console.error(message);
+	              console.error('Database error.');
+	              console.error(e.target.error);
+	              var error = new _Error2.default(e.target.error);
 	              callback(error);
 	            };
 	          })();
@@ -2476,10 +2476,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	          };
 
 	          req.onerror = function (e) {
-	            var message = 'Database Problem: ' + e.target.error.message;
-	            var error = new _Error2.default(message);
-	            console.error(message);
-
+	            console.error('Database error.');
+	            console.error(e.target.error);
+	            var error = new _Error2.default(e.target.error);
 	            callback && callback(error);
 	          };
 	        } catch (err) {
@@ -2559,10 +2558,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @param e
 	         */
 	        req.onerror = function (e) {
-	          var message = 'Database Problem: ' + e.target.error.message;
-	          var error = new _Error2.default(message);
-
-	          console.error(message);
+	          console.error('Database error.');
+	          console.error(e.target.error);
+	          var error = new _Error2.default(e.target.error);
 	          callback(error);
 	        };
 
@@ -2572,10 +2570,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @param e
 	         */
 	        req.onblocked = function (e) {
-	          var message = 'Database Problem: ' + e.target.error.message;
-	          var error = new _Error2.default(message);
-
-	          console.error(message);
+	          console.error('Database error.');
+	          console.error(e.target.error);
+	          var error = new _Error2.default(e.target.error);
 	          callback(error);
 	        };
 	      } catch (err) {
