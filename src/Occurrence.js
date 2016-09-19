@@ -38,10 +38,10 @@ const Occurrence = Backbone.Model.extend({
       const images = [];
       _.each(options.images, (image) => {
         if (image instanceof this.Image) {
-          image.setOccurrence(that);
+          image.setParent(that);
           images.push(image);
         } else {
-          const modelOptions = _.extend(image, { occurrence: that });
+          const modelOptions = _.extend(image, { parent: that });
           images.push(new this.Image(image.attributes, modelOptions));
         }
       });
@@ -106,7 +106,7 @@ const Occurrence = Backbone.Model.extend({
    */
   addImage(image) {
     if (!image) return;
-    image.setOccurrence(this);
+    image.setParent(this);
     this.images.add(image);
   },
 

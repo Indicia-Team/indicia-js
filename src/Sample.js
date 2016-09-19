@@ -11,10 +11,12 @@ import Backbone from 'backbone';
 import _ from 'underscore';
 import CONST from './constants';
 import helpers from './helpers';
+import Image from './Image';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
 const Sample = Backbone.Model.extend({
+  Image,
   Occurrence,
 
   constructor(attributes = {}, options = {}) {
@@ -32,6 +34,7 @@ const Sample = Backbone.Model.extend({
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
 
+    if (options.Image) this.Image = options.Image;
     if (options.Occurrence) this.Occurrence = options.Occurrence;
     if (options.onSend) this.onSend = options.onSend;
 
@@ -74,6 +77,26 @@ const Sample = Backbone.Model.extend({
     } else {
       this.occurrences = new Collection([], {
         model: this.Occurrence,
+      });
+    }
+
+    if (options.images) {
+      const images = [];
+      _.each(options.images, (image) => {
+        if (image instanceof this.Image) {
+          image.setParent(that);
+          images.push(image);
+        } else {
+          const modelOptions = _.extend(image, { parent: that });
+          images.push(new this.Image(image.attributes, modelOptions));
+        }
+      });
+      this.images = new Collection(images, {
+        model: this.Image,
+      });
+    } else {
+      this.images = new Collection([], {
+        model: this.Image,
       });
     }
 
@@ -146,6 +169,17 @@ const Sample = Backbone.Model.extend({
     this.occurrences.push(occurrence);
   },
 
+  /**
+   * Adds an image to occurrence and sets the images's occurrence to this.
+   * @param image
+   */
+  addImage(image) {
+    if (!image) return;
+    image.setParent(this);
+    this.images.add(image);
+  },
+
+
   validate(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
@@ -204,6 +238,7 @@ const Sample = Backbone.Model.extend({
    * @returns {*}
    */
   flatten(flattener) {
+    // images flattened separately
     const flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
     // occurrences
@@ -221,12 +256,22 @@ const Sample = Backbone.Model.extend({
       occurrences = occurrencesCollection.toJSON();
     }
 
+    let images;
+    const imagesCollection = this.images;
+    if (!imagesCollection) {
+      images = [];
+      console.warn('toJSON images missing');
+    } else {
+      images = imagesCollection.toJSON();
+    }
+
     const data = {
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
       occurrences,
+      images,
     };
 
     return data;

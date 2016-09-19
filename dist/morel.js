@@ -79,7 +79,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(7);
+	var _Occurrence = __webpack_require__(9);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -95,11 +95,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
-	var _Image = __webpack_require__(8);
+	var _Image = __webpack_require__(7);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -634,7 +634,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Occurrence = __webpack_require__(7);
+	var _Image = __webpack_require__(7);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Occurrence = __webpack_require__(9);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -645,6 +649,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Sample = _backbone2.default.Model.extend({
+	  Image: _Image2.default,
 	  Occurrence: _Occurrence2.default,
 
 	  constructor: function constructor() {
@@ -667,6 +672,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
+	    if (options.Image) this.Image = options.Image;
 	    if (options.Occurrence) this.Occurrence = options.Occurrence;
 	    if (options.onSend) this.onSend = options.onSend;
 
@@ -714,6 +720,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    }
 
+	    if (options.images) {
+	      (function () {
+	        var images = [];
+	        _underscore2.default.each(options.images, function (image) {
+	          if (image instanceof _this.Image) {
+	            image.setParent(that);
+	            images.push(image);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(image, { parent: that });
+	            images.push(new _this.Image(image.attributes, modelOptions));
+	          }
+	        });
+	        _this.images = new _Collection2.default(images, {
+	          model: _this.Image
+	        });
+	      })();
+	    } else {
+	      this.images = new _Collection2.default([], {
+	        model: this.Image
+	      });
+	    }
+
 	    this.initialize.apply(this, arguments);
 	  },
 
@@ -733,7 +761,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // only update local cache and DB
 	    if (!options.remote) {
-	      var _ret2 = function () {
+	      var _ret3 = function () {
 	        // todo: add attrs if passed to model
 	        var deferred = _backbone2.default.$.Deferred();
 
@@ -751,7 +779,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	      }();
 
-	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	      if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
 	    }
 
 	    // remote
@@ -794,6 +822,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!occurrence) return;
 	    occurrence.setSample(this);
 	    this.occurrences.push(occurrence);
+	  },
+
+
+	  /**
+	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * @param image
+	   */
+	  addImage: function addImage(image) {
+	    if (!image) return;
+	    image.setParent(this);
+	    this.images.add(image);
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
@@ -854,6 +893,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  flatten: function flatten(flattener) {
+	    // images flattened separately
 	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
 	    // occurrences
@@ -870,12 +910,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	      occurrences = occurrencesCollection.toJSON();
 	    }
 
+	    var images = void 0;
+	    var imagesCollection = this.images;
+	    if (!imagesCollection) {
+	      images = [];
+	      console.warn('toJSON images missing');
+	    } else {
+	      images = imagesCollection.toJSON();
+	    }
+
 	    var data = {
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      occurrences: occurrences
+	      occurrences: occurrences,
+	      images: images
 	    };
 
 	    return data;
@@ -1159,227 +1209,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _jquery = __webpack_require__(1);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _backbone = __webpack_require__(3);
-
-	var _backbone2 = _interopRequireDefault(_backbone);
-
-	var _underscore = __webpack_require__(2);
-
-	var _underscore2 = _interopRequireDefault(_underscore);
-
-	var _helpers = __webpack_require__(6);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	var _Image = __webpack_require__(8);
-
-	var _Image2 = _interopRequireDefault(_Image);
-
-	var _Collection = __webpack_require__(10);
-
-	var _Collection2 = _interopRequireDefault(_Collection);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/** *********************************************************************
-	 * OCCURRENCE
-	 **********************************************************************/
-
-
-	var Occurrence = _backbone2.default.Model.extend({
-	  Image: _Image2.default,
-	  constructor: function constructor() {
-	    var _this = this;
-
-	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-	    var that = this;
-	    var attrs = attributes;
-
-	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
-	    this.setSample(options.sample || this.sample);
-
-	    if (options.Image) this.Image = options.Image;
-
-	    this.attributes = {};
-	    if (options.collection) this.collection = options.collection;
-	    if (options.parse) attrs = this.parse(attrs, options) || {};
-	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
-	    this.set(attrs, options);
-	    this.changed = {};
-
-	    if (options.metadata) {
-	      this.metadata = options.metadata;
-	    } else {
-	      this.metadata = {
-	        created_on: new Date()
-	      };
-	    }
-
-	    if (options.images) {
-	      (function () {
-	        var images = [];
-	        _underscore2.default.each(options.images, function (image) {
-	          if (image instanceof _this.Image) {
-	            image.setOccurrence(that);
-	            images.push(image);
-	          } else {
-	            var modelOptions = _underscore2.default.extend(image, { occurrence: that });
-	            images.push(new _this.Image(image.attributes, modelOptions));
-	          }
-	        });
-	        _this.images = new _Collection2.default(images, {
-	          model: _this.Image
-	        });
-	      })();
-	    } else {
-	      this.images = new _Collection2.default([], {
-	        model: this.Image
-	      });
-	    }
-
-	    this.initialize.apply(this, arguments);
-	  },
-	  save: function save(attrs) {
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-	    if (!this.sample) return false;
-	    return this.sample.save(attrs, options);
-	  },
-	  destroy: function destroy() {
-	    var _this2 = this;
-
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-	    var dfd = new _jquery2.default.Deferred();
-
-	    // removes from all collections etc
-	    this.stopListening();
-	    this.trigger('destroy', this, this.collection, options);
-
-	    if (this.sample && !options.noSave) {
-	      (function () {
-	        var success = options.success;
-	        options.success = function () {
-	          dfd.resolve();
-	          success && success();
-	        };
-
-	        // save the changes permanentely
-	        _this2.save(null, options);
-	      })();
-	    } else {
-	      dfd.resolve();
-	      options.success && options.success();
-	    }
-
-	    return dfd.promise();
-	  },
-
-
-	  /**
-	   * Sets parent Sample.
-	   * @param occurrence
-	   */
-	  setSample: function setSample(sample) {
-	    if (!sample) return;
-
-	    var that = this;
-	    this.sample = sample;
-	    this.sample.on('destroy', function () {
-	      that.destroy({ noSave: true });
-	    });
-	  },
-
-
-	  /**
-	   * Adds an image to occurrence and sets the images's occurrence to this.
-	   * @param image
-	   */
-	  addImage: function addImage(image) {
-	    if (!image) return;
-	    image.setOccurrence(this);
-	    this.images.add(image);
-	  },
-	  validate: function validate(attributes) {
-	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
-
-	    var errors = {};
-
-	    // location
-	    if (!attrs.taxon) {
-	      errors.taxon = 'can\'t be blank';
-	    }
-
-	    if (!_underscore2.default.isEmpty(errors)) {
-	      return errors;
-	    }
-
-	    return null;
-	  },
-	  toJSON: function toJSON() {
-	    var images = void 0;
-	    var imagesCollection = this.images;
-	    if (!imagesCollection) {
-	      images = [];
-	      console.warn('toJSON images missing');
-	    } else {
-	      images = imagesCollection.toJSON();
-	    }
-	    var data = {
-	      id: this.id,
-	      cid: this.cid,
-	      metadata: this.metadata,
-	      attributes: this.attributes,
-	      images: images
-	    };
-	    return data;
-	  },
-
-
-	  /**
-	   * Returns an object with attributes and their values flattened and
-	   * mapped for warehouse submission.
-	   *
-	   * @param flattener
-	   * @returns {*}
-	   */
-	  flatten: function flatten(flattener, count) {
-	    // images flattened separately
-	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
-	  }
-	});
-
-	/**
-	 * Warehouse attributes and their values.
-	 */
-	Occurrence.keys = {
-	  taxon: {
-	    id: ''
-	  },
-	  comment: {
-	    id: 'comment'
-	  }
-	};
-
-	exports.default = Occurrence;
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = undefined;
-
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
 	                                                                                                                                                                                                                                                   * IMAGE
 	                                                                                                                                                                                                                                                   **********************************************************************/
@@ -1401,7 +1230,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1423,7 +1252,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
-	    this.setOccurrence(options.occurrence || this.occurrence);
+	    this.setParent(options.parent || this.parent);
 
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
@@ -1445,8 +1274,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  save: function save(attrs) {
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	    if (!this.occurrence) return false;
-	    return this.occurrence.save(attrs, options);
+	    if (!this.parent) return false;
+	    return this.parent.save(attrs, options);
 	  },
 	  destroy: function destroy() {
 	    var _this = this;
@@ -1459,7 +1288,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.stopListening();
 	    this.trigger('destroy', this, this.collection, options);
 
-	    if (this.occurrence && !options.noSave) {
+	    if (this.parent && !options.noSave) {
 	      (function () {
 	        var success = options.success;
 	        options.success = function () {
@@ -1488,15 +1317,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Sets parent Occurrence.
-	   * @param occurrence
+	   * Sets parent.
+	   * @param parent
 	   */
-	  setOccurrence: function setOccurrence(occurrence) {
-	    if (!occurrence) return;
+	  setParent: function setParent(parent) {
+	    if (!parent) return;
 
 	    var that = this;
-	    this.occurrence = occurrence;
-	    this.occurrence.on('destroy', function () {
+	    this.parent = parent;
+	    this.parent.on('destroy', function () {
 	      that.destroy({ noSave: true });
 	    });
 	  },
@@ -1670,7 +1499,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1701,6 +1530,227 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	exports.default = Error;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _jquery = __webpack_require__(1);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
+	var _backbone = __webpack_require__(3);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(2);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _helpers = __webpack_require__(6);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Image = __webpack_require__(7);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Collection = __webpack_require__(10);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
+
+
+	var Occurrence = _backbone2.default.Model.extend({
+	  Image: _Image2.default,
+	  constructor: function constructor() {
+	    var _this = this;
+
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var that = this;
+	    var attrs = attributes;
+
+	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
+	    this.setSample(options.sample || this.sample);
+
+	    if (options.Image) this.Image = options.Image;
+
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date()
+	      };
+	    }
+
+	    if (options.images) {
+	      (function () {
+	        var images = [];
+	        _underscore2.default.each(options.images, function (image) {
+	          if (image instanceof _this.Image) {
+	            image.setParent(that);
+	            images.push(image);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(image, { parent: that });
+	            images.push(new _this.Image(image.attributes, modelOptions));
+	          }
+	        });
+	        _this.images = new _Collection2.default(images, {
+	          model: _this.Image
+	        });
+	      })();
+	    } else {
+	      this.images = new _Collection2.default([], {
+	        model: this.Image
+	      });
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+	  save: function save(attrs) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    if (!this.sample) return false;
+	    return this.sample.save(attrs, options);
+	  },
+	  destroy: function destroy() {
+	    var _this2 = this;
+
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    var dfd = new _jquery2.default.Deferred();
+
+	    // removes from all collections etc
+	    this.stopListening();
+	    this.trigger('destroy', this, this.collection, options);
+
+	    if (this.sample && !options.noSave) {
+	      (function () {
+	        var success = options.success;
+	        options.success = function () {
+	          dfd.resolve();
+	          success && success();
+	        };
+
+	        // save the changes permanentely
+	        _this2.save(null, options);
+	      })();
+	    } else {
+	      dfd.resolve();
+	      options.success && options.success();
+	    }
+
+	    return dfd.promise();
+	  },
+
+
+	  /**
+	   * Sets parent Sample.
+	   * @param occurrence
+	   */
+	  setSample: function setSample(sample) {
+	    if (!sample) return;
+
+	    var that = this;
+	    this.sample = sample;
+	    this.sample.on('destroy', function () {
+	      that.destroy({ noSave: true });
+	    });
+	  },
+
+
+	  /**
+	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * @param image
+	   */
+	  addImage: function addImage(image) {
+	    if (!image) return;
+	    image.setParent(this);
+	    this.images.add(image);
+	  },
+	  validate: function validate(attributes) {
+	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
+
+	    var errors = {};
+
+	    // location
+	    if (!attrs.taxon) {
+	      errors.taxon = 'can\'t be blank';
+	    }
+
+	    if (!_underscore2.default.isEmpty(errors)) {
+	      return errors;
+	    }
+
+	    return null;
+	  },
+	  toJSON: function toJSON() {
+	    var images = void 0;
+	    var imagesCollection = this.images;
+	    if (!imagesCollection) {
+	      images = [];
+	      console.warn('toJSON images missing');
+	    } else {
+	      images = imagesCollection.toJSON();
+	    }
+	    var data = {
+	      id: this.id,
+	      cid: this.cid,
+	      metadata: this.metadata,
+	      attributes: this.attributes,
+	      images: images
+	    };
+	    return data;
+	  },
+
+
+	  /**
+	   * Returns an object with attributes and their values flattened and
+	   * mapped for warehouse submission.
+	   *
+	   * @param flattener
+	   * @returns {*}
+	   */
+	  flatten: function flatten(flattener, count) {
+	    // images flattened separately
+	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
+	  }
+	});
+
+	/**
+	 * Warehouse attributes and their values.
+	 */
+	Occurrence.keys = {
+	  taxon: {
+	    id: ''
+	  },
+	  comment: {
+	    id: 'comment'
+	  }
+	};
+
+	exports.default = Occurrence;
 
 /***/ },
 /* 10 */
@@ -1770,7 +1820,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2010,7 +2060,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2227,7 +2277,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
