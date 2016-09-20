@@ -187,7 +187,7 @@ cd morel && npm install
 - Build the library: 
 
 ```bash
-grunt
+npm start
 ```
 
 This will update a `morel.js` and `morel.min.js`.
@@ -195,7 +195,7 @@ This will update a `morel.js` and `morel.min.js`.
 - Test the code
  
  ```bash
- grunt test
+ npm test
  ```
 
 ## Bugs and feature requests
