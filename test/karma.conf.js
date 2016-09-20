@@ -1,28 +1,20 @@
-const webpack = require('webpack');
-const path = require('path');
-const pkg = require('../package.json');
-const webpackMerge = require('webpack-merge');
-const webpackConfig = require('../webpack.config.js');
-
-const testWebpackConfig = webpackMerge(webpackConfig, {
-
-});
-
 module.exports = function exports(config) {
   config.set({
     basePath: '../',
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox'],
+    browsers: ['Chrome'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
-      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
-      { pattern: 'test/vendor/jquery.js', watched: false },
-      { pattern: 'test/vendor/underscore.js', watched: false },
-      { pattern: 'test/vendor/backbone.js', watched: false },
+      // load morel dependencies
+      { pattern: 'bower_components/IndexedDBShim/dist/indexeddbshim.min.js', watched: false },
+      { pattern: 'bower_components/jquery/dist/jquery.js', watched: false },
+      { pattern: 'bower_components/underscore/underscore-min.js', watched: false },
+      { pattern: 'bower_components/backbone/backbone-min.js', watched: false },
+
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
@@ -31,7 +23,7 @@ module.exports = function exports(config) {
       'tests.webpack.js': ['webpack'],
     },
 
-    webpack: testWebpackConfig,
+    webpack: require('../webpack.config.js'),
 
     webpackServer: {
       noInfo: true,

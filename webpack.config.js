@@ -16,7 +16,7 @@ ${_.pluck(pkg.licenses, 'url')}
 `;
 
 // production uglify
-const minimize = process.argv.indexOf('--minimize') !== -1;
+const uglify = process.argv.indexOf('--uglify') !== -1;
 const plugins = [
   new webpack.DefinePlugin({
     LIB_VERSION: JSON.stringify(pkg.version),
@@ -24,7 +24,7 @@ const plugins = [
   new webpack.BannerPlugin(banner),
 ];
 
-if (minimize) {
+if (uglify) {
   plugins.push(new webpack.optimize.UglifyJsPlugin({
     minimize: true,
   }));
@@ -43,9 +43,9 @@ module.exports = {
     umdNamedDefine: true,
   },
   externals: {
-    jquery: 'jquery',
+    jquery: 'jQuery',
     backbone: 'Backbone',
-    underscore: 'Underscore',
+    underscore: '_',
   },
   resolve: {
     root: [
