@@ -1,4 +1,12 @@
+const webpack = require('webpack');
 const path = require('path');
+const pkg = require('../package.json');
+const webpackMerge = require('webpack-merge');
+const webpackConfig = require('../webpack.config.js');
+
+const testWebpackConfig = webpackMerge(webpackConfig, {
+
+});
 
 module.exports = function exports(config) {
   config.set({
@@ -12,6 +20,9 @@ module.exports = function exports(config) {
 
     files: [
       { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
+      { pattern: 'test/vendor/jquery.js', watched: false },
+      { pattern: 'test/vendor/underscore.js', watched: false },
+      { pattern: 'test/vendor/backbone.js', watched: false },
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
@@ -20,26 +31,7 @@ module.exports = function exports(config) {
       'tests.webpack.js': ['webpack'],
     },
 
-    webpack: {
-      resolve: {
-        root: [
-          path.resolve('./test/vendor'),
-        ],
-        alias: {
-          backbone: 'backbone',
-          underscore: 'underscore',
-        },
-      },
-      module: {
-        loaders: [
-          {
-            // test: /^\.js$/,
-            exclude: /(node_modules|bower_components|vendor)/,
-            loader: 'babel-loader',
-          },
-        ],
-      },
-    },
+    webpack: testWebpackConfig,
 
     webpackServer: {
       noInfo: true,

@@ -417,7 +417,8 @@ class Morel {
 _.extend(Morel.prototype, Backbone.Events);
 
 _.extend(Morel, CONST, {
-  VERSION: '0', // library version, generated/replaced by grunt
+  /* global LIB_VERSION */
+  VERSION: LIB_VERSION, // replaced by build
 
   Sample,
   Occurrence,

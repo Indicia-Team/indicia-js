@@ -1,29 +1,59 @@
 const path = require('path');
+const _ = require('underscore');
+const webpack = require('webpack');
+const UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
+const pkg = require('./package.json');
+
+var filename = 'morel.js';
+
+const banner = `
+${pkg.name} ${pkg.version}
+${pkg.description}
+${pkg.homepage}
+Author ${pkg.author.name}
+Released under the ${_.pluck(pkg.licenses, 'type').join(', ')} license.
+${_.pluck(pkg.licenses, 'url')}
+`;
+
+// production uglify
+const minimize = process.argv.indexOf('--minimize') !== -1;
+const plugins = [
+  new webpack.DefinePlugin({
+    LIB_VERSION: JSON.stringify(pkg.version),
+  }),
+  new webpack.BannerPlugin(banner),
+];
+
+if (minimize) {
+  plugins.push(new webpack.optimize.UglifyJsPlugin({
+    minimize: true,
+  }));
+  filename = 'morel.min.js';
+}
 
 module.exports = {
   context: './src',
   entry: {
-    app: './main.js',
+    morel: './main.js',
   },
   output: {
     path: 'dist',
-    filename: 'morel.js',
-    library: 'Morel',
+    filename,
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },
   externals: {
     jquery: 'jquery',
-    backbone: 'backbone',
-    underscore: 'underscore',
+    backbone: 'Backbone',
+    underscore: 'Underscore',
   },
   resolve: {
     root: [
       path.resolve('./src'),
     ],
-    alias: {
-
-    },
+  },
+  resolveLoader: {
+    root: path.join(__dirname, 'node_modules'),
   },
   module: {
     loaders: [
@@ -34,4 +64,5 @@ module.exports = {
       },
     ],
   },
+  plugins,
 };

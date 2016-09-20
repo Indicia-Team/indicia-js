@@ -1,35 +1,6 @@
-const webpackConfig = require('./webpack.config.js');
-
 module.exports = function (grunt) {
-  'use strict';
-  const banner = '/*!\n' +
-    ' * <%= pkg.name %> <%= pkg.version %>\n' +
-    ' * <%= pkg.description %> \n' +
-    ' *\n' +
-    ' * <%= pkg.homepage %>\n' +
-    ' *\n' +
-    " * Author <%= grunt.template.today('yyyy') %> <%= pkg.author.name %>\n" +
-    " * Released under the <%= _.pluck(pkg.licenses, 'type').join(', ') %> license.\n" +
-    " * <%= _.pluck(pkg.licenses, 'url') %>\n" +
-    ' */\n';
-
-  const DIST_LOC = 'dist/';
-
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-
-    replace: {
-      version: {
-        src: [
-          DIST_LOC + '<%= pkg.name %>.js',
-        ],
-        overwrite: true,     // overwrite matched source files
-        replacements: [{
-          from: /(VERSION:) \'0\',/g,     // string replacement
-          to: '$1 \'<%= pkg.version %>\',',
-        }],
-      },
-    },
 
     karma: {
       local: {
@@ -41,21 +12,14 @@ module.exports = function (grunt) {
     },
 
     webpack: {
-      // Main run
-      main: webpackConfig,
-
-      build: {
-        // configuration for this build
-      },
+      main: require('./webpack.config.js'),
     },
   });
 
   grunt.loadNpmTasks('grunt-webpack');
   grunt.loadNpmTasks('grunt-karma');
-  grunt.loadNpmTasks('grunt-text-replace');
 
   // the default task can be run just by typing "grunt" on the command line
-  grunt.registerTask('build', ['webpack:main', 'replace']);
   grunt.registerTask('test', ['karma:local']);
-  grunt.registerTask('default', ['build']);
+  grunt.registerTask('default', ['webpack:main']);
 };
