@@ -7,12 +7,14 @@ const path = require('path');
 
 // Browsers to run on Sauce Labs platforms
 const sauceBrowsers = _.reduce([
+  ['firefox', '48'],
   ['firefox', '45'],
   ['firefox', '44'],
   ['firefox', '43'],
   ['firefox', '42'],
   ['firefox', '41'],
 
+  ['chrome', '53'],
   ['chrome', '40'],
   ['chrome', '39'],
   ['chrome', '30'],
@@ -24,8 +26,8 @@ const sauceBrowsers = _.reduce([
   ['android', '5.1'],
   ['android', '5'],
   ['android', '4.4'],
-  ['android', '4.3'],
-  ['android', '4.1'],
+  // ['android', '4.3'],
+  // ['android', '4.1'],
 
   ['safari', '9'],
   ['safari', '8.0', 'OS X 10.10'],
@@ -66,6 +68,7 @@ module.exports = function (config) {
     files: [
       { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
       { pattern: 'tests.webpack.js', watched: false },
+      { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
 
     preprocessors: {

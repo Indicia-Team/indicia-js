@@ -25,7 +25,9 @@
   "scripts": {
     "test": "grunt"
   },
-  "dependencies": {},
+  "dependencies": {
+    "karma-firefox-launcher": "^1.0.0"
+  },
   "devDependencies": {
     "babel-core": "latest",
     "babel-loader": "latest",
@@ -46,7 +48,6 @@
     "grunt-karma": "latest",
     "grunt-text-replace": "0.4.0",
     "grunt-webpack": "latest",
-
     "karma": "latest",
     "karma-chai": "latest",
     "karma-chrome-launcher": "latest",
