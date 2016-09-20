@@ -1,12 +1,12 @@
 /**
  * Config copied with mods from backbone karma sauce config
  */
-const _ = require('./vendor/underscore');
-const fs = require('fs');
-const path = require('path');
+var _ = require('./vendor/underscore');
+var fs = require('fs');
+var path = require('path');
 
 // Browsers to run on Sauce Labs platforms
-const sauceBrowsers = _.reduce([
+var sauceBrowsers = _.reduce([
   ['firefox', '48'],
   ['firefox', '45'],
   ['firefox', '44'],
@@ -34,7 +34,7 @@ const sauceBrowsers = _.reduce([
 
 ], function (memo, platform) {
   // internet explorer -> ie
-  let label = platform[0].split(' ');
+  var label = platform[0].split(' ');
   if (label.length > 1) {
     label = _.invoke(label, 'charAt', 0);
   }
