@@ -120,7 +120,7 @@ const Occurrence = Backbone.Model.extend({
       errors.taxon = 'can\'t be blank';
     }
 
-    if (! _.isEmpty(errors)) {
+    if (!_.isEmpty(errors)) {
       return errors;
     }
 

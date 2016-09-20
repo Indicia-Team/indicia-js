@@ -2,18 +2,18 @@ const webpackConfig = require('./webpack.config.js');
 
 module.exports = function (grunt) {
   'use strict';
-  var banner = "/*!\n" +
-    " * <%= pkg.name %> <%= pkg.version %>\n" +
-    " * <%= pkg.description %> \n" +
-    " *\n" +
-    " * <%= pkg.homepage %>\n" +
-    " *\n" +
+  const banner = '/*!\n' +
+    ' * <%= pkg.name %> <%= pkg.version %>\n' +
+    ' * <%= pkg.description %> \n' +
+    ' *\n' +
+    ' * <%= pkg.homepage %>\n' +
+    ' *\n' +
     " * Author <%= grunt.template.today('yyyy') %> <%= pkg.author.name %>\n" +
     " * Released under the <%= _.pluck(pkg.licenses, 'type').join(', ') %> license.\n" +
     " * <%= _.pluck(pkg.licenses, 'url') %>\n" +
-    " */\n";
+    ' */\n';
 
-  var DIST_LOC = 'dist/';
+  const DIST_LOC = 'dist/';
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -21,12 +21,12 @@ module.exports = function (grunt) {
     replace: {
       version: {
         src: [
-          DIST_LOC + '<%= pkg.name %>.js'
+          DIST_LOC + '<%= pkg.name %>.js',
         ],
         overwrite: true,     // overwrite matched source files
         replacements: [{
           from: /(VERSION:) \'0\',/g,     // string replacement
-          to: '$1 \'<%= pkg.version %>\','
+          to: '$1 \'<%= pkg.version %>\',',
         }],
       },
     },
@@ -58,5 +58,4 @@ module.exports = function (grunt) {
   grunt.registerTask('build', ['webpack:main', 'replace']);
   grunt.registerTask('test', ['karma:local']);
   grunt.registerTask('default', ['build']);
-
 };

@@ -109,7 +109,7 @@ const isPlainObject = (obj) => {
 
 // checks if the object has any elements.
 const isEmptyObject = (obj) => {
-  for (let key in obj) {
+  for (const key in obj) {
     return false;
   }
   return true;

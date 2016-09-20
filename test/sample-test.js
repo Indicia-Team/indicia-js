@@ -18,7 +18,6 @@ const options = {
 };
 
 describe('Sample', () => {
-
   const morel = new Morel(_.extend(options, { Storage: DatabaseStorage }));
 
   it('new', () => {

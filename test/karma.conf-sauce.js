@@ -1,12 +1,12 @@
 /**
  * Config copied with mods from backbone karma sauce config
  */
-var _ = require('./vendor/underscore');
-var fs = require('fs');
-var path = require('path');
+const _ = require('./vendor/underscore');
+const fs = require('fs');
+const path = require('path');
 
 // Browsers to run on Sauce Labs platforms
-var sauceBrowsers = _.reduce([
+const sauceBrowsers = _.reduce([
   ['firefox', '45'],
   ['firefox', '44'],
   ['firefox', '43'],
@@ -32,7 +32,7 @@ var sauceBrowsers = _.reduce([
 
 ], function (memo, platform) {
   // internet explorer -> ie
-  var label = platform[0].split(' ');
+  let label = platform[0].split(' ');
   if (label.length > 1) {
     label = _.invoke(label, 'charAt', 0);
   }
@@ -41,7 +41,7 @@ var sauceBrowsers = _.reduce([
     'base': 'SauceLabs',
     'browserName': platform[0],
     'version': platform[1],
-    'platform': platform[2]
+    'platform': platform[2],
   }, Boolean);
   return memo;
 }, {});
@@ -115,7 +115,7 @@ module.exports = function (config) {
     sauceLabs: {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       startConnect: false,
-      tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER
+      tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
     },
 
     captureTimeout: 120000,

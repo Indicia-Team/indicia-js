@@ -206,7 +206,7 @@ export default function (manager) {
 
         const occurrence = new Occurrence({
           taxon: 1234,
-        },{
+        }, {
           images: [image1, image2],
         });
         const sample = new Sample({
@@ -227,6 +227,5 @@ export default function (manager) {
         server.respond();
       });
     });
-
   });
 }
