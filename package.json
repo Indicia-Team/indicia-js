@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "start": "webpack && webpack --uglify",
-    "test": "karma start test/karma.conf.js"
+    "test": "bower i && karma start test/karma.conf.js"
   },
   "dependencies": {
     "babel-core": "^6.14.0",
@@ -33,13 +33,13 @@
     "underscore": "^1.8.3",
     "webpack": "^1.13.2",
     "webpack-dev-server": "^1.16.1",
-    "webpack-merge": "^0.14.1",
-    "unminified-webpack-plugin": "^1.1.0"
+    "webpack-merge": "^0.14.1"
   },
   "devDependencies": {
     "bower": "^1.7.9",
     "chai": "^3.5.0",
     "core-js": "^2.4.1",
+    "dotenv": "^2.0.0",
     "eslint": "^3.5.0",
     "eslint-config-airbnb": "^11.1.0",
     "eslint-import-resolver-webpack": "^0.6.0",

@@ -1,9 +1,11 @@
-/**
- * Config copied with mods from backbone karma sauce config
- */
-var _ = require('./vendor/underscore');
+require('dotenv').config();
+var merge = require('webpack-merge');
+var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
+
+var karmaConfig = require('./karma.conf.js');
+
 
 // Browsers to run on Sauce Labs platforms
 var sauceBrowsers = _.reduce([
@@ -48,58 +50,8 @@ var sauceBrowsers = _.reduce([
   return memo;
 }, {});
 
-module.exports = function (config) {
-  // Use ENV vars on Travis and sauce.json locally to get credentials
-  if (!process.env.SAUCE_USERNAME) {
-    if (!fs.existsSync('./test/sauce.json')) {
-      console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
-      process.exit(1);
-    } else {
-      process.env.SAUCE_USERNAME = require('./sauce').username;
-      process.env.SAUCE_ACCESS_KEY = require('./sauce').accessKey;
-    }
-  }
-
-  config.set({
-    basePath: '../',
-
-    frameworks: ['mocha', 'chai', 'sinon'],
-
-    files: [
-      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
-      { pattern: 'tests.webpack.js', watched: false },
-      { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
-    ],
-
-    preprocessors: {
-      'tests.webpack.js': ['webpack'],
-    },
-
-    webpack: {
-      resolve: {
-        root: [
-          path.resolve('./test/vendor'),
-        ],
-        alias: {
-          backbone: 'backbone',
-          underscore: 'underscore',
-        },
-      },
-      module: {
-        loaders: [
-          {
-            // test: /^\.js$/,
-            exclude: /(node_modules|bower_components|vendor)/,
-            loader: 'babel-loader',
-          },
-        ],
-      },
-    },
-
-    webpackServer: {
-      noInfo: true,
-    },
-
+module.exports =  function(config) {
+  config.set(merge(karmaConfig, {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
 
@@ -111,10 +63,8 @@ module.exports = function (config) {
     concurrency: 9,
 
     // test results reporter to use
-    reporters: ['dots', 'saucelabs'],
-    port: 9876,
-    colors: true,
-    logLevel: config.LOG_WARN,
+    reporters: ['saucelabs'],
+    // logLevel: config.LOG_WARN,
     sauceLabs: {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       startConnect: false,
@@ -136,5 +86,6 @@ module.exports = function (config) {
       require('karma-phantomjs-launcher'),
       require('karma-sauce-launcher'),
     ],
-  });
+  }));
 };
+

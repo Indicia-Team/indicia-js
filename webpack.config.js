@@ -1,7 +1,6 @@
 const path = require('path');
 const _ = require('underscore');
 const webpack = require('webpack');
-const UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 const pkg = require('./package.json');
 
 var filename = 'morel.js';

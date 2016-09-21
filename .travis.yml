@@ -9,8 +9,8 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - grunt # check the full build
-  - grunt karma:sauce
+  - npm start # check the full build
+  - karma start test/karma.conf-sauce.js
 notifications:
   email: false
 sudo: false
