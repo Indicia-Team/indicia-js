@@ -50,6 +50,11 @@ var sauceBrowsers = _.reduce([
   return memo;
 }, {});
 
+var BUILD = 'LOCAL #' + new Date().getTime();
+if (process.env.TRAVIS_BUILD_NUMBER ) {
+  BUILD = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
+}
+
 module.exports =  function(config) {
   config.set(merge(karmaConfig, {
     // enable / disable watching file and executing tests whenever any file changes
@@ -63,10 +68,11 @@ module.exports =  function(config) {
     concurrency: 9,
 
     // test results reporter to use
-    reporters: ['saucelabs'],
-    // logLevel: config.LOG_WARN,
+    reporters: ['dots', 'saucelabs'],
+
+    logLevel: config.LOG_WARN,
     sauceLabs: {
-      build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
+      build: BUILD,
       startConnect: false,
       tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
     },
