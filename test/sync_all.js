@@ -27,6 +27,7 @@ export default function (manager) {
 
     before(() => {
       server = sinon.fakeServer.create();
+      server.respondImmediately = true;
     });
 
     beforeEach(() => {
@@ -43,6 +44,8 @@ export default function (manager) {
       manager.sync.restore();
       manager.clear(done);
     });
+
+
     it('should return a promise and use callbacks', (done) => {
       const promise = manager.syncAll(null, null, {
         success: () => {
@@ -54,6 +57,8 @@ export default function (manager) {
     });
 
     it('should post all', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
+
       manager.getAll((err, models) => {
         // check if collection is empty
         expect(models.length).to.be.equal(0);
@@ -62,13 +67,14 @@ export default function (manager) {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const sample3 = getRandomSample();
+
+        // delete occurrences for the sample to become invalid
         _.each(_.clone(sample3.occurrences.models), (model) => {
           model.destroy({ noSave: true });
         });
 
-        server.respondWith('POST', '/mobile/submit', okResponse);
         $.when(sample.save(), sample2.save(), sample3.save())
-          .then(() => {
+          .always(() => {
             expect(models.length).to.be.equal(3);
             // synchronise collection
             manager.syncAll()
@@ -88,7 +94,6 @@ export default function (manager) {
                 });
                 done();
               });
-            server.respond();
           });
       });
     });
@@ -108,8 +113,6 @@ export default function (manager) {
               expect(Morel.prototype.post.calledTwice).to.be.true;
               done();
             });
-
-          server.respond();
         });
     });
   });

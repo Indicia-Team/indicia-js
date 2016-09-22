@@ -36,6 +36,7 @@ export default function (manager) {
 
     before(() => {
       server = sinon.fakeServer.create();
+      server.respondImmediately = true;
     });
 
     beforeEach(() => {
@@ -89,10 +90,10 @@ export default function (manager) {
       expect(valid).to.be.an('object');
 
       server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
     });
 
     it('should update remotely synced record', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       sample.save(null, {
@@ -107,9 +108,6 @@ export default function (manager) {
           });
         },
       });
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
     });
 
     it('should validate before remote sending', () => {
@@ -138,7 +136,6 @@ export default function (manager) {
       expect(valid).to.be.an('object');
 
       server.respondWith('POST', '/mobile/submit', errResponse);
-      server.respond();
     });
 
     it('should set synchronising flag on sample', () => {
@@ -173,10 +170,10 @@ export default function (manager) {
       expect(valid).to.be.false;
 
       server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
     });
 
     it('should timeout', () => {
+      server.respondImmediately = false;
       const clock = sinon.useFakeTimers();
       const errorCallback = sinon.spy();
       const sample = getRandomSample();
@@ -224,7 +221,6 @@ export default function (manager) {
         });
 
         server.respondWith('POST', '/mobile/submit', okResponse);
-        server.respond();
       });
     });
   });

@@ -178,6 +178,7 @@ class Morel {
     };
 
     const dfd = new $.Deferred();
+    // async call to get the form data
     this._getModelFormData(model, (err, formData) => {
       // AJAX post
       const xhr = options.xhr = Backbone.ajax({
