@@ -28,8 +28,8 @@ var sauceBrowsers = _.reduce([
   // ['android', '4.3'],
   // ['android', '4.1'],
 
-  ['safari', '9'],
-  ['safari', '8.0', 'OS X 10.10'],
+  // ['safari', '9'],
+  // ['safari', '8.0', 'OS X 10.10'],
 
 ], function (memo, platform) {
   // internet explorer -> ie
