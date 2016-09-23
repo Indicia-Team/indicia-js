@@ -6,7 +6,6 @@
  * Within a sample, you can have zero or more occurrences which refer to each
  * species sighted as part of the sample.
  **********************************************************************/
-import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 import CONST from './constants';
@@ -109,33 +108,43 @@ const Sample = Backbone.Model.extend({
    */
   save(attrs, options = {}) {
     const model = this;
+    let promise;
 
     if (!this.manager) return false;
 
     // only update local cache and DB
     if (!options.remote) {
       // todo: add attrs if passed to model
-      const deferred = Backbone.$.Deferred();
+
+      let promiseResolve;
+      let promiseReject;
+      promise = new Promise((fulfill, reject) => {
+        promiseResolve = fulfill;
+        promiseReject = reject;
+      });
 
       this.manager.set(this, (err) => {
         if (err) {
-          deferred.reject(err);
+          promiseReject(err);
           options.error && options.error(err);
           return;
         }
-        deferred.resolve(model, {}, options);
+        promiseResolve(model, {}, options);
         options.success && options.success(model, {}, options);
       });
-      return deferred.promise();
+      return promise;
     }
 
     // remote
-    const xhr = Backbone.Model.prototype.save.apply(this, arguments);
-    return xhr;
+    promise = Backbone.Model.prototype.save.apply(this, arguments);
+    return promise;
   },
 
   destroy(options = {}) {
-    const dfd = new $.Deferred();
+    let promiseResolve;
+    const promise = new Promise((fulfill) => {
+      promiseResolve = fulfill;
+    });
 
     if (this.manager && !options.noSave) {
       // save the changes permanentely
@@ -144,7 +153,7 @@ const Sample = Backbone.Model.extend({
           options.error && options.error(err);
           return;
         }
-        dfd.resolve();
+        promiseResolve();
         options.success && options.success();
       });
     } else {
@@ -152,11 +161,11 @@ const Sample = Backbone.Model.extend({
       this.stopListening();
       this.trigger('destroy', this, this.collection, options);
 
-      dfd.resolve();
+      promiseResolve();
       options.success && options.success();
     }
 
-    return dfd.promise();
+    return promise;
   },
 
   /**

@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
@@ -77,6 +76,7 @@ export default function (manager) {
     });
 
     it('should post with remote option', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -87,9 +87,7 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      expect(valid).to.be.instanceOf(Promise);
     });
 
     it('should update remotely synced record', (done) => {
@@ -122,6 +120,7 @@ export default function (manager) {
     });
 
     it('should return error if unsuccessful remote sync', (done) => {
+      server.respondWith('POST', '/mobile/submit', errResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -133,9 +132,7 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
-
-      server.respondWith('POST', '/mobile/submit', errResponse);
+      expect(valid).to.be.instanceOf(Promise);
     });
 
     it('should set synchronising flag on sample', () => {
@@ -147,6 +144,7 @@ export default function (manager) {
 
 
     it('should not double sync', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       let valid = sample.save(null, {
@@ -158,7 +156,7 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
+      expect(valid).to.be.instanceOf(Promise);
 
       valid = sample.save(null, {
         remote: true,
@@ -168,11 +166,9 @@ export default function (manager) {
       });
 
       expect(valid).to.be.false;
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
     });
 
-    it('should timeout', () => {
+    it('should timeout', (done) => {
       server.respondImmediately = false;
       const clock = sinon.useFakeTimers();
       const errorCallback = sinon.spy();
@@ -183,14 +179,18 @@ export default function (manager) {
         error: errorCallback,
       });
 
-      clock.tick(29000);
-      expect(errorCallback.calledOnce).to.be.false;
-      clock.tick(2000);
-      expect(errorCallback.calledOnce).to.be.true;
+      setTimeout(() => {
+        clock.tick(29000);
+        expect(errorCallback.calledOnce).to.be.false;
+        clock.tick(2000);
+        expect(errorCallback.calledOnce).to.be.true;
+        done();
+      }, 10);
     });
 
     describe('occurrences with images', (done) => {
       it('should send both dataURI and absolute pathed images', () => {
+        server.respondWith('POST', '/mobile/submit', okResponse);
         const image1 = new ImageModel({
           data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',
@@ -219,8 +219,6 @@ export default function (manager) {
             done();
           },
         });
-
-        server.respondWith('POST', '/mobile/submit', okResponse);
       });
     });
   });

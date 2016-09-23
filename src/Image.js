@@ -47,8 +47,10 @@ const ImageModel = Backbone.Model.extend({
   },
 
   destroy(options = {}) {
-    const dfd = new $.Deferred();
-
+    let promiseResolve;
+    const promise = new Promise((fulfill) => {
+      promiseResolve = fulfill;
+    });
     // removes from all collections etc
     this.stopListening();
     this.trigger('destroy', this, this.collection, options);
@@ -56,18 +58,18 @@ const ImageModel = Backbone.Model.extend({
     if (this.parent && !options.noSave) {
       const success = options.success;
       options.success = () => {
-        dfd.resolve();
+        promiseResolve();
         success && success();
       };
 
       // save the changes permanentely
       this.save(null, options);
     } else {
-      dfd.resolve();
+      promiseResolve();
       options.success && options.success();
     }
 
-    return dfd.promise();
+    return promise;
   },
 
   /**

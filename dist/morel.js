@@ -10,14 +10,14 @@
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("jQuery"), require("_"), require("Backbone"));
+		module.exports = factory(require("_"), require("Backbone"), require("jQuery"));
 	else if(typeof define === 'function' && define.amd)
-		define(["jQuery", "_", "Backbone"], factory);
+		define(["_", "Backbone", "jQuery"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("jQuery"), require("_"), require("Backbone")) : factory(root["jQuery"], root["_"], root["Backbone"]);
+		var a = typeof exports === 'object' ? factory(require("_"), require("Backbone"), require("jQuery")) : factory(root["_"], root["Backbone"], root["jQuery"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_3__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_4__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -73,19 +73,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _jquery = __webpack_require__(1);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Sample = __webpack_require__(4);
+	var _Sample = __webpack_require__(3);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
@@ -191,53 +187,62 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function syncAll(method, collection) {
 	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
-	      var returnPromise = new _jquery2.default.Deferred();
+	      var syncAllPromiseResolve = void 0;
+	      var syncAllPromiseReject = void 0;
+	      var returnPromise = new Promise(function (fulfill, reject) {
+	        syncAllPromiseResolve = fulfill;
+	        syncAllPromiseReject = reject;
+	      });
 
 	      // sync all in collection
 	      function syncEach(collectionToSync) {
 	        var toWait = [];
 	        collectionToSync.each(function (model) {
 	          // todo: reuse the passed options model
-	          var promise = model.save(null, {
+	          var xhr = model.save(null, {
 	            remote: true,
 	            timeout: options.timeout
 	          });
-	          var passingPromise = new _jquery2.default.Deferred();
-	          if (!promise) {
+	          var syncPromise = void 0;
+	          if (!xhr) {
 	            // model was invalid
-	            passingPromise.resolve();
+	            syncPromise = Promise.resolve();
 	          } else {
 	            // valid model, but in case it fails sync carry on
-	            promise.always(function () {
-	              passingPromise.resolve();
+	            syncPromise = new Promise(function (fulfill) {
+	              xhr.then(function () {
+	                fulfill();
+	              }).catch(function () {
+	                fulfill();
+	              });
 	            });
 	          }
-	          toWait.push(passingPromise);
+	          toWait.push(syncPromise);
 	        });
 
-	        var dfd = _jquery2.default.when.apply(_jquery2.default, toWait);
-	        dfd.then(function () {
-	          returnPromise.resolve();
+	        Promise.all(toWait).then(function () {
+	          // after all is synced
+	          syncAllPromiseResolve();
 	          options.success && options.success();
 	        });
 	      }
 
 	      if (collection) {
 	        syncEach(collection);
-	        return returnPromise.promise();
+	        return returnPromise;
 	      }
 
 	      // get all models to submit
 	      this.getAll(function (err, receivedCollection) {
 	        if (err) {
-	          returnPromise.reject();
+	          syncAllPromiseReject();
 	          options.error && options.error(err);
 	          return;
 	        }
 
 	        syncEach(receivedCollection);
 	      });
-	      return returnPromise.promise();
+	      return returnPromise;
 	    }
 
 	    /**
@@ -281,6 +286,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'post',
 	    value: function post(model, options) {
+	      var that = this;
 	      // call user defined onSend function to modify
 	      var onSend = model.onSend || this.onSend;
 	      var stopSending = onSend && onSend(model);
@@ -314,30 +320,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (error) error.call(options.context, xhr, textStatus, errorThrown);
 	      };
 
-	      var dfd = new _jquery2.default.Deferred();
-	      this._getModelFormData(model, function (err, formData) {
-	        // AJAX post
-	        var xhr = options.xhr = _backbone2.default.ajax({
-	          url: options.url,
-	          type: 'POST',
-	          data: formData,
-	          processData: false,
-	          contentType: false,
-	          timeout: options.timeout || 30000, // 30s
-	          success: options.success,
-	          error: options.error
-	        });
+	      var promise = new Promise(function (fulfill, reject) {
+	        // async call to get the form data
+	        that._getModelFormData(model, function (err, formData) {
+	          // AJAX post
+	          var xhr = options.xhr = _backbone2.default.ajax({
+	            url: options.url,
+	            type: 'POST',
+	            data: formData,
+	            processData: false,
+	            contentType: false,
+	            timeout: options.timeout || 30000, // 30s
+	            success: options.success,
+	            error: options.error
+	          });
 
-	        xhr.done(function (data, textStatus, jqXHR) {
-	          dfd.resolve(data, textStatus, jqXHR);
+	          // also resolve the promise
+	          xhr.done(function (data, textStatus, jqXHR) {
+	            fulfill(data, textStatus, jqXHR);
+	          });
+	          xhr.fail(function (jqXHR, textStatus, errorThrown) {
+	            reject(jqXHR, textStatus, errorThrown);
+	          });
+	          model.trigger('request', model, xhr, options);
 	        });
-	        xhr.fail(function (jqXHR, textStatus, errorThrown) {
-	          dfd.reject(jqXHR, textStatus, errorThrown);
-	        });
-	        model.trigger('request', model, xhr, options);
 	      });
 
-	      return dfd.promise();
+	      return promise;
 	    }
 	  }, {
 	    key: '_attachListeners',
@@ -366,8 +375,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var imageProcesses = [];
 
 	        occurrence.images.each(function (image) {
-	          var imageDfd = new _jquery2.default.Deferred();
-	          imageProcesses.push(imageDfd);
+	          var imagePromiseResolve = void 0;
+	          var imagePromise = new Promise(function (fulfill) {
+	            imagePromiseResolve = fulfill;
+	          });
+	          imageProcesses.push(imagePromise);
 
 	          var url = image.getURL();
 	          var type = image.get('type');
@@ -389,7 +401,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            formData.append(name, blob, 'pic.' + extension);
 	            imgCount++;
-	            imageDfd.resolve();
+	            imagePromiseResolve();
 	          }
 
 	          if (!_helpers2.default.isDataURL(url)) {
@@ -401,6 +413,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	              xhr.onload = function () {
 	                onSuccess(null, null, null, xhr.response);
 	              };
+	              // todo check error case
 
 	              xhr.send();
 	            })();
@@ -409,11 +422,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 	        });
 
-	        occurrenceProcesses.push(_jquery2.default.when.apply(_jquery2.default, imageProcesses));
+	        occurrenceProcesses.push(Promise.all(imageProcesses));
 	        occCount++;
 	      });
 
-	      _jquery2.default.when.apply(_jquery2.default, occurrenceProcesses).then(function () {
+	      Promise.all(occurrenceProcesses).then(function () {
 	        // append attributes
 	        var keys = Object.keys(flattened);
 	        for (var i = 0; i < keys.length; i++) {
@@ -600,12 +613,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
-
-/***/ },
-/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -625,15 +632,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(1);
+	var _jquery = __webpack_require__(4);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -766,6 +773,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var model = this;
+	    var promise = void 0;
 
 	    if (!this.manager) return false;
 
@@ -773,19 +781,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!options.remote) {
 	      var _ret3 = function () {
 	        // todo: add attrs if passed to model
-	        var deferred = _backbone2.default.$.Deferred();
+
+	        var promiseResolve = void 0;
+	        var promiseReject = void 0;
+	        promise = new Promise(function (fulfill, reject) {
+	          promiseResolve = fulfill;
+	          promiseReject = reject;
+	        });
 
 	        _this2.manager.set(_this2, function (err) {
 	          if (err) {
-	            deferred.reject(err);
+	            promiseReject(err);
 	            options.error && options.error(err);
 	            return;
 	          }
-	          deferred.resolve(model, {}, options);
+	          promiseResolve(model, {}, options);
 	          options.success && options.success(model, {}, options);
 	        });
 	        return {
-	          v: deferred.promise()
+	          v: promise
 	        };
 	      }();
 
@@ -793,13 +807,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    // remote
-	    var xhr = _backbone2.default.Model.prototype.save.apply(this, arguments);
-	    return xhr;
+	    promise = _backbone2.default.Model.prototype.save.apply(this, arguments);
+	    return promise;
 	  },
 	  destroy: function destroy() {
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    var dfd = new _jquery2.default.Deferred();
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
 
 	    if (this.manager && !options.noSave) {
 	      // save the changes permanentely
@@ -808,7 +825,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          options.error && options.error(err);
 	          return;
 	        }
-	        dfd.resolve();
+	        promiseResolve();
 	        options.success && options.success();
 	      });
 	    } else {
@@ -816,11 +833,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.stopListening();
 	      this.trigger('destroy', this, this.collection, options);
 
-	      dfd.resolve();
+	      promiseResolve();
 	      options.success && options.success();
 	    }
 
-	    return dfd.promise();
+	    return promise;
 	  },
 
 
@@ -1016,6 +1033,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	exports.default = Sample;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_4__;
 
 /***/ },
 /* 5 */
@@ -1223,15 +1246,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(1);
+	var _jquery = __webpack_require__(4);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -1549,15 +1572,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _jquery = __webpack_require__(1);
+	var _jquery = __webpack_require__(4);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -1768,11 +1791,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -1815,11 +1838,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
@@ -1827,7 +1850,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _Sample = __webpack_require__(4);
+	var _Sample = __webpack_require__(3);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 

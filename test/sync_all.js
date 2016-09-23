@@ -47,10 +47,15 @@ export default function (manager) {
 
 
     it('should return a promise and use callbacks', (done) => {
+      let finished = false;
       const promise = manager.syncAll(null, null, {
         success: () => {
-          done();
+          if (finished) done();
+          finished = true;
         },
+      }).then(() => {
+        if (finished) done();
+        finished = true;
       });
 
       expect(promise.then).to.be.a.function;

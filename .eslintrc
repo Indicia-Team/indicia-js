@@ -19,6 +19,7 @@
     "describe": true,
     "it": true,
     "expect": true,
+    "sinon": true,
 
     "parseInt": true
   },
