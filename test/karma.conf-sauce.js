@@ -1,11 +1,8 @@
 require('dotenv').config();
 var merge = require('webpack-merge');
 var _ = require('underscore');
-var fs = require('fs');
-var path = require('path');
-
 var karmaConfig = require('./karma.conf.js');
-
+var commonConfig = karmaConfig({ set(c) { return c; } });
 
 // Browsers to run on Sauce Labs platforms
 var sauceBrowsers = _.reduce([
@@ -56,7 +53,7 @@ if (process.env.TRAVIS_BUILD_NUMBER ) {
 }
 
 module.exports =  function(config) {
-  config.set(merge(karmaConfig, {
+  config.set(merge(commonConfig, {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
 
@@ -69,10 +66,11 @@ module.exports =  function(config) {
 
     // test results reporter to use
     reporters: ['dots', 'saucelabs'],
-
+    port: 9876,
+    colors: true,
     logLevel: config.LOG_WARN,
     sauceLabs: {
-      build: BUILD,
+      build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       startConnect: false,
       tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
     },
@@ -89,7 +87,6 @@ module.exports =  function(config) {
       require('karma-sinon'),
       require('karma-mocha'),
       require('karma-chai'),
-      require('karma-phantomjs-launcher'),
       require('karma-sauce-launcher'),
     ],
   }));
