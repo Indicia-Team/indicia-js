@@ -73,13 +73,13 @@ export default function (manager) {
         const sample2 = getRandomSample();
         const sample3 = getRandomSample();
 
-        // delete occurrences for the sample to become invalid
+        // delete occurrences for the sample to become invalid to sync
         _.each(_.clone(sample3.occurrences.models), (model) => {
           model.destroy({ noSave: true });
         });
 
-        $.when(sample.save(), sample2.save(), sample3.save())
-          .always(() => {
+        Promise.all([sample.save(), sample2.save(), sample3.save()])
+          .then(() => {
             expect(models.length).to.be.equal(3);
             // synchronise collection
             manager.syncAll()
@@ -109,10 +109,10 @@ export default function (manager) {
       const sample2 = getRandomSample();
 
       server.respondWith('POST', '/mobile/submit', okResponse);
-      $.when(sample.save(), sample2.save())
+      Promise.all([sample.save(), sample2.save()])
         .then(() => {
           // synchronise collection twice
-          $.when(manager.syncAll(), manager.syncAll())
+          Promise.all([manager.syncAll(), manager.syncAll()])
             .then(() => {
               expect(manager.sync.callCount).to.be.equal(4);
               expect(Morel.prototype.post.calledTwice).to.be.true;

@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
@@ -172,20 +173,24 @@ export default function (manager) {
       server.respondImmediately = false;
       const clock = sinon.useFakeTimers();
       const errorCallback = sinon.spy();
+
+      const origCall = $.ajax;
+      const stub = sinon.stub($, 'ajax', (...args) => {
+        origCall.apply($, args);
+        clock.tick(29000);
+        expect(errorCallback.calledOnce).to.be.false;
+        clock.tick(2000);
+        expect(errorCallback.calledOnce).to.be.true;
+        stub.restore();
+        done();
+      });
+
       const sample = getRandomSample();
 
       sample.save(null, {
         remote: true,
         error: errorCallback,
       });
-
-      setTimeout(() => {
-        clock.tick(29000);
-        expect(errorCallback.calledOnce).to.be.false;
-        clock.tick(2000);
-        expect(errorCallback.calledOnce).to.be.true;
-        done();
-      }, 10);
     });
 
     describe('occurrences with images', (done) => {
