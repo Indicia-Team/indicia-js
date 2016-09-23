@@ -55,6 +55,7 @@ module.exports = function exports(config) {
       require('karma-chai'),
       require('karma-phantomjs-launcher'),
       require('karma-chrome-launcher'),
+      require('karma-safari-launcher'),
       require('karma-firefox-launcher'),
     ],
   });
