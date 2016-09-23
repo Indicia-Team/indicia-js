@@ -21,6 +21,12 @@ const plugins = [
     LIB_VERSION: JSON.stringify(pkg.version),
   }),
   new webpack.BannerPlugin(banner),
+  new webpack.ProvidePlugin({
+    "_": "underscore",
+    "Backbone": "backbone",
+    "$": "jquery",
+  })
+
 ];
 
 if (uglify) {
@@ -38,13 +44,29 @@ module.exports = {
   output: {
     path: 'dist',
     filename,
+    library: 'Morel',
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },
   externals: {
-    jquery: 'jQuery',
-    backbone: 'Backbone',
-    underscore: '_',
+    jquery: {
+      commonjs: 'jquery',
+      commonjs2: 'jquery',
+      amd: '$',
+      root: '$'
+    },
+    backbone: {
+      commonjs: 'backbone',
+      commonjs2: 'backbone',
+      amd: 'Backbone',
+      root: 'Backbone'
+    },
+    underscore: {
+      commonjs: 'underscore',
+      commonjs2: 'underscore',
+      amd: '_',
+      root: '_'
+    },
   },
   resolve: {
     root: [

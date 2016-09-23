@@ -10,14 +10,14 @@
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("_"), require("Backbone"), require("jQuery"));
+		module.exports = factory(require("underscore"), require("backbone"), require("jquery"));
 	else if(typeof define === 'function' && define.amd)
-		define(["_", "Backbone", "jQuery"], factory);
-	else {
-		var a = typeof exports === 'object' ? factory(require("_"), require("Backbone"), require("jQuery")) : factory(root["_"], root["Backbone"], root["jQuery"]);
-		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
-	}
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_4__) {
+		define("Morel", ["_", "Backbone", "$"], factory);
+	else if(typeof exports === 'object')
+		exports["Morel"] = factory(require("underscore"), require("backbone"), require("jquery"));
+	else
+		root["Morel"] = factory(root["_"], root["Backbone"], root["$"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_7__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -101,7 +101,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
-	var _Image = __webpack_require__(7);
+	var _Image = __webpack_require__(6);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
@@ -109,11 +109,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _constants = __webpack_require__(5);
+	var _constants = __webpack_require__(4);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -632,10 +632,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(4);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
 	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -644,15 +640,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _constants = __webpack_require__(5);
+	var _constants = __webpack_require__(4);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(7);
+	var _Image = __webpack_require__(6);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
@@ -1038,12 +1034,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports) {
 
-	module.exports = __WEBPACK_EXTERNAL_MODULE_4__;
-
-/***/ },
-/* 5 */
-/***/ function(module, exports) {
-
 	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
@@ -1060,7 +1050,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1231,7 +1221,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1246,7 +1236,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(4);
+	var _jquery = __webpack_require__(7);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
@@ -1258,7 +1248,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -1314,8 +1304,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    var dfd = new _jquery2.default.Deferred();
-
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
 	    // removes from all collections etc
 	    this.stopListening();
 	    this.trigger('destroy', this, this.collection, options);
@@ -1324,7 +1316,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      (function () {
 	        var success = options.success;
 	        options.success = function () {
-	          dfd.resolve();
+	          promiseResolve();
 	          success && success();
 	        };
 
@@ -1332,11 +1324,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _this.save(null, options);
 	      })();
 	    } else {
-	      dfd.resolve();
+	      promiseResolve();
 	      options.success && options.success();
 	    }
 
-	    return dfd.promise();
+	    return promise;
 	  },
 
 
@@ -1530,6 +1522,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
+
+/***/ },
 /* 8 */
 /***/ function(module, exports) {
 
@@ -1572,7 +1570,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _jquery = __webpack_require__(4);
+	var _jquery = __webpack_require__(7);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
@@ -1584,11 +1582,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(7);
+	var _Image = __webpack_require__(6);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
@@ -1667,8 +1665,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    var dfd = new _jquery2.default.Deferred();
-
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
 	    // removes from all collections etc
 	    this.stopListening();
 	    this.trigger('destroy', this, this.collection, options);
@@ -1677,7 +1677,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      (function () {
 	        var success = options.success;
 	        options.success = function () {
-	          dfd.resolve();
+	          promiseResolve();
 	          success && success();
 	        };
 
@@ -1685,11 +1685,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _this2.save(null, options);
 	      })();
 	    } else {
-	      dfd.resolve();
+	      promiseResolve();
 	      options.success && options.success();
 	    }
 
-	    return dfd.promise();
+	    return promise;
 	  },
 
 
