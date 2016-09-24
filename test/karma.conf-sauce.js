@@ -53,6 +53,8 @@ if (process.env.TRAVIS_BUILD_NUMBER ) {
 }
 
 module.exports =  function(config) {
+  delete commonConfig.browsers; // remove Chrome and Safari
+
   config.set(merge(commonConfig, {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
