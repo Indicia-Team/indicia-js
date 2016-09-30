@@ -22,6 +22,7 @@
       "url": "http://www.gnu.org/licenses/gpl.html"
     }
   ],
+  "main": "dist/morel.js",
   "scripts": {
     "start": "webpack && webpack --uglify",
     "test": "bower i && karma start test/karma.conf.js"
