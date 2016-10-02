@@ -37,10 +37,20 @@ class Morel {
   set(model, callback, options) {
     model.manager = this; // set the manager on new model
     this.storage.set(model, callback, options);
+
+    // this.storage.set(model, (...args) => {
+    //   this._addReference(model);
+    //   callback && callback(args);
+    // }, options);
   }
 
   remove(model, callback, options) {
     this.storage.remove(model, callback, options);
+
+    // this.storage.remove(model, (...args) => {
+    //   this._removeReference(model);
+    //   callback && callback(args);
+    // }, options);
   }
 
   has(model, callback, options) {
@@ -169,8 +179,8 @@ class Morel {
       // update model
       model.metadata.warehouse_id = 1;
       model.metadata.server_on =
-      model.metadata.updated_on =
-      model.metadata.synced_on = new Date();
+        model.metadata.updated_on =
+          model.metadata.synced_on = new Date();
 
       success && success(model, null, options);
     };
@@ -428,6 +438,18 @@ class Morel {
 
     return data;
   }
+
+  // _addReference(model) {
+  //   model.on('all', this._onSampleEvent, this);
+  // }
+  //
+  // _removeReference(model) {
+  //   model.off('all', this._onSampleEvent, this);
+  // }
+  //
+  // _onSampleEvent(...args) {
+  //   this.trigger.apply(this, args);
+  // }
 }
 
 _.extend(Morel.prototype, Backbone.Events);

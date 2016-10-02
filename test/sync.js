@@ -193,6 +193,22 @@ export default function (manager) {
       });
     });
 
+    // it('should fire model sync events', (done) => {
+    //   const events = ['sync', 'request', 'error'];
+    //   const sample = getRandomSample();
+    //
+    //   manager.set(sample, () => {
+    //     manager.on(events.join(' '), () => {
+    //       events.pop();
+    //       if (!events.length) done();
+    //     });
+    //
+    //     sample.trigger('sync');
+    //     sample.trigger('request');
+    //     sample.trigger('error');
+    //   });
+    // });
+
     describe('occurrences with images', (done) => {
       it('should send both dataURI and absolute pathed images', () => {
         server.respondWith('POST', '/mobile/submit', okResponse);

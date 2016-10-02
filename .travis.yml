@@ -10,7 +10,7 @@ before_script:
   - sleep 3 # give xvfb some time to start
 script:
   - npm start # check the full build
-  - bower i && karma start test/karma.conf-sauce.js
+  - karma start test/karma.conf-sauce.js
 notifications:
   email: false
 sudo: false
