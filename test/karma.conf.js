@@ -10,8 +10,8 @@ module.exports = function exports(config) {
 
     files: [
       // load polyfils
-      // { pattern: 'node_modules/IndexedDBShim/dist/indexeddbshim.min.js', watched: false },
-      // { pattern: 'node_modules/es6-promise/es6-promise.min.js', watched: false },
+      { pattern: 'node_modules/indexeddbshim/dist/indexeddbshim.min.js', watched: false },
+      { pattern: 'node_modules/es6-promise/dist/es6-promise.min.js', watched: false },
 
       // load dependencies
       { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
