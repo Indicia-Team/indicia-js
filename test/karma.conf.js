@@ -10,13 +10,13 @@ module.exports = function exports(config) {
 
     files: [
       // load polyfils
-      { pattern: 'bower_components/IndexedDBShim/dist/indexeddbshim.min.js', watched: false },
-      { pattern: 'bower_components/es6-promise/es6-promise.min.js', watched: false },
+      // { pattern: 'node_modules/IndexedDBShim/dist/indexeddbshim.min.js', watched: false },
+      // { pattern: 'node_modules/es6-promise/es6-promise.min.js', watched: false },
 
       // load dependencies
-      { pattern: 'bower_components/jquery/dist/jquery.js', watched: false },
-      { pattern: 'bower_components/underscore/underscore-min.js', watched: false },
-      { pattern: 'bower_components/backbone/backbone-min.js', watched: false },
+      { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
+      { pattern: 'node_modules/underscore/underscore-min.js', watched: false },
+      { pattern: 'node_modules/backbone/backbone-min.js', watched: false },
 
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },

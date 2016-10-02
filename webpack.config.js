@@ -53,19 +53,19 @@ module.exports = {
       commonjs: 'jquery',
       commonjs2: 'jquery',
       amd: '$',
-      root: '$'
+      root: '$',
     },
     backbone: {
       commonjs: 'backbone',
       commonjs2: 'backbone',
       amd: 'Backbone',
-      root: 'Backbone'
+      root: 'Backbone',
     },
     underscore: {
       commonjs: 'underscore',
       commonjs2: 'underscore',
       amd: '_',
-      root: '_'
+      root: '_',
     },
   },
   resolve: {
@@ -80,7 +80,7 @@ module.exports = {
     loaders: [
       {
         // test: /^\.js$/,
-        exclude: /(node_modules|bower_components|vendor)/,
+        exclude: /(node_modules|vendor)/,
         loader: 'babel-loader',
       },
     ],
