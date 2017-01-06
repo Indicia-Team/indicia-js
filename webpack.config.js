@@ -22,10 +22,10 @@ const plugins = [
   }),
   new webpack.BannerPlugin(banner),
   new webpack.ProvidePlugin({
-    "_": "underscore",
-    "Backbone": "backbone",
-    "$": "jquery",
-  })
+    _: 'underscore',
+    Backbone: 'backbone',
+    $: 'jquery',
+  }),
 
 ];
 

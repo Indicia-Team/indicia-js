@@ -158,11 +158,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function set(model, callback, options) {
 	      model.manager = this; // set the manager on new model
 	      this.storage.set(model, callback, options);
+
+	      // this.storage.set(model, (...args) => {
+	      //   this._addReference(model);
+	      //   callback && callback(args);
+	      // }, options);
 	    }
 	  }, {
 	    key: 'remove',
 	    value: function remove(model, callback, options) {
 	      this.storage.remove(model, callback, options);
+
+	      // this.storage.remove(model, (...args) => {
+	      //   this._removeReference(model);
+	      //   callback && callback(args);
+	      // }, options);
 	    }
 	  }, {
 	    key: 'has',
@@ -578,6 +588,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      return data;
 	    }
+
+	    // _addReference(model) {
+	    //   model.on('all', this._onSampleEvent, this);
+	    // }
+	    //
+	    // _removeReference(model) {
+	    //   model.off('all', this._onSampleEvent, this);
+	    // }
+	    //
+	    // _onSampleEvent(...args) {
+	    //   this.trigger.apply(this, args);
+	    // }
+
 	  }]);
 
 	  return Morel;
