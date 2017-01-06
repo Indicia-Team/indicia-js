@@ -38,10 +38,10 @@ const Occurrence = Backbone.Model.extend({
       const images = [];
       _.each(options.images, (image) => {
         if (image instanceof this.Image) {
-          image.setOccurrence(that);
+          image.setParent(that);
           images.push(image);
         } else {
-          const modelOptions = _.extend(image, { occurrence: that });
+          const modelOptions = _.extend(image, { parent: that });
           images.push(new this.Image(image.attributes, modelOptions));
         }
       });
@@ -63,8 +63,10 @@ const Occurrence = Backbone.Model.extend({
   },
 
   destroy(options = {}) {
-    const dfd = new $.Deferred();
-
+    let promiseResolve;
+    const promise = new Promise((fulfill) => {
+      promiseResolve = fulfill;
+    });
     // removes from all collections etc
     this.stopListening();
     this.trigger('destroy', this, this.collection, options);
@@ -72,18 +74,18 @@ const Occurrence = Backbone.Model.extend({
     if (this.sample && !options.noSave) {
       const success = options.success;
       options.success = () => {
-        dfd.resolve();
+        promiseResolve();
         success && success();
       };
 
       // save the changes permanentely
       this.save(null, options);
     } else {
-      dfd.resolve();
+      promiseResolve();
       options.success && options.success();
     }
 
-    return dfd.promise();
+    return promise;
   },
 
   /**
@@ -106,7 +108,7 @@ const Occurrence = Backbone.Model.extend({
    */
   addImage(image) {
     if (!image) return;
-    image.setOccurrence(this);
+    image.setParent(this);
     this.images.add(image);
   },
 
@@ -120,7 +122,7 @@ const Occurrence = Backbone.Model.extend({
       errors.taxon = 'can\'t be blank';
     }
 
-    if (! _.isEmpty(errors)) {
+    if (!_.isEmpty(errors)) {
       return errors;
     }
 

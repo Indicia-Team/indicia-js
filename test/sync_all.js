@@ -27,6 +27,7 @@ export default function (manager) {
 
     before(() => {
       server = sinon.fakeServer.create();
+      server.respondImmediately = true;
     });
 
     beforeEach(() => {
@@ -43,17 +44,26 @@ export default function (manager) {
       manager.sync.restore();
       manager.clear(done);
     });
+
+
     it('should return a promise and use callbacks', (done) => {
+      let finished = false;
       const promise = manager.syncAll(null, null, {
         success: () => {
-          done();
+          if (finished) done();
+          finished = true;
         },
+      }).then(() => {
+        if (finished) done();
+        finished = true;
       });
 
       expect(promise.then).to.be.a.function;
     });
 
     it('should post all', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
+
       manager.getAll((err, models) => {
         // check if collection is empty
         expect(models.length).to.be.equal(0);
@@ -62,12 +72,13 @@ export default function (manager) {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const sample3 = getRandomSample();
+
+        // delete occurrences for the sample to become invalid to sync
         _.each(_.clone(sample3.occurrences.models), (model) => {
           model.destroy({ noSave: true });
         });
 
-        server.respondWith('POST', '/mobile/submit', okResponse);
-        $.when(sample.save(), sample2.save(), sample3.save())
+        Promise.all([sample.save(), sample2.save(), sample3.save()])
           .then(() => {
             expect(models.length).to.be.equal(3);
             // synchronise collection
@@ -88,7 +99,6 @@ export default function (manager) {
                 });
                 done();
               });
-            server.respond();
           });
       });
     });
@@ -99,17 +109,15 @@ export default function (manager) {
       const sample2 = getRandomSample();
 
       server.respondWith('POST', '/mobile/submit', okResponse);
-      $.when(sample.save(), sample2.save())
+      Promise.all([sample.save(), sample2.save()])
         .then(() => {
           // synchronise collection twice
-          $.when(manager.syncAll(), manager.syncAll())
+          Promise.all([manager.syncAll(), manager.syncAll()])
             .then(() => {
               expect(manager.sync.callCount).to.be.equal(4);
               expect(Morel.prototype.post.calledTwice).to.be.true;
               done();
             });
-
-          server.respond();
         });
     });
   });

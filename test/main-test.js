@@ -55,7 +55,7 @@ describe('Saving/destroying propagation', () => {
             });
           },
         });
-        expect(req).to.be.an('object');
+        expect(req).to.be.an.instanceof(Promise);
       });
     });
 

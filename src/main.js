@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Backbone from 'backbone';
 import Sample from './Sample';
@@ -38,10 +37,20 @@ class Morel {
   set(model, callback, options) {
     model.manager = this; // set the manager on new model
     this.storage.set(model, callback, options);
+
+    // this.storage.set(model, (...args) => {
+    //   this._addReference(model);
+    //   callback && callback(args);
+    // }, options);
   }
 
   remove(model, callback, options) {
     this.storage.remove(model, callback, options);
+
+    // this.storage.remove(model, (...args) => {
+    //   this._removeReference(model);
+    //   callback && callback(args);
+    // }, options);
   }
 
   has(model, callback, options) {
@@ -59,53 +68,62 @@ class Morel {
    * @returns {*}
    */
   syncAll(method, collection, options = {}) {
-    const returnPromise = new $.Deferred();
+    let syncAllPromiseResolve;
+    let syncAllPromiseReject;
+    const returnPromise = new Promise((fulfill, reject) => {
+      syncAllPromiseResolve = fulfill;
+      syncAllPromiseReject = reject;
+    });
 
     // sync all in collection
     function syncEach(collectionToSync) {
       const toWait = [];
       collectionToSync.each((model) => {
         // todo: reuse the passed options model
-        const promise = model.save(null, {
+        const xhr = model.save(null, {
           remote: true,
           timeout: options.timeout,
         });
-        const passingPromise = new $.Deferred();
-        if (!promise) {
+        let syncPromise;
+        if (!xhr) {
           // model was invalid
-          passingPromise.resolve();
+          syncPromise = Promise.resolve();
         } else {
           // valid model, but in case it fails sync carry on
-          promise.always(() => {
-            passingPromise.resolve();
+          syncPromise = new Promise((fulfill) => {
+            xhr.then(() => {
+              fulfill();
+            }).catch(() => {
+              fulfill();
+            });
           });
         }
-        toWait.push(passingPromise);
+        toWait.push(syncPromise);
       });
 
-      const dfd = $.when.apply($, toWait);
-      dfd.then(() => {
-        returnPromise.resolve();
+      Promise.all(toWait).then(() => {
+        // after all is synced
+        syncAllPromiseResolve();
         options.success && options.success();
       });
     }
 
     if (collection) {
       syncEach(collection);
-      return returnPromise.promise();
+      return returnPromise;
     }
 
     // get all models to submit
     this.getAll((err, receivedCollection) => {
       if (err) {
-        returnPromise.reject();
+        syncAllPromiseReject();
         options.error && options.error(err);
         return;
       }
 
       syncEach(receivedCollection);
     });
-    return returnPromise.promise();
+    return returnPromise;
   }
 
   /**
@@ -142,6 +160,7 @@ class Morel {
    * @param options
    */
   post(model, options) {
+    const that = this;
     // call user defined onSend function to modify
     const onSend = model.onSend || this.onSend;
     const stopSending = onSend && onSend(model);
@@ -160,8 +179,8 @@ class Morel {
       // update model
       model.metadata.warehouse_id = 1;
       model.metadata.server_on =
-      model.metadata.updated_on =
-      model.metadata.synced_on = new Date();
+        model.metadata.updated_on =
+          model.metadata.synced_on = new Date();
 
       success && success(model, null, options);
     };
@@ -177,30 +196,33 @@ class Morel {
       if (error) error.call(options.context, xhr, textStatus, errorThrown);
     };
 
-    const dfd = new $.Deferred();
-    this._getModelFormData(model, (err, formData) => {
-      // AJAX post
-      const xhr = options.xhr = Backbone.ajax({
-        url: options.url,
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        timeout: options.timeout || 30000, // 30s
-        success: options.success,
-        error: options.error,
-      });
+    const promise = new Promise((fulfill, reject) => {
+      // async call to get the form data
+      that._getModelFormData(model, (err, formData) => {
+        // AJAX post
+        const xhr = options.xhr = Backbone.ajax({
+          url: options.url,
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          timeout: options.timeout || 30000, // 30s
+          success: options.success,
+          error: options.error,
+        });
 
-      xhr.done((data, textStatus, jqXHR) => {
-        dfd.resolve(data, textStatus, jqXHR);
+        // also resolve the promise
+        xhr.done((data, textStatus, jqXHR) => {
+          fulfill(data, textStatus, jqXHR);
+        });
+        xhr.fail((jqXHR, textStatus, errorThrown) => {
+          reject(jqXHR, textStatus, errorThrown);
+        });
+        model.trigger('request', model, xhr, options);
       });
-      xhr.fail((jqXHR, textStatus, errorThrown) => {
-        dfd.reject(jqXHR, textStatus, errorThrown);
-      });
-      model.trigger('request', model, xhr, options);
     });
 
-    return dfd.promise();
+    return promise;
   }
 
   _attachListeners() {
@@ -225,8 +247,11 @@ class Morel {
       const imageProcesses = [];
 
       occurrence.images.each((image) => {
-        const imageDfd = new $.Deferred();
-        imageProcesses.push(imageDfd);
+        let imagePromiseResolve;
+        const imagePromise = new Promise((fulfill) => {
+          imagePromiseResolve = fulfill;
+        });
+        imageProcesses.push(imagePromise);
 
         const url = image.getURL();
         const type = image.get('type');
@@ -248,7 +273,7 @@ class Morel {
 
           formData.append(name, blob, `pic.${extension}`);
           imgCount++;
-          imageDfd.resolve();
+          imagePromiseResolve();
         }
 
         if (!helpers.isDataURL(url)) {
@@ -259,6 +284,7 @@ class Morel {
           xhr.onload = () => {
             onSuccess(null, null, null, xhr.response);
           };
+          // todo check error case
 
           xhr.send();
         } else {
@@ -266,11 +292,11 @@ class Morel {
         }
       });
 
-      occurrenceProcesses.push($.when.apply($, imageProcesses));
+      occurrenceProcesses.push(Promise.all(imageProcesses));
       occCount++;
     });
 
-    $.when.apply($, occurrenceProcesses).then(() => {
+    Promise.all(occurrenceProcesses).then(() => {
       // append attributes
       const keys = Object.keys(flattened);
       for (let i = 0; i < keys.length; i++) {
@@ -412,12 +438,25 @@ class Morel {
 
     return data;
   }
+
+  // _addReference(model) {
+  //   model.on('all', this._onSampleEvent, this);
+  // }
+  //
+  // _removeReference(model) {
+  //   model.off('all', this._onSampleEvent, this);
+  // }
+  //
+  // _onSampleEvent(...args) {
+  //   this.trigger.apply(this, args);
+  // }
 }
 
 _.extend(Morel.prototype, Backbone.Events);
 
 _.extend(Morel, CONST, {
-  VERSION: '0', // library version, generated/replaced by grunt
+  /* global LIB_VERSION */
+  VERSION: LIB_VERSION, // replaced by build
 
   Sample,
   Occurrence,

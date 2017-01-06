@@ -21,7 +21,7 @@ const ImageModel = Backbone.Model.extend({
     }
 
     this.cid = options.cid || options.id || helpers.getNewUUID();
-    this.setOccurrence(options.occurrence || this.occurrence);
+    this.setParent(options.parent || this.parent);
 
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
@@ -42,32 +42,34 @@ const ImageModel = Backbone.Model.extend({
   },
 
   save(attrs, options = {}) {
-    if (!this.occurrence) return false;
-    return this.occurrence.save(attrs, options);
+    if (!this.parent) return false;
+    return this.parent.save(attrs, options);
   },
 
   destroy(options = {}) {
-    const dfd = new $.Deferred();
-
+    let promiseResolve;
+    const promise = new Promise((fulfill) => {
+      promiseResolve = fulfill;
+    });
     // removes from all collections etc
     this.stopListening();
     this.trigger('destroy', this, this.collection, options);
 
-    if (this.occurrence && !options.noSave) {
+    if (this.parent && !options.noSave) {
       const success = options.success;
       options.success = () => {
-        dfd.resolve();
+        promiseResolve();
         success && success();
       };
 
       // save the changes permanentely
       this.save(null, options);
     } else {
-      dfd.resolve();
+      promiseResolve();
       options.success && options.success();
     }
 
-    return dfd.promise();
+    return promise;
   },
 
   /**
@@ -78,15 +80,15 @@ const ImageModel = Backbone.Model.extend({
   },
 
   /**
-   * Sets parent Occurrence.
-   * @param occurrence
+   * Sets parent.
+   * @param parent
    */
-  setOccurrence(occurrence) {
-    if (!occurrence) return;
+  setParent(parent) {
+    if (!parent) return;
 
     const that = this;
-    this.occurrence = occurrence;
-    this.occurrence.on('destroy', () => {
+    this.parent = parent;
+    this.parent.on('destroy', () => {
       that.destroy({ noSave: true });
     });
   },

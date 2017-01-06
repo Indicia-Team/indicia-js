@@ -36,6 +36,7 @@ export default function (manager) {
 
     before(() => {
       server = sinon.fakeServer.create();
+      server.respondImmediately = true;
     });
 
     beforeEach(() => {
@@ -76,6 +77,7 @@ export default function (manager) {
     });
 
     it('should post with remote option', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -86,13 +88,11 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
+      expect(valid).to.be.instanceOf(Promise);
     });
 
     it('should update remotely synced record', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       sample.save(null, {
@@ -107,9 +107,6 @@ export default function (manager) {
           });
         },
       });
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
     });
 
     it('should validate before remote sending', () => {
@@ -124,6 +121,7 @@ export default function (manager) {
     });
 
     it('should return error if unsuccessful remote sync', (done) => {
+      server.respondWith('POST', '/mobile/submit', errResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -135,10 +133,7 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
-
-      server.respondWith('POST', '/mobile/submit', errResponse);
-      server.respond();
+      expect(valid).to.be.instanceOf(Promise);
     });
 
     it('should set synchronising flag on sample', () => {
@@ -150,6 +145,7 @@ export default function (manager) {
 
 
     it('should not double sync', (done) => {
+      server.respondWith('POST', '/mobile/submit', okResponse);
       const sample = getRandomSample();
 
       let valid = sample.save(null, {
@@ -161,7 +157,7 @@ export default function (manager) {
         },
       });
 
-      expect(valid).to.be.an('object');
+      expect(valid).to.be.instanceOf(Promise);
 
       valid = sample.save(null, {
         remote: true,
@@ -171,29 +167,51 @@ export default function (manager) {
       });
 
       expect(valid).to.be.false;
-
-      server.respondWith('POST', '/mobile/submit', okResponse);
-      server.respond();
     });
 
-    it('should timeout', () => {
+    it('should timeout', (done) => {
+      server.respondImmediately = false;
       const clock = sinon.useFakeTimers();
       const errorCallback = sinon.spy();
+
+      const origCall = $.ajax;
+      const stub = sinon.stub($, 'ajax', (...args) => {
+        origCall.apply($, args);
+        clock.tick(29000);
+        expect(errorCallback.calledOnce).to.be.false;
+        clock.tick(2000);
+        expect(errorCallback.calledOnce).to.be.true;
+        stub.restore();
+        done();
+      });
+
       const sample = getRandomSample();
 
       sample.save(null, {
         remote: true,
         error: errorCallback,
       });
-
-      clock.tick(29000);
-      expect(errorCallback.calledOnce).to.be.false;
-      clock.tick(2000);
-      expect(errorCallback.calledOnce).to.be.true;
     });
+
+    // it('should fire model sync events', (done) => {
+    //   const events = ['sync', 'request', 'error'];
+    //   const sample = getRandomSample();
+    //
+    //   manager.set(sample, () => {
+    //     manager.on(events.join(' '), () => {
+    //       events.pop();
+    //       if (!events.length) done();
+    //     });
+    //
+    //     sample.trigger('sync');
+    //     sample.trigger('request');
+    //     sample.trigger('error');
+    //   });
+    // });
 
     describe('occurrences with images', (done) => {
       it('should send both dataURI and absolute pathed images', () => {
+        server.respondWith('POST', '/mobile/submit', okResponse);
         const image1 = new ImageModel({
           data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',
@@ -206,7 +224,7 @@ export default function (manager) {
 
         const occurrence = new Occurrence({
           taxon: 1234,
-        },{
+        }, {
           images: [image1, image2],
         });
         const sample = new Sample({
@@ -222,11 +240,7 @@ export default function (manager) {
             done();
           },
         });
-
-        server.respondWith('POST', '/mobile/submit', okResponse);
-        server.respond();
       });
     });
-
   });
 }

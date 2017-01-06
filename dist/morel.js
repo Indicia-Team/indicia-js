@@ -1,13 +1,23 @@
+/*!
+ * 
+ * morel 3.1.3
+ * Mobile Recording Library for biological data collection.
+ * https://github.com/NERC-CEH/morel
+ * Author Karolis Kazlauskis
+ * Released under the GNU GPL v3 license.
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("jquery"), require("underscore"), require("backbone"));
+		module.exports = factory(require("underscore"), require("backbone"), require("jquery"));
 	else if(typeof define === 'function' && define.amd)
-		define("Morel", ["jquery", "underscore", "backbone"], factory);
+		define("Morel", ["_", "Backbone", "$"], factory);
 	else if(typeof exports === 'object')
-		exports["Morel"] = factory(require("jquery"), require("underscore"), require("backbone"));
+		exports["Morel"] = factory(require("underscore"), require("backbone"), require("jquery"));
 	else
-		root["Morel"] = factory(root["jquery"], root["underscore"], root["backbone"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_3__) {
+		root["Morel"] = factory(root["_"], root["Backbone"], root["$"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_7__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -63,23 +73,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _jquery = __webpack_require__(1);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Sample = __webpack_require__(4);
+	var _Sample = __webpack_require__(3);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(7);
+	var _Occurrence = __webpack_require__(9);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -95,19 +101,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _LocalStorage2 = _interopRequireDefault(_LocalStorage);
 
-	var _Image = __webpack_require__(8);
+	var _Image = __webpack_require__(6);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _constants = __webpack_require__(5);
+	var _constants = __webpack_require__(4);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -152,11 +158,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function set(model, callback, options) {
 	      model.manager = this; // set the manager on new model
 	      this.storage.set(model, callback, options);
+
+	      // this.storage.set(model, (...args) => {
+	      //   this._addReference(model);
+	      //   callback && callback(args);
+	      // }, options);
 	    }
 	  }, {
 	    key: 'remove',
 	    value: function remove(model, callback, options) {
 	      this.storage.remove(model, callback, options);
+
+	      // this.storage.remove(model, (...args) => {
+	      //   this._removeReference(model);
+	      //   callback && callback(args);
+	      // }, options);
 	    }
 	  }, {
 	    key: 'has',
@@ -181,53 +197,62 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function syncAll(method, collection) {
 	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
-	      var returnPromise = new _jquery2.default.Deferred();
+	      var syncAllPromiseResolve = void 0;
+	      var syncAllPromiseReject = void 0;
+	      var returnPromise = new Promise(function (fulfill, reject) {
+	        syncAllPromiseResolve = fulfill;
+	        syncAllPromiseReject = reject;
+	      });
 
 	      // sync all in collection
 	      function syncEach(collectionToSync) {
 	        var toWait = [];
 	        collectionToSync.each(function (model) {
 	          // todo: reuse the passed options model
-	          var promise = model.save(null, {
+	          var xhr = model.save(null, {
 	            remote: true,
 	            timeout: options.timeout
 	          });
-	          var passingPromise = new _jquery2.default.Deferred();
-	          if (!promise) {
+	          var syncPromise = void 0;
+	          if (!xhr) {
 	            // model was invalid
-	            passingPromise.resolve();
+	            syncPromise = Promise.resolve();
 	          } else {
 	            // valid model, but in case it fails sync carry on
-	            promise.always(function () {
-	              passingPromise.resolve();
+	            syncPromise = new Promise(function (fulfill) {
+	              xhr.then(function () {
+	                fulfill();
+	              }).catch(function () {
+	                fulfill();
+	              });
 	            });
 	          }
-	          toWait.push(passingPromise);
+	          toWait.push(syncPromise);
 	        });
 
-	        var dfd = _jquery2.default.when.apply(_jquery2.default, toWait);
-	        dfd.then(function () {
-	          returnPromise.resolve();
+	        Promise.all(toWait).then(function () {
+	          // after all is synced
+	          syncAllPromiseResolve();
 	          options.success && options.success();
 	        });
 	      }
 
 	      if (collection) {
 	        syncEach(collection);
-	        return returnPromise.promise();
+	        return returnPromise;
 	      }
 
 	      // get all models to submit
 	      this.getAll(function (err, receivedCollection) {
 	        if (err) {
-	          returnPromise.reject();
+	          syncAllPromiseReject();
 	          options.error && options.error(err);
 	          return;
 	        }
 
 	        syncEach(receivedCollection);
 	      });
-	      return returnPromise.promise();
+	      return returnPromise;
 	    }
 
 	    /**
@@ -271,6 +296,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'post',
 	    value: function post(model, options) {
+	      var that = this;
 	      // call user defined onSend function to modify
 	      var onSend = model.onSend || this.onSend;
 	      var stopSending = onSend && onSend(model);
@@ -304,30 +330,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (error) error.call(options.context, xhr, textStatus, errorThrown);
 	      };
 
-	      var dfd = new _jquery2.default.Deferred();
-	      this._getModelFormData(model, function (err, formData) {
-	        // AJAX post
-	        var xhr = options.xhr = _backbone2.default.ajax({
-	          url: options.url,
-	          type: 'POST',
-	          data: formData,
-	          processData: false,
-	          contentType: false,
-	          timeout: options.timeout || 30000, // 30s
-	          success: options.success,
-	          error: options.error
-	        });
+	      var promise = new Promise(function (fulfill, reject) {
+	        // async call to get the form data
+	        that._getModelFormData(model, function (err, formData) {
+	          // AJAX post
+	          var xhr = options.xhr = _backbone2.default.ajax({
+	            url: options.url,
+	            type: 'POST',
+	            data: formData,
+	            processData: false,
+	            contentType: false,
+	            timeout: options.timeout || 30000, // 30s
+	            success: options.success,
+	            error: options.error
+	          });
 
-	        xhr.done(function (data, textStatus, jqXHR) {
-	          dfd.resolve(data, textStatus, jqXHR);
+	          // also resolve the promise
+	          xhr.done(function (data, textStatus, jqXHR) {
+	            fulfill(data, textStatus, jqXHR);
+	          });
+	          xhr.fail(function (jqXHR, textStatus, errorThrown) {
+	            reject(jqXHR, textStatus, errorThrown);
+	          });
+	          model.trigger('request', model, xhr, options);
 	        });
-	        xhr.fail(function (jqXHR, textStatus, errorThrown) {
-	          dfd.reject(jqXHR, textStatus, errorThrown);
-	        });
-	        model.trigger('request', model, xhr, options);
 	      });
 
-	      return dfd.promise();
+	      return promise;
 	    }
 	  }, {
 	    key: '_attachListeners',
@@ -356,8 +385,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var imageProcesses = [];
 
 	        occurrence.images.each(function (image) {
-	          var imageDfd = new _jquery2.default.Deferred();
-	          imageProcesses.push(imageDfd);
+	          var imagePromiseResolve = void 0;
+	          var imagePromise = new Promise(function (fulfill) {
+	            imagePromiseResolve = fulfill;
+	          });
+	          imageProcesses.push(imagePromise);
 
 	          var url = image.getURL();
 	          var type = image.get('type');
@@ -379,7 +411,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            formData.append(name, blob, 'pic.' + extension);
 	            imgCount++;
-	            imageDfd.resolve();
+	            imagePromiseResolve();
 	          }
 
 	          if (!_helpers2.default.isDataURL(url)) {
@@ -391,6 +423,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	              xhr.onload = function () {
 	                onSuccess(null, null, null, xhr.response);
 	              };
+	              // todo check error case
 
 	              xhr.send();
 	            })();
@@ -399,11 +432,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 	        });
 
-	        occurrenceProcesses.push(_jquery2.default.when.apply(_jquery2.default, imageProcesses));
+	        occurrenceProcesses.push(Promise.all(imageProcesses));
 	        occCount++;
 	      });
 
-	      _jquery2.default.when.apply(_jquery2.default, occurrenceProcesses).then(function () {
+	      Promise.all(occurrenceProcesses).then(function () {
 	        // append attributes
 	        var keys = Object.keys(flattened);
 	        for (var i = 0; i < keys.length; i++) {
@@ -555,6 +588,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      return data;
 	    }
+
+	    // _addReference(model) {
+	    //   model.on('all', this._onSampleEvent, this);
+	    // }
+	    //
+	    // _removeReference(model) {
+	    //   model.off('all', this._onSampleEvent, this);
+	    // }
+	    //
+	    // _onSampleEvent(...args) {
+	    //   this.trigger.apply(this, args);
+	    // }
+
 	  }]);
 
 	  return Morel;
@@ -563,7 +609,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	_underscore2.default.extend(Morel.prototype, _backbone2.default.Events);
 
 	_underscore2.default.extend(Morel, _constants2.default, {
-	  VERSION: '3.1.3', // library version, generated/replaced by grunt
+	  /* global LIB_VERSION */
+	  VERSION: ("3.1.3"), // replaced by build
 
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
@@ -589,12 +636,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
-
-/***/ },
-/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -614,27 +655,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(1);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _constants = __webpack_require__(5);
+	var _constants = __webpack_require__(4);
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Occurrence = __webpack_require__(7);
+	var _Image = __webpack_require__(6);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Occurrence = __webpack_require__(9);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -645,6 +686,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Sample = _backbone2.default.Model.extend({
+	  Image: _Image2.default,
 	  Occurrence: _Occurrence2.default,
 
 	  constructor: function constructor() {
@@ -667,6 +709,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
+	    if (options.Image) this.Image = options.Image;
 	    if (options.Occurrence) this.Occurrence = options.Occurrence;
 	    if (options.onSend) this.onSend = options.onSend;
 
@@ -691,7 +734,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        server_on: null };
 	    }
 
-	    // updated on server
 	    if (options.occurrences) {
 	      (function () {
 	        var occurrences = [];
@@ -714,6 +756,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    }
 
+	    if (options.images) {
+	      (function () {
+	        var images = [];
+	        _underscore2.default.each(options.images, function (image) {
+	          if (image instanceof _this.Image) {
+	            image.setParent(that);
+	            images.push(image);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(image, { parent: that });
+	            images.push(new _this.Image(image.attributes, modelOptions));
+	          }
+	        });
+	        _this.images = new _Collection2.default(images, {
+	          model: _this.Image
+	        });
+	      })();
+	    } else {
+	      this.images = new _Collection2.default([], {
+	        model: this.Image
+	      });
+	    }
+
 	    this.initialize.apply(this, arguments);
 	  },
 
@@ -728,40 +792,50 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var model = this;
+	    var promise = void 0;
 
 	    if (!this.manager) return false;
 
 	    // only update local cache and DB
 	    if (!options.remote) {
-	      var _ret2 = function () {
+	      var _ret3 = function () {
 	        // todo: add attrs if passed to model
-	        var deferred = _backbone2.default.$.Deferred();
+
+	        var promiseResolve = void 0;
+	        var promiseReject = void 0;
+	        promise = new Promise(function (fulfill, reject) {
+	          promiseResolve = fulfill;
+	          promiseReject = reject;
+	        });
 
 	        _this2.manager.set(_this2, function (err) {
 	          if (err) {
-	            deferred.reject(err);
+	            promiseReject(err);
 	            options.error && options.error(err);
 	            return;
 	          }
-	          deferred.resolve(model, {}, options);
+	          promiseResolve(model, {}, options);
 	          options.success && options.success(model, {}, options);
 	        });
 	        return {
-	          v: deferred.promise()
+	          v: promise
 	        };
 	      }();
 
-	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	      if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
 	    }
 
 	    // remote
-	    var xhr = _backbone2.default.Model.prototype.save.apply(this, arguments);
-	    return xhr;
+	    promise = _backbone2.default.Model.prototype.save.apply(this, arguments);
+	    return promise;
 	  },
 	  destroy: function destroy() {
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    var dfd = new _jquery2.default.Deferred();
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
 
 	    if (this.manager && !options.noSave) {
 	      // save the changes permanentely
@@ -770,7 +844,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          options.error && options.error(err);
 	          return;
 	        }
-	        dfd.resolve();
+	        promiseResolve();
 	        options.success && options.success();
 	      });
 	    } else {
@@ -778,11 +852,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.stopListening();
 	      this.trigger('destroy', this, this.collection, options);
 
-	      dfd.resolve();
+	      promiseResolve();
 	      options.success && options.success();
 	    }
 
-	    return dfd.promise();
+	    return promise;
 	  },
 
 
@@ -794,6 +868,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!occurrence) return;
 	    occurrence.setSample(this);
 	    this.occurrences.push(occurrence);
+	  },
+
+
+	  /**
+	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * @param image
+	   */
+	  addImage: function addImage(image) {
+	    if (!image) return;
+	    image.setParent(this);
+	    this.images.add(image);
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
@@ -854,6 +939,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  flatten: function flatten(flattener) {
+	    // images flattened separately
 	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
 	    // occurrences
@@ -870,12 +956,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	      occurrences = occurrencesCollection.toJSON();
 	    }
 
+	    var images = void 0;
+	    var imagesCollection = this.images;
+	    if (!imagesCollection) {
+	      images = [];
+	      console.warn('toJSON images missing');
+	    } else {
+	      images = imagesCollection.toJSON();
+	    }
+
 	    var data = {
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      occurrences: occurrences
+	      occurrences: occurrences,
+	      images: images
 	    };
 
 	    return data;
@@ -905,8 +1001,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          return _constants2.default.CHANGED_LOCALLY;
 	          // changed_server
 	        } else if (meta.synced_on < meta.server_on) {
-	            return _constants2.default.CHANGED_SERVER;
-	          }
+	          return _constants2.default.CHANGED_SERVER;
+	        }
 	        return _constants2.default.SYNCED;
 
 	        // partially initialized - we know the record exists on
@@ -949,7 +1045,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      irish: 'OSIE', // for Irish Grid
 	      latlon: 4326 }
 	  },
-	  // for Latitude and Longitude in decimal form (WGS84 datum)
 	  location_name: { id: 'location_name' },
 	  form: { id: 'input_form' },
 	  group: { id: 'group_id' },
@@ -959,7 +1054,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Sample;
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -978,7 +1073,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1124,11 +1219,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return date;
 	      // dashed
 	    } else if (regDash.test(date)) {
-	        date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
-	        // inversed dashed
-	      } else if (regDashInv.test(date)) {
-	          date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
-	        }
+	      date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
+	      // inversed dashed
+	    } else if (regDashInv.test(date)) {
+	      date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
+	    }
 	  }
 
 	  now = date || now;
@@ -1149,228 +1244,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = undefined;
-
-	var _jquery = __webpack_require__(1);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _backbone = __webpack_require__(3);
-
-	var _backbone2 = _interopRequireDefault(_backbone);
-
-	var _underscore = __webpack_require__(2);
-
-	var _underscore2 = _interopRequireDefault(_underscore);
-
-	var _helpers = __webpack_require__(6);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	var _Image = __webpack_require__(8);
-
-	var _Image2 = _interopRequireDefault(_Image);
-
-	var _Collection = __webpack_require__(10);
-
-	var _Collection2 = _interopRequireDefault(_Collection);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/** *********************************************************************
-	 * OCCURRENCE
-	 **********************************************************************/
-
-
-	var Occurrence = _backbone2.default.Model.extend({
-	  Image: _Image2.default,
-	  constructor: function constructor() {
-	    var _this = this;
-
-	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-	    var that = this;
-	    var attrs = attributes;
-
-	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
-	    this.setSample(options.sample || this.sample);
-
-	    if (options.Image) this.Image = options.Image;
-
-	    this.attributes = {};
-	    if (options.collection) this.collection = options.collection;
-	    if (options.parse) attrs = this.parse(attrs, options) || {};
-	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
-	    this.set(attrs, options);
-	    this.changed = {};
-
-	    if (options.metadata) {
-	      this.metadata = options.metadata;
-	    } else {
-	      this.metadata = {
-	        created_on: new Date()
-	      };
-	    }
-
-	    if (options.images) {
-	      (function () {
-	        var images = [];
-	        _underscore2.default.each(options.images, function (image) {
-	          if (image instanceof _this.Image) {
-	            image.setOccurrence(that);
-	            images.push(image);
-	          } else {
-	            var modelOptions = _underscore2.default.extend(image, { occurrence: that });
-	            images.push(new _this.Image(image.attributes, modelOptions));
-	          }
-	        });
-	        _this.images = new _Collection2.default(images, {
-	          model: _this.Image
-	        });
-	      })();
-	    } else {
-	      this.images = new _Collection2.default([], {
-	        model: this.Image
-	      });
-	    }
-
-	    this.initialize.apply(this, arguments);
-	  },
-	  save: function save(attrs) {
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-	    if (!this.sample) return false;
-	    return this.sample.save(attrs, options);
-	  },
-	  destroy: function destroy() {
-	    var _this2 = this;
-
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-	    var dfd = new _jquery2.default.Deferred();
-
-	    // removes from all collections etc
-	    this.stopListening();
-	    this.trigger('destroy', this, this.collection, options);
-
-	    if (this.sample && !options.noSave) {
-	      (function () {
-	        var success = options.success;
-	        options.success = function () {
-	          dfd.resolve();
-	          success && success();
-	        };
-
-	        // save the changes permanentely
-	        _this2.save(null, options);
-	      })();
-	    } else {
-	      dfd.resolve();
-	      options.success && options.success();
-	    }
-
-	    return dfd.promise();
-	  },
-
-
-	  /**
-	   * Sets parent Sample.
-	   * @param occurrence
-	   */
-	  setSample: function setSample(sample) {
-	    if (!sample) return;
-
-	    var that = this;
-	    this.sample = sample;
-	    this.sample.on('destroy', function () {
-	      that.destroy({ noSave: true });
-	    });
-	  },
-
-
-	  /**
-	   * Adds an image to occurrence and sets the images's occurrence to this.
-	   * @param image
-	   */
-	  addImage: function addImage(image) {
-	    if (!image) return;
-	    image.setOccurrence(this);
-	    this.images.add(image);
-	  },
-	  validate: function validate(attributes) {
-	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
-
-	    var errors = {};
-
-	    // location
-	    if (!attrs.taxon) {
-	      errors.taxon = 'can\'t be blank';
-	    }
-
-	    if (!_underscore2.default.isEmpty(errors)) {
-	      return errors;
-	    }
-
-	    return null;
-	  },
-	  toJSON: function toJSON() {
-	    var images = void 0;
-	    var imagesCollection = this.images;
-	    if (!imagesCollection) {
-	      images = [];
-	      console.warn('toJSON images missing');
-	    } else {
-	      images = imagesCollection.toJSON();
-	    }
-	    var data = {
-	      id: this.id,
-	      cid: this.cid,
-	      metadata: this.metadata,
-	      attributes: this.attributes,
-	      images: images
-	    };
-	    return data;
-	  },
-
-
-	  /**
-	   * Returns an object with attributes and their values flattened and
-	   * mapped for warehouse submission.
-	   *
-	   * @param flattener
-	   * @returns {*}
-	   */
-	  flatten: function flatten(flattener, count) {
-	    // images flattened separately
-	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
-	  }
-	});
-
-	/**
-	 * Warehouse attributes and their values.
-	 */
-	Occurrence.keys = {
-	  taxon: {
-	    id: ''
-	  },
-	  comment: {
-	    id: 'comment'
-	  }
-	};
-
-	exports.default = Occurrence;
-
-/***/ },
-/* 8 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1385,23 +1259,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
-	var _jquery = __webpack_require__(1);
+	var _jquery = __webpack_require__(7);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1423,7 +1297,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
-	    this.setOccurrence(options.occurrence || this.occurrence);
+	    this.setParent(options.parent || this.parent);
 
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
@@ -1445,25 +1319,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	  save: function save(attrs) {
 	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	    if (!this.occurrence) return false;
-	    return this.occurrence.save(attrs, options);
+	    if (!this.parent) return false;
+	    return this.parent.save(attrs, options);
 	  },
 	  destroy: function destroy() {
 	    var _this = this;
 
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	    var dfd = new _jquery2.default.Deferred();
-
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
 	    // removes from all collections etc
 	    this.stopListening();
 	    this.trigger('destroy', this, this.collection, options);
 
-	    if (this.occurrence && !options.noSave) {
+	    if (this.parent && !options.noSave) {
 	      (function () {
 	        var success = options.success;
 	        options.success = function () {
-	          dfd.resolve();
+	          promiseResolve();
 	          success && success();
 	        };
 
@@ -1471,11 +1347,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _this.save(null, options);
 	      })();
 	    } else {
-	      dfd.resolve();
+	      promiseResolve();
 	      options.success && options.success();
 	    }
 
-	    return dfd.promise();
+	    return promise;
 	  },
 
 
@@ -1488,15 +1364,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Sets parent Occurrence.
-	   * @param occurrence
+	   * Sets parent.
+	   * @param parent
 	   */
-	  setOccurrence: function setOccurrence(occurrence) {
-	    if (!occurrence) return;
+	  setParent: function setParent(parent) {
+	    if (!parent) return;
 
 	    var that = this;
-	    this.occurrence = occurrence;
-	    this.occurrence.on('destroy', function () {
+	    this.parent = parent;
+	    this.parent.on('destroy', function () {
 	      that.destroy({ noSave: true });
 	    });
 	  },
@@ -1566,7 +1442,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param onSaveSuccess
 	   * @returns {number}
 	   */
-
 	  getDataURI: function getDataURI(file, callback) {
 	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
@@ -1670,7 +1545,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
-/* 9 */
+/* 7 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
+
+/***/ },
+/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1684,7 +1565,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * ERROR
 	 **********************************************************************/
-
 	var Error = function Error() {
 	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
@@ -1703,6 +1583,227 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Error;
 
 /***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _jquery = __webpack_require__(7);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
+	var _backbone = __webpack_require__(2);
+
+	var _backbone2 = _interopRequireDefault(_backbone);
+
+	var _underscore = __webpack_require__(1);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _helpers = __webpack_require__(5);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _Image = __webpack_require__(6);
+
+	var _Image2 = _interopRequireDefault(_Image);
+
+	var _Collection = __webpack_require__(10);
+
+	var _Collection2 = _interopRequireDefault(_Collection);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
+	var Occurrence = _backbone2.default.Model.extend({
+	  Image: _Image2.default,
+	  constructor: function constructor() {
+	    var _this = this;
+
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    var that = this;
+	    var attrs = attributes;
+
+	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
+	    this.setSample(options.sample || this.sample);
+
+	    if (options.Image) this.Image = options.Image;
+
+	    this.attributes = {};
+	    if (options.collection) this.collection = options.collection;
+	    if (options.parse) attrs = this.parse(attrs, options) || {};
+	    attrs = _underscore2.default.defaults({}, attrs, _underscore2.default.result(this, 'defaults'));
+	    this.set(attrs, options);
+	    this.changed = {};
+
+	    if (options.metadata) {
+	      this.metadata = options.metadata;
+	    } else {
+	      this.metadata = {
+	        created_on: new Date()
+	      };
+	    }
+
+	    if (options.images) {
+	      (function () {
+	        var images = [];
+	        _underscore2.default.each(options.images, function (image) {
+	          if (image instanceof _this.Image) {
+	            image.setParent(that);
+	            images.push(image);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(image, { parent: that });
+	            images.push(new _this.Image(image.attributes, modelOptions));
+	          }
+	        });
+	        _this.images = new _Collection2.default(images, {
+	          model: _this.Image
+	        });
+	      })();
+	    } else {
+	      this.images = new _Collection2.default([], {
+	        model: this.Image
+	      });
+	    }
+
+	    this.initialize.apply(this, arguments);
+	  },
+	  save: function save(attrs) {
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	    if (!this.sample) return false;
+	    return this.sample.save(attrs, options);
+	  },
+	  destroy: function destroy() {
+	    var _this2 = this;
+
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	    var promiseResolve = void 0;
+	    var promise = new Promise(function (fulfill) {
+	      promiseResolve = fulfill;
+	    });
+	    // removes from all collections etc
+	    this.stopListening();
+	    this.trigger('destroy', this, this.collection, options);
+
+	    if (this.sample && !options.noSave) {
+	      (function () {
+	        var success = options.success;
+	        options.success = function () {
+	          promiseResolve();
+	          success && success();
+	        };
+
+	        // save the changes permanentely
+	        _this2.save(null, options);
+	      })();
+	    } else {
+	      promiseResolve();
+	      options.success && options.success();
+	    }
+
+	    return promise;
+	  },
+
+
+	  /**
+	   * Sets parent Sample.
+	   * @param occurrence
+	   */
+	  setSample: function setSample(sample) {
+	    if (!sample) return;
+
+	    var that = this;
+	    this.sample = sample;
+	    this.sample.on('destroy', function () {
+	      that.destroy({ noSave: true });
+	    });
+	  },
+
+
+	  /**
+	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * @param image
+	   */
+	  addImage: function addImage(image) {
+	    if (!image) return;
+	    image.setParent(this);
+	    this.images.add(image);
+	  },
+	  validate: function validate(attributes) {
+	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
+
+	    var errors = {};
+
+	    // location
+	    if (!attrs.taxon) {
+	      errors.taxon = 'can\'t be blank';
+	    }
+
+	    if (!_underscore2.default.isEmpty(errors)) {
+	      return errors;
+	    }
+
+	    return null;
+	  },
+	  toJSON: function toJSON() {
+	    var images = void 0;
+	    var imagesCollection = this.images;
+	    if (!imagesCollection) {
+	      images = [];
+	      console.warn('toJSON images missing');
+	    } else {
+	      images = imagesCollection.toJSON();
+	    }
+	    var data = {
+	      id: this.id,
+	      cid: this.cid,
+	      metadata: this.metadata,
+	      attributes: this.attributes,
+	      images: images
+	    };
+	    return data;
+	  },
+
+
+	  /**
+	   * Returns an object with attributes and their values flattened and
+	   * mapped for warehouse submission.
+	   *
+	   * @param flattener
+	   * @returns {*}
+	   */
+	  flatten: function flatten(flattener, count) {
+	    // images flattened separately
+	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
+	  }
+	});
+
+	/**
+	 * Warehouse attributes and their values.
+	 */
+	Occurrence.keys = {
+	  taxon: {
+	    id: ''
+	  },
+	  comment: {
+	    id: 'comment'
+	  }
+	};
+
+	exports.default = Occurrence;
+
+/***/ },
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1713,11 +1814,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
@@ -1726,8 +1827,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * COLLECTION MODULE
 	 **********************************************************************/
-
-
 	var Collection = _backbone2.default.Collection.extend({
 	  flatten: function flatten(flattener) {
 	    var flattened = {};
@@ -1762,19 +1861,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _underscore = __webpack_require__(2);
+	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _backbone = __webpack_require__(3);
+	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _Sample = __webpack_require__(4);
+	var _Sample = __webpack_require__(3);
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
@@ -2010,7 +2109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2227,7 +2326,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      **********************************************************************/
 
 
-	var _Error = __webpack_require__(9);
+	var _Error = __webpack_require__(8);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2239,7 +2338,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * options:
 	 *  @appname String subdomain name to use for storage
 	 */
-
 	var DatabaseStorage = function () {
 	  function DatabaseStorage() {
 	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
@@ -2415,8 +2513,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	                  // Reach the end of the data
 	                } else {
-	                    callback(null, data);
-	                  }
+	                  callback(null, data);
+	                }
 	              } catch (err) {
 	                callback && callback(err);
 	              }

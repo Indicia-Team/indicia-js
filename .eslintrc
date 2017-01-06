@@ -1,12 +1,18 @@
 {
+  "env": {
+    "browser": true
+  },
   "extends": "airbnb/base",
   "rules": {
+    "no-underscore-dangle": 0,
     "no-param-reassign": 0,
     "prefer-rest-params": 0,
-    "no-unused-expressions": 0
+    "no-unused-expressions": [2, {
+      "allowShortCircuit": true, // eg. a || a()
+      "allowTernary": true // eg. a ? b() : c()
+    }]
   },
   "globals": {
-    "sinon": true,
     "before": true,
     "beforeEach": true,
     "after": true,
@@ -14,5 +20,15 @@
     "describe": true,
     "it": true,
     "expect": true,
+    "sinon": true,
+
+    "parseInt": true
+  },
+  "settings": {
+    "import/resolver": {
+      "webpack": {
+        "config": "webpack.config.js"
+      }
+    }
   }
 }

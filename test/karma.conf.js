@@ -1,17 +1,23 @@
-var path = require('path');
-
 module.exports = function exports(config) {
-  config.set({
+  return config.set({
     basePath: '../',
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['Chrome', 'Safari'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
-      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
+      // load polyfils
+      { pattern: 'node_modules/indexeddbshim/dist/indexeddbshim.min.js', watched: false },
+      { pattern: 'node_modules/es6-promise/dist/es6-promise.min.js', watched: false },
+
+      // load dependencies
+      { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
+      { pattern: 'node_modules/underscore/underscore-min.js', watched: false },
+      { pattern: 'node_modules/backbone/backbone-min.js', watched: false },
+
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
@@ -20,26 +26,7 @@ module.exports = function exports(config) {
       'tests.webpack.js': ['webpack'],
     },
 
-    webpack: {
-      resolve: {
-        root: [
-          path.resolve('./test/vendor'),
-        ],
-        alias: {
-          backbone: 'backbone',
-          underscore: 'underscore',
-        },
-      },
-      module: {
-        loaders: [
-          {
-            // test: /^\.js$/,
-            exclude: /(node_modules|bower_components|vendor)/,
-            loader: 'babel-loader',
-          },
-        ],
-      },
-    },
+    webpack: require('../webpack.config.js'),
 
     webpackServer: {
       noInfo: true,
@@ -71,6 +58,8 @@ module.exports = function exports(config) {
       require('karma-chai'),
       require('karma-phantomjs-launcher'),
       require('karma-chrome-launcher'),
+      require('karma-safari-launcher'),
+      require('karma-firefox-launcher'),
     ],
   });
 };

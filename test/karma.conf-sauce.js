@@ -1,18 +1,19 @@
-/**
- * Config copied with mods from backbone karma sauce config
- */
-var _ = require('./vendor/underscore');
-var fs = require('fs');
-var path = require('path');
+require('dotenv').config();
+var merge = require('webpack-merge');
+var _ = require('underscore');
+var karmaConfig = require('./karma.conf.js');
+var commonConfig = karmaConfig({ set(c) { return c; } });
 
 // Browsers to run on Sauce Labs platforms
 var sauceBrowsers = _.reduce([
+  ['firefox', '48'],
   ['firefox', '45'],
   ['firefox', '44'],
   ['firefox', '43'],
   ['firefox', '42'],
   ['firefox', '41'],
 
+  ['chrome', '53'],
   ['chrome', '40'],
   ['chrome', '39'],
   ['chrome', '30'],
@@ -24,11 +25,11 @@ var sauceBrowsers = _.reduce([
   ['android', '5.1'],
   ['android', '5'],
   ['android', '4.4'],
-  ['android', '4.3'],
-  ['android', '4.1'],
+  // ['android', '4.3'],
+  // ['android', '4.1'],
 
-  ['safari', '9'],
-  ['safari', '8.0', 'OS X 10.10'],
+  // ['safari', '9'],
+  // ['safari', '8.0', 'OS X 10.10'],
 
 ], function (memo, platform) {
   // internet explorer -> ie
@@ -41,62 +42,20 @@ var sauceBrowsers = _.reduce([
     'base': 'SauceLabs',
     'browserName': platform[0],
     'version': platform[1],
-    'platform': platform[2]
+    'platform': platform[2],
   }, Boolean);
   return memo;
 }, {});
 
-module.exports = function (config) {
-  // Use ENV vars on Travis and sauce.json locally to get credentials
-  if (!process.env.SAUCE_USERNAME) {
-    if (!fs.existsSync('./test/sauce.json')) {
-      console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
-      process.exit(1);
-    } else {
-      process.env.SAUCE_USERNAME = require('./sauce').username;
-      process.env.SAUCE_ACCESS_KEY = require('./sauce').accessKey;
-    }
-  }
+var BUILD = 'LOCAL #' + new Date().getTime();
+if (process.env.TRAVIS_BUILD_NUMBER ) {
+  BUILD = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
+}
 
-  config.set({
-    basePath: '../',
+module.exports =  function(config) {
+  delete commonConfig.browsers; // remove Chrome and Safari
 
-    frameworks: ['mocha', 'chai', 'sinon'],
-
-    files: [
-      { pattern: 'test/vendor/indexeddbshim.min.js', watched: false },
-      { pattern: 'tests.webpack.js', watched: false },
-    ],
-
-    preprocessors: {
-      'tests.webpack.js': ['webpack'],
-    },
-
-    webpack: {
-      resolve: {
-        root: [
-          path.resolve('./test/vendor'),
-        ],
-        alias: {
-          backbone: 'backbone',
-          underscore: 'underscore',
-        },
-      },
-      module: {
-        loaders: [
-          {
-            // test: /^\.js$/,
-            exclude: /(node_modules|bower_components|vendor)/,
-            loader: 'babel-loader',
-          },
-        ],
-      },
-    },
-
-    webpackServer: {
-      noInfo: true,
-    },
-
+  config.set(merge(commonConfig, {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
 
@@ -115,7 +74,7 @@ module.exports = function (config) {
     sauceLabs: {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       startConnect: false,
-      tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER
+      tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
     },
 
     captureTimeout: 120000,
@@ -130,8 +89,8 @@ module.exports = function (config) {
       require('karma-sinon'),
       require('karma-mocha'),
       require('karma-chai'),
-      require('karma-phantomjs-launcher'),
       require('karma-sauce-launcher'),
     ],
-  });
+  }));
 };
+

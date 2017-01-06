@@ -1,5 +1,3 @@
-node_modules
-.idea
+test/karma.conf-sauce.js
 /bower_components/
 /node_modules/
-/.env
