@@ -1908,22 +1908,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // internal db
 	    this.db = null;
 	    var _dbPromise = new Promise(function (resolve, reject) {
-	      // config
-	      var dbConfig = {
-	        name: customConfig.name || 'morel',
-	        storeName: customConfig.storeName || 'records',
-	        version: customConfig.version || ''
-	      };
-	      var driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-	      var drivers = that._getDriverOrder(driverOrder);
-	      var DB = customConfig.LocalForage || _localforage2.default;
+	      // check custom drivers (eg. SQLite)
+	      var customDriversPromise = new Promise(function (resolve, reject) {
+	        if (_typeof(customConfig.driverOrder[0]) === 'object') {
+	          _localforage2.default.defineDriver(customConfig.driverOrder[0]).then(resolve);
+	        } else {
+	          resolve();
+	        }
+	      });
 
-	      // init
-	      that.db = DB.createInstance(dbConfig);
-	      that.db.setDriver(drivers, customConfig.drivers).then(function () {
-	        resolve(that.db);
-	      }).catch(function (reason) {
-	        return reject(reason);
+	      // config
+	      customDriversPromise.then(function () {
+	        var dbConfig = {
+	          name: customConfig.name || 'morel',
+	          storeName: customConfig.storeName || 'records',
+	          version: customConfig.version || ''
+	        };
+	        var driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
+	        var drivers = that._getDriverOrder(driverOrder);
+	        var DB = customConfig.LocalForage || _localforage2.default;
+
+	        // init
+	        that.db = DB.createInstance(dbConfig);
+	        that.db.setDriver(drivers).then(function () {
+	          resolve(that.db);
+	        }).catch(function (reason) {
+	          return reject(reason);
+	        });
 	      });
 	    });
 
@@ -1952,8 +1963,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(Storage, [{
 	    key: '_getDriverOrder',
 	    value: function _getDriverOrder(driverOrder) {
-	      var drivers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
 	      return driverOrder.map(function (driver) {
 	        switch (driver) {
 	          case 'indexeddb':
@@ -1964,8 +1973,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return _localforage2.default.LOCALSTORAGE;
 	          default:
 	            // custom
-	            if (!drivers[driver]) return console.error('No such db driver!');
-	            return drivers[driver];
+	            if ((typeof driver === 'undefined' ? 'undefined' : _typeof(driver)) === 'object' && driver._driver) {
+	              return driver._driver;
+	            }
+	            return console.error('No such db driver!');
 	        }
 	      });
 	    }

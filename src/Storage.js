@@ -36,23 +36,34 @@ class Storage {
     // internal db
     this.db = null;
     const _dbPromise = new Promise((resolve, reject) => {
-      // config
-      const dbConfig = {
-        name: customConfig.name || 'morel',
-        storeName: customConfig.storeName || 'records',
-        version: customConfig.version || '',
-      };
-      const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-      const drivers = that._getDriverOrder(driverOrder);
-      const DB = customConfig.LocalForage || LocalForage;
+      // check custom drivers (eg. SQLite)
+      const customDriversPromise = new Promise((resolve, reject) => {
+        if (typeof customConfig.driverOrder[0] === 'object') {
+          LocalForage.defineDriver(customConfig.driverOrder[0]).then(resolve);
+        } else {
+          resolve();
+        }
+      });
 
-      // init
-      that.db = DB.createInstance(dbConfig);
-      that.db.setDriver(drivers, customConfig.drivers)
-        .then(() => {
-          resolve(that.db);
-        })
-        .catch(reason => reject(reason));
+      // config
+      customDriversPromise.then(() => {
+        const dbConfig = {
+          name: customConfig.name || 'morel',
+          storeName: customConfig.storeName || 'records',
+          version: customConfig.version,
+        };
+        const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
+        const drivers = that._getDriverOrder(driverOrder);
+        const DB = customConfig.LocalForage || LocalForage;
+
+        // init
+        that.db = DB.createInstance(dbConfig);
+        that.db.setDriver(drivers)
+          .then(() => {
+            resolve(that.db);
+          })
+          .catch(reason => reject(reason));
+      });
     });
 
     // initialize the cache
@@ -77,7 +88,7 @@ class Storage {
     });
   }
 
-  _getDriverOrder(driverOrder, drivers = {}) {
+  _getDriverOrder(driverOrder) {
     return driverOrder.map((driver) => {
       switch (driver) {
         case 'indexeddb':
@@ -88,8 +99,10 @@ class Storage {
           return LocalForage.LOCALSTORAGE;
         default:
           // custom
-          if (!drivers[driver]) return console.error('No such db driver!');
-          return drivers[driver];
+          if (typeof driver === 'object' && driver._driver) {
+            return driver._driver;
+          }
+          return console.error('No such db driver!');
       }
     });
   }
