@@ -38,7 +38,7 @@ class Storage {
     const _dbPromise = new Promise((resolve, reject) => {
       // check custom drivers (eg. SQLite)
       const customDriversPromise = new Promise((resolve, reject) => {
-        if (typeof customConfig.driverOrder[0] === 'object') {
+        if (customConfig.driverOrder && typeof customConfig.driverOrder[0] === 'object') {
           LocalForage.defineDriver(customConfig.driverOrder[0]).then(resolve);
         } else {
           resolve();
