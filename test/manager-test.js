@@ -1,12 +1,8 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
-import Occurrence from '../src/Occurrence';
 import syncTests from './sync';
 import syncAllTests from './sync_all';
-import LocalStorage from '../src/LocalStorage';
-import DatabaseStorage from '../src/DatabaseStorage';
 
 const options = {
   url: '/mobile/submit',
@@ -136,7 +132,7 @@ function tests(manager) {
 
 describe('Manager', () => {
   const manager = new Morel(options);
-  const databaseStorageManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+  const databaseStorageManager = new Morel(_.extend(options, { }));
 
   // clean up
   after((done) => {

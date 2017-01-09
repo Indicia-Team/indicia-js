@@ -3,54 +3,104 @@
  **********************************************************************/
 import _ from 'underscore';
 import Backbone from 'backbone';
+import LocalForage from 'localforage';
 
 import Error from './Error';
 import Sample from './Sample';
 import Collection from './Collection';
-import LocalStorage from './LocalStorage';
 
 class Storage {
+  /**
+   * From ionic storage
+   * https://github.com/driftyco/ionic-storage/blob/master/src/storage.ts
+   driver      : localforage.WEBSQL, // Force WebSQL; same as using setDriver()
+   name        : 'myApp',
+   version     : 1.0,
+   size        : 4980736, // Size of database, in bytes. WebSQL-only for now.
+   storeName   : 'keyvaluepairs', // Should be alphanumeric, with underscores.
+   description : 'some description'
+   Sample
+   manager
+   * @param options
+   */
   constructor(options = {}) {
     const that = this;
+
+    this._initialized = false;
 
     this.Sample = options.Sample || Sample;
     this.manager = options.manager;
 
-    // internal storage
-    this.Storage = options.Storage || LocalStorage;
-    this.storage = new this.Storage({
-      appname: options.appname,
+    const customConfig = options.storage || {};
+
+    // internal db
+    this.db = null;
+    const _dbPromise = new Promise((resolve, reject) => {
+      // config
+      const dbConfig = {
+        name: customConfig.name || 'morel',
+        storeName: customConfig.storeName || 'records',
+        version: customConfig.version || '',
+      };
+      const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
+      const drivers = that._getDriverOrder(driverOrder);
+      const DB = customConfig.LocalForage || LocalForage;
+
+      // init
+      that.db = DB.createInstance(dbConfig);
+      that.db.setDriver(drivers, customConfig.drivers)
+        .then(() => {
+          resolve(that.db);
+        })
+        .catch(reason => reject(reason));
     });
 
     // initialize the cache
-    this.cache = {};
-    this.initialized = false;
-    this.storage.getAll((err, data) => {
-      data || (data = {});
-
+    this._cache = {};
+    _dbPromise.then(() => {
+      // build up samples
       const samples = [];
-      let sample = null;
-      const keys = Object.keys(data);
-
-      for (let i = 0; i < keys.length; i++) {
-        const current = data[keys[i]];
-        const modelOptions = _.extend(current, { manager: that.manager });
-        sample = new that.Sample(current.attributes, modelOptions);
+      this.db.iterate((value, key) =>{
+        const modelOptions = _.extend(value, { manager: that.manager });
+        const sample = new that.Sample(value.attributes, modelOptions);
         samples.push(sample);
-      }
-      that.cache = new Collection(samples, {
-        model: that.Sample,
-      });
-      that._attachListeners();
+      }).then(() => {
+        // attach the samples as collection
+        that._cache = new Collection(samples, {
+          model: that.Sample,
+        });
+        that._attachListeners();
 
-      that.initialized = true;
-      that.trigger('init');
+        that._initialized = true;
+        that.trigger('init');
+      });
     });
+  }
+
+  _getDriverOrder(driverOrder, drivers = {}) {
+    return driverOrder.map((driver) => {
+      switch (driver) {
+        case 'indexeddb':
+          return LocalForage.INDEXEDDB;
+        case 'websql':
+          return LocalForage.WEBSQL;
+        case 'localstorage':
+          return LocalForage.LOCALSTORAGE;
+        default:
+          // custom
+          if (!drivers[driver]) return console.error('No such db driver!');
+          return drivers[driver];
+      }
+    });
+  }
+
+  ready() {
+    return this._initialized;
   }
 
   get(model, callback, options = {}) {
     const that = this;
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.get(model, callback, options);
       });
@@ -61,7 +111,7 @@ class Storage {
 
     // a non cached version straight from storage medium
     if (options.nonCached) {
-      this.storage.get(key, (err, data) => {
+      this.db.getItem(key, (err, data) => {
         if (err) {
           callback(err);
           return;
@@ -73,17 +123,17 @@ class Storage {
       return;
     }
 
-    callback(null, this.cache.get(key));
+    callback(null, this._cache.get(key));
   }
 
   getAll(callback) {
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.getAll(callback);
       });
       return;
     }
-    callback(null, this.cache);
+    callback(null, this._cache);
   }
 
   set(model = {}, callback) {
@@ -95,7 +145,7 @@ class Storage {
     }
 
     // needs to be on and running
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.set(model, callback);
       });
@@ -104,25 +154,26 @@ class Storage {
 
     const that = this;
     const key = model.id || model.cid;
-    this.storage.set(key, model, (err) => {
+    const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
+    this.db.setItem(key, dataJSON, (err) => {
       if (err) {
         callback && callback(err);
         return;
       }
-      that.cache.set(model, { remove: false });
+      that._cache.set(model, { remove: false });
       callback && callback(null, model);
     });
   }
 
   remove(model, callback) {
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.remove(model, callback);
       });
       return;
     }
     const key = typeof model === 'object' ? model.id || model.cid : model;
-    this.storage.remove(key, (err) => {
+    this.db.removeItem(key, (err) => {
       if (err) {
         callback && callback(err);
         return;
@@ -133,7 +184,7 @@ class Storage {
   }
 
   has(model, callback) {
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.has(model, callback);
       }, this);
@@ -146,31 +197,31 @@ class Storage {
   }
 
   clear(callback) {
-    if (!this.initialized) {
+    if (!this.ready()) {
       this.on('init', () => {
         this.clear(callback);
       });
       return;
     }
     const that = this;
-    this.storage.clear((err) => {
+    this.db.clear((err) => {
       if (err) {
         callback && callback(err);
         return;
       }
-      that.cache.reset();
+      that._cache.reset();
       callback && callback();
     });
   }
 
   size(callback) {
-    this.storage.size(callback);
+    this.db.length(callback);
   }
 
   _attachListeners() {
     const that = this;
     // listen on cache because it is last updated
-    this.cache.on('update', () => {
+    this._cache.on('update', () => {
       that.trigger('update');
     });
   }

@@ -1,10 +1,8 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
-import DatabaseStorage from '../src/DatabaseStorage';
 
 const options = {
   url: '/mobile/submit',
@@ -18,7 +16,7 @@ let manager;
 
 describe('Saving/destroying propagation', () => {
   beforeEach(() => {
-    manager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+    manager = new Morel(_.extend(options, { }));
   });
 
   afterEach((done) => {
@@ -38,13 +36,13 @@ describe('Saving/destroying propagation', () => {
       // add sample to storage
       manager.set(sample, (err) => {
         if (err) throw err.message;
-        expect(manager.storage.cache.length).to.be.equal(1);
+        expect(manager.storage._cache.length).to.be.equal(1);
 
         // update the image and save it - the save should be permenant
         image.set('data', '1234');
         const req = image.save(null, {
           success() {
-            const newManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+            const newManager = new Morel(_.extend(options, { }));
             newManager.getAll((err, samples) => {
               expect(samples.length).to.be.equal(1);
               const occurrenceFromDB = samples.at(0).occurrences.at(0);
@@ -70,10 +68,10 @@ describe('Saving/destroying propagation', () => {
 
       // add sample to storage
       manager.set(sample, (err) => {
-        expect(manager.storage.cache.length).to.be.equal(1);
+        expect(manager.storage._cache.length).to.be.equal(1);
 
         image.destroy().then(() => {
-          const newManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+          const newManager = new Morel(_.extend(options, { }));
           newManager.getAll((err, samples) => {
             expect(samples.length).to.be.equal(1);
             const occurrenceFromDB = samples.at(0).occurrences.at(0);

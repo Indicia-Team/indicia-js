@@ -1,26 +1,30 @@
 import helpers from '../src/helpers';
 import Collection from '../src/Collection';
 import Storage from '../src/Storage';
-import DatabaseStorage from '../src/DatabaseStorage';
-import LocalStorage from '../src/LocalStorage';
 
-function tests(storage) {
+describe('Storage', () => {
+  const storage = new Storage({ });
+  // clean up
+  after(done => {
+    storage.clear(done);
+  });
+
   beforeEach(done => {
     storage.clear(done);
   });
 
   it('should have a cache', done => {
-    expect(storage.cache).to.not.be.null;
+    expect(storage._cache).to.not.be.null;
 
-    if (!storage.initialized) {
+    if (!storage.ready()) {
       storage.on('init', () => {
-        expect(storage.initialized).to.be.true;
-        expect(storage.cache).to.be.instanceOf(Collection);
+        expect(storage.ready()).to.be.true;
+        expect(storage._cache).to.be.instanceOf(Collection);
         done();
       });
       return;
     }
-    expect(storage.cache).to.be.instanceOf(Collection);
+    expect(storage._cache).to.be.instanceOf(Collection);
     done();
   });
 
@@ -120,23 +124,5 @@ function tests(storage) {
       expect(setErr).to.be.not.null;
       done();
     });
-  });
-}
-
-describe('Storage', () => {
-  const localStorage = new Storage({ Storage: LocalStorage });
-  const databaseStorage = new Storage({ Storage: DatabaseStorage });
-
-  // clean up
-  after(done => {
-    localStorage.clear(() => {
-      databaseStorage.clear(done);
-    });
-  });
-  describe('(local)', () => {
-    tests(localStorage);
-  });
-  describe('(database)', () => {
-    tests(databaseStorage);
   });
 });

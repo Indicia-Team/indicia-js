@@ -4,13 +4,12 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Safari'],
+    browsers: ['Chrome'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
       // load polyfils
-      { pattern: 'node_modules/indexeddbshim/dist/indexeddbshim.min.js', watched: false },
       { pattern: 'node_modules/es6-promise/dist/es6-promise.min.js', watched: false },
 
       // load dependencies
