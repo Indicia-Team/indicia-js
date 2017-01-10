@@ -49,7 +49,7 @@ class Storage {
       customDriversPromise.then(() => {
         const dbConfig = {
           name: customConfig.name || 'morel',
-          storeName: customConfig.storeName || 'records',
+          storeName: customConfig.storeName || 'samples',
         };
 
         if (customConfig.version) {
