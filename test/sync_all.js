@@ -1,8 +1,9 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
+
+/* eslint-disable no-unused-expressions */
 
 export default function (manager) {
   describe('Sync All', () => {

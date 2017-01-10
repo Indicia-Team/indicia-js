@@ -21,7 +21,7 @@ class Morel {
 
   // storage functions
   get(model, callback, options) {
-    this.storage.get(model, callback, options);
+    return this.storage.get(model, callback, options);
   }
 
   getAll(callback, options) {
@@ -30,7 +30,7 @@ class Morel {
 
   set(model, callback, options) {
     model.manager = this; // set the manager on new model
-    this.storage.set(model, callback, options);
+    return this.storage.set(model, callback, options);
 
     // this.storage.set(model, (...args) => {
     //   this._addReference(model);
@@ -39,7 +39,7 @@ class Morel {
   }
 
   remove(model, callback, options) {
-    this.storage.remove(model, callback, options);
+    return this.storage.remove(model, callback, options);
 
     // this.storage.remove(model, (...args) => {
     //   this._removeReference(model);
@@ -48,11 +48,11 @@ class Morel {
   }
 
   has(model, callback, options) {
-    this.storage.has(model, callback, options);
+    return this.storage.has(model, callback, options);
   }
 
   clear(callback, options) {
-    this.storage.clear(callback, options);
+    return this.storage.clear(callback, options);
   }
 
   /**

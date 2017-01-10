@@ -5,6 +5,8 @@ import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
 
+/* eslint-disable no-unused-expressions */
+
 const options = {
   url: '/mobile/submit',
   appname: 'test',

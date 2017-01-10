@@ -134,7 +134,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(Morel, [{
 	    key: 'get',
 	    value: function get(model, callback, options) {
-	      this.storage.get(model, callback, options);
+	      return this.storage.get(model, callback, options);
 	    }
 	  }, {
 	    key: 'getAll',
@@ -145,7 +145,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'set',
 	    value: function set(model, callback, options) {
 	      model.manager = this; // set the manager on new model
-	      this.storage.set(model, callback, options);
+	      return this.storage.set(model, callback, options);
 
 	      // this.storage.set(model, (...args) => {
 	      //   this._addReference(model);
@@ -155,7 +155,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'remove',
 	    value: function remove(model, callback, options) {
-	      this.storage.remove(model, callback, options);
+	      return this.storage.remove(model, callback, options);
 
 	      // this.storage.remove(model, (...args) => {
 	      //   this._removeReference(model);
@@ -165,12 +165,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'has',
 	    value: function has(model, callback, options) {
-	      this.storage.has(model, callback, options);
+	      return this.storage.has(model, callback, options);
 	    }
 	  }, {
 	    key: 'clear',
 	    value: function clear(callback, options) {
-	      this.storage.clear(callback, options);
+	      return this.storage.clear(callback, options);
 	    }
 
 	    /**
@@ -1909,11 +1909,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.db = null;
 	    var _dbPromise = new Promise(function (resolve, reject) {
 	      // check custom drivers (eg. SQLite)
-	      var customDriversPromise = new Promise(function (resolve, reject) {
+	      var customDriversPromise = new Promise(function (_resolve) {
 	        if (customConfig.driverOrder && _typeof(customConfig.driverOrder[0]) === 'object') {
-	          _localforage2.default.defineDriver(customConfig.driverOrder[0]).then(resolve);
+	          _localforage2.default.defineDriver(customConfig.driverOrder[0]).then(_resolve);
 	        } else {
-	          resolve();
+	          _resolve();
 	        }
 	      });
 
@@ -1921,7 +1921,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      customDriversPromise.then(function () {
 	        var dbConfig = {
 	          name: customConfig.name || 'morel',
-	          storeName: customConfig.storeName || 'records'
+	          storeName: customConfig.storeName || 'samples'
 	        };
 
 	        if (customConfig.version) {
@@ -1947,7 +1947,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _dbPromise.then(function () {
 	      // build up samples
 	      var samples = [];
-	      _this.db.iterate(function (value, key) {
+	      _this.db.iterate(function (value) {
 	        var modelOptions = _underscore2.default.extend(value, { manager: that.manager });
 	        var sample = new that.Sample(value.attributes, modelOptions);
 	        samples.push(sample);
@@ -1997,11 +1997,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
 	      var that = this;
+
+	      var resolve = void 0;
+	      var reject = void 0;
+	      var promise = new Promise(function (_resolve, _reject) {
+	        resolve = _resolve;
+	        reject = _reject;
+	      });
+
 	      if (!this.ready()) {
 	        this.on('init', function () {
-	          _this2.get(model, callback, options);
+	          _this2.get(model, callback, options).then(resolve);
 	        });
-	        return;
+	        return promise;
 	      }
 
 	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
@@ -2010,30 +2018,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (options.nonCached) {
 	        this.db.getItem(key, function (err, data) {
 	          if (err) {
-	            callback(err);
-	            return;
+	            callback && callback(err);
+	            reject(err);
+	            return promise;
 	          }
 	          var modelOptions = _underscore2.default.extend(data, { manager: that.manager });
 	          var sample = new that.Sample(data.attributes, modelOptions);
-	          callback(null, sample);
+	          callback && callback(null, sample);
+	          resolve(sample);
+	          return promise;
 	        });
-	        return;
+	        return promise;
 	      }
 
-	      callback(null, this._cache.get(key));
+	      var cachedModel = this._cache.get(key);
+	      callback && callback(null, cachedModel);
+	      resolve(cachedModel);
+	      return promise;
 	    }
 	  }, {
 	    key: 'getAll',
 	    value: function getAll(callback) {
 	      var _this3 = this;
 
+	      var resolve = void 0;
+	      // let reject;
+	      var promise = new Promise(function (_resolve) {
+	        resolve = _resolve;
+	        // reject = _reject;
+	      });
+
 	      if (!this.ready()) {
 	        this.on('init', function () {
-	          _this3.getAll(callback);
+	          _this3.getAll(callback).then(resolve);
 	        });
-	        return;
+	        return promise;
 	      }
-	      callback(null, this._cache);
+	      callback && callback(null, this._cache);
+	      resolve(this._cache);
+	      return promise;
 	    }
 	  }, {
 	    key: 'set',
@@ -2043,19 +2066,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var model = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 	      var callback = arguments[1];
 
+	      var resolve = void 0;
+	      var reject = void 0;
+	      var promise = new Promise(function (_resolve, _reject) {
+	        resolve = _resolve;
+	        reject = _reject;
+	      });
+
 	      // early return if no id or cid
 	      if (!model.id && !model.cid) {
 	        var error = new _Error2.default('Invalid model passed to storage');
-	        callback(error);
-	        return;
+	        callback && callback(error);
+	        reject(error);
+	        return promise;
 	      }
 
 	      // needs to be on and running
 	      if (!this.ready()) {
 	        this.on('init', function () {
-	          _this4.set(model, callback);
+	          _this4.set(model, callback).then(resolve);
 	        });
-	        return;
+	        return promise;
 	      }
 
 	      var that = this;
@@ -2064,74 +2095,114 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.db.setItem(key, dataJSON, function (err) {
 	        if (err) {
 	          callback && callback(err);
-	          return;
+	          reject(err);
+	          return promise;
 	        }
 	        that._cache.set(model, { remove: false });
 	        callback && callback(null, model);
+	        resolve(model);
+	        return promise;
 	      });
+	      return promise;
 	    }
 	  }, {
 	    key: 'remove',
 	    value: function remove(model, callback) {
 	      var _this5 = this;
 
+	      var resolve = void 0;
+	      var reject = void 0;
+	      var promise = new Promise(function (_resolve, _reject) {
+	        resolve = _resolve;
+	        reject = _reject;
+	      });
+
 	      if (!this.ready()) {
 	        this.on('init', function () {
-	          _this5.remove(model, callback);
+	          _this5.remove(model, callback).then(resolve);
 	        });
-	        return;
+	        return promise;
 	      }
 	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
 	      this.db.removeItem(key, function (err) {
 	        if (err) {
 	          callback && callback(err);
-	          return;
+	          reject(err);
+	          return promise;
 	        }
 	        delete model.manager;
-	        model.destroy().then(callback); // removes from cache
+	        return model.destroy().then(callback).then(resolve); // removes from cache
 	      });
+	      return promise;
 	    }
 	  }, {
 	    key: 'has',
 	    value: function has(model, callback) {
 	      var _this6 = this;
 
+	      var resolve = void 0;
+	      // let reject;
+	      var promise = new Promise(function (_resolve) {
+	        resolve = _resolve;
+	        // reject = _reject;
+	      });
 	      if (!this.ready()) {
 	        this.on('init', function () {
-	          _this6.has(model, callback);
+	          _this6.has(model, callback).then(resolve);
 	        }, this);
-	        return;
+	        return promise;
 	      }
 	      this.get(model, function (err, data) {
 	        var found = (typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object';
-	        callback(null, found);
+	        callback && callback(null, found);
+	        resolve(found);
 	      });
+	      return promise;
 	    }
 	  }, {
 	    key: 'clear',
 	    value: function clear(callback) {
 	      var _this7 = this;
 
+	      var resolve = void 0;
+	      var reject = void 0;
+	      var promise = new Promise(function (_resolve, _reject) {
+	        resolve = _resolve;
+	        reject = _reject;
+	      });
+
 	      if (!this.ready()) {
 	        this.on('init', function () {
 	          _this7.clear(callback);
 	        });
-	        return;
+	        return promise;
 	      }
 	      var that = this;
 	      this.db.clear(function (err) {
 	        if (err) {
 	          callback && callback(err);
-	          return;
+	          reject(err);
+	          return promise;
 	        }
 	        that._cache.reset();
 	        callback && callback();
+	        resolve();
+	        return promise;
 	      });
+	      return promise;
 	    }
 	  }, {
 	    key: 'size',
 	    value: function size(callback) {
-	      this.db.length(callback);
+	      var resolve = void 0;
+	      // let reject;
+	      var promise = new Promise(function (_resolve) {
+	        resolve = _resolve;
+	        // reject = _reject;
+	      });
+
+	      this.db.length(callback).then(resolve);
+	      return promise;
 	    }
 	  }, {
 	    key: '_attachListeners',

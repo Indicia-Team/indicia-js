@@ -37,11 +37,11 @@ class Storage {
     this.db = null;
     const _dbPromise = new Promise((resolve, reject) => {
       // check custom drivers (eg. SQLite)
-      const customDriversPromise = new Promise((resolve, reject) => {
+      const customDriversPromise = new Promise((_resolve) => {
         if (customConfig.driverOrder && typeof customConfig.driverOrder[0] === 'object') {
-          LocalForage.defineDriver(customConfig.driverOrder[0]).then(resolve);
+          LocalForage.defineDriver(customConfig.driverOrder[0]).then(_resolve);
         } else {
-          resolve();
+          _resolve();
         }
       });
 
@@ -75,7 +75,7 @@ class Storage {
     _dbPromise.then(() => {
       // build up samples
       const samples = [];
-      this.db.iterate((value, key) =>{
+      this.db.iterate((value) => {
         const modelOptions = _.extend(value, { manager: that.manager });
         const sample = new that.Sample(value.attributes, modelOptions);
         samples.push(sample);
@@ -117,11 +117,19 @@ class Storage {
 
   get(model, callback, options = {}) {
     const that = this;
+
+    let resolve;
+    let reject;
+    const promise = new Promise((_resolve, _reject) => {
+      resolve = _resolve;
+      reject = _reject;
+    });
+
     if (!this.ready()) {
       this.on('init', () => {
-        this.get(model, callback, options);
+        this.get(model, callback, options).then(resolve);
       });
-      return;
+      return promise;
     }
 
     const key = typeof model === 'object' ? model.id || model.cid : model;
@@ -130,43 +138,66 @@ class Storage {
     if (options.nonCached) {
       this.db.getItem(key, (err, data) => {
         if (err) {
-          callback(err);
-          return;
+          callback && callback(err);
+          reject(err);
+          return promise;
         }
         const modelOptions = _.extend(data, { manager: that.manager });
         const sample = new that.Sample(data.attributes, modelOptions);
-        callback(null, sample);
+        callback && callback(null, sample);
+        resolve(sample);
+        return promise;
       });
-      return;
+      return promise;
     }
 
-    callback(null, this._cache.get(key));
+    const cachedModel = this._cache.get(key);
+    callback && callback(null, cachedModel);
+    resolve(cachedModel);
+    return promise;
   }
 
   getAll(callback) {
+    let resolve;
+    // let reject;
+    const promise = new Promise((_resolve) => {
+      resolve = _resolve;
+      // reject = _reject;
+    });
+
     if (!this.ready()) {
       this.on('init', () => {
-        this.getAll(callback);
+        this.getAll(callback).then(resolve);
       });
-      return;
+      return promise;
     }
-    callback(null, this._cache);
+    callback && callback(null, this._cache);
+    resolve(this._cache);
+    return promise;
   }
 
   set(model = {}, callback) {
+    let resolve;
+    let reject;
+    const promise = new Promise((_resolve, _reject) => {
+      resolve = _resolve;
+      reject = _reject;
+    });
+
     // early return if no id or cid
     if (!model.id && !model.cid) {
       const error = new Error('Invalid model passed to storage');
-      callback(error);
-      return;
+      callback && callback(error);
+      reject(error);
+      return promise;
     }
 
     // needs to be on and running
     if (!this.ready()) {
       this.on('init', () => {
-        this.set(model, callback);
+        this.set(model, callback).then(resolve);
       });
-      return;
+      return promise;
     }
 
     const that = this;
@@ -175,64 +206,104 @@ class Storage {
     this.db.setItem(key, dataJSON, (err) => {
       if (err) {
         callback && callback(err);
-        return;
+        reject(err);
+        return promise;
       }
       that._cache.set(model, { remove: false });
       callback && callback(null, model);
+      resolve(model);
+      return promise;
     });
+    return promise;
   }
 
   remove(model, callback) {
+    let resolve;
+    let reject;
+    const promise = new Promise((_resolve, _reject) => {
+      resolve = _resolve;
+      reject = _reject;
+    });
+
     if (!this.ready()) {
       this.on('init', () => {
-        this.remove(model, callback);
+        this.remove(model, callback).then(resolve);
       });
-      return;
+      return promise;
     }
     const key = typeof model === 'object' ? model.id || model.cid : model;
     this.db.removeItem(key, (err) => {
       if (err) {
         callback && callback(err);
-        return;
+        reject(err);
+        return promise;
       }
       delete model.manager;
-      model.destroy().then(callback); // removes from cache
+      return model.destroy().then(callback).then(resolve); // removes from cache
     });
+    return promise;
   }
 
   has(model, callback) {
+    let resolve;
+    // let reject;
+    const promise = new Promise((_resolve) => {
+      resolve = _resolve;
+      // reject = _reject;
+    });
     if (!this.ready()) {
       this.on('init', () => {
-        this.has(model, callback);
+        this.has(model, callback).then(resolve);
       }, this);
-      return;
+      return promise;
     }
     this.get(model, (err, data) => {
       const found = typeof data === 'object';
-      callback(null, found);
+      callback && callback(null, found);
+      resolve(found);
     });
+    return promise;
   }
 
   clear(callback) {
+    let resolve;
+    let reject;
+    const promise = new Promise((_resolve, _reject) => {
+      resolve = _resolve;
+      reject = _reject;
+    });
+
     if (!this.ready()) {
       this.on('init', () => {
         this.clear(callback);
       });
-      return;
+      return promise;
     }
     const that = this;
     this.db.clear((err) => {
       if (err) {
         callback && callback(err);
-        return;
+        reject(err);
+        return promise;
       }
       that._cache.reset();
       callback && callback();
+      resolve();
+      return promise;
     });
+    return promise;
   }
 
   size(callback) {
-    this.db.length(callback);
+    let resolve;
+    // let reject;
+    const promise = new Promise((_resolve) => {
+      resolve = _resolve;
+      // reject = _reject;
+    });
+
+    this.db.length(callback).then(resolve);
+    return promise;
   }
 
   _attachListeners() {

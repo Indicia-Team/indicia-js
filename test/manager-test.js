@@ -3,6 +3,8 @@ import Sample from '../src/Sample';
 import syncTests from './sync';
 import syncAllTests from './sync_all';
 
+/* eslint-disable no-unused-expressions */
+
 const options = {
   url: '/mobile/submit',
   appname: 'test',
@@ -57,6 +59,36 @@ describe('Manager', () => {
         });
       });
     });
+  });
+
+  it('should return promises', (done) => {
+    const sample = new Sample();
+    const key = Date.now().toString();
+    const value = Math.random();
+
+    sample.set(key, value);
+
+    manager.clear()
+      .then(() => {
+        manager.set(sample)
+          .then(() => {
+            manager.get(sample)
+              .then((data) => {
+                expect(data).to.be.instanceof(Sample);
+                expect(sample.get(key)).to.be.equal(data.get(key));
+              });
+
+            manager.has(sample)
+              .then((contains) => {
+                expect(contains).to.be.true;
+                manager.has(new Sample())
+                  .then((finalContains) => {
+                    expect(finalContains).to.be.false;
+                    done();
+                  });
+              });
+          });
+      });
   });
 
   it('should getall and clear', (done) => {

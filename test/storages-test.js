@@ -2,19 +2,21 @@ import helpers from '../src/helpers';
 import Collection from '../src/Collection';
 import Storage from '../src/Storage';
 
+/* eslint-disable no-unused-expressions */
+
 describe('Storage', () => {
   const storage = new Storage({ });
 
   // clean up
-  after(done => {
+  after((done) => {
     storage.clear(done);
   });
 
-  beforeEach(done => {
+  beforeEach((done) => {
     storage.clear(done);
   });
 
-  it('should have a cache', done => {
+  it('should have a cache', (done) => {
     expect(storage._cache).to.not.be.null;
 
     if (!storage.ready()) {
@@ -29,14 +31,14 @@ describe('Storage', () => {
     done();
   });
 
-  it('should return error if no id or cid has been passed', done => {
+  it('should return error if no id or cid has been passed', (done) => {
     storage.set(12345, (err) => {
       expect(err).to.be.an('object');
       done();
     });
   });
 
-  it('should set get has', done => {
+  it('should set get has', (done) => {
     const item = {
       id: helpers.getNewUUID(),
     };
@@ -57,7 +59,26 @@ describe('Storage', () => {
     });
   });
 
-  it('should size', done => {
+  it('should return promises', (done) => {
+    const item = {
+      id: helpers.getNewUUID(),
+    };
+
+    storage.set(item)
+      .then(() => {
+        storage.get(item)
+          .then((data) => {
+            expect(data.id).to.be.equal(item.id);
+            storage.has(item)
+              .then((contains) => {
+                expect(contains).to.be.true;
+                done();
+              });
+          });
+      });
+  });
+
+  it('should size', (done) => {
     storage.size((sizeErr, size) => {
       if (sizeErr) throw sizeErr.message;
 
@@ -89,7 +110,7 @@ describe('Storage', () => {
     });
   });
 
-  it('should getAll', done => {
+  it('should getAll', (done) => {
     storage.getAll((getAllErr, allItems) => {
       if (getAllErr) throw getAllErr.message;
 
@@ -115,7 +136,7 @@ describe('Storage', () => {
     });
   });
 
-  it('should pass error object to on database error', done => {
+  it('should pass error object to on database error', (done) => {
     const item = {
       id: helpers.getNewUUID(),
       corruptedAttribute: () => {},

@@ -1,5 +1,7 @@
 import Occurrence from '../src/Occurrence';
 
+/* eslint-disable no-unused-expressions */
+
 describe('Occurrence', () => {
   it('should create new', () => {
     const occurrence = new Occurrence();

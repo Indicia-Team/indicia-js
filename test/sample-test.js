@@ -1,5 +1,7 @@
 import _ from 'underscore';
 
+/* eslint-disable no-unused-expressions */
+
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';

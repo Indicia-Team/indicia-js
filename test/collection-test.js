@@ -1,6 +1,8 @@
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
 
+/* eslint-disable no-unused-expressions */
+
 describe('Collection', () => {
   it('should return JSON', () => {
     const occurrence = new Occurrence();

@@ -1,5 +1,7 @@
 import ImageModel from '../src/Image';
 
+/* eslint-disable no-unused-expressions */
+
 describe('Image', () => {
   describe('getDataURI', () => {
     it('should accept image path', (done) => {
