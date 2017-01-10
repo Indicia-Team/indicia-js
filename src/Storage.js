@@ -33,7 +33,7 @@ class Storage {
 
     const customConfig = options.storage || {};
 
-    // internal db
+    // initialize db
     this.db = null;
     const _dbPromise = new Promise((resolve, reject) => {
       // check custom drivers (eg. SQLite)
@@ -50,8 +50,12 @@ class Storage {
         const dbConfig = {
           name: customConfig.name || 'morel',
           storeName: customConfig.storeName || 'records',
-          version: customConfig.version,
         };
+
+        if (customConfig.version) {
+          dbConfig.version = customConfig.version;
+        }
+
         const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
         const drivers = that._getDriverOrder(driverOrder);
         const DB = customConfig.LocalForage || LocalForage;
@@ -66,7 +70,7 @@ class Storage {
       });
     });
 
-    // initialize the cache
+    // initialize db cache
     this._cache = {};
     _dbPromise.then(() => {
       // build up samples

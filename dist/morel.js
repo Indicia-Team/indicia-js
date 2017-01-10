@@ -1905,12 +1905,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var customConfig = options.storage || {};
 
-	    // internal db
+	    // initialize db
 	    this.db = null;
 	    var _dbPromise = new Promise(function (resolve, reject) {
 	      // check custom drivers (eg. SQLite)
 	      var customDriversPromise = new Promise(function (resolve, reject) {
-	        if (_typeof(customConfig.driverOrder[0]) === 'object') {
+	        if (customConfig.driverOrder && _typeof(customConfig.driverOrder[0]) === 'object') {
 	          _localforage2.default.defineDriver(customConfig.driverOrder[0]).then(resolve);
 	        } else {
 	          resolve();
@@ -1921,9 +1921,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      customDriversPromise.then(function () {
 	        var dbConfig = {
 	          name: customConfig.name || 'morel',
-	          storeName: customConfig.storeName || 'records',
-	          version: customConfig.version || ''
+	          storeName: customConfig.storeName || 'records'
 	        };
+
+	        if (customConfig.version) {
+	          dbConfig.version = customConfig.version;
+	        }
+
 	        var driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
 	        var drivers = that._getDriverOrder(driverOrder);
 	        var DB = customConfig.LocalForage || _localforage2.default;
@@ -1938,7 +1942,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    });
 
-	    // initialize the cache
+	    // initialize db cache
 	    this._cache = {};
 	    _dbPromise.then(function () {
 	      // build up samples

@@ -16,6 +16,7 @@ module.exports = function exports(config) {
       { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
       { pattern: 'node_modules/underscore/underscore-min.js', watched: false },
       { pattern: 'node_modules/backbone/backbone-min.js', watched: false },
+      { pattern: 'node_modules/localforage/dist/localforage.js', watched: false },
 
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },

@@ -4,6 +4,7 @@ import Storage from '../src/Storage';
 
 describe('Storage', () => {
   const storage = new Storage({ });
+
   // clean up
   after(done => {
     storage.clear(done);
