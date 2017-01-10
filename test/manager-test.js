@@ -1,12 +1,7 @@
-import $ from 'jquery';
-import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
-import Occurrence from '../src/Occurrence';
 import syncTests from './sync';
 import syncAllTests from './sync_all';
-import LocalStorage from '../src/LocalStorage';
-import DatabaseStorage from '../src/DatabaseStorage';
 
 const options = {
   url: '/mobile/submit',
@@ -16,7 +11,14 @@ const options = {
   survey_id: 42,
 };
 
-function tests(manager) {
+describe('Manager', () => {
+  const manager = new Morel(options);
+
+  // clean up
+  after((done) => {
+    manager.clear(done);
+  });
+
   it('should have URL passed through options', () => {
     const URL = options.url;
     expect(manager.options.url).to.be.equal(URL);
@@ -131,25 +133,5 @@ function tests(manager) {
   describe('Synchronisation', () => {
     syncTests(manager);
     syncAllTests(manager);
-  });
-}
-
-describe('Manager', () => {
-  const manager = new Morel(options);
-  const databaseStorageManager = new Morel(_.extend(options, { Storage: DatabaseStorage }));
-
-  // clean up
-  after((done) => {
-    manager.clear(() => {
-      databaseStorageManager.clear(done);
-    });
-  });
-
-  describe('(default)', () => {
-    tests(manager);
-  });
-
-  describe('(database storage)', () => {
-    tests(databaseStorageManager);
   });
 });

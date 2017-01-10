@@ -1,11 +1,8 @@
 import _ from 'underscore';
 
 import Morel from '../src/main';
-import DatabaseStorage from '../src/DatabaseStorage';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
-import Image from '../src/Image';
-import Error from '../src/Error';
 import Collection from '../src/Collection';
 import helpers from '../src/helpers';
 
@@ -18,7 +15,7 @@ const options = {
 };
 
 describe('Sample', () => {
-  const morel = new Morel(_.extend(options, { Storage: DatabaseStorage }));
+  const morel = new Morel(_.extend(options, { }));
 
   it('new', () => {
     const sample = new Sample();

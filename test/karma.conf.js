@@ -4,19 +4,19 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Safari'],
+    browsers: ['Chrome'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
       // load polyfils
-      { pattern: 'node_modules/indexeddbshim/dist/indexeddbshim.min.js', watched: false },
       { pattern: 'node_modules/es6-promise/dist/es6-promise.min.js', watched: false },
 
       // load dependencies
       { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
       { pattern: 'node_modules/underscore/underscore-min.js', watched: false },
       { pattern: 'node_modules/backbone/backbone-min.js', watched: false },
+      { pattern: 'node_modules/localforage/dist/localforage.js', watched: false },
 
       { pattern: 'tests.webpack.js', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },

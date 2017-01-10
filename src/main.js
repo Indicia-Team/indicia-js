@@ -3,8 +3,6 @@ import Backbone from 'backbone';
 import Sample from './Sample';
 import Occurrence from './Occurrence';
 import Storage from './Storage';
-import DatabaseStorage from './DatabaseStorage';
-import LocalStorage from './LocalStorage';
 import ImageModel from './Image';
 import Error from './Error';
 import CONST from './constants';
@@ -13,13 +11,9 @@ import helpers from './helpers';
 class Morel {
   constructor(options = {}) {
     this.options = options;
+    options.manager = this;
 
-    this.storage = new Storage({
-      appname: options.appname,
-      Sample: options.Sample,
-      Storage: options.Storage,
-      manager: this,
-    });
+    this.storage = new Storage(options);
     this.onSend = options.onSend;
     this._attachListeners();
     this.synchronising = false;
@@ -460,8 +454,6 @@ _.extend(Morel, CONST, {
 
   Sample,
   Occurrence,
-  DatabaseStorage,
-  LocalStorage,
   Image: ImageModel,
   Error,
 });

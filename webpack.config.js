@@ -67,6 +67,12 @@ module.exports = {
       amd: '_',
       root: '_',
     },
+    localforage: {
+      commonjs: 'localforage',
+      commonjs2: 'localforage',
+      amd: 'localforage',
+      root: 'localforage',
+    },
   },
   resolve: {
     root: [
