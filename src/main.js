@@ -29,7 +29,10 @@ class Morel {
   }
 
   set(model, callback, options) {
-    model.manager = this; // set the manager on new model
+    if (model instanceof Sample) {
+      // not JSON but a whole sample model
+      model.manager = this; // set the manager on new model
+    }
     return this.storage.set(model, callback, options);
 
     // this.storage.set(model, (...args) => {
