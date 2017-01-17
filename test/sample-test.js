@@ -21,7 +21,7 @@ describe('Sample', () => {
 
   it('new', () => {
     const sample = new Sample();
-    expect(sample.id).to.be.a.string;
+    expect(sample.cid).to.be.a.string;
     expect(sample.attributes).to.be.an.object;
     expect(sample.occurrences).to.be.instanceOf(Collection);
   });

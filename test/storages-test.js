@@ -40,7 +40,7 @@ describe('Storage', () => {
 
   it('should set get has', (done) => {
     const item = {
-      id: helpers.getNewUUID(),
+      cid: helpers.getNewUUID(),
     };
 
     storage.set(item, (setErr) => {
@@ -50,7 +50,7 @@ describe('Storage', () => {
         if (getErr) throw getErr.message;
 
         expect(data instanceof storage.Sample).to.be.true;
-        expect(data.id).to.be.equal(item.cid);
+        expect(data.cid).to.be.equal(item.cid);
 
         storage.has(item, (hasErr, contains) => {
           expect(contains).to.be.true;
@@ -62,7 +62,7 @@ describe('Storage', () => {
 
   it('should return promises', (done) => {
     const item = {
-      id: helpers.getNewUUID(),
+      cid: helpers.getNewUUID(),
     };
 
     storage.set(item)
@@ -70,7 +70,7 @@ describe('Storage', () => {
         storage.get(item)
           .then((data) => {
             expect(data instanceof storage.Sample).to.be.true;
-            expect(data.id).to.be.equal(item.cid);
+            expect(data.cid).to.be.equal(item.cid);
             storage.has(item)
               .then((contains) => {
                 expect(contains).to.be.true;
@@ -85,7 +85,7 @@ describe('Storage', () => {
       if (sizeErr) throw sizeErr.message;
 
       const item = {
-        id: helpers.getNewUUID(),
+        cid: helpers.getNewUUID(),
       };
 
       expect(size).to.be.equal(0);
@@ -117,7 +117,7 @@ describe('Storage', () => {
       if (getAllErr) throw getAllErr.message;
 
       const item = {
-        id: helpers.getNewUUID(),
+        cid: helpers.getNewUUID(),
       };
       expect(allItems).to.be.an.object;
 
@@ -140,7 +140,7 @@ describe('Storage', () => {
 
   it('should pass error object to on database error', (done) => {
     const item = {
-      id: helpers.getNewUUID(),
+      cid: helpers.getNewUUID(),
       corruptedAttribute: () => {},
     };
 

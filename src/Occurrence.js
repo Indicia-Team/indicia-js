@@ -14,7 +14,7 @@ const Occurrence = Backbone.Model.extend({
     const that = this;
     let attrs = attributes;
 
-    this.cid = options.cid || options.id || helpers.getNewUUID();
+    this.cid = options.cid || helpers.getNewUUID();
     this.setSample(options.sample || this.sample);
 
     if (options.Image) this.Image = options.Image;

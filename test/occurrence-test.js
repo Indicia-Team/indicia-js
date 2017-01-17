@@ -8,7 +8,7 @@ describe('Occurrence', () => {
     expect(occurrence.attributes).to.be.an.object;
     expect(occurrence instanceof Occurrence).to.be.true;
     expect(Object.keys(occurrence.attributes).length).to.be.equal(0);
-    expect(occurrence.id).to.be.a.string;
+    expect(occurrence.cid).to.be.a.string;
   });
 
   it('should return JSON', () => {
@@ -19,7 +19,7 @@ describe('Occurrence', () => {
 
     const json = occurrence.toJSON();
 
-    expect(json.id).to.be.equal(occurrence.id);
+    expect(json.cid).to.be.equal(occurrence.cid);
     expect(json.attributes[item]).to.be.equal(value);
   });
 

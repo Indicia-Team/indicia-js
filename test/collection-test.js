@@ -17,6 +17,6 @@ describe('Collection', () => {
 
     expect(json).to.be.an.array;
     expect(json.length).to.be.equal(1);
-    expect(json[0].id).to.be.equal(occurrence.id);
+    expect(json[0].cid).to.be.equal(occurrence.cid);
   });
 });

@@ -132,7 +132,7 @@ class Storage {
       return promise;
     }
 
-    const key = typeof model === 'object' ? model.id || model.cid : model;
+    const key = typeof model === 'object' ? model.cid : model;
 
     // a non cached version straight from storage medium
     if (options.nonCached) {
@@ -185,7 +185,7 @@ class Storage {
     });
 
     // early return if no id or cid
-    if (!model.id && !model.cid) {
+    if (!model.cid) {
       const error = new Error('Invalid model passed to storage');
       callback && callback(error);
       reject(error);
@@ -201,7 +201,7 @@ class Storage {
     }
 
     const that = this;
-    const key = model.id || model.cid;
+    const key = model.cid;
     const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
     this.db.setItem(key, dataJSON, (err) => {
       if (err) {
@@ -239,7 +239,7 @@ class Storage {
       });
       return promise;
     }
-    const key = typeof model === 'object' ? model.id || model.cid : model;
+    const key = typeof model === 'object' ? model.cid : model;
     this.db.removeItem(key, (err) => {
       if (err) {
         callback && callback(err);

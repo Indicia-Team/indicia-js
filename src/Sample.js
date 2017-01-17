@@ -29,7 +29,7 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
-    this.cid = options.cid || options.id || helpers.getNewUUID();
+    this.cid = options.cid || helpers.getNewUUID();
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
 
@@ -222,7 +222,7 @@ const Sample = Backbone.Model.extend({
       this.occurrences.each((occurrence) => {
         const errors = occurrence.validate();
         if (errors) {
-          const occurrenceID = occurrence.id || occurrence.cid;
+          const occurrenceID = occurrence.cid;
           occurrences[occurrenceID] = errors;
         }
       });

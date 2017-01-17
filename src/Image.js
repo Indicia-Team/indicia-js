@@ -20,7 +20,7 @@ const ImageModel = Backbone.Model.extend({
       return;
     }
 
-    this.cid = options.cid || options.id || helpers.getNewUUID();
+    this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 
     this.attributes = {};
@@ -144,6 +144,7 @@ const ImageModel = Backbone.Model.extend({
   toJSON() {
     const data = {
       id: this.id,
+      cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
     };

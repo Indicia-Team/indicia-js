@@ -324,12 +324,12 @@ class Morel {
     }
 
     // add external ID
-    const id = this.cid || this.id;
-    if (id) {
+    const cid = this.cid;
+    if (cid) {
       if (this instanceof Occurrence) {
-        flattened[`${prefix + count + native}external_key`] = id;
+        flattened[`${prefix + count + native}external_key`] = cid;
       } else {
-        flattened[`${native}external_key`] = this.cid || this.id;
+        flattened[`${native}external_key`] = this.cid;
       }
     }
 
@@ -342,7 +342,7 @@ class Morel {
         continue;
       }
 
-      name = keys[attr].id;
+      name = keys[attr].cid;
 
       if (!name) {
         name = `${prefix + count}::present`;
