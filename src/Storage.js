@@ -209,7 +209,15 @@ class Storage {
         reject(err);
         return promise;
       }
-      that._cache.set(model, { remove: false });
+
+      if (model instanceof that.Sample) {
+        that._cache.set(model, { remove: false });
+      } else {
+        const modelOptions = _.extend(model, { manager: that.manager});
+        const sample = new that.Sample(model.attributes, modelOptions);
+        that._cache.set(sample, { remove: false });
+      }
+
       callback && callback(null, model);
       resolve(model);
       return promise;

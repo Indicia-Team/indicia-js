@@ -49,7 +49,8 @@ describe('Storage', () => {
       storage.get(item, (getErr, data) => {
         if (getErr) throw getErr.message;
 
-        expect(data.id).to.be.equal(item.id);
+        expect(data instanceof storage.Sample).to.be.true;
+        expect(data.id).to.be.equal(item.cid);
 
         storage.has(item, (hasErr, contains) => {
           expect(contains).to.be.true;
@@ -68,7 +69,8 @@ describe('Storage', () => {
       .then(() => {
         storage.get(item)
           .then((data) => {
-            expect(data.id).to.be.equal(item.id);
+            expect(data instanceof storage.Sample).to.be.true;
+            expect(data.id).to.be.equal(item.cid);
             storage.has(item)
               .then((contains) => {
                 expect(contains).to.be.true;
