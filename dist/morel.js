@@ -459,12 +459,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      // add external ID
-	      var id = this.cid || this.id;
-	      if (id) {
+	      var cid = this.cid;
+	      if (cid) {
 	        if (this instanceof _Occurrence2.default) {
-	          flattened[prefix + count + native + 'external_key'] = id;
+	          flattened[prefix + count + native + 'external_key'] = cid;
 	        } else {
-	          flattened[native + 'external_key'] = this.cid || this.id;
+	          flattened[native + 'external_key'] = this.cid;
 	        }
 	      }
 
@@ -477,7 +477,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          continue;
 	        }
 
-	        name = keys[attr].id;
+	        name = keys[attr].cid;
 
 	        if (!name) {
 	          name = prefix + count + '::present';
@@ -694,7 +694,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
-	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
@@ -902,7 +902,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.occurrences.each(function (occurrence) {
 	        var errors = occurrence.validate();
 	        if (errors) {
-	          var occurrenceID = occurrence.id || occurrence.cid;
+	          var occurrenceID = occurrence.cid;
 	          occurrences[occurrenceID] = errors;
 	        }
 	      });
@@ -1285,7 +1285,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return;
 	    }
 
-	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
 
 	    this.attributes = {};
@@ -1414,6 +1414,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  toJSON: function toJSON() {
 	    var data = {
 	      id: this.id,
+	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes
 	    };
@@ -1622,7 +1623,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 	    var attrs = attributes;
 
-	    this.cid = options.cid || options.id || _helpers2.default.getNewUUID();
+	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setSample(options.sample || this.sample);
 
 	    if (options.Image) this.Image = options.Image;
@@ -2015,7 +2016,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return promise;
 	      }
 
-	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
 
 	      // a non cached version straight from storage medium
 	      if (options.nonCached) {
@@ -2077,7 +2078,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 
 	      // early return if no id or cid
-	      if (!model.id && !model.cid) {
+	      if (!model.cid) {
 	        var error = new _Error2.default('Invalid model passed to storage');
 	        callback && callback(error);
 	        reject(error);
@@ -2093,7 +2094,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      var that = this;
-	      var key = model.id || model.cid;
+	      var key = model.cid;
 	      var dataJSON = typeof model.toJSON === 'function' ? model.toJSON() : model;
 	      this.db.setItem(key, dataJSON, function (err) {
 	        if (err) {
@@ -2101,7 +2102,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	          reject(err);
 	          return promise;
 	        }
-	        that._cache.set(model, { remove: false });
+
+	        if (model instanceof that.Sample) {
+	          that._cache.set(model, { remove: false });
+	        } else {
+	          var modelOptions = _underscore2.default.extend(model, { manager: that.manager });
+	          var sample = new that.Sample(model.attributes, modelOptions);
+	          that._cache.set(sample, { remove: false });
+	        }
+
 	        callback && callback(null, model);
 	        resolve(model);
 	        return promise;
@@ -2126,7 +2135,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        return promise;
 	      }
-	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.id || model.cid : model;
+	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
 	      this.db.removeItem(key, function (err) {
 	        if (err) {
 	          callback && callback(err);
