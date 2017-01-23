@@ -342,7 +342,7 @@ class Morel {
         continue;
       }
 
-      name = keys[attr].cid;
+      name = keys[attr].id;
 
       if (!name) {
         name = `${prefix + count}::present`;
