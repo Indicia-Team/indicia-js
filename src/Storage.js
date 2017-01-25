@@ -92,7 +92,7 @@ class Storage {
     });
   }
 
-  _getDriverOrder(driverOrder) {
+  static _getDriverOrder(driverOrder) {
     return driverOrder.map((driver) => {
       switch (driver) {
         case 'indexeddb':
@@ -115,202 +115,151 @@ class Storage {
     return this._initialized;
   }
 
-  get(model, callback, options = {}) {
+  get(model, options = {}) {
     const that = this;
 
-    let resolve;
-    let reject;
-    const promise = new Promise((_resolve, _reject) => {
-      resolve = _resolve;
-      reject = _reject;
-    });
-
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.get(model, callback, options).then(resolve);
-      });
-      return promise;
-    }
-
-    const key = typeof model === 'object' ? model.cid : model;
-
-    // a non cached version straight from storage medium
-    if (options.nonCached) {
-      this.db.getItem(key, (err, data) => {
-        if (err) {
-          callback && callback(err);
-          reject(err);
-          return promise;
-        }
-        const modelOptions = _.extend(data, { manager: that.manager });
-        const sample = new that.Sample(data.attributes, modelOptions);
-        callback && callback(null, sample);
-        resolve(sample);
-        return promise;
-      });
-      return promise;
-    }
-
-    const cachedModel = this._cache.get(key);
-    callback && callback(null, cachedModel);
-    resolve(cachedModel);
-    return promise;
-  }
-
-  getAll(callback) {
-    let resolve;
-    // let reject;
-    const promise = new Promise((_resolve) => {
-      resolve = _resolve;
-      // reject = _reject;
-    });
-
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.getAll(callback).then(resolve);
-      });
-      return promise;
-    }
-    callback && callback(null, this._cache);
-    resolve(this._cache);
-    return promise;
-  }
-
-  set(model = {}, callback) {
-    let resolve;
-    let reject;
-    const promise = new Promise((_resolve, _reject) => {
-      resolve = _resolve;
-      reject = _reject;
-    });
-
-    // early return if no id or cid
-    if (!model.cid) {
-      const error = new Error('Invalid model passed to storage');
-      callback && callback(error);
-      reject(error);
-      return promise;
-    }
-
-    // needs to be on and running
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.set(model, callback).then(resolve);
-      });
-      return promise;
-    }
-
-    const that = this;
-    const key = model.cid;
-    const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
-    this.db.setItem(key, dataJSON, (err) => {
-      if (err) {
-        callback && callback(err);
-        reject(err);
-        return promise;
+    const promise = new Promise((resolve, reject) => {
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.get(model, options).then(resolve).catch(reject);
+        });
+        return;
       }
 
-      if (model instanceof that.Sample) {
-        that._cache.set(model, { remove: false });
-      } else {
-        const modelOptions = _.extend(model, { manager: that.manager});
-        const sample = new that.Sample(model.attributes, modelOptions);
-        that._cache.set(sample, { remove: false });
+      const key = typeof model === 'object' ? model.cid : model;
+
+      // a non cached version straight from storage medium
+      if (options.nonCached) {
+        this.db.getItem(key)
+          .then((data) => {
+            const modelOptions = _.extend(data, { manager: that.manager });
+            const sample = new that.Sample(data.attributes, modelOptions);
+            resolve(sample);
+          })
+          .catch(reject);
+        return;
       }
 
-      callback && callback(null, model);
-      resolve(model);
-      return promise;
+      const cachedModel = this._cache.get(key);
+      resolve(cachedModel);
     });
+
     return promise;
   }
 
-  remove(model, callback) {
-    let resolve;
-    let reject;
-    const promise = new Promise((_resolve, _reject) => {
-      resolve = _resolve;
-      reject = _reject;
+  getAll() {
+    const promise = new Promise((resolve, reject) => {
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.getAll().then(resolve).catch(reject);
+        });
+        return;
+      }
+      resolve(this._cache);
     });
 
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.remove(model, callback).then(resolve);
+    return promise;
+  }
+
+  set(model = {}) {
+    const promise = new Promise((resolve, reject) => {
+      // early return if no id or cid
+      if (!model.cid) {
+        const error = new Error('Invalid model passed to storage');
+        reject(error);
+        return;
+      }
+
+      // needs to be on and running
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.set(model).then(resolve).catch(reject);
+        });
+        return;
+      }
+
+      const that = this;
+      const key = model.cid;
+      const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
+      this.db.setItem(key, dataJSON)
+        .then(() => {
+          if (model instanceof that.Sample) {
+            that._cache.set(model, { remove: false });
+          } else {
+            const modelOptions = _.extend(model, { manager: that.manager });
+            const sample = new that.Sample(model.attributes, modelOptions);
+            that._cache.set(sample, { remove: false });
+          }
+          resolve(model);
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  }
+
+  remove(model) {
+    const promise = new Promise((resolve, reject) => {
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.remove(model).then(resolve).catch(reject);
+        });
+        return;
+      }
+      const key = typeof model === 'object' ? model.cid : model;
+      this.db.removeItem(key)
+        .then(() => {
+          delete model.manager; // delete a reference
+          return model.destroy().then(resolve); // removes from cache
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  }
+
+  has(model) {
+    const promise = new Promise((resolve, reject) => {
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.has(model).then(resolve).catch(reject);
+        }, this);
+        return;
+      }
+      this.get(model).then((data) => {
+        const found = typeof data === 'object';
+        resolve(found);
       });
-      return promise;
-    }
-    const key = typeof model === 'object' ? model.cid : model;
-    this.db.removeItem(key, (err) => {
-      if (err) {
-        callback && callback(err);
-        reject(err);
-        return promise;
+    });
+
+    return promise;
+  }
+
+  clear() {
+    const promise = new Promise((resolve, reject) => {
+      if (!this.ready()) {
+        this.on('init', () => {
+          this.clear().then(resolve).catch(reject);
+        });
+        return;
       }
-      delete model.manager;
-      return model.destroy().then(callback).then(resolve); // removes from cache
+      const that = this;
+      this.db.clear()
+        .then(() => {
+          that._cache.reset();
+          resolve();
+        })
+        .catch(reject);
     });
+
     return promise;
   }
 
-  has(model, callback) {
-    let resolve;
-    // let reject;
-    const promise = new Promise((_resolve) => {
-      resolve = _resolve;
-      // reject = _reject;
-    });
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.has(model, callback).then(resolve);
-      }, this);
-      return promise;
-    }
-    this.get(model, (err, data) => {
-      const found = typeof data === 'object';
-      callback && callback(null, found);
-      resolve(found);
-    });
-    return promise;
-  }
-
-  clear(callback) {
-    let resolve;
-    let reject;
-    const promise = new Promise((_resolve, _reject) => {
-      resolve = _resolve;
-      reject = _reject;
+  size() {
+    const promise = new Promise((resolve, reject) => {
+      this.db.length().then(resolve).catch(reject);
     });
 
-    if (!this.ready()) {
-      this.on('init', () => {
-        this.clear(callback);
-      });
-      return promise;
-    }
-    const that = this;
-    this.db.clear((err) => {
-      if (err) {
-        callback && callback(err);
-        reject(err);
-        return promise;
-      }
-      that._cache.reset();
-      callback && callback();
-      resolve();
-      return promise;
-    });
-    return promise;
-  }
-
-  size(callback) {
-    let resolve;
-    // let reject;
-    const promise = new Promise((_resolve) => {
-      resolve = _resolve;
-      // reject = _reject;
-    });
-
-    this.db.length(callback).then(resolve);
     return promise;
   }
 

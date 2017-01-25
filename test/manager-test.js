@@ -18,7 +18,7 @@ describe('Manager', () => {
 
   // clean up
   after((done) => {
-    manager.clear(done);
+    manager.clear().then(done);
   });
 
   it('should have HOST passed through options', () => {
@@ -33,32 +33,30 @@ describe('Manager', () => {
 
     sample.set(key, value);
 
-    manager.clear((err) => {
-      if (err) throw err.message;
-
-      manager.set(sample, (serErr) => {
-        if (serErr) throw serErr.message;
-
-        manager.get(sample, (getErr, data) => {
-          if (getErr) throw getErr.message;
-
-          expect(data).to.be.instanceof(Sample);
-          expect(sample.get(key)).to.be.equal(data.get(key));
-        });
-
-        manager.has(sample, (hasErr, contains) => {
-          if (hasErr) throw hasErr.message;
-
-          expect(contains).to.be.true;
-          manager.has(new Sample(), (finalHasErr, finalContains) => {
-            if (finalHasErr) throw finalHasErr.message;
-
-            expect(finalContains).to.be.false;
-            done();
+    manager.clear()
+      .then(() => {
+        return manager.set(sample);
+      })
+      .then(() => {
+        manager.get(sample)
+          .then((data) => {
+            expect(data).to.be.instanceof(Sample);
+            expect(sample.get(key)).to.be.equal(data.get(key));
           });
-        });
+
+        manager.has(sample)
+          .then((contains) => {
+            expect(contains).to.be.true;
+            manager.has(new Sample())
+              .then((finalContains) => {
+                expect(finalContains).to.be.false;
+                done();
+              });
+          });
+      })
+      .catch((err) => {
+        if (err) throw err.message;
       });
-    });
   });
 
   it('should return promises', (done) => {
@@ -95,42 +93,36 @@ describe('Manager', () => {
     const sample = new Sample();
     const sample2 = new Sample();
 
-    manager.clear((err) => {
-      if (err) throw err.message;
-
-      // add one
-      manager.set(sample, (setErr) => {
-        if (setErr) throw setErr.message;
-
+    manager.clear()
+      .then(() => {
+        // add one
+        return manager.set(sample);
+      })
+      .then(() => {
         // add two
-        manager.set(sample2, (setErr2) => {
-          if (setErr2) throw setErr2.message;
+        return manager.set(sample2)
+      })
+      .then(() => {
+        return manager.has(sample);
+      })
+      .then((contains) => {
+        expect(contains).to.be.true;
 
-          manager.has(sample, (hasErr, contains) => {
-            if (hasErr) throw hasErr.message;
-            expect(contains).to.be.true;
+        // getall
+        manager.getAll()
+          .then((collection) => {
+            expect(collection.length).to.be.equal(2);
 
-            // getall
-            manager.getAll((getAllErr, collection) => {
-              if (getAllErr) throw getAllErr.message;
-
-              expect(collection.length).to.be.equal(2);
-
-              manager.clear((clearErr) => {
-                if (clearErr) throw clearErr.message;
-
-                manager.has(sample, (finalHasErr, finalContains) => {
-                  if (finalHasErr) throw finalHasErr.message;
-
-                  expect(finalContains).to.be.false;
-                  done();
-                });
+            manager.clear()
+              .then(() => {
+                manager.has(sample)
+                  .then((finalContains) => {
+                    expect(finalContains).to.be.false;
+                    done();
+                  });
               });
-            });
           });
-        });
       });
-    });
   });
 
   it('should remove', (done) => {

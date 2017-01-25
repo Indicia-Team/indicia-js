@@ -23,7 +23,7 @@ describe('Saving/destroying propagation', () => {
   });
 
   afterEach((done) => {
-    manager.clear(done);
+    manager.clear().then(done);
   });
 
   describe('Image', () => {
@@ -37,14 +37,13 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample, (err) => {
-        if (err) throw err.message;
-        expect(manager.storage._cache.length).to.be.equal(1);
+      manager.set(sample)
+        .then(() => {
+          expect(manager.storage._cache.length).to.be.equal(1);
 
-        // update the image and save it - the save should be permenant
-        image.set('data', '1234');
-        const req = image.save(null, {
-          success() {
+          // update the image and save it - the save should be permenant
+          image.set('data', '1234');
+          const req = image.save(null).then(() => {
             const newManager = new Morel(_.extend(options, { }));
             newManager.getAll((err, samples) => {
               expect(samples.length).to.be.equal(1);
@@ -54,10 +53,12 @@ describe('Saving/destroying propagation', () => {
               expect(imageFromDB.get('data')).to.be.equal('1234');
               done();
             });
-          },
+          });
+          expect(req).to.be.an.instanceof(Promise);
+        })
+        .catch((err) => {
+          if (err) throw err.message;
         });
-        expect(req).to.be.an.instanceof(Promise);
-      });
     });
 
     it('should save sample on image destroy', (done) => {
@@ -70,12 +71,12 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample, (err) => {
+      manager.set(sample).then(() => {
         expect(manager.storage._cache.length).to.be.equal(1);
 
         image.destroy().then(() => {
           const newManager = new Morel(_.extend(options, { }));
-          newManager.getAll((err, samples) => {
+          newManager.getAll().then((samples) => {
             expect(samples.length).to.be.equal(1);
             const occurrenceFromDB = samples.at(0).occurrences.at(0);
             // check if change to image is permenant
@@ -98,7 +99,7 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample, () => {
+      manager.set(sample).then(() => {
         sinon.spy(image, 'destroy');
 
         sample.destroy().then(() => {

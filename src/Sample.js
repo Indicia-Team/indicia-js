@@ -107,63 +107,39 @@ const Sample = Backbone.Model.extend({
    * Returns on success: model, response, options
    */
   save(attrs, options = {}) {
-    const model = this;
-    let promise;
-
-    if (!this.manager) return false;
-
-    // only update local cache and DB
-    if (!options.remote) {
-      // todo: add attrs if passed to model
-
-      let promiseResolve;
-      let promiseReject;
-      promise = new Promise((fulfill, reject) => {
-        promiseResolve = fulfill;
-        promiseReject = reject;
-      });
-
-      this.manager.set(this, (err) => {
-        if (err) {
-          promiseReject(err);
-          options.error && options.error(err);
-          return;
-        }
-        promiseResolve(model, {}, options);
-        options.success && options.success(model, {}, options);
-      });
-      return promise;
+    if (!this.manager) {
+      return false;
     }
 
-    // remote
-    promise = Backbone.Model.prototype.save.apply(this, arguments);
+    const promise = new Promise((fulfill, reject) => {
+      // only update local cache and DB
+      if (!options.remote) {
+        // todo: add attrs if passed to model
+        this.manager.set(this).then(fulfill).catch(reject);
+      }
+
+      // remote
+      Backbone.Model.prototype.save.apply(this, arguments)
+        .then(fulfill)
+        .catch(reject);
+    });
+
     return promise;
   },
 
   destroy(options = {}) {
-    let promiseResolve;
-    const promise = new Promise((fulfill) => {
-      promiseResolve = fulfill;
+    const promise = new Promise((fulfill, reject) => {
+      if (this.manager && !options.noSave) {
+        // save the changes permanentely
+        this.manager.remove(this).then(fulfill).catch(reject);
+      } else {
+        // removes from all collections etc
+        this.stopListening();
+        this.trigger('destroy', this, this.collection, options);
+
+        fulfill();
+      }
     });
-
-    if (this.manager && !options.noSave) {
-      // save the changes permanentely
-      this.manager.remove(this, (err) => {
-        if (err) {
-          options.error && options.error(err);
-          return;
-        }
-        promiseResolve();
-        options.success && options.success();
-      });
-    } else {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      promiseResolve();
-      options.success && options.success();
-    }
 
     return promise;
   },

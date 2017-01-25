@@ -135,22 +135,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  _createClass(Morel, [{
 	    key: 'get',
-	    value: function get(model, callback, options) {
-	      return this.storage.get(model, callback, options);
+	    value: function get(model, options) {
+	      return this.storage.get(model, options);
 	    }
 	  }, {
 	    key: 'getAll',
-	    value: function getAll(callback, options) {
-	      this.storage.getAll(callback, options);
+	    value: function getAll(options) {
+	      return this.storage.getAll(options);
 	    }
 	  }, {
 	    key: 'set',
-	    value: function set(model, callback, options) {
+	    value: function set(model, options) {
 	      if (model instanceof _Sample2.default) {
 	        // not JSON but a whole sample model
 	        model.manager = this; // set the manager on new model
 	      }
-	      return this.storage.set(model, callback, options);
+	      return this.storage.set(model, options);
 
 	      // this.storage.set(model, (...args) => {
 	      //   this._addReference(model);
@@ -159,8 +159,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, {
 	    key: 'remove',
-	    value: function remove(model, callback, options) {
-	      return this.storage.remove(model, callback, options);
+	    value: function remove(model, options) {
+	      return this.storage.remove(model, options);
 
 	      // this.storage.remove(model, (...args) => {
 	      //   this._removeReference(model);
@@ -169,13 +169,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, {
 	    key: 'has',
-	    value: function has(model, callback, options) {
-	      return this.storage.has(model, callback, options);
+	    value: function has(model, options) {
+	      return this.storage.has(model, options);
 	    }
 	  }, {
 	    key: 'clear',
-	    value: function clear(callback, options) {
-	      return this.storage.clear(callback, options);
+	    value: function clear(options) {
+	      return this.storage.clear(options);
 	    }
 
 	    /**
@@ -188,64 +188,54 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'syncAll',
 	    value: function syncAll(method, collection) {
+	      var _this = this;
+
 	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-	      var syncAllPromiseResolve = void 0;
-	      var syncAllPromiseReject = void 0;
-	      var returnPromise = new Promise(function (fulfill, reject) {
-	        syncAllPromiseResolve = fulfill;
-	        syncAllPromiseReject = reject;
-	      });
-
-	      // sync all in collection
-	      function syncEach(collectionToSync) {
-	        var toWait = [];
-	        collectionToSync.each(function (model) {
-	          // todo: reuse the passed options model
-	          var xhr = model.save(null, {
-	            remote: true,
-	            timeout: options.timeout
-	          });
-	          var syncPromise = void 0;
-	          if (!xhr) {
-	            // model was invalid
-	            syncPromise = Promise.resolve();
-	          } else {
-	            // valid model, but in case it fails sync carry on
-	            syncPromise = new Promise(function (fulfill) {
-	              xhr.then(function () {
-	                fulfill();
-	              }).catch(function () {
-	                fulfill();
-	              });
+	      var promise = new Promise(function (fulfill, reject) {
+	        // sync all in collection
+	        function syncEach(collectionToSync) {
+	          var toWait = [];
+	          collectionToSync.each(function (model) {
+	            // todo: reuse the passed options model
+	            var xhr = model.save(null, {
+	              remote: true,
+	              timeout: options.timeout
 	            });
-	          }
-	          toWait.push(syncPromise);
-	        });
+	            var syncPromise = void 0;
+	            if (!xhr) {
+	              // model was invalid
+	              syncPromise = Promise.resolve();
+	            } else {
+	              // valid model, but in case it fails sync carry on
+	              syncPromise = new Promise(function (fulfillSync) {
+	                xhr.then(fulfillSync).catch(fulfillSync);
+	              });
+	            }
+	            toWait.push(syncPromise);
+	          });
 
-	        Promise.all(toWait).then(function () {
 	          // after all is synced
-	          syncAllPromiseResolve();
-	          options.success && options.success();
-	        });
-	      }
+	          Promise.all(toWait).then(fulfill);
+	        }
 
-	      if (collection) {
-	        syncEach(collection);
-	        return returnPromise;
-	      }
-
-	      // get all models to submit
-	      this.getAll(function (err, receivedCollection) {
-	        if (err) {
-	          syncAllPromiseReject();
-	          options.error && options.error(err);
+	        if (collection) {
+	          syncEach(collection);
 	          return;
 	        }
 
-	        syncEach(receivedCollection);
+	        // get all models to submit
+	        _this.getAll(function (err, receivedCollection) {
+	          if (err) {
+	            reject(err);
+	            return;
+	          }
+
+	          syncEach(receivedCollection);
+	        });
 	      });
-	      return returnPromise;
+
+	      return promise;
 	    }
 
 	    /**
@@ -256,38 +246,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 
 	  }, {
-	    key: 'sync',
-	    value: function sync(method, model) {
-	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	    key: 'post',
 
-	      // don't resend
-	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
-	        return false;
-	      }
-
-	      options.host = model.manager.options.host; // get the URL
-
-	      // on success update the model and save to local storage
-	      var success = options.success;
-	      options.success = function (successModel) {
-	        successModel.save().then(function () {
-	          successModel.trigger('sync');
-	          success && success();
-	        });
-	      };
-
-	      var xhr = Morel.prototype.post.apply(model.manager, [model, options]);
-	      return xhr;
-	    }
 
 	    /**
 	     * Posts a record to remote server.
 	     * @param model
 	     * @param options
 	     */
-
-	  }, {
-	    key: 'post',
 	    value: function post(model, options) {
 	      var that = this;
 	      // call user defined onSend function to modify
@@ -298,32 +264,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return false;
 	      }
 
-	      model.synchronising = true;
-
-	      // on success
-	      var success = options.success;
-	      options.success = function () {
-	        model.synchronising = false;
-
-	        // update model
-	        model.metadata.warehouse_id = 1;
-	        model.metadata.server_on = model.metadata.updated_on = model.metadata.synced_on = new Date();
-
-	        success && success(model, null, options);
-	      };
-
-	      // on error
-	      var error = options.error;
-	      options.error = function (xhr, textStatus, errorThrown) {
-	        model.synchronising = false;
-	        model.trigger('error');
-
-	        options.textStatus = textStatus;
-	        options.errorThrown = errorThrown;
-	        if (error) error.call(options.context, xhr, textStatus, errorThrown);
-	      };
-
 	      var promise = new Promise(function (fulfill, reject) {
+	        model.synchronising = true;
+
 	        // async call to get the form data
 	        that._getModelFormData(model, function (err, formData) {
 	          // AJAX post
@@ -334,16 +277,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	            data: formData,
 	            processData: false,
 	            contentType: false,
-	            timeout: options.timeout || 30000, // 30s
-	            success: options.success,
-	            error: options.error
-	          });
+	            timeout: options.timeout || 30000 });
 
 	          // also resolve the promise
 	          xhr.done(function (data, textStatus, jqXHR) {
-	            fulfill(data, textStatus, jqXHR);
+	            model.synchronising = false;
+
+	            // update model
+	            model.metadata.warehouse_id = 1;
+	            var timeNow = new Date();
+	            model.metadata.server_on = timeNow;
+	            model.metadata.updated_on = timeNow;
+	            model.metadata.synced_on = timeNow;
+
+	            fulfill(model, null, options);
 	          });
+
 	          xhr.fail(function (jqXHR, textStatus, errorThrown) {
+	            if (errorThrown === 'Conflict') {
+	              // duplicate occurred
+	              fulfill(model, null, options);
+	              return;
+	            }
+
+	            model.synchronising = false;
+	            model.trigger('error');
+
 	            reject(jqXHR, textStatus, errorThrown);
 	          });
 	          model.trigger('request', model, xhr, options);
@@ -362,85 +321,86 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, {
 	    key: '_getModelFormData',
-	    value: function _getModelFormData(model, callback) {
-	      var _this = this;
+	    value: function _getModelFormData(model) {
+	      var _this2 = this;
 
-	      var flattened = model.flatten(this._flattener);
-	      var formData = new FormData();
+	      var promise = new Promise(function (fulfill, reject) {
+	        var flattened = model.flatten(_this2._flattener);
+	        var formData = new FormData();
 
-	      // append images
-	      var occCount = 0;
-	      var occurrenceProcesses = [];
-	      model.occurrences.each(function (occurrence) {
-	        // on async run occCount will be incremented before used for image name
-	        var localOccCount = occCount;
-	        var imgCount = 0;
+	        // append images
+	        var occCount = 0;
+	        var occurrenceProcesses = [];
+	        model.occurrences.each(function (occurrence) {
+	          // on async run occCount will be incremented before used for image name
+	          var localOccCount = occCount;
+	          var imgCount = 0;
 
-	        var imageProcesses = [];
+	          var imageProcesses = [];
 
-	        occurrence.images.each(function (image) {
-	          var imagePromiseResolve = void 0;
-	          var imagePromise = new Promise(function (fulfill) {
-	            imagePromiseResolve = fulfill;
+	          occurrence.images.each(function (image) {
+	            var imagePromise = new Promise(function (_fulfill) {
+	              var url = image.getURL();
+	              var type = image.get('type');
+
+	              function onSuccess(err, img, dataURI, blob) {
+	                var name = 'sc:' + localOccCount + '::photo' + imgCount;
+
+	                // can provide both image/jpeg and jpeg
+	                var extension = type;
+	                var mediaType = type;
+	                if (type.match(/image.*/)) {
+	                  extension = type.split('/')[1];
+	                } else {
+	                  mediaType = 'image/' + mediaType;
+	                }
+	                if (!blob) {
+	                  blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
+	                }
+
+	                formData.append(name, blob, 'pic.' + extension);
+	                imgCount++;
+	                _fulfill();
+	              }
+
+	              if (!_helpers2.default.isDataURL(url)) {
+	                (function () {
+	                  // load image
+	                  var xhr = new XMLHttpRequest();
+	                  xhr.open('GET', url, true);
+	                  xhr.responseType = 'blob';
+	                  xhr.onload = function () {
+	                    onSuccess(null, null, null, xhr.response);
+	                  };
+	                  // todo check error case
+
+	                  xhr.send();
+	                })();
+	              } else {
+	                onSuccess(null, null, url);
+	              }
+	            });
+	            imageProcesses.push(imagePromise);
 	          });
-	          imageProcesses.push(imagePromise);
 
-	          var url = image.getURL();
-	          var type = image.get('type');
-
-	          function onSuccess(err, img, dataURI, blob) {
-	            var name = 'sc:' + localOccCount + '::photo' + imgCount;
-
-	            // can provide both image/jpeg and jpeg
-	            var extension = type;
-	            var mediaType = type;
-	            if (type.match(/image.*/)) {
-	              extension = type.split('/')[1];
-	            } else {
-	              mediaType = 'image/' + mediaType;
-	            }
-	            if (!blob) {
-	              blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
-	            }
-
-	            formData.append(name, blob, 'pic.' + extension);
-	            imgCount++;
-	            imagePromiseResolve();
-	          }
-
-	          if (!_helpers2.default.isDataURL(url)) {
-	            (function () {
-	              // load image
-	              var xhr = new XMLHttpRequest();
-	              xhr.open('GET', url, true);
-	              xhr.responseType = 'blob';
-	              xhr.onload = function () {
-	                onSuccess(null, null, null, xhr.response);
-	              };
-	              // todo check error case
-
-	              xhr.send();
-	            })();
-	          } else {
-	            onSuccess(null, null, url);
-	          }
+	          occurrenceProcesses.push(Promise.all(imageProcesses));
+	          occCount++;
 	        });
 
-	        occurrenceProcesses.push(Promise.all(imageProcesses));
-	        occCount++;
+	        Promise.all(occurrenceProcesses).then(function () {
+	          // append attributes
+	          var keys = Object.keys(flattened);
+	          for (var i = 0; i < keys.length; i++) {
+	            formData.append(keys[i], flattened[keys[i]]);
+	          }
+
+	          // Add authentication
+	          formData = _this2.appendAuth(formData);
+	          fulfill(formData);
+	        });
 	      });
 
-	      Promise.all(occurrenceProcesses).then(function () {
-	        // append attributes
-	        var keys = Object.keys(flattened);
-	        for (var i = 0; i < keys.length; i++) {
-	          formData.append(keys[i], flattened[keys[i]]);
-	        }
-
-	        // Add authentication
-	        formData = _this.appendAuth(formData);
-	        callback(null, formData);
-	      });
+	      return promise;
 	    }
 	  }, {
 	    key: '_flattener',
@@ -595,6 +555,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //   this.trigger.apply(this, args);
 	    // }
 
+	  }], [{
+	    key: 'sync',
+	    value: function sync(method, model) {
+	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+	      // don't resend
+	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
+	        return false;
+	      }
+
+	      var promise = new Promise(function (fulfill, reject) {
+	        options.host = model.manager.options.host; // get the URL
+
+	        Morel.prototype.post.apply(model.manager, [model, options]).then(function (successModel) {
+	          // on success update the model and save to local storage
+	          successModel.save().then(function () {
+	            successModel.trigger('sync');
+	            fulfill(successModel);
+	          });
+	        }).catch(reject);
+	      });
+
+	      return promise;
+	    }
 	  }]);
 
 	  return Morel;
@@ -636,16 +620,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	exports.default = undefined;
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * SAMPLE
-	                                                                                                                                                                                                                                                                               *
-	                                                                                                                                                                                                                                                                               * Refers to the event in which the sightings were observed, in other
-	                                                                                                                                                                                                                                                                               * words it describes the place, date, people, environmental conditions etc.
-	                                                                                                                                                                                                                                                                               * Within a sample, you can have zero or more occurrences which refer to each
-	                                                                                                                                                                                                                                                                               * species sighted as part of the sample.
-	                                                                                                                                                                                                                                                                               **********************************************************************/
-
 
 	var _backbone = __webpack_require__(2);
 
@@ -777,74 +751,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * Returns on success: model, response, options
 	   */
 	  save: function save(attrs) {
-	    var _this2 = this;
+	    var _this2 = this,
+	        _arguments = arguments;
 
 	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-	    var model = this;
-	    var promise = void 0;
-
-	    if (!this.manager) return false;
-
-	    // only update local cache and DB
-	    if (!options.remote) {
-	      var _ret3 = function () {
-	        // todo: add attrs if passed to model
-
-	        var promiseResolve = void 0;
-	        var promiseReject = void 0;
-	        promise = new Promise(function (fulfill, reject) {
-	          promiseResolve = fulfill;
-	          promiseReject = reject;
-	        });
-
-	        _this2.manager.set(_this2, function (err) {
-	          if (err) {
-	            promiseReject(err);
-	            options.error && options.error(err);
-	            return;
-	          }
-	          promiseResolve(model, {}, options);
-	          options.success && options.success(model, {}, options);
-	        });
-	        return {
-	          v: promise
-	        };
-	      }();
-
-	      if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
+	    if (!this.manager) {
+	      return false;
 	    }
 
-	    // remote
-	    promise = _backbone2.default.Model.prototype.save.apply(this, arguments);
+	    var promise = new Promise(function (fulfill, reject) {
+	      // only update local cache and DB
+	      if (!options.remote) {
+	        // todo: add attrs if passed to model
+	        _this2.manager.set(_this2).then(fulfill).catch(reject);
+	      }
+
+	      // remote
+	      _backbone2.default.Model.prototype.save.apply(_this2, _arguments).then(fulfill).catch(reject);
+	    });
+
 	    return promise;
 	  },
 	  destroy: function destroy() {
+	    var _this3 = this;
+
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	    var promiseResolve = void 0;
-	    var promise = new Promise(function (fulfill) {
-	      promiseResolve = fulfill;
+	    var promise = new Promise(function (fulfill, reject) {
+	      if (_this3.manager && !options.noSave) {
+	        // save the changes permanentely
+	        _this3.manager.remove(_this3).then(fulfill).catch(reject);
+	      } else {
+	        // removes from all collections etc
+	        _this3.stopListening();
+	        _this3.trigger('destroy', _this3, _this3.collection, options);
+
+	        fulfill();
+	      }
 	    });
-
-	    if (this.manager && !options.noSave) {
-	      // save the changes permanentely
-	      this.manager.remove(this, function (err) {
-	        if (err) {
-	          options.error && options.error(err);
-	          return;
-	        }
-	        promiseResolve();
-	        options.success && options.success();
-	      });
-	    } else {
-	      // removes from all collections etc
-	      this.stopListening();
-	      this.trigger('destroy', this, this.collection, options);
-
-	      promiseResolve();
-	      options.success && options.success();
-	    }
 
 	    return promise;
 	  },
@@ -1021,6 +966,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Warehouse attributes and their values.
 	 */
+	/** *********************************************************************
+	 * SAMPLE
+	 *
+	 * Refers to the event in which the sightings were observed, in other
+	 * words it describes the place, date, people, environmental conditions etc.
+	 * Within a sample, you can have zero or more occurrences which refer to each
+	 * species sighted as part of the sample.
+	 **********************************************************************/
 	Sample.keys = {
 	  id: { id: 'id' },
 	  survey: { id: 'survey_id' },
@@ -1319,29 +1272,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	    var promiseResolve = void 0;
 	    var promise = new Promise(function (fulfill) {
-	      promiseResolve = fulfill;
-	    });
-	    // removes from all collections etc
-	    this.stopListening();
-	    this.trigger('destroy', this, this.collection, options);
+	      // removes from all collections etc
+	      _this.stopListening();
+	      _this.trigger('destroy', _this, _this.collection, options);
 
-	    if (this.parent && !options.noSave) {
-	      (function () {
-	        var success = options.success;
-	        options.success = function () {
-	          promiseResolve();
-	          success && success();
-	        };
-
+	      if (_this.parent && !options.noSave) {
 	        // save the changes permanentely
-	        _this.save(null, options);
-	      })();
-	    } else {
-	      promiseResolve();
-	      options.success && options.success();
-	    }
+	        _this.save(null, options).then(fulfill);
+	        return;
+	      }
+	      fulfill();
+	    });
 
 	    return promise;
 	  },
@@ -1373,46 +1315,52 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Resizes itself.
 	   */
-	  resize: function resize(MAX_WIDTH, MAX_HEIGHT, callback) {
+	  resize: function resize(MAX_WIDTH, MAX_HEIGHT) {
+	    var _this2 = this;
+
 	    var that = this;
-	    ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT, function (err, image, data) {
-	      if (err) {
-	        callback && callback(err);
-	        return;
-	      }
-	      that.set('data', data);
-	      callback && callback(null, image, data);
+	    var promise = new Promise(function (fulfill, reject) {
+	      ImageModel.resize(_this2.getURL(), _this2.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (image, data) {
+	        that.set('data', data);
+	        fulfill(image, data);
+	      }).catch(reject);
 	    });
+	    return promise;
 	  },
 
 
 	  /**
 	   * Adds a thumbnail to image model.
-	   * @param callback
 	   * @param options
 	   */
-	  addThumbnail: function addThumbnail(callback) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	  addThumbnail: function addThumbnail() {
+	    var _this3 = this;
+
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    var that = this;
-	    // check if data source is dataURI
 
-	    var re = /^data:/i;
-	    if (re.test(this.getURL())) {
-	      ImageModel.resize(this.getURL(), this.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width, function (err, image, data) {
+	    var promise = new Promise(function (fulfill, reject) {
+	      // check if data source is dataURI
+	      var re = /^data:/i;
+	      if (re.test(_this3.getURL())) {
+	        ImageModel.resize(_this3.getURL(), _this3.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (image, data) {
+	          that.set('thumbnail', data);
+	          fulfill();
+	        }).catch(reject);
+	        return;
+	      }
+
+	      ImageModel.getDataURI(_this3.getURL(), {
+	        width: THUMBNAIL_WIDTH || options.width,
+	        height: THUMBNAIL_HEIGHT || options.height
+	      }).then(function (data) {
 	        that.set('thumbnail', data);
-	        callback && callback();
-	      });
-	      return;
-	    }
-
-	    ImageModel.getDataURI(this.getURL(), function (err, data) {
-	      that.set('thumbnail', data);
-	      callback && callback();
-	    }, {
-	      width: THUMBNAIL_WIDTH || options.width,
-	      height: THUMBNAIL_HEIGHT || options.height
+	        fulfill();
+	      }).catch(reject);
 	    });
+
+	    return promise;
 	  },
 	  toJSON: function toJSON() {
 	    var data = {
@@ -1435,103 +1383,110 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param onSaveSuccess
 	   * @returns {number}
 	   */
-	  getDataURI: function getDataURI(file, callback) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	  getDataURI: function getDataURI(file) {
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-	    // file paths
-	    if (typeof file === 'string') {
-	      var _ret2 = function () {
-	        // get extension
-	        var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
-	        if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
+	    var promise = new Promise(function (fulfill, reject) {
+	      // file paths
+	      if (typeof file === 'string') {
+	        var _ret = function () {
+	          // get extension
+	          var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+	          if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-	        ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
-	          callback(null, dataURI, fileType, image.width, image.height);
-	        });
-	        return {
-	          v: void 0
-	        };
-	      }();
-
-	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
-	    }
-
-	    // file inputs
-	    if (!window.FileReader) {
-	      var message = 'No File Reader';
-	      var error = new _Error2.default(message);
-	      console.error(message);
-
-	      callback(error);
-	      return;
-	    }
-
-	    var reader = new FileReader();
-	    reader.onload = function (event) {
-	      if (options.width || options.height) {
-	        // resize
-	        ImageModel.resize(event.target.result, file.type, options.width, options.height, function (err, image, dataURI) {
-	          callback(null, dataURI, file.type, image.width, image.height);
-	        });
-	      } else {
-	        (function () {
-	          var image = new window.Image(); // native one
-
-	          image.onload = function () {
-	            var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
-	            callback(null, event.target.result, type, image.width, image.height);
+	          ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
+	            fulfill(dataURI, fileType, image.width, image.height);
+	          });
+	          return {
+	            v: void 0
 	          };
-	          image.src = event.target.result;
-	        })();
+	        }();
+
+	        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	      }
-	    };
-	    reader.readAsDataURL(file);
-	    return;
+
+	      // file inputs
+	      if (!window.FileReader) {
+	        var message = 'No File Reader';
+	        var error = new _Error2.default(message);
+	        console.error(message);
+
+	        reject(error);
+	        return;
+	      }
+
+	      var reader = new FileReader();
+	      reader.onload = function (event) {
+	        if (options.width || options.height) {
+	          // resize
+	          ImageModel.resize(event.target.result, file.type, options.width, options.height, function (err, image, dataURI) {
+	            fulfill(dataURI, file.type, image.width, image.height);
+	          });
+	        } else {
+	          (function () {
+	            var image = new window.Image(); // native one
+
+	            image.onload = function () {
+	              var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
+	              fulfill(event.target.result, type, image.width, image.height);
+	            };
+	            image.src = event.target.result;
+	          })();
+	        }
+	      };
+	      reader.readAsDataURL(file);
+	    });
+
+	    return promise;
 	  },
 
 
 	  /**
 	   * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
 	   * @param data
-	   * @param width
-	   * @param height
-	   * @param callback
+	   * @param fileType
+	   * @param MAX_WIDTH
+	   * @param MAX_HEIGHT
 	   */
-	  resize: function resize(data, fileType, MAX_WIDTH, MAX_HEIGHT, callback) {
-	    var image = new window.Image(); // native one
+	  resize: function resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
+	    var promise = new Promise(function (fulfill, reject) {
+	      var image = new window.Image(); // native one
 
-	    image.onload = function () {
-	      var width = image.width;
-	      var height = image.height;
-	      var maxWidth = MAX_WIDTH || width;
-	      var maxHeight = MAX_HEIGHT || height;
+	      image.onload = function () {
+	        var width = image.width;
+	        var height = image.height;
+	        var maxWidth = MAX_WIDTH || width;
+	        var maxHeight = MAX_HEIGHT || height;
 
-	      var canvas = null;
-	      var res = null;
+	        var canvas = null;
+	        var res = null;
 
-	      // resizing
-	      if (width > height) {
-	        res = width / maxWidth;
-	      } else {
-	        res = height / maxHeight;
-	      }
+	        // resizing
+	        if (width > height) {
+	          res = width / maxWidth;
+	        } else {
+	          res = height / maxHeight;
+	        }
 
-	      width = width / res;
-	      height = height / res;
+	        width = width / res;
+	        height = height / res;
 
-	      // Create a canvas with the desired dimensions
-	      canvas = document.createElement('canvas');
-	      canvas.width = width;
-	      canvas.height = height;
+	        // Create a canvas with the desired dimensions
+	        canvas = document.createElement('canvas');
+	        canvas.width = width;
+	        canvas.height = height;
 
-	      // Scale and draw the source image to the canvas
-	      canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+	        // Scale and draw the source image to the canvas
+	        canvas.getContext('2d').drawImage(image, 0, 0, width, height);
 
-	      // Convert the canvas to a data URL in some format
-	      callback(null, image, canvas.toDataURL(fileType));
-	    };
+	        // Convert the canvas to a data URL in some format
+	        fulfill(image, canvas.toDataURL(fileType));
+	      };
 
-	    image.src = data;
+	      image.src = data;
+	    });
+
+	    return promise;
 	  }
 	});
 
@@ -1681,29 +1636,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	    var promiseResolve = void 0;
 	    var promise = new Promise(function (fulfill) {
-	      promiseResolve = fulfill;
-	    });
-	    // removes from all collections etc
-	    this.stopListening();
-	    this.trigger('destroy', this, this.collection, options);
+	      // removes from all collections etc
+	      _this2.stopListening();
+	      _this2.trigger('destroy', _this2, _this2.collection, options);
 
-	    if (this.sample && !options.noSave) {
-	      (function () {
-	        var success = options.success;
-	        options.success = function () {
-	          promiseResolve();
-	          success && success();
-	        };
-
+	      if (_this2.sample && !options.noSave) {
 	        // save the changes permanentely
-	        _this2.save(null, options);
-	      })();
-	    } else {
-	      promiseResolve();
-	      options.success && options.success();
-	    }
+	        _this2.save(null, options).then(fulfill);
+	      } else {
+	        fulfill();
+	      }
+	    });
 
 	    return promise;
 	  },
@@ -1928,7 +1872,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      customDriversPromise.then(function () {
 	        var dbConfig = {
 	          name: customConfig.name || 'morel',
-	          storeName: customConfig.storeName || 'samples'
+	          storeName: customConfig.storeName || 'models'
 	        };
 
 	        if (customConfig.version) {
@@ -1972,6 +1916,185 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  _createClass(Storage, [{
+	    key: 'ready',
+	    value: function ready() {
+	      return this._initialized;
+	    }
+	  }, {
+	    key: 'get',
+	    value: function get(model) {
+	      var _this2 = this;
+
+	      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+	      var that = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        if (!_this2.ready()) {
+	          _this2.on('init', function () {
+	            _this2.get(model, options).then(resolve).catch(reject);
+	          });
+	          return;
+	        }
+
+	        var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
+
+	        // a non cached version straight from storage medium
+	        if (options.nonCached) {
+	          _this2.db.getItem(key).then(function (data) {
+	            var modelOptions = _underscore2.default.extend(data, { manager: that.manager });
+	            var sample = new that.Sample(data.attributes, modelOptions);
+	            resolve(sample);
+	          }).catch(reject);
+	          return;
+	        }
+
+	        var cachedModel = _this2._cache.get(key);
+	        resolve(cachedModel);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'getAll',
+	    value: function getAll() {
+	      var _this3 = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        if (!_this3.ready()) {
+	          _this3.on('init', function () {
+	            _this3.getAll().then(resolve).catch(reject);
+	          });
+	          return;
+	        }
+	        resolve(_this3._cache);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'set',
+	    value: function set() {
+	      var _this4 = this;
+
+	      var model = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	      var promise = new Promise(function (resolve, reject) {
+	        // early return if no id or cid
+	        if (!model.cid) {
+	          var error = new _Error2.default('Invalid model passed to storage');
+	          reject(error);
+	          return;
+	        }
+
+	        // needs to be on and running
+	        if (!_this4.ready()) {
+	          _this4.on('init', function () {
+	            _this4.set(model).then(resolve).catch(reject);
+	          });
+	          return;
+	        }
+
+	        var that = _this4;
+	        var key = model.cid;
+	        var dataJSON = typeof model.toJSON === 'function' ? model.toJSON() : model;
+	        _this4.db.setItem(key, dataJSON).then(function () {
+	          if (model instanceof that.Sample) {
+	            that._cache.set(model, { remove: false });
+	          } else {
+	            var modelOptions = _underscore2.default.extend(model, { manager: that.manager });
+	            var sample = new that.Sample(model.attributes, modelOptions);
+	            that._cache.set(sample, { remove: false });
+	          }
+	          resolve(model);
+	        }).catch(reject);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'remove',
+	    value: function remove(model) {
+	      var _this5 = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        if (!_this5.ready()) {
+	          _this5.on('init', function () {
+	            _this5.remove(model).then(resolve).catch(reject);
+	          });
+	          return;
+	        }
+	        var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
+	        _this5.db.removeItem(key).then(function () {
+	          delete model.manager; // delete a reference
+	          return model.destroy().then(resolve); // removes from cache
+	        }).catch(reject);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'has',
+	    value: function has(model) {
+	      var _this6 = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        if (!_this6.ready()) {
+	          _this6.on('init', function () {
+	            _this6.has(model).then(resolve).catch(reject);
+	          }, _this6);
+	          return;
+	        }
+	        _this6.get(model).then(function (data) {
+	          var found = (typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object';
+	          resolve(found);
+	        });
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'clear',
+	    value: function clear() {
+	      var _this7 = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        if (!_this7.ready()) {
+	          _this7.on('init', function () {
+	            _this7.clear().then(resolve).catch(reject);
+	          });
+	          return;
+	        }
+	        var that = _this7;
+	        _this7.db.clear().then(function () {
+	          that._cache.reset();
+	          resolve();
+	        }).catch(reject);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'size',
+	    value: function size() {
+	      var _this8 = this;
+
+	      var promise = new Promise(function (resolve, reject) {
+	        _this8.db.length().then(resolve).catch(reject);
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: '_attachListeners',
+	    value: function _attachListeners() {
+	      var that = this;
+	      // listen on cache because it is last updated
+	      this._cache.on('update', function () {
+	        that.trigger('update');
+	      });
+	    }
+	  }], [{
 	    key: '_getDriverOrder',
 	    value: function _getDriverOrder(driverOrder) {
 	      return driverOrder.map(function (driver) {
@@ -1989,243 +2112,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            return console.error('No such db driver!');
 	        }
-	      });
-	    }
-	  }, {
-	    key: 'ready',
-	    value: function ready() {
-	      return this._initialized;
-	    }
-	  }, {
-	    key: 'get',
-	    value: function get(model, callback) {
-	      var _this2 = this;
-
-	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-	      var that = this;
-
-	      var resolve = void 0;
-	      var reject = void 0;
-	      var promise = new Promise(function (_resolve, _reject) {
-	        resolve = _resolve;
-	        reject = _reject;
-	      });
-
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this2.get(model, callback, options).then(resolve);
-	        });
-	        return promise;
-	      }
-
-	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
-
-	      // a non cached version straight from storage medium
-	      if (options.nonCached) {
-	        this.db.getItem(key, function (err, data) {
-	          if (err) {
-	            callback && callback(err);
-	            reject(err);
-	            return promise;
-	          }
-	          var modelOptions = _underscore2.default.extend(data, { manager: that.manager });
-	          var sample = new that.Sample(data.attributes, modelOptions);
-	          callback && callback(null, sample);
-	          resolve(sample);
-	          return promise;
-	        });
-	        return promise;
-	      }
-
-	      var cachedModel = this._cache.get(key);
-	      callback && callback(null, cachedModel);
-	      resolve(cachedModel);
-	      return promise;
-	    }
-	  }, {
-	    key: 'getAll',
-	    value: function getAll(callback) {
-	      var _this3 = this;
-
-	      var resolve = void 0;
-	      // let reject;
-	      var promise = new Promise(function (_resolve) {
-	        resolve = _resolve;
-	        // reject = _reject;
-	      });
-
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this3.getAll(callback).then(resolve);
-	        });
-	        return promise;
-	      }
-	      callback && callback(null, this._cache);
-	      resolve(this._cache);
-	      return promise;
-	    }
-	  }, {
-	    key: 'set',
-	    value: function set() {
-	      var _this4 = this;
-
-	      var model = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	      var callback = arguments[1];
-
-	      var resolve = void 0;
-	      var reject = void 0;
-	      var promise = new Promise(function (_resolve, _reject) {
-	        resolve = _resolve;
-	        reject = _reject;
-	      });
-
-	      // early return if no id or cid
-	      if (!model.cid) {
-	        var error = new _Error2.default('Invalid model passed to storage');
-	        callback && callback(error);
-	        reject(error);
-	        return promise;
-	      }
-
-	      // needs to be on and running
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this4.set(model, callback).then(resolve);
-	        });
-	        return promise;
-	      }
-
-	      var that = this;
-	      var key = model.cid;
-	      var dataJSON = typeof model.toJSON === 'function' ? model.toJSON() : model;
-	      this.db.setItem(key, dataJSON, function (err) {
-	        if (err) {
-	          callback && callback(err);
-	          reject(err);
-	          return promise;
-	        }
-
-	        if (model instanceof that.Sample) {
-	          that._cache.set(model, { remove: false });
-	        } else {
-	          var modelOptions = _underscore2.default.extend(model, { manager: that.manager });
-	          var sample = new that.Sample(model.attributes, modelOptions);
-	          that._cache.set(sample, { remove: false });
-	        }
-
-	        callback && callback(null, model);
-	        resolve(model);
-	        return promise;
-	      });
-	      return promise;
-	    }
-	  }, {
-	    key: 'remove',
-	    value: function remove(model, callback) {
-	      var _this5 = this;
-
-	      var resolve = void 0;
-	      var reject = void 0;
-	      var promise = new Promise(function (_resolve, _reject) {
-	        resolve = _resolve;
-	        reject = _reject;
-	      });
-
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this5.remove(model, callback).then(resolve);
-	        });
-	        return promise;
-	      }
-	      var key = (typeof model === 'undefined' ? 'undefined' : _typeof(model)) === 'object' ? model.cid : model;
-	      this.db.removeItem(key, function (err) {
-	        if (err) {
-	          callback && callback(err);
-	          reject(err);
-	          return promise;
-	        }
-	        delete model.manager;
-	        return model.destroy().then(callback).then(resolve); // removes from cache
-	      });
-	      return promise;
-	    }
-	  }, {
-	    key: 'has',
-	    value: function has(model, callback) {
-	      var _this6 = this;
-
-	      var resolve = void 0;
-	      // let reject;
-	      var promise = new Promise(function (_resolve) {
-	        resolve = _resolve;
-	        // reject = _reject;
-	      });
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this6.has(model, callback).then(resolve);
-	        }, this);
-	        return promise;
-	      }
-	      this.get(model, function (err, data) {
-	        var found = (typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object';
-	        callback && callback(null, found);
-	        resolve(found);
-	      });
-	      return promise;
-	    }
-	  }, {
-	    key: 'clear',
-	    value: function clear(callback) {
-	      var _this7 = this;
-
-	      var resolve = void 0;
-	      var reject = void 0;
-	      var promise = new Promise(function (_resolve, _reject) {
-	        resolve = _resolve;
-	        reject = _reject;
-	      });
-
-	      if (!this.ready()) {
-	        this.on('init', function () {
-	          _this7.clear(callback);
-	        });
-	        return promise;
-	      }
-	      var that = this;
-	      this.db.clear(function (err) {
-	        if (err) {
-	          callback && callback(err);
-	          reject(err);
-	          return promise;
-	        }
-	        that._cache.reset();
-	        callback && callback();
-	        resolve();
-	        return promise;
-	      });
-	      return promise;
-	    }
-	  }, {
-	    key: 'size',
-	    value: function size(callback) {
-	      var resolve = void 0;
-	      // let reject;
-	      var promise = new Promise(function (_resolve) {
-	        resolve = _resolve;
-	        // reject = _reject;
-	      });
-
-	      this.db.length(callback).then(resolve);
-	      return promise;
-	    }
-	  }, {
-	    key: '_attachListeners',
-	    value: function _attachListeners() {
-	      var that = this;
-	      // listen on cache because it is last updated
-	      this._cache.on('update', function () {
-	        that.trigger('update');
 	      });
 	    }
 	  }]);

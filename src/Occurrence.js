@@ -1,7 +1,6 @@
 /** *********************************************************************
  * OCCURRENCE
  **********************************************************************/
-import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 import helpers from './helpers';
@@ -63,27 +62,18 @@ const Occurrence = Backbone.Model.extend({
   },
 
   destroy(options = {}) {
-    let promiseResolve;
     const promise = new Promise((fulfill) => {
-      promiseResolve = fulfill;
+      // removes from all collections etc
+      this.stopListening();
+      this.trigger('destroy', this, this.collection, options);
+
+      if (this.sample && !options.noSave) {
+        // save the changes permanentely
+        this.save(null, options).then(fulfill);
+      } else {
+        fulfill();
+      }
     });
-    // removes from all collections etc
-    this.stopListening();
-    this.trigger('destroy', this, this.collection, options);
-
-    if (this.sample && !options.noSave) {
-      const success = options.success;
-      options.success = () => {
-        promiseResolve();
-        success && success();
-      };
-
-      // save the changes permanentely
-      this.save(null, options);
-    } else {
-      promiseResolve();
-      options.success && options.success();
-    }
 
     return promise;
   },

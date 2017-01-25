@@ -20,20 +20,20 @@ class Morel {
   }
 
   // storage functions
-  get(model, callback, options) {
-    return this.storage.get(model, callback, options);
+  get(model, options) {
+    return this.storage.get(model, options);
   }
 
-  getAll(callback, options) {
-    this.storage.getAll(callback, options);
+  getAll(options) {
+    return this.storage.getAll(options);
   }
 
-  set(model, callback, options) {
+  set(model, options) {
     if (model instanceof Sample) {
       // not JSON but a whole sample model
       model.manager = this; // set the manager on new model
     }
-    return this.storage.set(model, callback, options);
+    return this.storage.set(model, options);
 
     // this.storage.set(model, (...args) => {
     //   this._addReference(model);
@@ -41,8 +41,8 @@ class Morel {
     // }, options);
   }
 
-  remove(model, callback, options) {
-    return this.storage.remove(model, callback, options);
+  remove(model, options) {
+    return this.storage.remove(model, options);
 
     // this.storage.remove(model, (...args) => {
     //   this._removeReference(model);
@@ -50,12 +50,12 @@ class Morel {
     // }, options);
   }
 
-  has(model, callback, options) {
-    return this.storage.has(model, callback, options);
+  has(model, options) {
+    return this.storage.has(model, options);
   }
 
-  clear(callback, options) {
-    return this.storage.clear(callback, options);
+  clear(options) {
+    return this.storage.clear(options);
   }
 
   /**
@@ -65,62 +65,50 @@ class Morel {
    * @returns {*}
    */
   syncAll(method, collection, options = {}) {
-    let syncAllPromiseResolve;
-    let syncAllPromiseReject;
-    const returnPromise = new Promise((fulfill, reject) => {
-      syncAllPromiseResolve = fulfill;
-      syncAllPromiseReject = reject;
-    });
-
-    // sync all in collection
-    function syncEach(collectionToSync) {
-      const toWait = [];
-      collectionToSync.each((model) => {
-        // todo: reuse the passed options model
-        const xhr = model.save(null, {
-          remote: true,
-          timeout: options.timeout,
-        });
-        let syncPromise;
-        if (!xhr) {
-          // model was invalid
-          syncPromise = Promise.resolve();
-        } else {
-          // valid model, but in case it fails sync carry on
-          syncPromise = new Promise((fulfill) => {
-            xhr.then(() => {
-              fulfill();
-            }).catch(() => {
-              fulfill();
-            });
+    const promise = new Promise((fulfill, reject) => {
+      // sync all in collection
+      function syncEach(collectionToSync) {
+        const toWait = [];
+        collectionToSync.each((model) => {
+          // todo: reuse the passed options model
+          const xhr = model.save(null, {
+            remote: true,
+            timeout: options.timeout,
           });
-        }
-        toWait.push(syncPromise);
-      });
+          let syncPromise;
+          if (!xhr) {
+            // model was invalid
+            syncPromise = Promise.resolve();
+          } else {
+            // valid model, but in case it fails sync carry on
+            syncPromise = new Promise((fulfillSync) => {
+              xhr.then(fulfillSync).catch(fulfillSync);
+            });
+          }
+          toWait.push(syncPromise);
+        });
 
-      Promise.all(toWait).then(() => {
         // after all is synced
-        syncAllPromiseResolve();
-        options.success && options.success();
-      });
-    }
+        Promise.all(toWait).then(fulfill);
+      }
 
-    if (collection) {
-      syncEach(collection);
-      return returnPromise;
-    }
-
-    // get all models to submit
-    this.getAll((err, receivedCollection) => {
-      if (err) {
-        syncAllPromiseReject();
-        options.error && options.error(err);
+      if (collection) {
+        syncEach(collection);
         return;
       }
 
-      syncEach(receivedCollection);
+      // get all models to submit
+      this.getAll((err, receivedCollection) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        syncEach(receivedCollection);
+      });
     });
-    return returnPromise;
+
+    return promise;
   }
 
   /**
@@ -129,26 +117,28 @@ class Morel {
    * @param model
    * @param options
    */
-  sync(method, model, options = {}) {
+  static sync(method, model, options = {}) {
     // don't resend
     if (model.getSyncStatus() === CONST.SYNCED ||
       model.getSyncStatus() === CONST.SYNCHRONISING) {
       return false;
     }
 
-    options.host = model.manager.options.host; // get the URL
+    const promise = new Promise((fulfill, reject) => {
+      options.host = model.manager.options.host; // get the URL
 
-    // on success update the model and save to local storage
-    const success = options.success;
-    options.success = (successModel) => {
-      successModel.save().then(() => {
-        successModel.trigger('sync');
-        success && success();
-      });
-    };
+      Morel.prototype.post.apply(model.manager, [model, options])
+        .then((successModel) => {
+          // on success update the model and save to local storage
+          successModel.save().then(() => {
+            successModel.trigger('sync');
+            fulfill(successModel);
+          });
+        })
+        .catch(reject);
+    });
 
-    const xhr = Morel.prototype.post.apply(model.manager, [model, options]);
-    return xhr;
+    return promise;
   }
 
   /**
@@ -166,34 +156,9 @@ class Morel {
       return false;
     }
 
-    model.synchronising = true;
-
-    // on success
-    const success = options.success;
-    options.success = () => {
-      model.synchronising = false;
-
-      // update model
-      model.metadata.warehouse_id = 1;
-      model.metadata.server_on =
-        model.metadata.updated_on =
-          model.metadata.synced_on = new Date();
-
-      success && success(model, null, options);
-    };
-
-    // on error
-    const error = options.error;
-    options.error = (xhr, textStatus, errorThrown) => {
-      model.synchronising = false;
-      model.trigger('error');
-
-      options.textStatus = textStatus;
-      options.errorThrown = errorThrown;
-      if (error) error.call(options.context, xhr, textStatus, errorThrown);
-    };
-
     const promise = new Promise((fulfill, reject) => {
+      model.synchronising = true;
+
       // async call to get the form data
       that._getModelFormData(model, (err, formData) => {
         // AJAX post
@@ -205,15 +170,32 @@ class Morel {
           processData: false,
           contentType: false,
           timeout: options.timeout || 30000, // 30s
-          success: options.success,
-          error: options.error,
         });
 
         // also resolve the promise
         xhr.done((data, textStatus, jqXHR) => {
-          fulfill(data, textStatus, jqXHR);
+          model.synchronising = false;
+
+          // update model
+          model.metadata.warehouse_id = 1;
+          const timeNow = new Date();
+          model.metadata.server_on = timeNow;
+          model.metadata.updated_on = timeNow;
+          model.metadata.synced_on = timeNow;
+
+          fulfill(model, null, options);
         });
+
         xhr.fail((jqXHR, textStatus, errorThrown) => {
+          if (errorThrown === 'Conflict') {
+            // duplicate occurred
+            fulfill(model, null, options);
+            return;
+          }
+
+          model.synchronising = false;
+          model.trigger('error');
+
           reject(jqXHR, textStatus, errorThrown);
         });
         model.trigger('request', model, xhr, options);
@@ -230,81 +212,82 @@ class Morel {
     });
   }
 
-  _getModelFormData(model, callback) {
-    const flattened = model.flatten(this._flattener);
-    let formData = new FormData();
+  _getModelFormData(model) {
+    const promise = new Promise((fulfill, reject) => {
+      const flattened = model.flatten(this._flattener);
+      let formData = new FormData();
 
-    // append images
-    let occCount = 0;
-    const occurrenceProcesses = [];
-    model.occurrences.each((occurrence) => {
-      // on async run occCount will be incremented before used for image name
-      const localOccCount = occCount;
-      let imgCount = 0;
+      // append images
+      let occCount = 0;
+      const occurrenceProcesses = [];
+      model.occurrences.each((occurrence) => {
+        // on async run occCount will be incremented before used for image name
+        const localOccCount = occCount;
+        let imgCount = 0;
 
-      const imageProcesses = [];
+        const imageProcesses = [];
 
-      occurrence.images.each((image) => {
-        let imagePromiseResolve;
-        const imagePromise = new Promise((fulfill) => {
-          imagePromiseResolve = fulfill;
+        occurrence.images.each((image) => {
+          const imagePromise = new Promise((_fulfill) => {
+            const url = image.getURL();
+            const type = image.get('type');
+
+            function onSuccess(err, img, dataURI, blob) {
+              const name = `sc:${localOccCount}::photo${imgCount}`;
+
+              // can provide both image/jpeg and jpeg
+              let extension = type;
+              let mediaType = type;
+              if (type.match(/image.*/)) {
+                extension = type.split('/')[1];
+              } else {
+                mediaType = `image/${mediaType}`;
+              }
+              if (!blob) {
+                blob = helpers.dataURItoBlob(dataURI, mediaType);
+              }
+
+              formData.append(name, blob, `pic.${extension}`);
+              imgCount++;
+              _fulfill();
+            }
+
+            if (!helpers.isDataURL(url)) {
+              // load image
+              const xhr = new XMLHttpRequest();
+              xhr.open('GET', url, true);
+              xhr.responseType = 'blob';
+              xhr.onload = () => {
+                onSuccess(null, null, null, xhr.response);
+              };
+              // todo check error case
+
+              xhr.send();
+            } else {
+              onSuccess(null, null, url);
+            }
+          });
+          imageProcesses.push(imagePromise);
         });
-        imageProcesses.push(imagePromise);
 
-        const url = image.getURL();
-        const type = image.get('type');
-
-        function onSuccess(err, img, dataURI, blob) {
-          const name = `sc:${localOccCount}::photo${imgCount}`;
-
-          // can provide both image/jpeg and jpeg
-          let extension = type;
-          let mediaType = type;
-          if (type.match(/image.*/)) {
-            extension = type.split('/')[1];
-          } else {
-            mediaType = `image/${mediaType}`;
-          }
-          if (!blob) {
-            blob = helpers.dataURItoBlob(dataURI, mediaType);
-          }
-
-          formData.append(name, blob, `pic.${extension}`);
-          imgCount++;
-          imagePromiseResolve();
-        }
-
-        if (!helpers.isDataURL(url)) {
-          // load image
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.responseType = 'blob';
-          xhr.onload = () => {
-            onSuccess(null, null, null, xhr.response);
-          };
-          // todo check error case
-
-          xhr.send();
-        } else {
-          onSuccess(null, null, url);
-        }
+        occurrenceProcesses.push(Promise.all(imageProcesses));
+        occCount++;
       });
 
-      occurrenceProcesses.push(Promise.all(imageProcesses));
-      occCount++;
+      Promise.all(occurrenceProcesses).then(() => {
+        // append attributes
+        const keys = Object.keys(flattened);
+        for (let i = 0; i < keys.length; i++) {
+          formData.append(keys[i], flattened[keys[i]]);
+        }
+
+        // Add authentication
+        formData = this.appendAuth(formData);
+        fulfill(formData);
+      });
     });
 
-    Promise.all(occurrenceProcesses).then(() => {
-      // append attributes
-      const keys = Object.keys(flattened);
-      for (let i = 0; i < keys.length; i++) {
-        formData.append(keys[i], flattened[keys[i]]);
-      }
-
-      // Add authentication
-      formData = this.appendAuth(formData);
-      callback(null, formData);
-    });
+    return promise;
   }
 
   _flattener(attributes, options) {
