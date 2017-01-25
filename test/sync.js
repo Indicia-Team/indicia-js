@@ -54,22 +54,19 @@ export default function (manager) {
     afterEach((done) => {
       Morel.prototype.post.restore();
       manager.sync.restore();
-      manager.clear(done);
+      manager.clear().then(done);
     });
 
-    it('should return error if no manager', () => {
+    it('should return false if no manager', () => {
       const sample = new Sample();
-      sample.save(null, {
-        error: (err) => {
-          expect(err).to.not.be.null;
-        },
-      });
+      const promise = sample.save();
+      expect(promise).to.be.false;
     });
 
     it('should save locally', (done) => {
       const sample = getRandomSample();
 
-      const valid = sample.save(null).then(() => {
+      const valid = sample.save().then(() => {
         expect(manager.sync.called).to.be.false;
         done();
       });
@@ -81,7 +78,7 @@ export default function (manager) {
       server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
-      const valid = sample.save(null).then(() => {
+      const valid = sample.save({ remote: true }).then(() => {
         expect(manager.sync.calledOnce).to.be.true;
         done();
       });
@@ -93,14 +90,15 @@ export default function (manager) {
       server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
-      sample.save(null, { remote: true }).then(() => {
+      sample.save({ remote: true }).then(() => {
         // get new manager without cached samples
         const Storage = manager.storage.Storage;
         const newManager = new Morel(_.extend(options, { Storage }));
-        newManager.get(sample, (err, savedSample) => {
-          expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
-          done(err);
-        });
+        newManager.get(sample)
+          .then((savedSample) => {
+            expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
+            done();
+          });
       });
     });
 
@@ -111,7 +109,7 @@ export default function (manager) {
         manager,
       });
 
-      const valid = sample.save(null, { remote: true });
+      const valid = sample.save({ remote: true });
       expect(valid).to.be.false;
     });
 
@@ -119,7 +117,7 @@ export default function (manager) {
       server.respondWith('POST', SAMPLE_POST_URL, errResponse);
       const sample = getRandomSample();
 
-      const valid = sample.save(null, { remote: true })
+      const valid = sample.save({ remote: true })
         .catch((model, xhr, errorThrown) => {
           expect(manager.sync.calledOnce).to.be.true;
           expect(errorThrown).to.not.be.null;
@@ -132,7 +130,7 @@ export default function (manager) {
     it('should set synchronising flag on sample', () => {
       const sample = getRandomSample();
 
-      sample.save(null, { remote: true });
+      sample.save({ remote: true });
       expect(sample.synchronising).to.be.true;
     });
 
@@ -141,25 +139,16 @@ export default function (manager) {
       server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
-      let valid = sample.save(null, { remote: true }).then(() => {
+      const valid = sample.save({ remote: true }).then(() => {
+        const newValid = sample.save({ remote: true });
+
+        expect(newValid).to.be.false;
         expect(manager.sync.calledTwice).to.be.true;
         expect(Morel.prototype.post.calledOnce).to.be.true;
         done();
       });
 
       expect(valid).to.be.instanceOf(Promise);
-
-      valid = sample.save(null, { remote: true })
-        .then(() => {
-          // should not be called
-          expect(true).to.be.false;
-        })
-        .catch(() => {
-          // should not be called
-          expect(true).to.be.false;
-        });
-
-      expect(valid).to.be.false;
     });
 
     it('should timeout', (done) => {
@@ -180,10 +169,7 @@ export default function (manager) {
 
       const sample = getRandomSample();
 
-      sample.save(null, {
-        remote: true,
-        error: errorCallback,
-      });
+      sample.save({ remote: true }).catch(errorCallback);
     });
 
     // it('should fire model sync events', (done) => {
@@ -227,7 +213,7 @@ export default function (manager) {
           manager,
         });
 
-        sample.save(null, { remote: true }).then(done);
+        sample.save({ remote: true }).then(done);
       });
     });
   });

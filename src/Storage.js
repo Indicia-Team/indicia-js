@@ -57,7 +57,7 @@ class Storage {
         }
 
         const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-        const drivers = that._getDriverOrder(driverOrder);
+        const drivers = Storage._getDriverOrder(driverOrder);
         const DB = customConfig.LocalForage || LocalForage;
 
         // init
@@ -66,7 +66,7 @@ class Storage {
           .then(() => {
             resolve(that.db);
           })
-          .catch(reason => reject(reason));
+          .catch(reject);
       });
     });
 

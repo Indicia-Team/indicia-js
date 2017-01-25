@@ -71,7 +71,7 @@ class Morel {
         const toWait = [];
         collectionToSync.each((model) => {
           // todo: reuse the passed options model
-          const xhr = model.save(null, {
+          const xhr = model.save({
             remote: true,
             timeout: options.timeout,
           });
@@ -98,14 +98,9 @@ class Morel {
       }
 
       // get all models to submit
-      this.getAll((err, receivedCollection) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
+      this.getAll().then((receivedCollection) => {
         syncEach(receivedCollection);
-      });
+      }).catch(reject);
     });
 
     return promise;
@@ -117,7 +112,7 @@ class Morel {
    * @param model
    * @param options
    */
-  static sync(method, model, options = {}) {
+  sync(method, model, options = {}) {
     // don't resend
     if (model.getSyncStatus() === CONST.SYNCED ||
       model.getSyncStatus() === CONST.SYNCHRONISING) {
@@ -128,7 +123,8 @@ class Morel {
       options.host = model.manager.options.host; // get the URL
 
       Morel.prototype.post.apply(model.manager, [model, options])
-        .then((successModel) => {
+        .then((args) => {
+          const [successModel, responseData] = args;
           // on success update the model and save to local storage
           successModel.save().then(() => {
             successModel.trigger('sync');
@@ -160,7 +156,7 @@ class Morel {
       model.synchronising = true;
 
       // async call to get the form data
-      that._getModelFormData(model, (err, formData) => {
+      that._getModelFormData(model).then((formData) => {
         // AJAX post
         const fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
         const xhr = options.xhr = Backbone.ajax({
@@ -173,7 +169,7 @@ class Morel {
         });
 
         // also resolve the promise
-        xhr.done((data, textStatus, jqXHR) => {
+        xhr.done((responseData) => {
           model.synchronising = false;
 
           // update model
@@ -183,20 +179,20 @@ class Morel {
           model.metadata.updated_on = timeNow;
           model.metadata.synced_on = timeNow;
 
-          fulfill(model, null, options);
+          fulfill([model, responseData]);
         });
 
         xhr.fail((jqXHR, textStatus, errorThrown) => {
           if (errorThrown === 'Conflict') {
             // duplicate occurred
-            fulfill(model, null, options);
+            fulfill([model, null, options]);
             return;
           }
 
           model.synchronising = false;
           model.trigger('error');
 
-          reject(jqXHR, textStatus, errorThrown);
+          reject([jqXHR, textStatus, errorThrown]);
         });
         model.trigger('request', model, xhr, options);
       });

@@ -41,9 +41,9 @@ const ImageModel = Backbone.Model.extend({
     this.initialize.apply(this, arguments);
   },
 
-  save(attrs, options = {}) {
+  save(options = {}) {
     if (!this.parent) return false;
-    return this.parent.save(attrs, options);
+    return this.parent.save(options);
   },
 
   destroy(options = {}) {
@@ -54,7 +54,7 @@ const ImageModel = Backbone.Model.extend({
 
       if (this.parent && !options.noSave) {
         // save the changes permanentely
-        this.save(null, options).then(fulfill);
+        this.save(options).then(fulfill);
         return;
       }
       fulfill();
@@ -91,9 +91,10 @@ const ImageModel = Backbone.Model.extend({
     const that = this;
     const promise = new Promise((fulfill, reject) => {
       ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT)
-        .then((image, data) => {
+        .then((args) => {
+          const [image, data] = args;
           that.set('data', data);
-          fulfill(image, data);
+          fulfill([image, data]);
         })
         .catch(reject);
     });
@@ -117,7 +118,8 @@ const ImageModel = Backbone.Model.extend({
           THUMBNAIL_WIDTH || options.width,
           THUMBNAIL_WIDTH || options.width
         )
-          .then((image, data) => {
+          .then((args) => {
+            const [image, data] = args;
             that.set('thumbnail', data);
             fulfill();
           })
@@ -168,9 +170,11 @@ _.extend(ImageModel, {
         let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
         if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-        ImageModel.resize(file, fileType, options.width, options.height, (err, image, dataURI) => {
-          fulfill(dataURI, fileType, image.width, image.height);
-        });
+        ImageModel.resize(file, fileType, options.width, options.height)
+          .then((args) => {
+            const [image, dataURI] = args;
+            fulfill([dataURI, fileType, image.width, image.height]);
+          });
         return;
       }
 
@@ -188,15 +192,17 @@ _.extend(ImageModel, {
       reader.onload = function (event) {
         if (options.width || options.height) {
           // resize
-          ImageModel.resize(event.target.result, file.type, options.width, options.height, (err, image, dataURI) => {
-            fulfill(dataURI, file.type, image.width, image.height);
-          });
+          ImageModel.resize(event.target.result, file.type, options.width, options.height)
+            .then((args) => {
+              const [image, dataURI] = args;
+              fulfill([dataURI, file.type, image.width, image.height]);
+            });
         } else {
           const image = new window.Image(); // native one
 
           image.onload = () => {
             const type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
-            fulfill(event.target.result, type, image.width, image.height);
+            fulfill([event.target.result, type, image.width, image.height]);
           };
           image.src = event.target.result;
         }
@@ -246,7 +252,7 @@ _.extend(ImageModel, {
         canvas.getContext('2d').drawImage(image, 0, 0, width, height);
 
         // Convert the canvas to a data URL in some format
-        fulfill(image, canvas.toDataURL(fileType));
+        fulfill([image, canvas.toDataURL(fileType)]);
       };
 
       image.src = data;

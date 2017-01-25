@@ -117,7 +117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Morel = function () {
 	  function Morel() {
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    _classCallCheck(this, Morel);
 
@@ -146,7 +146,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'set',
 	    value: function set(model, options) {
-	      if (model instanceof _Sample2.default) {
+	      if (model instanceof // replaced by build
+
+	      _Sample2.default) {
 	        // not JSON but a whole sample model
 	        model.manager = this; // set the manager on new model
 	      }
@@ -190,7 +192,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function syncAll(method, collection) {
 	      var _this = this;
 
-	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	      var promise = new Promise(function (fulfill, reject) {
 	        // sync all in collection
@@ -280,6 +282,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            timeout: options.timeout || 30000 });
 
 	          // also resolve the promise
+	          // 30s
 	          xhr.done(function (data, textStatus, jqXHR) {
 	            model.synchronising = false;
 
@@ -558,7 +561,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }], [{
 	    key: 'sync',
 	    value: function sync(method, model) {
-	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	      // don't resend
 	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
@@ -588,9 +591,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	_underscore2.default.extend(Morel, CONST, {
 	  /* global LIB_VERSION */
-	  VERSION: ("3.2.0"), // replaced by build
-
-	  Sample: _Sample2.default,
+	  VERSION: ("3.2.0"), Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
 	  Image: _Image2.default,
 	  Error: _Error2.default
@@ -656,8 +657,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  constructor: function constructor() {
 	    var _this = this;
 
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
 	    var attrs = attributes;
@@ -698,6 +699,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        server_on: null };
 	    }
 
+	    // updated on server
 	    if (options.occurrences) {
 	      (function () {
 	        var occurrences = [];
@@ -754,7 +756,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _this2 = this,
 	        _arguments = arguments;
 
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (!this.manager) {
 	      return false;
@@ -776,7 +778,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function destroy() {
 	    var _this3 = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var promise = new Promise(function (fulfill, reject) {
 	      if (_this3.manager && !options.noSave) {
@@ -936,8 +938,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          return _constants.CHANGED_LOCALLY;
 	          // changed_server
 	        } else if (meta.synced_on < meta.server_on) {
-	          return _constants.CHANGED_SERVER;
-	        }
+	            return _constants.CHANGED_SERVER;
+	          }
 	        return _constants.SYNCED;
 
 	        // partially initialized - we know the record exists on
@@ -988,6 +990,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      irish: 'OSIE', // for Irish Grid
 	      latlon: 4326 }
 	  },
+	  // for Latitude and Longitude in decimal form (WGS84 datum)
 	  location_name: { id: 'location_name' },
 	  form: { id: 'input_form' },
 	  group: { id: 'group_id' },
@@ -1027,7 +1030,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	/** *********************************************************************
 	 * HELPER FUNCTIONS
@@ -1164,11 +1167,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return date;
 	      // dashed
 	    } else if (regDash.test(date)) {
-	      date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
-	      // inversed dashed
-	    } else if (regDashInv.test(date)) {
-	      date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
-	    }
+	        date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
+	        // inversed dashed
+	      } else if (regDashInv.test(date)) {
+	          date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
+	        }
 	  }
 
 	  now = date || now;
@@ -1199,9 +1202,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * IMAGE
-	                                                                                                                                                                                                                                                                               **********************************************************************/
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
+	                                                                                                                                                                                                                                                   * IMAGE
+	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
 	var _jquery = __webpack_require__(7);
@@ -1231,8 +1234,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var ImageModel = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var attrs = attributes;
 	    if (typeof attributes === 'string') {
@@ -1262,7 +1265,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.initialize.apply(this, arguments);
 	  },
 	  save: function save(attrs) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (!this.parent) return false;
 	    return this.parent.save(attrs, options);
@@ -1270,7 +1273,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function destroy() {
 	    var _this = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var promise = new Promise(function (fulfill) {
 	      // removes from all collections etc
@@ -1336,7 +1339,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  addThumbnail: function addThumbnail() {
 	    var _this3 = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var that = this;
 
@@ -1383,8 +1386,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param onSaveSuccess
 	   * @returns {number}
 	   */
+
 	  getDataURI: function getDataURI(file) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var promise = new Promise(function (fulfill, reject) {
 	      // file paths
@@ -1513,8 +1517,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * ERROR
 	 **********************************************************************/
+
 	var Error = function Error() {
-	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	  _classCallCheck(this, Error);
 
@@ -1541,10 +1546,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _jquery = __webpack_require__(7);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
 	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -1567,16 +1568,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	/** *********************************************************************
-	 * OCCURRENCE
-	 **********************************************************************/
 	var Occurrence = _backbone2.default.Model.extend({
 	  Image: _Image2.default,
 	  constructor: function constructor() {
 	    var _this = this;
 
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
 	    var attrs = attributes;
@@ -1626,7 +1624,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.initialize.apply(this, arguments);
 	  },
 	  save: function save(attrs) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (!this.sample) return false;
 	    return this.sample.save(attrs, options);
@@ -1634,7 +1632,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function destroy() {
 	    var _this2 = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var promise = new Promise(function (fulfill) {
 	      // removes from all collections etc
@@ -1729,6 +1727,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Warehouse attributes and their values.
 	 */
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
 	Occurrence.keys = {
 	  taxon: {
 	    id: ''
@@ -1764,6 +1765,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * COLLECTION MODULE
 	 **********************************************************************/
+
+
 	var Collection = _backbone2.default.Collection.extend({
 	  flatten: function flatten(flattener) {
 	    var flattened = {};
@@ -1791,7 +1794,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * STORAGE
@@ -1840,10 +1843,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	   manager
 	   * @param options
 	   */
+
 	  function Storage() {
 	    var _this = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    _classCallCheck(this, Storage);
 
@@ -1925,7 +1929,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function get(model) {
 	      var _this2 = this;
 
-	      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	      var that = this;
 
@@ -1977,7 +1981,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function set() {
 	      var _this4 = this;
 
-	      var model = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	      var model = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	      var promise = new Promise(function (resolve, reject) {
 	        // early return if no id or cid

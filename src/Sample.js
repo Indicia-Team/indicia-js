@@ -106,25 +106,23 @@ const Sample = Backbone.Model.extend({
    * Saves the record to the record manager and if valid syncs it with DB
    * Returns on success: model, response, options
    */
-  save(attrs, options = {}) {
+  save(options = {}) {
     if (!this.manager) {
       return false;
     }
 
-    const promise = new Promise((fulfill, reject) => {
-      // only update local cache and DB
-      if (!options.remote) {
-        // todo: add attrs if passed to model
-        this.manager.set(this).then(fulfill).catch(reject);
-      }
+    // only update local cache and DB
+    if (!options.remote) {
+      // todo: add attrs if passed to model
+      return this.manager.set(this);
+    }
 
-      // remote
-      Backbone.Model.prototype.save.apply(this, arguments)
-        .then(fulfill)
-        .catch(reject);
-    });
+    if (this.validate()) {
+      return false;
+    }
 
-    return promise;
+    // remote
+    return Backbone.Model.prototype.save.apply(this, [null, options]);
   },
 
   destroy(options = {}) {

@@ -5,15 +5,15 @@ import Storage from '../src/Storage';
 /* eslint-disable no-unused-expressions */
 
 describe('Storage', () => {
-  const storage = new Storage({ });
+  const storage = new Storage({});
 
   // clean up
   after((done) => {
-    storage.clear(done);
+    storage.clear().then(done);
   });
 
   beforeEach((done) => {
-    storage.clear(done);
+    storage.clear().then(done);
   });
 
   it('should have a cache', (done) => {
@@ -32,7 +32,7 @@ describe('Storage', () => {
   });
 
   it('should return error if no id or cid has been passed', (done) => {
-    storage.set(12345, (err) => {
+    storage.set(12345).catch((err) => {
       expect(err).to.be.an('object');
       done();
     });
@@ -43,21 +43,18 @@ describe('Storage', () => {
       cid: helpers.getNewUUID(),
     };
 
-    storage.set(item, (setErr) => {
-      if (setErr) throw setErr.message;
-
-      storage.get(item, (getErr, data) => {
-        if (getErr) throw getErr.message;
-
+    storage.set(item)
+      .then(() => storage.get(item))
+      .then((data) => {
         expect(data instanceof storage.Sample).to.be.true;
         expect(data.cid).to.be.equal(item.cid);
 
-        storage.has(item, (hasErr, contains) => {
-          expect(contains).to.be.true;
-          done();
-        });
+        return storage.has(item);
+      })
+      .then((contains) => {
+        expect(contains).to.be.true;
+        done();
       });
-    });
   });
 
   it('should return promises', (done) => {
@@ -81,70 +78,47 @@ describe('Storage', () => {
   });
 
   it('should size', (done) => {
-    storage.size((sizeErr, size) => {
-      if (sizeErr) throw sizeErr.message;
-
-      const item = {
-        cid: helpers.getNewUUID(),
-      };
-
-      expect(size).to.be.equal(0);
-
-      storage.set(item, (setErr) => {
-        if (setErr) throw setErr.message;
-
-        storage.size((newSizeErr, newSize) => {
-          if (newSizeErr) throw newSizeErr.message;
-
-          expect(newSize).to.be.equal(1);
-          storage.clear((clearErr) => {
-            if (clearErr) throw clearErr.message;
-
-            storage.size((finalSizeErr, finalSize) => {
-              if (finalSizeErr) throw finalSizeErr.message;
-
-              expect(finalSize).to.be.equal(0);
-              done();
-            });
-          });
-        });
+    storage.size()
+      .then((size) => {
+        expect(size).to.be.equal(0);
+        return storage.set({ cid: helpers.getNewUUID() });
+      })
+      .then(() => storage.size())
+      .then((newSize) => {
+        expect(newSize).to.be.equal(1);
+        return storage.clear();
+      })
+      .then(() => storage.size())
+      .then((finalSize) => {
+        expect(finalSize).to.be.equal(0);
+        done();
       });
-    });
   });
 
   it('should getAll', (done) => {
-    storage.getAll((getAllErr, allItems) => {
-      if (getAllErr) throw getAllErr.message;
-
-      const item = {
-        cid: helpers.getNewUUID(),
-      };
-      expect(allItems).to.be.an.object;
-
-      storage.set(item, (setErr) => {
-        if (setErr) throw setErr.message;
-
-        storage.getAll((finalGetAllErr, newAllItems) => {
-          if (finalGetAllErr) throw finalGetAllErr.message;
-
-          storage.size((sizeErr, size) => {
-            if (sizeErr) throw sizeErr.message;
-
-            expect(size).to.be.equal(newAllItems.length);
-            done();
-          });
+    storage.getAll()
+      .then((allItems) => {
+        const item = { cid: helpers.getNewUUID() };
+        expect(allItems).to.be.an.object;
+        return storage.set(item);
+      })
+      .then(() => storage.getAll())
+      .then((newAllItems) => {
+        storage.size().then((size) => {
+          expect(size).to.be.equal(newAllItems.length);
+          done();
         });
       });
-    });
   });
 
   it('should pass error object to on database error', (done) => {
     const item = {
       cid: helpers.getNewUUID(),
-      corruptedAttribute: () => {},
+      corruptedAttribute: () => {
+      },
     };
 
-    storage.set(item, (setErr) => {
+    storage.set(item).catch((setErr) => {
       expect(setErr).to.be.not.null;
       done();
     });

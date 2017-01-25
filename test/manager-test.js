@@ -34,25 +34,20 @@ describe('Manager', () => {
     sample.set(key, value);
 
     manager.clear()
-      .then(() => {
-        return manager.set(sample);
+      .then(() => manager.set(sample))
+      .then(() => manager.get(sample))
+      .then((data) => {
+        expect(data).to.be.instanceof(Sample);
+        expect(sample.get(key)).to.be.equal(data.get(key));
       })
-      .then(() => {
-        manager.get(sample)
-          .then((data) => {
-            expect(data).to.be.instanceof(Sample);
-            expect(sample.get(key)).to.be.equal(data.get(key));
-          });
-
-        manager.has(sample)
-          .then((contains) => {
-            expect(contains).to.be.true;
-            manager.has(new Sample())
-              .then((finalContains) => {
-                expect(finalContains).to.be.false;
-                done();
-              });
-          });
+      .then(() => manager.has(sample))
+      .then((contains) => {
+        expect(contains).to.be.true;
+        return manager.has(new Sample());
+      })
+      .then((finalContains) => {
+        expect(finalContains).to.be.false;
+        done();
       })
       .catch((err) => {
         if (err) throw err.message;
@@ -94,17 +89,9 @@ describe('Manager', () => {
     const sample2 = new Sample();
 
     manager.clear()
-      .then(() => {
-        // add one
-        return manager.set(sample);
-      })
-      .then(() => {
-        // add two
-        return manager.set(sample2)
-      })
-      .then(() => {
-        return manager.has(sample);
-      })
+      .then(() => manager.set(sample))
+      .then(() => manager.set(sample2))
+      .then(() => manager.has(sample))
       .then((contains) => {
         expect(contains).to.be.true;
 
@@ -128,30 +115,18 @@ describe('Manager', () => {
   it('should remove', (done) => {
     const sample = new Sample();
 
-    manager.clear((err) => {
-      if (err) throw err.message;
-
-      manager.set(sample, (setErr) => {
-        if (setErr) throw setErr.message;
-
-        manager.has(sample, (hasErr, contains) => {
-          if (hasErr) throw hasErr.message;
-
-          expect(contains).to.be.true;
-
-          manager.remove(sample, (removeErr) => {
-            if (removeErr) throw removeErr.message;
-
-            manager.has(sample, (finalHasErr, finalContains) => {
-              if (finalHasErr) throw finalHasErr.message;
-
-              expect(finalContains).to.be.false;
-              done();
-            });
-          });
-        });
+    manager.clear()
+      .then(() => manager.set(sample))
+      .then(() => manager.has(sample))
+      .then((contains) => {
+        expect(contains).to.be.true;
+        return manager.remove(sample);
+      })
+      .then(() => manager.has(sample))
+      .then((finalContains) => {
+        expect(finalContains).to.be.false;
+        done();
       });
-    });
   });
 
   describe('Synchronisation', () => {

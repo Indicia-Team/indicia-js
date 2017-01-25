@@ -6,7 +6,8 @@ describe('Image', () => {
   describe('getDataURI', () => {
     it('should accept image path', (done) => {
       const file = '/base/test/images/image.jpg';
-      ImageModel.getDataURI(file).then((dataURI, type, width, height) => {
+      ImageModel.getDataURI(file).then((args) => {
+        const [dataURI, type, width, height] = args;
         expect(type).to.be.equal('jpeg');
         expect(width).to.be.equal(960);
         expect(height).to.be.equal(710);
@@ -22,7 +23,8 @@ describe('Image', () => {
       xhr.onload = function () {
         if (this.status === 200) {
           const file = this.response; // blob
-          ImageModel.getDataURI(file).then((dataURI, type, width, height) => {
+          ImageModel.getDataURI(file).then((args) => {
+            const [dataURI, type, width, height] = args;
             expect(type).to.be.equal('jpeg');
             expect(width).to.be.equal(960);
             expect(height).to.be.equal(710);

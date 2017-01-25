@@ -43,16 +43,17 @@ describe('Saving/destroying propagation', () => {
 
           // update the image and save it - the save should be permenant
           image.set('data', '1234');
-          const req = image.save(null).then(() => {
+          const req = image.save().then(() => {
             const newManager = new Morel(_.extend(options, { }));
-            newManager.getAll((err, samples) => {
-              expect(samples.length).to.be.equal(1);
-              const occurrenceFromDB = samples.at(0).occurrences.at(0);
-              const imageFromDB = occurrenceFromDB.images.at(0);
-              // check if change to image is permenant
-              expect(imageFromDB.get('data')).to.be.equal('1234');
-              done();
-            });
+            newManager.getAll()
+              .then((samples) => {
+                expect(samples.length).to.be.equal(1);
+                const occurrenceFromDB = samples.at(0).occurrences.at(0);
+                const imageFromDB = occurrenceFromDB.images.at(0);
+                // check if change to image is permenant
+                expect(imageFromDB.get('data')).to.be.equal('1234');
+                done();
+              });
           });
           expect(req).to.be.an.instanceof(Promise);
         })

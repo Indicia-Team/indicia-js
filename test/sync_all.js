@@ -45,7 +45,7 @@ export default function (manager) {
     afterEach((done) => {
       Morel.prototype.post.restore();
       manager.sync.restore();
-      manager.clear(done);
+      manager.clear().then(done);
     });
 
 
@@ -62,43 +62,44 @@ export default function (manager) {
     it('should post all', (done) => {
       server.respondWith('POST', SAMPLE_POST_URL, okResponse);
 
-      manager.getAll((err, models) => {
-        // check if collection is empty
-        expect(models.length).to.be.equal(0);
+      manager.getAll()
+        .then((models) => {
+          // check if collection is empty
+          expect(models.length).to.be.equal(0);
 
-        // add two valid samples
-        const sample = getRandomSample();
-        const sample2 = getRandomSample();
-        const sample3 = getRandomSample();
+          // add two valid samples
+          const sample = getRandomSample();
+          const sample2 = getRandomSample();
+          const sample3 = getRandomSample();
 
-        // delete occurrences for the sample to become invalid to sync
-        _.each(_.clone(sample3.occurrences.models), (model) => {
-          model.destroy({ noSave: true });
-        });
-
-        Promise.all([sample.save(), sample2.save(), sample3.save()])
-          .then(() => {
-            expect(models.length).to.be.equal(3);
-            // synchronise collection
-            manager.syncAll()
-              .then(() => {
-                expect(manager.sync.calledTwice).to.be.true;
-
-                // check sample status
-                models.each((model) => {
-                  const status = model.getSyncStatus();
-                  if (model.cid === sample3.cid) {
-                    // invalid record (without occurrences)
-                    // should not be synced
-                    expect(status).to.be.equal(Morel.LOCAL);
-                  } else {
-                    expect(status).to.be.equal(Morel.SYNCED);
-                  }
-                });
-                done();
-              });
+          // delete occurrences for the sample to become invalid to sync
+          _.each(_.clone(sample3.occurrences.models), (model) => {
+            model.destroy({ noSave: true });
           });
-      });
+
+          Promise.all([sample.save(), sample2.save(), sample3.save()])
+            .then(() => {
+              expect(models.length).to.be.equal(3);
+              // synchronise collection
+              manager.syncAll()
+                .then(() => {
+                  expect(manager.sync.calledTwice).to.be.true;
+
+                  // check sample status
+                  models.each((model) => {
+                    const status = model.getSyncStatus();
+                    if (model.cid === sample3.cid) {
+                      // invalid record (without occurrences)
+                      // should not be synced
+                      expect(status).to.be.equal(Morel.LOCAL);
+                    } else {
+                      expect(status).to.be.equal(Morel.SYNCED);
+                    }
+                  });
+                  done();
+                });
+            });
+        });
     });
 
     it('should not double sync all', (done) => {

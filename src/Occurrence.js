@@ -56,9 +56,9 @@ const Occurrence = Backbone.Model.extend({
     this.initialize.apply(this, arguments);
   },
 
-  save(attrs, options = {}) {
+  save(options = {}) {
     if (!this.sample) return false;
-    return this.sample.save(attrs, options);
+    return this.sample.save(options);
   },
 
   destroy(options = {}) {
@@ -69,7 +69,7 @@ const Occurrence = Backbone.Model.extend({
 
       if (this.sample && !options.noSave) {
         // save the changes permanentely
-        this.save(null, options).then(fulfill);
+        this.save(options).then(fulfill);
       } else {
         fulfill();
       }
