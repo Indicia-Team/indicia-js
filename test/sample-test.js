@@ -9,7 +9,7 @@ import Collection from '../src/Collection';
 import helpers from '../src/helpers';
 
 const options = {
-  url: '/mobile/submit',
+  host: '',
   appname: 'test',
   appsecret: 'mytest',
   website_id: 23,

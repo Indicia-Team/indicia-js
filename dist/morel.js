@@ -103,11 +103,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _constants = __webpack_require__(4);
 
-	var _constants2 = _interopRequireDefault(_constants);
+	var CONST = _interopRequireWildcard(_constants);
 
 	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -259,11 +261,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
 	      // don't resend
-	      if (model.getSyncStatus() === _constants2.default.SYNCED || model.getSyncStatus() === _constants2.default.SYNCHRONISING) {
+	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
 	        return false;
 	      }
 
-	      options.url = model.manager.options.url; // get the URL
+	      options.host = model.manager.options.host; // get the URL
 
 	      // on success update the model and save to local storage
 	      var success = options.success;
@@ -325,8 +327,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // async call to get the form data
 	        that._getModelFormData(model, function (err, formData) {
 	          // AJAX post
+	          var fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
 	          var xhr = options.xhr = _backbone2.default.ajax({
-	            url: options.url,
+	            url: options.host + fullSamplePostPath,
 	            type: 'POST',
 	            data: formData,
 	            processData: false,
@@ -599,7 +602,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	_underscore2.default.extend(Morel.prototype, _backbone2.default.Events);
 
-	_underscore2.default.extend(Morel, _constants2.default, {
+	_underscore2.default.extend(Morel, CONST, {
 	  /* global LIB_VERSION */
 	  VERSION: ("3.2.0"), // replaced by build
 
@@ -653,8 +656,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _underscore2 = _interopRequireDefault(_underscore);
 
 	var _constants = __webpack_require__(4);
-
-	var _constants2 = _interopRequireDefault(_constants);
 
 	var _helpers = __webpack_require__(5);
 
@@ -975,7 +976,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var meta = this.metadata;
 	    // on server
 	    if (this.synchronising) {
-	      return _constants2.default.SYNCHRONISING;
+	      return _constants.SYNCHRONISING;
 	    }
 
 	    if (meta.warehouse_id) {
@@ -985,23 +986,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (meta.synced_on < meta.updated_on) {
 	          // changed_server - conflict!
 	          if (meta.synced_on < meta.server_on) {
-	            return _constants2.default.CONFLICT;
+	            return _constants.CONFLICT;
 	          }
-	          return _constants2.default.CHANGED_LOCALLY;
+	          return _constants.CHANGED_LOCALLY;
 	          // changed_server
 	        } else if (meta.synced_on < meta.server_on) {
-	          return _constants2.default.CHANGED_SERVER;
+	          return _constants.CHANGED_SERVER;
 	        }
-	        return _constants2.default.SYNCED;
+	        return _constants.SYNCED;
 
 	        // partially initialized - we know the record exists on
 	        // server but has not yet been downloaded
 	      }
-	      return _constants2.default.SERVER;
+	      return _constants.SERVER;
 
 	      // local only
 	    }
-	    return _constants2.default.LOCAL;
+	    return _constants.LOCAL;
 	  },
 
 
@@ -1046,20 +1047,22 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.default = {
-	  SYNCHRONISING: 0,
-	  SYNCED: 1,
-	  LOCAL: 2,
-	  SERVER: 3,
-	  CHANGED_LOCALLY: 4,
-	  CHANGED_SERVER: 5,
-	  CONFLICT: -1
-	};
+	/* eslint-disable */
+	var API_BASE = exports.API_BASE = 'api/',
+	    API_VER = exports.API_VER = 'v0.1',
+	    API_SAMPLES_PATH = exports.API_SAMPLES_PATH = '/samples',
+	    SYNCHRONISING = exports.SYNCHRONISING = 0,
+	    SYNCED = exports.SYNCED = 1,
+	    LOCAL = exports.LOCAL = 2,
+	    SERVER = exports.SERVER = 3,
+	    CHANGED_LOCALLY = exports.CHANGED_LOCALLY = 4,
+	    CHANGED_SERVER = exports.CHANGED_SERVER = 5,
+	    CONFLICT = exports.CONFLICT = -1;
 
 /***/ },
 /* 5 */

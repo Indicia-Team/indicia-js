@@ -4,11 +4,12 @@ import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
+import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
-
+const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
 const options = {
-  url: '/mobile/submit',
+  host: SAMPLE_POST_URL,
   appname: 'test',
   appsecret: 'mytest',
   website_id: 23,
@@ -79,7 +80,7 @@ export default function (manager) {
     });
 
     it('should post with remote option', (done) => {
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -94,7 +95,7 @@ export default function (manager) {
     });
 
     it('should update remotely synced record', (done) => {
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
       sample.save(null, {
@@ -123,7 +124,7 @@ export default function (manager) {
     });
 
     it('should return error if unsuccessful remote sync', (done) => {
-      server.respondWith('POST', '/mobile/submit', errResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, errResponse);
       const sample = getRandomSample();
 
       const valid = sample.save(null, {
@@ -147,7 +148,7 @@ export default function (manager) {
 
 
     it('should not double sync', (done) => {
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
       let valid = sample.save(null, {
@@ -213,7 +214,7 @@ export default function (manager) {
 
     describe('occurrences with images', (done) => {
       it('should send both dataURI and absolute pathed images', () => {
-        server.respondWith('POST', '/mobile/submit', okResponse);
+        server.respondWith('POST', SAMPLE_POST_URL, okResponse);
         const image1 = new ImageModel({
           data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',

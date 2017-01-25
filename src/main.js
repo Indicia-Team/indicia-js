@@ -5,7 +5,7 @@ import Occurrence from './Occurrence';
 import Storage from './Storage';
 import ImageModel from './Image';
 import Error from './Error';
-import CONST from './constants';
+import * as CONST from './constants';
 import helpers from './helpers';
 
 class Morel {
@@ -136,7 +136,7 @@ class Morel {
       return false;
     }
 
-    options.url = model.manager.options.url; // get the URL
+    options.host = model.manager.options.host; // get the URL
 
     // on success update the model and save to local storage
     const success = options.success;
@@ -197,8 +197,9 @@ class Morel {
       // async call to get the form data
       that._getModelFormData(model, (err, formData) => {
         // AJAX post
+        const fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
         const xhr = options.xhr = Backbone.ajax({
-          url: options.url,
+          url: options.host + fullSamplePostPath,
           type: 'POST',
           data: formData,
           processData: false,

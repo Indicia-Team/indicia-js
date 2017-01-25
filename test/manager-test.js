@@ -6,7 +6,7 @@ import syncAllTests from './sync_all';
 /* eslint-disable no-unused-expressions */
 
 const options = {
-  url: '/mobile/submit',
+  host: '',
   appname: 'test',
   appsecret: 'mytest',
   website_id: 23,
@@ -21,9 +21,9 @@ describe('Manager', () => {
     manager.clear(done);
   });
 
-  it('should have URL passed through options', () => {
-    const URL = options.url;
-    expect(manager.options.url).to.be.equal(URL);
+  it('should have HOST passed through options', () => {
+    const HOST = options.host;
+    expect(manager.options.host).to.be.equal(HOST);
   });
 
   it('should set, get and has', (done) => {

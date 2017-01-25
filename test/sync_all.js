@@ -2,8 +2,10 @@ import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
+import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
+const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
 
 export default function (manager) {
   describe('Sync All', () => {
@@ -63,7 +65,7 @@ export default function (manager) {
     });
 
     it('should post all', (done) => {
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
 
       manager.getAll((err, models) => {
         // check if collection is empty
@@ -109,7 +111,7 @@ export default function (manager) {
       const sample = getRandomSample();
       const sample2 = getRandomSample();
 
-      server.respondWith('POST', '/mobile/submit', okResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       Promise.all([sample.save(), sample2.save()])
         .then(() => {
           // synchronise collection twice

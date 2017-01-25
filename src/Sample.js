@@ -8,7 +8,7 @@
  **********************************************************************/
 import Backbone from 'backbone';
 import _ from 'underscore';
-import CONST from './constants';
+import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED, SERVER, LOCAL } from './constants';
 import helpers from './helpers';
 import Image from './Image';
 import Occurrence from './Occurrence';
@@ -294,7 +294,7 @@ const Sample = Backbone.Model.extend({
     const meta = this.metadata;
     // on server
     if (this.synchronising) {
-      return CONST.SYNCHRONISING;
+      return SYNCHRONISING;
     }
 
     if (meta.warehouse_id) {
@@ -304,23 +304,23 @@ const Sample = Backbone.Model.extend({
         if (meta.synced_on < meta.updated_on) {
           // changed_server - conflict!
           if (meta.synced_on < meta.server_on) {
-            return CONST.CONFLICT;
+            return CONFLICT;
           }
-          return CONST.CHANGED_LOCALLY;
+          return CHANGED_LOCALLY;
           // changed_server
         } else if (meta.synced_on < meta.server_on) {
-          return CONST.CHANGED_SERVER;
+          return CHANGED_SERVER;
         }
-        return CONST.SYNCED;
+        return SYNCED;
 
         // partially initialized - we know the record exists on
         // server but has not yet been downloaded
       }
-      return CONST.SERVER;
+      return SERVER;
 
       // local only
     }
-    return CONST.LOCAL;
+    return LOCAL;
   },
 
   /**

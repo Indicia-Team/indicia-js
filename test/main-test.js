@@ -1,5 +1,6 @@
 import _ from 'underscore';
 import Morel from '../src/main';
+import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
@@ -7,7 +8,7 @@ import ImageModel from '../src/Image';
 /* eslint-disable no-unused-expressions */
 
 const options = {
-  url: '/mobile/submit',
+  host: API_BASE + API_VER + API_SAMPLES_PATH,
   appname: 'test',
   appsecret: 'mytest',
   website_id: 23,
