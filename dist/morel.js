@@ -71,6 +71,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _underscore = __webpack_require__(1);
@@ -117,7 +119,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Morel = function () {
 	  function Morel() {
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    _classCallCheck(this, Morel);
 
@@ -146,9 +148,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'set',
 	    value: function set(model, options) {
-	      if (model instanceof // replaced by build
-
-	      _Sample2.default) {
+	      if (model instanceof _Sample2.default) {
 	        // not JSON but a whole sample model
 	        model.manager = this; // set the manager on new model
 	      }
@@ -190,54 +190,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'syncAll',
 	    value: function syncAll(method, collection) {
-	      var _this = this;
+	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-	      var promise = new Promise(function (fulfill, reject) {
-	        // sync all in collection
-	        function syncEach(collectionToSync) {
-	          var toWait = [];
-	          collectionToSync.each(function (model) {
-	            // todo: reuse the passed options model
-	            var xhr = model.save(null, {
-	              remote: true,
-	              timeout: options.timeout
-	            });
-	            var syncPromise = void 0;
-	            if (!xhr) {
-	              // model was invalid
-	              syncPromise = Promise.resolve();
-	            } else {
-	              // valid model, but in case it fails sync carry on
-	              syncPromise = new Promise(function (fulfillSync) {
-	                xhr.then(fulfillSync).catch(fulfillSync);
-	              });
-	            }
-	            toWait.push(syncPromise);
+	      // sync all in collection
+	      function syncEach(collectionToSync) {
+	        var toWait = [];
+	        collectionToSync.each(function (model) {
+	          // todo: reuse the passed options model
+	          var xhr = model.save({
+	            remote: true,
+	            timeout: options.timeout
 	          });
-
-	          // after all is synced
-	          Promise.all(toWait).then(fulfill);
-	        }
-
-	        if (collection) {
-	          syncEach(collection);
-	          return;
-	        }
-
-	        // get all models to submit
-	        _this.getAll(function (err, receivedCollection) {
-	          if (err) {
-	            reject(err);
-	            return;
+	          var syncPromise = void 0;
+	          if (!xhr) {
+	            // model was invalid
+	            syncPromise = Promise.resolve();
+	          } else {
+	            // valid model, but in case it fails sync carry on
+	            syncPromise = new Promise(function (fulfillSync) {
+	              xhr.then(fulfillSync, fulfillSync);
+	            });
 	          }
-
-	          syncEach(receivedCollection);
+	          toWait.push(syncPromise);
 	        });
-	      });
 
-	      return promise;
+	        // after all is synced
+	        return Promise.all(toWait);
+	      }
+
+	      if (collection) {
+	        return syncEach(collection);
+	      }
+
+	      // get all models to submit
+	      return this.getAll().then(syncEach);
 	    }
 
 	    /**
@@ -248,14 +234,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 
 	  }, {
-	    key: 'post',
+	    key: 'sync',
+	    value: function sync(method, model) {
+	      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
+	      // don't resend
+	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
+	        return false;
+	      }
+
+	      var promise = new Promise(function (fulfill, reject) {
+	        options.host = model.manager.options.host; // get the URL
+
+	        Morel.prototype.post.apply(model.manager, [model, options]).then(function (successModel) {
+	          // on success update the model and save to local storage
+	          successModel.save().then(function () {
+	            successModel.trigger('sync');
+	            fulfill(successModel);
+	          });
+	        }).catch(reject);
+	      });
+
+	      return promise;
+	    }
 
 	    /**
 	     * Posts a record to remote server.
 	     * @param model
 	     * @param options
 	     */
+
+	  }, {
+	    key: 'post',
 	    value: function post(model, options) {
 	      var that = this;
 	      // call user defined onSend function to modify
@@ -266,53 +276,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return false;
 	      }
 
-	      var promise = new Promise(function (fulfill, reject) {
-	        model.synchronising = true;
+	      model.synchronising = true;
 
-	        // async call to get the form data
-	        that._getModelFormData(model, function (err, formData) {
-	          // AJAX post
-	          var fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
-	          var xhr = options.xhr = _backbone2.default.ajax({
-	            url: options.host + fullSamplePostPath,
-	            type: 'POST',
-	            data: formData,
-	            processData: false,
-	            contentType: false,
-	            timeout: options.timeout || 30000 });
-
-	          // also resolve the promise
-	          // 30s
-	          xhr.done(function (data, textStatus, jqXHR) {
-	            model.synchronising = false;
-
-	            // update model
-	            model.metadata.warehouse_id = 1;
-	            var timeNow = new Date();
-	            model.metadata.server_on = timeNow;
-	            model.metadata.updated_on = timeNow;
-	            model.metadata.synced_on = timeNow;
-
-	            fulfill(model, null, options);
-	          });
-
-	          xhr.fail(function (jqXHR, textStatus, errorThrown) {
-	            if (errorThrown === 'Conflict') {
-	              // duplicate occurred
-	              fulfill(model, null, options);
-	              return;
-	            }
-
-	            model.synchronising = false;
-	            model.trigger('error');
-
-	            reject(jqXHR, textStatus, errorThrown);
-	          });
-	          model.trigger('request', model, xhr, options);
-	        });
+	      // async call to get the form data
+	      return that._getModelFormData(model).then(function (formData) {
+	        return Morel._ajaxModel(formData, model, options);
 	      });
-
-	      return promise;
 	    }
 	  }, {
 	    key: '_attachListeners',
@@ -325,10 +294,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: '_getModelFormData',
 	    value: function _getModelFormData(model) {
-	      var _this2 = this;
+	      var _this = this;
 
-	      var promise = new Promise(function (fulfill, reject) {
-	        var flattened = model.flatten(_this2._flattener);
+	      var promise = new Promise(function (fulfill) {
+	        var flattened = model.flatten(_this._flattener);
 	        var formData = new FormData();
 
 	        // append images
@@ -398,7 +367,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 
 	          // Add authentication
-	          formData = _this2.appendAuth(formData);
+	          formData = _this.appendAuth(formData);
 	          fulfill(formData);
 	        });
 	      });
@@ -559,25 +528,92 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // }
 
 	  }], [{
-	    key: 'sync',
-	    value: function sync(method, model) {
-	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-	      // don't resend
-	      if (model.getSyncStatus() === CONST.SYNCED || model.getSyncStatus() === CONST.SYNCHRONISING) {
-	        return false;
-	      }
-
+	    key: '_ajaxModel',
+	    value: function _ajaxModel(formData, model, options) {
+	      // todo: use ajax promise
 	      var promise = new Promise(function (fulfill, reject) {
-	        options.host = model.manager.options.host; // get the URL
+	        // AJAX post
+	        var fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
+	        var xhr = options.xhr = _backbone2.default.ajax({
+	          url: options.host + fullSamplePostPath,
+	          type: 'POST',
+	          data: formData,
+	          processData: false,
+	          contentType: false,
+	          timeout: options.timeout || 30000 });
 
-	        Morel.prototype.post.apply(model.manager, [model, options]).then(function (successModel) {
-	          // on success update the model and save to local storage
-	          successModel.save().then(function () {
-	            successModel.trigger('sync');
-	            fulfill(successModel);
+	        function getIDs(submodels) {
+	          var ids = {};
+	          submodels.forEach(function (submodel) {
+	            ids[submodel.external_key] = submodel.id;
+	            if (submodel.submodels) {
+	              _underscore2.default.extend(ids, getIDs(submodel.submodels)); // recursive iterate
+	            }
 	          });
-	        }).catch(reject);
+	          return ids;
+	        }
+
+	        function setModelRemoteID(model, newRemoteIDs) {
+	          model.id = newRemoteIDs[model.cid];
+
+	          if (model.occurrences) {
+	            model.occurrences.each(function (occurrence) {
+	              // recursively iterate over submodels
+	              setModelRemoteID(occurrence, newRemoteIDs);
+	            });
+	          }
+	        }
+
+	        xhr.done(function (responseData) {
+	          model.synchronising = false;
+
+	          // update the model and submodels with new remote IDs
+	          var newRemoteIDs = {};
+	          newRemoteIDs[responseData.data.external_key] = responseData.data.id;
+	          _underscore2.default.extend(newRemoteIDs, getIDs(responseData.data.submodels));
+	          setModelRemoteID(model, newRemoteIDs);
+
+	          var timeNow = new Date();
+	          model.metadata.server_on = timeNow;
+	          model.metadata.updated_on = timeNow;
+	          model.metadata.synced_on = timeNow;
+
+	          model.save().then(fulfill);
+	        });
+
+	        xhr.fail(function (jqXHR, textStatus, errorThrown) {
+	          model.synchronising = false;
+
+	          if (errorThrown === 'Conflict') {
+	            var _ret2 = function () {
+	              // duplicate occurred
+	              var newRemoteIDs = {};
+	              jqXHR.responseJSON.errors.forEach(function (error) {
+	                newRemoteIDs[model.cid] = error.sample_id;
+	                newRemoteIDs[error.external_key] = error.id;
+	              });
+	              setModelRemoteID(model, newRemoteIDs);
+
+	              var timeNow = new Date();
+	              model.metadata.server_on = timeNow;
+	              model.metadata.updated_on = timeNow;
+	              model.metadata.synced_on = timeNow;
+	              model.save().then(fulfill);
+	              return {
+	                v: void 0
+	              };
+	            }();
+
+	            if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	          }
+
+	          model.trigger('error');
+
+	          var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
+	          reject(error);
+	        });
+
+	        model.trigger('request', model, xhr, options);
 	      });
 
 	      return promise;
@@ -591,7 +627,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	_underscore2.default.extend(Morel, CONST, {
 	  /* global LIB_VERSION */
-	  VERSION: ("3.2.0"), Sample: _Sample2.default,
+	  VERSION: ("3.2.0"), // replaced by build
+
+	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
 	  Image: _Image2.default,
 	  Error: _Error2.default
@@ -657,8 +695,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  constructor: function constructor() {
 	    var _this = this;
 
-	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    var that = this;
 	    var attrs = attributes;
@@ -670,6 +708,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
+	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
@@ -693,13 +732,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        created_on: today,
 	        updated_on: today,
 
-	        warehouse_id: null,
-
 	        synced_on: null, // set when fully initialized only
 	        server_on: null };
 	    }
 
-	    // updated on server
 	    if (options.occurrences) {
 	      (function () {
 	        var occurrences = [];
@@ -752,42 +788,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * Saves the record to the record manager and if valid syncs it with DB
 	   * Returns on success: model, response, options
 	   */
-	  save: function save(attrs) {
-	    var _this2 = this,
-	        _arguments = arguments;
-
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	  save: function save() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    if (!this.manager) {
 	      return false;
 	    }
 
-	    var promise = new Promise(function (fulfill, reject) {
-	      // only update local cache and DB
-	      if (!options.remote) {
-	        // todo: add attrs if passed to model
-	        _this2.manager.set(_this2).then(fulfill).catch(reject);
-	      }
+	    // only update local cache and DB
+	    if (!options.remote) {
+	      // todo: add attrs if passed to model
+	      return this.manager.set(this);
+	    }
 
-	      // remote
-	      _backbone2.default.Model.prototype.save.apply(_this2, _arguments).then(fulfill).catch(reject);
-	    });
+	    if (this.validate()) {
+	      return false;
+	    }
 
-	    return promise;
+	    // remote
+	    return _backbone2.default.Model.prototype.save.apply(this, [null, options]);
 	  },
 	  destroy: function destroy() {
-	    var _this3 = this;
+	    var _this2 = this;
 
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    var promise = new Promise(function (fulfill, reject) {
-	      if (_this3.manager && !options.noSave) {
+	      if (_this2.manager && !options.noSave) {
 	        // save the changes permanentely
-	        _this3.manager.remove(_this3).then(fulfill).catch(reject);
+	        _this2.manager.remove(_this2).then(fulfill, reject);
 	      } else {
 	        // removes from all collections etc
-	        _this3.stopListening();
-	        _this3.trigger('destroy', _this3, _this3.collection, options);
+	        _this2.stopListening();
+	        _this2.trigger('destroy', _this2, _this2.collection, options);
 
 	        fulfill();
 	      }
@@ -926,7 +959,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return _constants.SYNCHRONISING;
 	    }
 
-	    if (meta.warehouse_id) {
+	    if (this.id >= 0) {
 	      // fully initialized
 	      if (meta.synced_on) {
 	        // changed_locally
@@ -938,8 +971,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          return _constants.CHANGED_LOCALLY;
 	          // changed_server
 	        } else if (meta.synced_on < meta.server_on) {
-	            return _constants.CHANGED_SERVER;
-	          }
+	          return _constants.CHANGED_SERVER;
+	        }
 	        return _constants.SYNCED;
 
 	        // partially initialized - we know the record exists on
@@ -990,7 +1023,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      irish: 'OSIE', // for Irish Grid
 	      latlon: 4326 }
 	  },
-	  // for Latitude and Longitude in decimal form (WGS84 datum)
 	  location_name: { id: 'location_name' },
 	  form: { id: 'input_form' },
 	  group: { id: 'group_id' },
@@ -1030,7 +1062,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	/** *********************************************************************
 	 * HELPER FUNCTIONS
@@ -1167,11 +1199,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return date;
 	      // dashed
 	    } else if (regDash.test(date)) {
-	        date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
-	        // inversed dashed
-	      } else if (regDashInv.test(date)) {
-	          date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
-	        }
+	      date = new Date(window.parseInt(dateArray[0]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[2]));
+	      // inversed dashed
+	    } else if (regDashInv.test(date)) {
+	      date = new Date(window.parseInt(dateArray[2]), window.parseInt(dateArray[1]) - 1, window.parseInt(dateArray[0]));
+	    }
 	  }
 
 	  now = date || now;
@@ -1202,9 +1234,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                   * IMAGE
-	                                                                                                                                                                                                                                                   **********************************************************************/
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * IMAGE
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          **********************************************************************/
 
 
 	var _jquery = __webpack_require__(7);
@@ -1234,8 +1268,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var ImageModel = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
-	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    var attrs = attributes;
 	    if (typeof attributes === 'string') {
@@ -1244,6 +1278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return;
 	    }
 
+	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
 
@@ -1264,16 +1299,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.initialize.apply(this, arguments);
 	  },
-	  save: function save(attrs) {
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	  save: function save() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    if (!this.parent) return false;
-	    return this.parent.save(attrs, options);
+	    return this.parent.save(options);
 	  },
 	  destroy: function destroy() {
 	    var _this = this;
 
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    var promise = new Promise(function (fulfill) {
 	      // removes from all collections etc
@@ -1282,7 +1317,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      if (_this.parent && !options.noSave) {
 	        // save the changes permanentely
-	        _this.save(null, options).then(fulfill);
+	        _this.save(options).then(fulfill);
 	        return;
 	      }
 	      fulfill();
@@ -1323,9 +1358,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var that = this;
 	    var promise = new Promise(function (fulfill, reject) {
-	      ImageModel.resize(_this2.getURL(), _this2.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (image, data) {
+	      ImageModel.resize(_this2.getURL(), _this2.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (args) {
+	        var _args = _slicedToArray(args, 2),
+	            image = _args[0],
+	            data = _args[1];
+
 	        that.set('data', data);
-	        fulfill(image, data);
+	        fulfill([image, data]);
 	      }).catch(reject);
 	    });
 	    return promise;
@@ -1339,7 +1378,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  addThumbnail: function addThumbnail() {
 	    var _this3 = this;
 
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    var that = this;
 
@@ -1347,7 +1386,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // check if data source is dataURI
 	      var re = /^data:/i;
 	      if (re.test(_this3.getURL())) {
-	        ImageModel.resize(_this3.getURL(), _this3.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (image, data) {
+	        ImageModel.resize(_this3.getURL(), _this3.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (args) {
+	          var _args2 = _slicedToArray(args, 2),
+	              image = _args2[0],
+	              data = _args2[1];
+
 	          that.set('thumbnail', data);
 	          fulfill();
 	        }).catch(reject);
@@ -1386,9 +1429,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param onSaveSuccess
 	   * @returns {number}
 	   */
-
 	  getDataURI: function getDataURI(file) {
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    var promise = new Promise(function (fulfill, reject) {
 	      // file paths
@@ -1398,8 +1440,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
 	          if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-	          ImageModel.resize(file, fileType, options.width, options.height, function (err, image, dataURI) {
-	            fulfill(dataURI, fileType, image.width, image.height);
+	          ImageModel.resize(file, fileType, options.width, options.height).then(function (args) {
+	            var _args3 = _slicedToArray(args, 2),
+	                image = _args3[0],
+	                dataURI = _args3[1];
+
+	            fulfill([dataURI, fileType, image.width, image.height]);
 	          });
 	          return {
 	            v: void 0
@@ -1423,8 +1469,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	      reader.onload = function (event) {
 	        if (options.width || options.height) {
 	          // resize
-	          ImageModel.resize(event.target.result, file.type, options.width, options.height, function (err, image, dataURI) {
-	            fulfill(dataURI, file.type, image.width, image.height);
+	          ImageModel.resize(event.target.result, file.type, options.width, options.height).then(function (args) {
+	            var _args4 = _slicedToArray(args, 2),
+	                image = _args4[0],
+	                dataURI = _args4[1];
+
+	            fulfill([dataURI, file.type, image.width, image.height]);
 	          });
 	        } else {
 	          (function () {
@@ -1432,7 +1482,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            image.onload = function () {
 	              var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
-	              fulfill(event.target.result, type, image.width, image.height);
+	              fulfill([event.target.result, type, image.width, image.height]);
 	            };
 	            image.src = event.target.result;
 	          })();
@@ -1484,7 +1534,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        canvas.getContext('2d').drawImage(image, 0, 0, width, height);
 
 	        // Convert the canvas to a data URL in some format
-	        fulfill(image, canvas.toDataURL(fileType));
+	        fulfill([image, canvas.toDataURL(fileType)]);
 	      };
 
 	      image.src = data;
@@ -1517,9 +1567,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * ERROR
 	 **********************************************************************/
-
 	var Error = function Error() {
-	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	  _classCallCheck(this, Error);
 
@@ -1573,12 +1622,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  constructor: function constructor() {
 	    var _this = this;
 
-	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    var that = this;
 	    var attrs = attributes;
 
+	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setSample(options.sample || this.sample);
 
@@ -1623,16 +1673,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.initialize.apply(this, arguments);
 	  },
-	  save: function save(attrs) {
-	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	  save: function save() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    if (!this.sample) return false;
-	    return this.sample.save(attrs, options);
+	    return this.sample.save(options);
 	  },
 	  destroy: function destroy() {
 	    var _this2 = this;
 
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    var promise = new Promise(function (fulfill) {
 	      // removes from all collections etc
@@ -1641,7 +1691,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      if (_this2.sample && !options.noSave) {
 	        // save the changes permanentely
-	        _this2.save(null, options).then(fulfill);
+	        _this2.save(options).then(fulfill);
 	      } else {
 	        fulfill();
 	      }
@@ -1765,8 +1815,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	/** *********************************************************************
 	 * COLLECTION MODULE
 	 **********************************************************************/
-
-
 	var Collection = _backbone2.default.Collection.extend({
 	  flatten: function flatten(flattener) {
 	    var flattened = {};
@@ -1794,7 +1842,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /** *********************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * STORAGE
@@ -1843,11 +1891,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	   manager
 	   * @param options
 	   */
-
 	  function Storage() {
 	    var _this = this;
 
-	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    _classCallCheck(this, Storage);
 
@@ -1884,16 +1931,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        var driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-	        var drivers = that._getDriverOrder(driverOrder);
+	        var drivers = Storage._getDriverOrder(driverOrder);
 	        var DB = customConfig.LocalForage || _localforage2.default;
 
 	        // init
 	        that.db = DB.createInstance(dbConfig);
 	        that.db.setDriver(drivers).then(function () {
 	          resolve(that.db);
-	        }).catch(function (reason) {
-	          return reject(reason);
-	        });
+	        }).catch(reject);
 	      });
 	    });
 
@@ -1929,14 +1974,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function get(model) {
 	      var _this2 = this;
 
-	      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	      var that = this;
 
 	      var promise = new Promise(function (resolve, reject) {
 	        if (!_this2.ready()) {
 	          _this2.on('init', function () {
-	            _this2.get(model, options).then(resolve).catch(reject);
+	            _this2.get(model, options).then(resolve, reject);
 	          });
 	          return;
 	        }
@@ -1967,7 +2012,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var promise = new Promise(function (resolve, reject) {
 	        if (!_this3.ready()) {
 	          _this3.on('init', function () {
-	            _this3.getAll().then(resolve).catch(reject);
+	            _this3.getAll().then(resolve, reject);
 	          });
 	          return;
 	        }
@@ -1981,7 +2026,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function set() {
 	      var _this4 = this;
 
-	      var model = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	      var model = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	      var promise = new Promise(function (resolve, reject) {
 	        // early return if no id or cid
@@ -1994,7 +2039,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // needs to be on and running
 	        if (!_this4.ready()) {
 	          _this4.on('init', function () {
-	            _this4.set(model).then(resolve).catch(reject);
+	            _this4.set(model).then(resolve, reject);
 	          });
 	          return;
 	        }
@@ -2024,7 +2069,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var promise = new Promise(function (resolve, reject) {
 	        if (!_this5.ready()) {
 	          _this5.on('init', function () {
-	            _this5.remove(model).then(resolve).catch(reject);
+	            _this5.remove(model).then(resolve, reject);
 	          });
 	          return;
 	        }
@@ -2045,7 +2090,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var promise = new Promise(function (resolve, reject) {
 	        if (!_this6.ready()) {
 	          _this6.on('init', function () {
-	            _this6.has(model).then(resolve).catch(reject);
+	            _this6.has(model).then(resolve, reject);
 	          }, _this6);
 	          return;
 	        }
@@ -2065,7 +2110,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var promise = new Promise(function (resolve, reject) {
 	        if (!_this7.ready()) {
 	          _this7.on('init', function () {
-	            _this7.clear().then(resolve).catch(reject);
+	            _this7.clear().then(resolve, reject);
 	          });
 	          return;
 	        }
@@ -2084,7 +2129,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this8 = this;
 
 	      var promise = new Promise(function (resolve, reject) {
-	        _this8.db.length().then(resolve).catch(reject);
+	        _this8.db.length().then(resolve, reject);
 	      });
 
 	      return promise;

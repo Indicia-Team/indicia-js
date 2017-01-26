@@ -20,6 +20,7 @@ const ImageModel = Backbone.Model.extend({
       return;
     }
 
+    this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 

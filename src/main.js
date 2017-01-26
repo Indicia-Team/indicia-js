@@ -116,8 +116,7 @@ class Morel {
       options.host = model.manager.options.host; // get the URL
 
       Morel.prototype.post.apply(model.manager, [model, options])
-        .then((args) => {
-          const [successModel, responseData] = args;
+        .then((successModel) => {
           // on success update the model and save to local storage
           successModel.save().then(() => {
             successModel.trigger('sync');
@@ -149,10 +148,10 @@ class Morel {
 
     // async call to get the form data
     return that._getModelFormData(model)
-      .then(formData => that._ajaxModel(formData, model, options));
+      .then(formData => Morel._ajaxModel(formData, model, options));
   }
 
-  _ajaxModel(formData, model, options) {
+  static _ajaxModel(formData, model, options) {
     // todo: use ajax promise
     const promise = new Promise((fulfill, reject) => {
       // AJAX post
@@ -166,27 +165,65 @@ class Morel {
         timeout: options.timeout || 30000, // 30s
       });
 
+      function getIDs(submodels) {
+        const ids = {};
+        submodels.forEach((submodel) => {
+          ids[submodel.external_key] = submodel.id;
+          if (submodel.submodels) {
+            _.extend(ids, getIDs(submodel.submodels)); // recursive iterate
+          }
+        });
+        return ids;
+      }
+
+      function setModelRemoteID(model, newRemoteIDs) {
+        model.id = newRemoteIDs[model.cid];
+
+        if (model.occurrences) {
+          model.occurrences.each((occurrence) => {
+            // recursively iterate over submodels
+            setModelRemoteID(occurrence, newRemoteIDs);
+          });
+        }
+      }
+
       xhr.done((responseData) => {
         model.synchronising = false;
 
-        // update model
-        model.metadata.warehouse_id = 1;
+        // update the model and submodels with new remote IDs
+        const newRemoteIDs = {};
+        newRemoteIDs[responseData.data.external_key] = responseData.data.id;
+        _.extend(newRemoteIDs, getIDs(responseData.data.submodels));
+        setModelRemoteID(model, newRemoteIDs);
+
         const timeNow = new Date();
         model.metadata.server_on = timeNow;
         model.metadata.updated_on = timeNow;
         model.metadata.synced_on = timeNow;
 
-        fulfill([model, responseData]);
+        model.save().then(fulfill);
       });
 
       xhr.fail((jqXHR, textStatus, errorThrown) => {
+        model.synchronising = false;
+
         if (errorThrown === 'Conflict') {
           // duplicate occurred
-          fulfill([model, options]);
+          const newRemoteIDs = {};
+          jqXHR.responseJSON.errors.forEach((error) => {
+            newRemoteIDs[model.cid] = error.sample_id;
+            newRemoteIDs[error.external_key] = error.id;
+          });
+          setModelRemoteID(model, newRemoteIDs);
+
+          const timeNow = new Date();
+          model.metadata.server_on = timeNow;
+          model.metadata.updated_on = timeNow;
+          model.metadata.synced_on = timeNow;
+          model.save().then(fulfill);
           return;
         }
 
-        model.synchronising = false;
         model.trigger('error');
 
         const error = new Error({ code: jqXHR.status, message: errorThrown });
@@ -207,7 +244,7 @@ class Morel {
   }
 
   _getModelFormData(model) {
-    const promise = new Promise((fulfill, reject) => {
+    const promise = new Promise((fulfill) => {
       const flattened = model.flatten(this._flattener);
       let formData = new FormData();
 

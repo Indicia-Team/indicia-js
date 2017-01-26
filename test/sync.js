@@ -1,9 +1,9 @@
-import $ from 'jquery';
 import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import ImageModel from '../src/Image';
+import serverResponses from './server_responses.js';
 import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
@@ -16,12 +16,23 @@ const options = {
   survey_id: 42,
 };
 
+
+
 export default function (manager) {
   describe('Sync', () => {
     let server;
 
-    const okResponse = [200, { 'Content-Type': 'text/html' }, ''];
-    const errResponse = [502, { 'Content-Type': 'text/html' }, ''];
+    function generateSampleResponse(sample) {
+      server.respondWith(
+        'POST',
+        SAMPLE_POST_URL,
+        serverResponses('OK', {
+            cid: sample.cid,
+            submodel_cid: sample.occurrences.at(0).cid,
+          },
+        ),
+      );
+    }
 
     function getRandomSample() {
       const occurrence = new Occurrence({
@@ -75,9 +86,9 @@ export default function (manager) {
     });
 
     it('should post with remote option', (done) => {
-      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
 
+      generateSampleResponse(sample);
       const valid = sample.save({ remote: true }).then(() => {
         expect(manager.sync.calledOnce).to.be.true;
         done();
@@ -87,13 +98,12 @@ export default function (manager) {
     });
 
     it('should update remotely synced record', (done) => {
-      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
+      generateSampleResponse(sample);
 
       sample.save({ remote: true }).then(() => {
         // get new manager without cached samples
-        const Storage = manager.storage.Storage;
-        const newManager = new Morel(_.extend(options, { Storage }));
+        const newManager = new Morel(_.extend(options));
         newManager.get(sample)
           .then((savedSample) => {
             expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
@@ -114,7 +124,7 @@ export default function (manager) {
     });
 
     it('should return error if unsuccessful remote sync', (done) => {
-      server.respondWith('POST', SAMPLE_POST_URL, errResponse);
+      server.respondWith('POST', SAMPLE_POST_URL, serverResponses('err'));
       const sample = getRandomSample();
 
       const valid = sample.save({ remote: true })
@@ -127,6 +137,26 @@ export default function (manager) {
       expect(valid).to.be.instanceOf(Promise);
     });
 
+    // todo: we should fix this eventually
+    it('should ignore the duplication error', (done) => {
+      const sample = getRandomSample();
+      server.respondWith('POST',
+        SAMPLE_POST_URL,
+        serverResponses('duplicate', { cid: sample.occurrences.at(0).cid },
+        ),
+      );
+      expect(sample.id).to.be.undefined;
+      expect(sample.occurrences.at(0).id).to.be.undefined;
+
+      sample.save({ remote: true })
+        .then(() => {
+          expect(sample.id).to.be.a('number');
+          expect(sample.occurrences.at(0).id).to.be.a('number');
+          expect(manager.sync.calledOnce).to.be.true;
+          done();
+        });
+    });
+
     it('should set synchronising flag on sample', () => {
       const sample = getRandomSample();
 
@@ -136,8 +166,8 @@ export default function (manager) {
 
 
     it('should not double sync', (done) => {
-      server.respondWith('POST', SAMPLE_POST_URL, okResponse);
       const sample = getRandomSample();
+      generateSampleResponse(sample);
 
       const valid = sample.save({ remote: true }).then(() => {
         const newValid = sample.save({ remote: true });
@@ -195,7 +225,6 @@ export default function (manager) {
 
     describe('occurrences with images', (done) => {
       it('should send both dataURI and absolute pathed images', () => {
-        server.respondWith('POST', SAMPLE_POST_URL, okResponse);
         const image1 = new ImageModel({
           data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',
@@ -217,6 +246,7 @@ export default function (manager) {
           occurrences: [occurrence],
           manager,
         });
+        generateSampleResponse(sample);
 
         sample.save({ remote: true }).then(done);
       });

@@ -29,6 +29,7 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
+    this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
@@ -51,8 +52,6 @@ const Sample = Backbone.Model.extend({
       this.metadata = {
         created_on: today,
         updated_on: today,
-
-        warehouse_id: null,
 
         synced_on: null, // set when fully initialized only
         server_on: null, // updated on server
@@ -271,7 +270,7 @@ const Sample = Backbone.Model.extend({
       return SYNCHRONISING;
     }
 
-    if (meta.warehouse_id) {
+    if (this.id >= 0) {
       // fully initialized
       if (meta.synced_on) {
         // changed_locally

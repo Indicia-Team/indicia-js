@@ -89,6 +89,7 @@ module.exports = {
         exclude: /(node_modules|vendor)/,
         loader: 'babel-loader',
       },
+      { test: /\.json/, loader: 'json' },
     ],
   },
   plugins,

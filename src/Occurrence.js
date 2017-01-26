@@ -13,6 +13,7 @@ const Occurrence = Backbone.Model.extend({
     const that = this;
     let attrs = attributes;
 
+    this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setSample(options.sample || this.sample);
 
