@@ -18,6 +18,11 @@ const options = {
 let manager;
 
 describe('Saving/destroying propagation', () => {
+  before((done) => {
+    manager = new Morel(_.extend(options, { }));
+    manager.clear().then(done);
+  });
+
   beforeEach(() => {
     manager = new Morel(_.extend(options, { }));
   });

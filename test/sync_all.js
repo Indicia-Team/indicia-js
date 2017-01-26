@@ -49,13 +49,8 @@ export default function (manager) {
     });
 
 
-    it('should return a promise', (done) => {
-      let finished = false;
-      const promise = manager.syncAll().then(() => {
-        if (finished) done();
-        finished = true;
-      });
-
+    it('should return a promise', () => {
+      const promise = manager.syncAll();
       expect(promise.then).to.be.a.function;
     });
 
@@ -81,23 +76,23 @@ export default function (manager) {
             .then(() => {
               expect(models.length).to.be.equal(3);
               // synchronise collection
-              manager.syncAll()
-                .then(() => {
-                  expect(manager.sync.calledTwice).to.be.true;
+              return manager.syncAll();
+            })
+            .then(() => {
+              expect(manager.sync.calledTwice).to.be.true;
 
-                  // check sample status
-                  models.each((model) => {
-                    const status = model.getSyncStatus();
-                    if (model.cid === sample3.cid) {
-                      // invalid record (without occurrences)
-                      // should not be synced
-                      expect(status).to.be.equal(Morel.LOCAL);
-                    } else {
-                      expect(status).to.be.equal(Morel.SYNCED);
-                    }
-                  });
-                  done();
-                });
+              // check sample status
+              models.each((model) => {
+                const status = model.getSyncStatus();
+                if (model.cid === sample3.cid) {
+                  // invalid record (without occurrences)
+                  // should not be synced
+                  expect(status).to.be.equal(Morel.LOCAL);
+                } else {
+                  expect(status).to.be.equal(Morel.SYNCED);
+                }
+              });
+              done();
             });
         });
     });

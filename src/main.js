@@ -65,45 +65,38 @@ class Morel {
    * @returns {*}
    */
   syncAll(method, collection, options = {}) {
-    const promise = new Promise((fulfill, reject) => {
-      // sync all in collection
-      function syncEach(collectionToSync) {
-        const toWait = [];
-        collectionToSync.each((model) => {
-          // todo: reuse the passed options model
-          const xhr = model.save({
-            remote: true,
-            timeout: options.timeout,
-          });
-          let syncPromise;
-          if (!xhr) {
-            // model was invalid
-            syncPromise = Promise.resolve();
-          } else {
-            // valid model, but in case it fails sync carry on
-            syncPromise = new Promise((fulfillSync) => {
-              xhr.then(fulfillSync).catch(fulfillSync);
-            });
-          }
-          toWait.push(syncPromise);
+    // sync all in collection
+    function syncEach(collectionToSync) {
+      const toWait = [];
+      collectionToSync.each((model) => {
+        // todo: reuse the passed options model
+        const xhr = model.save({
+          remote: true,
+          timeout: options.timeout,
         });
+        let syncPromise;
+        if (!xhr) {
+          // model was invalid
+          syncPromise = Promise.resolve();
+        } else {
+          // valid model, but in case it fails sync carry on
+          syncPromise = new Promise((fulfillSync) => {
+            xhr.then(fulfillSync).catch(fulfillSync);
+          });
+        }
+        toWait.push(syncPromise);
+      });
 
-        // after all is synced
-        Promise.all(toWait).then(fulfill);
-      }
+      // after all is synced
+      return Promise.all(toWait);
+    }
 
-      if (collection) {
-        syncEach(collection);
-        return;
-      }
+    if (collection) {
+      return syncEach(collection);
+    }
 
-      // get all models to submit
-      this.getAll().then((receivedCollection) => {
-        syncEach(receivedCollection);
-      }).catch(reject);
-    });
-
-    return promise;
+    // get all models to submit
+    return this.getAll().then(syncEach);
   }
 
   /**

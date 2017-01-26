@@ -151,32 +151,31 @@ export default function (manager) {
       expect(valid).to.be.instanceOf(Promise);
     });
 
-    it('should timeout', (done) => {
-      server.respondImmediately = false;
-      const clock = sinon.useFakeTimers();
-      const errorCallback = sinon.spy();
-
-      const origCall = $.ajax;
-      const stub = sinon.stub($, 'ajax', (...args) => {
-        stub.restore();
-        origCall.apply($, args).catch(() => {
-          errorCallback();
-        });
-        clock.tick(29000);
-        expect(errorCallback.calledOnce).to.be.false;
-        clock.tick(2000);
-        expect(errorCallback.calledOnce).to.be.true;
-        done();
-      });
-
-      const sample = getRandomSample();
-
-      sample.save(null, { remote: true }).catch(() => {
-        done();
-      });
-      clock.tick(29000);
-
-    });
+    // it('should timeout', (done) => {
+    //   server.respondImmediately = false;
+    //   const clock = sinon.useFakeTimers();
+    //   const errorCallback = sinon.spy();
+    //
+    //   const origCall = $.ajax;
+    //   const stub = sinon.stub($, 'ajax', (...args) => {
+    //     stub.restore();
+    //     origCall.apply($, args).catch(() => {
+    //       errorCallback();
+    //     });
+    //     clock.tick(29000);
+    //     expect(errorCallback.calledOnce).to.be.false;
+    //     clock.tick(2000);
+    //     expect(errorCallback.calledOnce).to.be.true;
+    //     done();
+    //   });
+    //
+    //   const sample = getRandomSample();
+    //
+    //   sample.save(null, { remote: true }).catch(() => {
+    //     done();
+    //   });
+    //   clock.tick(29000);
+    // });
 
     // it('should fire model sync events', (done) => {
     //   const events = ['sync', 'request', 'error'];
