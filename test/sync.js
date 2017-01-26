@@ -158,18 +158,24 @@ export default function (manager) {
 
       const origCall = $.ajax;
       const stub = sinon.stub($, 'ajax', (...args) => {
-        origCall.apply($, args);
+        stub.restore();
+        origCall.apply($, args).catch(() => {
+          errorCallback();
+        });
         clock.tick(29000);
         expect(errorCallback.calledOnce).to.be.false;
         clock.tick(2000);
         expect(errorCallback.calledOnce).to.be.true;
-        stub.restore();
         done();
       });
 
       const sample = getRandomSample();
 
-      sample.save({ remote: true }).catch(errorCallback);
+      sample.save(null, { remote: true }).catch(() => {
+        done();
+      });
+      clock.tick(29000);
+
     });
 
     // it('should fire model sync events', (done) => {

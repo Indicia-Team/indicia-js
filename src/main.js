@@ -152,50 +152,54 @@ class Morel {
       return false;
     }
 
+    model.synchronising = true;
+
+    // async call to get the form data
+    return that._getModelFormData(model)
+      .then(formData => that._ajaxModel(formData, model, options));
+  }
+
+  _ajaxModel(formData, model, options) {
+    // todo: use ajax promise
     const promise = new Promise((fulfill, reject) => {
-      model.synchronising = true;
-
-      // async call to get the form data
-      that._getModelFormData(model).then((formData) => {
-        // AJAX post
-        const fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
-        const xhr = options.xhr = Backbone.ajax({
-          url: options.host + fullSamplePostPath,
-          type: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          timeout: options.timeout || 30000, // 30s
-        });
-
-        // also resolve the promise
-        xhr.done((responseData) => {
-          model.synchronising = false;
-
-          // update model
-          model.metadata.warehouse_id = 1;
-          const timeNow = new Date();
-          model.metadata.server_on = timeNow;
-          model.metadata.updated_on = timeNow;
-          model.metadata.synced_on = timeNow;
-
-          fulfill([model, responseData]);
-        });
-
-        xhr.fail((jqXHR, textStatus, errorThrown) => {
-          if (errorThrown === 'Conflict') {
-            // duplicate occurred
-            fulfill([model, null, options]);
-            return;
-          }
-
-          model.synchronising = false;
-          model.trigger('error');
-
-          reject([jqXHR, textStatus, errorThrown]);
-        });
-        model.trigger('request', model, xhr, options);
+      // AJAX post
+      const fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
+      const xhr = options.xhr = Backbone.ajax({
+        url: options.host + fullSamplePostPath,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        timeout: options.timeout || 30000, // 30s
       });
+
+      xhr.done((responseData) => {
+        model.synchronising = false;
+
+        // update model
+        model.metadata.warehouse_id = 1;
+        const timeNow = new Date();
+        model.metadata.server_on = timeNow;
+        model.metadata.updated_on = timeNow;
+        model.metadata.synced_on = timeNow;
+
+        fulfill([model, responseData]);
+      });
+
+      xhr.fail((jqXHR, textStatus, errorThrown) => {
+        if (errorThrown === 'Conflict') {
+          // duplicate occurred
+          fulfill([model, null, options]);
+          return;
+        }
+
+        model.synchronising = false;
+        model.trigger('error');
+
+        reject([jqXHR, textStatus, errorThrown]);
+      });
+
+      model.trigger('request', model, xhr, options);
     });
 
     return promise;
