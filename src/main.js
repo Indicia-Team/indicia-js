@@ -81,7 +81,7 @@ class Morel {
         } else {
           // valid model, but in case it fails sync carry on
           syncPromise = new Promise((fulfillSync) => {
-            xhr.then(fulfillSync).catch(fulfillSync);
+            xhr.then(fulfillSync, fulfillSync);
           });
         }
         toWait.push(syncPromise);
@@ -182,14 +182,15 @@ class Morel {
       xhr.fail((jqXHR, textStatus, errorThrown) => {
         if (errorThrown === 'Conflict') {
           // duplicate occurred
-          fulfill([model, null, options]);
+          fulfill([model, options]);
           return;
         }
 
         model.synchronising = false;
         model.trigger('error');
 
-        reject([jqXHR, textStatus, errorThrown]);
+        const error = new Error({ code: jqXHR.status, message: errorThrown });
+        reject(error);
       });
 
       model.trigger('request', model, xhr, options);

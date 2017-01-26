@@ -121,7 +121,7 @@ class Storage {
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.get(model, options).then(resolve).catch(reject);
+          this.get(model, options).then(resolve, reject);
         });
         return;
       }
@@ -151,7 +151,7 @@ class Storage {
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.getAll().then(resolve).catch(reject);
+          this.getAll().then(resolve, reject);
         });
         return;
       }
@@ -173,7 +173,7 @@ class Storage {
       // needs to be on and running
       if (!this.ready()) {
         this.on('init', () => {
-          this.set(model).then(resolve).catch(reject);
+          this.set(model).then(resolve, reject);
         });
         return;
       }
@@ -202,7 +202,7 @@ class Storage {
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.remove(model).then(resolve).catch(reject);
+          this.remove(model).then(resolve, reject);
         });
         return;
       }
@@ -222,7 +222,7 @@ class Storage {
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.has(model).then(resolve).catch(reject);
+          this.has(model).then(resolve, reject);
         }, this);
         return;
       }
@@ -239,7 +239,7 @@ class Storage {
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.clear().then(resolve).catch(reject);
+          this.clear().then(resolve, reject);
         });
         return;
       }
@@ -257,7 +257,7 @@ class Storage {
 
   size() {
     const promise = new Promise((resolve, reject) => {
-      this.db.length().then(resolve).catch(reject);
+      this.db.length().then(resolve, reject);
     });
 
     return promise;

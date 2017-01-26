@@ -129,7 +129,7 @@ const Sample = Backbone.Model.extend({
     const promise = new Promise((fulfill, reject) => {
       if (this.manager && !options.noSave) {
         // save the changes permanentely
-        this.manager.remove(this).then(fulfill).catch(reject);
+        this.manager.remove(this).then(fulfill, reject);
       } else {
         // removes from all collections etc
         this.stopListening();

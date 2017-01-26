@@ -118,9 +118,9 @@ export default function (manager) {
       const sample = getRandomSample();
 
       const valid = sample.save({ remote: true })
-        .catch((model, xhr, errorThrown) => {
+        .catch((err) => {
           expect(manager.sync.calledOnce).to.be.true;
-          expect(errorThrown).to.not.be.null;
+          expect(err.message).to.not.be.null;
           done();
         });
 
