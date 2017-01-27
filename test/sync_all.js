@@ -38,9 +38,10 @@ export default function (manager) {
       return sample;
     }
 
-    before(() => {
+    before((done) => {
       server = sinon.fakeServer.create();
       server.respondImmediately = true;
+      manager.clear().then(done);
     });
 
     beforeEach(() => {
@@ -48,8 +49,9 @@ export default function (manager) {
       sinon.spy(Morel.prototype, 'post');
     });
 
-    after(() => {
+    after((done) => {
       server.restore();
+      manager.clear().then(done);
     });
 
     afterEach((done) => {

@@ -48,9 +48,10 @@ export default function (manager) {
       return sample;
     }
 
-    before(() => {
+    before((done) => {
       server = sinon.fakeServer.create();
       server.respondImmediately = true;
+      manager.clear().then(done);
     });
 
     beforeEach(() => {
@@ -58,8 +59,9 @@ export default function (manager) {
       sinon.spy(Morel.prototype, 'post');
     });
 
-    after(() => {
+    after((done) => {
       server.restore();
+      manager.clear().then(done);
     });
 
     afterEach((done) => {
@@ -223,8 +225,16 @@ export default function (manager) {
     //   });
     // });
 
-    describe('occurrences with images', (done) => {
-      it('should send both dataURI and absolute pathed images', () => {
+    describe('occurrences with images', () => {
+      before((done) => {
+        manager.clear().then(done);
+      });
+
+      after((done) => {
+        manager.clear().then(done);
+      });
+
+      it('should send both dataURI and absolute pathed images', (done) => {
         const image1 = new ImageModel({
           data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',
@@ -248,7 +258,7 @@ export default function (manager) {
         });
         generateSampleResponse(sample);
 
-        sample.save({ remote: true }).then(done);
+        sample.save({ remote: true }).then(() => done());
       });
     });
   });

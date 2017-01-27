@@ -16,6 +16,10 @@ const options = {
 describe('Manager', () => {
   const manager = new Morel(options);
 
+  before((done) => {
+    manager.clear().then(done);
+  });
+
   // clean up
   after((done) => {
     manager.clear().then(done);
