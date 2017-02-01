@@ -1,6 +1,6 @@
 const responses = {
   duplicate(options) {
-    const data = {
+    const reponse = {
       errors: [
         {
           id: Math.random(),
@@ -11,7 +11,7 @@ const responses = {
       ],
     };
 
-    return [409, data];
+    return [409, reponse];
   },
 
   // model -> type
@@ -31,7 +31,7 @@ const responses = {
       ],
     };
 
-    return [200, data];
+    return [200, { data }];
   },
 
   err() {
