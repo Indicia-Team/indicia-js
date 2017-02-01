@@ -169,8 +169,8 @@ class Morel {
         const ids = {};
         submodels.forEach((submodel) => {
           ids[submodel.external_key] = submodel.id;
-          if (submodel.submodels) {
-            _.extend(ids, getIDs(submodel.submodels)); // recursive iterate
+          if (submodel.subModels) {
+            _.extend(ids, getIDs(submodel.subModels)); // recursive iterate
           }
         });
         return ids;
@@ -193,7 +193,7 @@ class Morel {
         // update the model and submodels with new remote IDs
         const newRemoteIDs = {};
         newRemoteIDs[responseData.data.external_key] = responseData.data.id;
-        _.extend(newRemoteIDs, getIDs(responseData.data.submodels));
+        _.extend(newRemoteIDs, getIDs(responseData.data.subModels));
         setModelRemoteID(model, newRemoteIDs);
 
         const timeNow = new Date();
