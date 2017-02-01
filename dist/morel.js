@@ -548,8 +548,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var ids = {};
 	          submodels.forEach(function (submodel) {
 	            ids[submodel.external_key] = submodel.id;
-	            if (submodel.submodels) {
-	              _underscore2.default.extend(ids, getIDs(submodel.submodels)); // recursive iterate
+	            if (submodel.subModels) {
+	              _underscore2.default.extend(ids, getIDs(submodel.subModels)); // recursive iterate
 	            }
 	          });
 	          return ids;
@@ -572,7 +572,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          // update the model and submodels with new remote IDs
 	          var newRemoteIDs = {};
 	          newRemoteIDs[responseData.data.external_key] = responseData.data.id;
-	          _underscore2.default.extend(newRemoteIDs, getIDs(responseData.data.submodels));
+	          _underscore2.default.extend(newRemoteIDs, getIDs(responseData.data.subModels));
 	          setModelRemoteID(model, newRemoteIDs);
 
 	          var timeNow = new Date();
