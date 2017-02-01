@@ -14,18 +14,21 @@ const responses = {
     return [409, data];
   },
 
+  // model -> type
+  // children -> subModels
+  // struct -> data
   OK(options) {
     const data = {
-      data: {
-        id: Math.random(),
-        external_key: options.cid,
-        submodels: [
-          {
-            id: Math.random(),
-            external_key: options.submodel_cid,
-          },
-        ],
-      },
+      type: 'sample',
+      id: Math.random(),
+      external_key: options.cid,
+      subModels: [
+        {
+          type: 'occurrence',
+          id: Math.random(),
+          external_key: options.cid,
+        },
+      ],
     };
 
     return [200, data];

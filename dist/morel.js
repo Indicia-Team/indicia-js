@@ -542,7 +542,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	          contentType: false,
 	          timeout: options.timeout || 30000 });
 
-	        function getIDs(submodels) {
+	        function getIDs() {
+	          var submodels = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
 	          var ids = {};
 	          submodels.forEach(function (submodel) {
 	            ids[submodel.external_key] = submodel.id;

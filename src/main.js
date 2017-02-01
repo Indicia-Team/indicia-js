@@ -165,7 +165,7 @@ class Morel {
         timeout: options.timeout || 30000, // 30s
       });
 
-      function getIDs(submodels) {
+      function getIDs(submodels = []) {
         const ids = {};
         submodels.forEach((submodel) => {
           ids[submodel.external_key] = submodel.id;
