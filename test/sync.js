@@ -28,20 +28,20 @@ export default function (manager) {
         SAMPLE_POST_URL,
         serverResponses('OK', {
             cid: sample.cid,
-            submodel_cid: sample.occurrences.at(0).cid,
+            submodel_cid: sample.subModels.at(0).cid,
           },
         ),
       );
     }
 
     function getRandomSample() {
-      const occurrence = new Occurrence({
+      const subModel = new Occurrence({
         taxon: 1234,
       });
       const sample = new Sample({
         location: ' 12.12, -0.23',
       }, {
-        occurrences: [occurrence],
+        subModels: [subModel],
         manager,
       });
 
@@ -115,9 +115,9 @@ export default function (manager) {
     });
 
     it('should validate before remote sending', () => {
-      const occurrence = new Occurrence();
+      const subModel = new Occurrence();
       const sample = new Sample(null, {
-        occurrences: [occurrence],
+        subModels: [subModel],
         manager,
       });
 
@@ -144,16 +144,16 @@ export default function (manager) {
       const sample = getRandomSample();
       server.respondWith('POST',
         SAMPLE_POST_URL,
-        serverResponses('duplicate', { cid: sample.occurrences.at(0).cid },
+        serverResponses('duplicate', { cid: sample.subModels.at(0).cid },
         ),
       );
       expect(sample.id).to.be.undefined;
-      expect(sample.occurrences.at(0).id).to.be.undefined;
+      expect(sample.subModels.at(0).id).to.be.undefined;
 
       sample.save({ remote: true })
         .then(() => {
           expect(sample.id).to.be.a('number');
-          expect(sample.occurrences.at(0).id).to.be.a('number');
+          expect(sample.subModels.at(0).id).to.be.a('number');
           expect(manager.sync.calledOnce).to.be.true;
           done();
         });
@@ -225,7 +225,7 @@ export default function (manager) {
     //   });
     // });
 
-    describe('occurrences with images', () => {
+    describe('subModels with images', () => {
       before((done) => {
         manager.clear().then(done);
       });
@@ -245,7 +245,7 @@ export default function (manager) {
           type: 'png',
         });
 
-        const occurrence = new Occurrence({
+        const subModel = new Occurrence({
           taxon: 1234,
         }, {
           images: [image1, image2],
@@ -253,7 +253,7 @@ export default function (manager) {
         const sample = new Sample({
           location: ' 12.12, -0.23',
         }, {
-          occurrences: [occurrence],
+          subModels: [subModel],
           manager,
         });
         generateSampleResponse(sample);

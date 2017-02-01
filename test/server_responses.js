@@ -24,7 +24,7 @@ const responses = {
       external_key: options.cid,
       subModels: [
         {
-          type: 'occurrence',
+          type: 'subModel',
           id: Math.random(),
           external_key: options.cid,
         },

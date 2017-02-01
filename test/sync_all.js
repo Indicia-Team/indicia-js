@@ -18,20 +18,20 @@ export default function (manager) {
         SAMPLE_POST_URL,
         serverResponses('OK', {
             cid: sample.cid,
-            submodel_cid: sample.occurrences.at(0).cid,
+            submodel_cid: sample.subModels.at(0).cid,
           },
         ),
       );
     }
 
     function getRandomSample() {
-      const occurrence = new Occurrence({
+      const subModel = new Occurrence({
         taxon: 1234,
       });
       const sample = new Sample({
         location: ' 12.12, -0.23',
       }, {
-        occurrences: [occurrence],
+        subModels: [subModel],
         manager,
       });
 
@@ -78,8 +78,8 @@ export default function (manager) {
 
           generateSampleResponse(sample);
 
-          // delete occurrences for the sample to become invalid to sync
-          _.each(_.clone(sample2.occurrences.models), (model) => {
+          // delete subModels for the sample to become invalid to sync
+          _.each(_.clone(sample2.subModels.models), (model) => {
             model.destroy({ noSave: true });
           });
 
@@ -96,7 +96,7 @@ export default function (manager) {
               models.each((model) => {
                 const status = model.getSyncStatus();
                 if (model.cid === sample2.cid) {
-                  // invalid record (without occurrences)
+                  // invalid record (without subModels)
                   // should not be synced
                   expect(status).to.be.equal(Morel.LOCAL);
                 } else {

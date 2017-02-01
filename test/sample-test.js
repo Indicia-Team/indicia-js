@@ -23,7 +23,7 @@ describe('Sample', () => {
     const sample = new Sample();
     expect(sample.cid).to.be.a.string;
     expect(sample.attributes).to.be.an.object;
-    expect(sample.occurrences).to.be.instanceOf(Collection);
+    expect(sample.subModels).to.be.instanceOf(Collection);
   });
 
   it('should add missing date and location type if missing', () => {
@@ -42,16 +42,22 @@ describe('Sample', () => {
   it('should return JSON', () => {
     const occurrence = new Occurrence();
     const sample = new Sample();
+    const subSample = new Sample();
+    subSample.subModels.set(occurrence);
 
     let json = sample.toJSON();
 
     expect(json).to.be.an.object;
-    expect(json.occurrences.length).to.be.equal(0);
+    expect(json.subModels.length).to.be.equal(0);
 
-    sample.occurrences.set(occurrence);
+    sample.subModels.set(subSample);
     json = sample.toJSON();
 
-    expect(json.occurrences.length).to.be.equal(1);
+    expect(json.subModels.length).to.be.equal(1);
+    expect(json.subModels[0].cid).to.be.equal(subSample.cid);
+
+    expect(json.subModels[0].subModels.length).to.be.equal(1);
+    expect(json.subModels[0].subModels[0].cid).to.be.equal(occurrence.cid);
   });
 
   it('should have a validator', () => {
@@ -59,8 +65,11 @@ describe('Sample', () => {
     expect(sample.validate).to.be.a('function');
   });
 
-  it('should validate location, location type, date and occurrences', () => {
+  it('should validate location, location type, date and subModels', () => {
     const sample = new Sample();
+    const subSample = new Sample();
+    const occurrence = new Occurrence();
+
     delete sample.attributes.location_type;
     let allInvalids = sample.validate();
     let invalids = allInvalids.sample;
@@ -68,13 +77,19 @@ describe('Sample', () => {
     expect(invalids).to.be.an('object');
     expect(invalids.location).to.be.a('string');
     expect(invalids.location_type).to.be.a('string');
-    expect(invalids.occurrences).to.be.a('string');
+    expect(invalids.subModels).to.be.a('string');
 
-    sample.occurrences.set(new Occurrence());
+    sample.subModels.set(subSample);
 
     allInvalids = sample.validate();
     invalids = allInvalids.sample;
-    expect(invalids.occurrences).to.be.undefined;
-    expect(allInvalids.occurrences).to.not.be.empty;
+    expect(invalids.subModels).to.be.undefined;
+    expect(allInvalids.subModels).to.not.be.empty;
+
+    subSample.subModels.set(occurrence);
+
+    allInvalids = sample.validate();
+    invalids = allInvalids.sample;
+    expect(allInvalids.subModels[subSample.cid].subModels).to.not.be.empty;
   });
 });

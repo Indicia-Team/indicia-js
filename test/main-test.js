@@ -34,11 +34,11 @@ describe('Saving/destroying propagation', () => {
   describe('Image', () => {
     it('should save sample on image save', (done) => {
       const image = new ImageModel();
-      const occurrence = new Occurrence(null, {
+      const subModel = new Occurrence(null, {
         images: [image],
       });
       const sample = new Sample(null, {
-        occurrences: [occurrence],
+        subModels: [subModel],
       });
 
       // add sample to storage
@@ -53,8 +53,8 @@ describe('Saving/destroying propagation', () => {
             newManager.getAll()
               .then((samples) => {
                 expect(samples.length).to.be.equal(1);
-                const occurrenceFromDB = samples.at(0).occurrences.at(0);
-                const imageFromDB = occurrenceFromDB.images.at(0);
+                const subModelFromDB = samples.at(0).subModels.at(0);
+                const imageFromDB = subModelFromDB.images.at(0);
                 // check if change to image is permenant
                 expect(imageFromDB.get('data')).to.be.equal('1234');
                 done();
@@ -69,11 +69,11 @@ describe('Saving/destroying propagation', () => {
 
     it('should save sample on image destroy', (done) => {
       const image = new ImageModel();
-      const occurrence = new Occurrence(null, {
+      const subModel = new Occurrence(null, {
         images: [image],
       });
       const sample = new Sample(null, {
-        occurrences: [occurrence],
+        subModels: [subModel],
       });
 
       // add sample to storage
@@ -84,9 +84,9 @@ describe('Saving/destroying propagation', () => {
           const newManager = new Morel(_.extend(options, { }));
           newManager.getAll().then((samples) => {
             expect(samples.length).to.be.equal(1);
-            const occurrenceFromDB = samples.at(0).occurrences.at(0);
+            const subModelFromDB = samples.at(0).subModels.at(0);
             // check if change to image is permenant
-            expect(occurrenceFromDB.images.length).to.be.equal(0);
+            expect(subModelFromDB.images.length).to.be.equal(0);
             done();
           });
         });
@@ -97,11 +97,11 @@ describe('Saving/destroying propagation', () => {
   describe('Sample', () => {
     it('destroys the images on sample destroy', (done) => {
       const image = new ImageModel();
-      const occurrence = new Occurrence(null, {
+      const subModel = new Occurrence(null, {
         images: [image],
       });
       const sample = new Sample(null, {
-        occurrences: [occurrence],
+        subModels: [subModel],
       });
 
       // add sample to storage

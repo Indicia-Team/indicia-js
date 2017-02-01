@@ -3,7 +3,7 @@
  *
  * Refers to the event in which the sightings were observed, in other
  * words it describes the place, date, people, environmental conditions etc.
- * Within a sample, you can have zero or more occurrences which refer to each
+ * Within a sample, you can have zero or more subModels which refer to each
  * species sighted as part of the sample.
  **********************************************************************/
 import Backbone from 'backbone';
@@ -31,6 +31,7 @@ const Sample = Backbone.Model.extend({
 
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
+    this.setParent(options.parent || this.parent);
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
 
@@ -58,22 +59,22 @@ const Sample = Backbone.Model.extend({
       };
     }
 
-    if (options.occurrences) {
-      const occurrences = [];
-      _.each(options.occurrences, (occ) => {
+    if (options.subModels) {
+      const subModels = [];
+      _.each(options.subModels, (occ) => {
         if (occ instanceof that.Occurrence) {
-          occ.setSample(that);
-          occurrences.push(occ);
+          occ.setParent(that);
+          subModels.push(occ);
         } else {
-          const modelOptions = _.extend(occ, { sample: that });
-          occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
+          const modelOptions = _.extend(occ, { parent: that });
+          subModels.push(new that.Occurrence(occ.attributes, modelOptions));
         }
       });
-      this.occurrences = new Collection(occurrences, {
+      this.subModels = new Collection(subModels, {
         model: this.Occurrence,
       });
     } else {
-      this.occurrences = new Collection([], {
+      this.subModels = new Collection([], {
         model: this.Occurrence,
       });
     }
@@ -106,6 +107,10 @@ const Sample = Backbone.Model.extend({
    * Returns on success: model, response, options
    */
   save(options = {}) {
+    if (this.parent) {
+      return this.parent.save(options);
+    }
+
     if (!this.manager) {
       return false;
     }
@@ -134,7 +139,12 @@ const Sample = Backbone.Model.extend({
         this.stopListening();
         this.trigger('destroy', this, this.collection, options);
 
-        fulfill();
+        if (this.parent && !options.noSave) {
+          // save the changes permanentely
+          this.save(options).then(fulfill);
+        } else {
+          fulfill();
+        }
       }
     });
 
@@ -142,17 +152,31 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Adds an occurrence to sample and sets the occurrence's sample to this.
-   * @param occurrence
+   * Sets parent.
+   * @param parent
    */
-  addOccurrence(occurrence) {
-    if (!occurrence) return;
-    occurrence.setSample(this);
-    this.occurrences.push(occurrence);
+  setParent(parent) {
+    if (!parent) return;
+
+    const that = this;
+    this.parent = parent;
+    this.parent.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
   },
 
   /**
-   * Adds an image to occurrence and sets the images's occurrence to this.
+   * Adds an subModel to sample and sets the subModel's sample to this.
+   * @param subModel
+   */
+  addSubModel(subModel) {
+    if (!subModel) return;
+    subModel.setParent(this);
+    this.subModels.push(subModel);
+  },
+
+  /**
+   * Adds an image to subModel and sets the images's subModel to this.
    * @param image
    */
   addImage(image) {
@@ -161,12 +185,11 @@ const Sample = Backbone.Model.extend({
     this.images.add(image);
   },
 
-
   validate(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const sample = {};
-    const occurrences = {};
+    const subModels = {};
 
     // location
     if (!attrs.location) {
@@ -188,23 +211,23 @@ const Sample = Backbone.Model.extend({
       }
     }
 
-    // occurrences
-    if (this.occurrences.length === 0) {
-      sample.occurrences = 'no occurrences';
+    // subModels
+    if (this.subModels.length === 0) {
+      sample.subModels = 'no subModels';
     } else {
-      this.occurrences.each((occurrence) => {
-        const errors = occurrence.validate();
+      this.subModels.each((subModel) => {
+        const errors = subModel.validate();
         if (errors) {
-          const occurrenceID = occurrence.cid;
-          occurrences[occurrenceID] = errors;
+          const subModelID = subModel.cid;
+          subModels[subModelID] = errors;
         }
       });
     }
 
-    if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
+    if (!_.isEmpty(sample) || !_.isEmpty(subModels)) {
       const errors = {
         sample,
-        occurrences,
+        subModels,
       };
       return errors;
     }
@@ -223,19 +246,19 @@ const Sample = Backbone.Model.extend({
     // images flattened separately
     const flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
-    // occurrences
-    _.extend(flattened, this.occurrences.flatten(flattener));
+    // subModels
+    _.extend(flattened, this.subModels.flatten(flattener));
     return flattened;
   },
 
   toJSON() {
-    let occurrences;
-    const occurrencesCollection = this.occurrences;
-    if (!occurrencesCollection) {
-      occurrences = [];
-      console.warn('toJSON occurrences missing');
+    let subModels;
+    const subModelsCollection = this.subModels;
+    if (!subModelsCollection) {
+      subModels = [];
+      console.warn('toJSON subModels missing');
     } else {
-      occurrences = occurrencesCollection.toJSON();
+      subModels = subModelsCollection.toJSON();
     }
 
     let images;
@@ -252,7 +275,7 @@ const Sample = Backbone.Model.extend({
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
-      occurrences,
+      subModels,
       images,
     };
 
@@ -301,9 +324,9 @@ const Sample = Backbone.Model.extend({
    */
   offAll() {
     this._events = {};
-    this.occurrences.offAll();
-    for (let i = 0; i < this.occurrences.data.length; i++) {
-      this.occurrences.models[i].offAll();
+    this.subModels.offAll();
+    for (let i = 0; i < this.subModels.data.length; i++) {
+      this.subModels.models[i].offAll();
     }
   },
 });

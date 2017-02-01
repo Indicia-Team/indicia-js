@@ -15,7 +15,7 @@ const Occurrence = Backbone.Model.extend({
 
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
-    this.setSample(options.sample || this.sample);
+    this.setParent(options.parent || this.parent);
 
     if (options.Image) this.Image = options.Image;
 
@@ -58,8 +58,8 @@ const Occurrence = Backbone.Model.extend({
   },
 
   save(options = {}) {
-    if (!this.sample) return false;
-    return this.sample.save(options);
+    if (!this.parent) return false;
+    return this.parent.save(options);
   },
 
   destroy(options = {}) {
@@ -68,7 +68,7 @@ const Occurrence = Backbone.Model.extend({
       this.stopListening();
       this.trigger('destroy', this, this.collection, options);
 
-      if (this.sample && !options.noSave) {
+      if (this.parent && !options.noSave) {
         // save the changes permanentely
         this.save(options).then(fulfill);
       } else {
@@ -80,21 +80,21 @@ const Occurrence = Backbone.Model.extend({
   },
 
   /**
-   * Sets parent Sample.
-   * @param occurrence
+   * Sets parent.
+   * @param parent
    */
-  setSample(sample) {
-    if (!sample) return;
+  setParent(parent) {
+    if (!parent) return;
 
     const that = this;
-    this.sample = sample;
-    this.sample.on('destroy', () => {
+    this.parent = parent;
+    this.parent.on('destroy', () => {
       that.destroy({ noSave: true });
     });
   },
 
   /**
-   * Adds an image to occurrence and sets the images's occurrence to this.
+   * Adds an image to occurrence and sets the images's parent to this.
    * @param image
    */
   addImage(image) {

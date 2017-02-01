@@ -179,10 +179,10 @@ class Morel {
       function setModelRemoteID(model, newRemoteIDs) {
         model.id = newRemoteIDs[model.cid];
 
-        if (model.occurrences) {
-          model.occurrences.each((occurrence) => {
+        if (model.subModels) {
+          model.subModels.each((subModel) => {
             // recursively iterate over submodels
-            setModelRemoteID(occurrence, newRemoteIDs);
+            setModelRemoteID(subModel, newRemoteIDs);
           });
         }
       }
@@ -250,15 +250,15 @@ class Morel {
 
       // append images
       let occCount = 0;
-      const occurrenceProcesses = [];
-      model.occurrences.each((occurrence) => {
+      const subModelProcesses = [];
+      model.subModels.each((subModel) => {
         // on async run occCount will be incremented before used for image name
         const localOccCount = occCount;
         let imgCount = 0;
 
         const imageProcesses = [];
 
-        occurrence.images.each((image) => {
+        subModel.images.each((image) => {
           const imagePromise = new Promise((_fulfill) => {
             const url = image.getURL();
             const type = image.get('type');
@@ -301,11 +301,11 @@ class Morel {
           imageProcesses.push(imagePromise);
         });
 
-        occurrenceProcesses.push(Promise.all(imageProcesses));
+        subModelProcesses.push(Promise.all(imageProcesses));
         occCount++;
       });
 
-      Promise.all(occurrenceProcesses).then(() => {
+      Promise.all(subModelProcesses).then(() => {
         // append attributes
         const keys = Object.keys(flattened);
         for (let i = 0; i < keys.length; i++) {
