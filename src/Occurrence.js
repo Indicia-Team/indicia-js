@@ -13,6 +13,7 @@ const Occurrence = Backbone.Model.extend({
     const that = this;
     let attrs = attributes;
 
+    this.type = 'occurrence';
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
@@ -130,6 +131,7 @@ const Occurrence = Backbone.Model.extend({
       images = imagesCollection.toJSON();
     }
     const data = {
+      type: this.type,
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,

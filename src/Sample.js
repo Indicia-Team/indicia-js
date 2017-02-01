@@ -29,6 +29,7 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
+    this.type = 'sample';
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
@@ -61,13 +62,19 @@ const Sample = Backbone.Model.extend({
 
     if (options.subModels) {
       const subModels = [];
-      _.each(options.subModels, (occ) => {
-        if (occ instanceof that.Occurrence) {
-          occ.setParent(that);
-          subModels.push(occ);
+      _.each(options.subModels, (subModel) => {
+        if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
+          subModel.setParent(that);
+          subModels.push(subModel);
         } else {
-          const modelOptions = _.extend(occ, { parent: that });
-          subModels.push(new that.Occurrence(occ.attributes, modelOptions));
+          const modelOptions = _.extend(subModel, { parent: that });
+          let newSubModel;
+          if (subModel.type === 'sample') {
+            newSubModel = new Sample(subModel.attributes, modelOptions);
+          } else {
+            newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
+          }
+          subModels.push(newSubModel);
         }
       });
       this.subModels = new Collection(subModels, {
@@ -271,6 +278,7 @@ const Sample = Backbone.Model.extend({
     }
 
     const data = {
+      type: this.type,
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,

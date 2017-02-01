@@ -99,6 +99,34 @@ export default function (manager) {
       expect(valid).to.be.instanceOf(Promise);
     });
 
+    it('should post with remote option (subsample)', (done) => {
+      const occurrence = new Occurrence({
+        taxon: 1234,
+      });
+      const subSample = new Sample({
+          location: ' 12.12, -0.23',
+        },
+        {
+          subModels: [occurrence]
+        },
+      );
+
+      const sample = new Sample({
+        location: ' 12.12, -0.23',
+      }, {
+        subModels: [subSample],
+        manager,
+      });
+
+      generateSampleResponse(sample);
+      const valid = sample.save({ remote: true }).then(() => {
+        expect(manager.sync.calledOnce).to.be.true;
+        done();
+      });
+
+      expect(valid).to.be.instanceOf(Promise);
+    });
+
     it('should update remotely synced record', (done) => {
       const sample = getRandomSample();
       generateSampleResponse(sample);
