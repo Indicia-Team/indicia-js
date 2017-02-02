@@ -17,7 +17,7 @@
 		exports["Morel"] = factory(require("underscore"), require("backbone"), require("jquery"), require("localforage"));
 	else
 		root["Morel"] = factory(root["_"], root["Backbone"], root["$"], root["localforage"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_7__, __WEBPACK_EXTERNAL_MODULE_12__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_8__, __WEBPACK_EXTERNAL_MODULE_12__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -95,11 +95,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Storage2 = _interopRequireDefault(_Storage);
 
-	var _Image = __webpack_require__(6);
+	var _Image = __webpack_require__(7);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(5);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -107,7 +107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var CONST = _interopRequireWildcard(_constants);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -670,11 +670,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _constants = __webpack_require__(4);
 
-	var _helpers = __webpack_require__(5);
+	var _Error = __webpack_require__(5);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(6);
+	var _Image = __webpack_require__(7);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
@@ -688,7 +692,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	/** *********************************************************************
+	 * SAMPLE
+	 *
+	 * Refers to the event in which the sightings were observed, in other
+	 * words it describes the place, date, people, environmental conditions etc.
+	 * Within a sample, you can have zero or more subModels which refer to each
+	 * species sighted as part of the sample.
+	 **********************************************************************/
 	var Sample = _backbone2.default.Model.extend({
+	  type: 'sample',
 	  Image: _Image2.default,
 	  Occurrence: _Occurrence2.default,
 
@@ -708,7 +721,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
-	    this.type = 'sample';
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
@@ -740,30 +752,42 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if (options.subModels) {
 	      (function () {
+	        // fill in existing ones
 	        var subModels = [];
+
+	        var subModelType = void 0; // to check subModels' consistency
 	        _underscore2.default.each(options.subModels, function (subModel) {
+	          // set parent sample's subModels type
+	          if (!subModelType) {
+	            subModelType = subModel.type;
+	          } else if (subModelType !== subModel.type) {
+	            // don't allow to add mixed type subModels
+	            throw new _Error2.default('Sample cannot be initialised with mixed type submodels.');
+	          }
+
 	          if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
 	            subModel.setParent(that);
 	            subModels.push(subModel);
 	          } else {
 	            var modelOptions = _underscore2.default.extend(subModel, { parent: that });
 	            var newSubModel = void 0;
-	            if (subModel.type === 'sample') {
-	              newSubModel = new Sample(subModel.attributes, modelOptions);
-	            } else {
+	            if (subModel.type === 'occurrence') {
 	              newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
+	            } else {
+	              newSubModel = new Sample(subModel.attributes, modelOptions);
 	            }
 	            subModels.push(newSubModel);
 	          }
 	        });
+
 	        _this.subModels = new _Collection2.default(subModels, {
-	          model: _this.Occurrence
+	          model: subModelType === 'occurrence' ? _this.Occurrence : Sample
 	        });
 	      })();
 	    } else {
-	      this.subModels = new _Collection2.default([], {
-	        model: this.Occurrence
-	      });
+	      // init empty subModels collection
+	      // don't set model type for it will be done on first subModel add
+	      this.subModels = new _Collection2.default([]);
 	    }
 
 	    if (options.images) {
@@ -869,6 +893,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  addSubModel: function addSubModel(subModel) {
 	    if (!subModel) return;
 	    subModel.setParent(this);
+
+	    if (!this.subModels.model.type) {
+	      this.subModels.model = subModel.type === 'occurrence' ? this.Occurrence : Sample;
+	    } else if (this.subModels.model.type !== subModel.type) {
+	      // don't allow to add mixed type subModels
+	      throw new _Error2.default('Cannot add a different type submodel to a sample.');
+	    }
+
 	    this.subModels.push(subModel);
 	  },
 
@@ -1020,6 +1052,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
+	   * Returns submodel.
+	   * @param index
+	   * @returns {*}
+	   */
+	  getSubModel: function getSubModel() {
+	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+	    return this.subModels.at(index);
+	  },
+
+
+	  /**
 	   * Detach all the listeners.
 	   */
 	  offAll: function offAll() {
@@ -1031,17 +1075,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	});
 
+	Sample.type = 'sample'; // need a static one
+
 	/**
 	 * Warehouse attributes and their values.
 	 */
-	/** *********************************************************************
-	 * SAMPLE
-	 *
-	 * Refers to the event in which the sightings were observed, in other
-	 * words it describes the place, date, people, environmental conditions etc.
-	 * Within a sample, you can have zero or more subModels which refer to each
-	 * species sighted as part of the sample.
-	 **********************************************************************/
 	Sample.keys = {
 	  id: { id: 'id' },
 	  survey: { id: 'survey_id' },
@@ -1087,6 +1125,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 5 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/** *********************************************************************
+	 * ERROR
+	 **********************************************************************/
+	var Error = function Error() {
+	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	  _classCallCheck(this, Error);
+
+	  if (typeof options === 'string') {
+	    this.code = -1;
+	    this.message = options;
+	    return;
+	  }
+
+	  this.code = options.code || -1;
+	  this.message = options.message || '';
+	};
+
+	exports.default = Error;
+
+/***/ },
+/* 6 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1257,7 +1327,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1274,7 +1344,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          **********************************************************************/
 
 
-	var _jquery = __webpack_require__(7);
+	var _jquery = __webpack_require__(8);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
@@ -1286,11 +1356,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(5);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1580,42 +1650,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = ImageModel;
 
 /***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
-
-/***/ },
 /* 8 */
 /***/ function(module, exports) {
 
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	/** *********************************************************************
-	 * ERROR
-	 **********************************************************************/
-	var Error = function Error() {
-	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	  _classCallCheck(this, Error);
-
-	  if (typeof options === 'string') {
-	    this.code = -1;
-	    this.message = options;
-	    return;
-	  }
-
-	  this.code = options.code || -1;
-	  this.message = options.message || '';
-	};
-
-	exports.default = Error;
+	module.exports = __WEBPACK_EXTERNAL_MODULE_8__;
 
 /***/ },
 /* 9 */
@@ -1636,11 +1674,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(5);
+	var _helpers = __webpack_require__(6);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(6);
+	var _Image = __webpack_require__(7);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
@@ -1651,7 +1689,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Occurrence = _backbone2.default.Model.extend({
+	  type: 'occurrence',
 	  Image: _Image2.default,
+
 	  constructor: function constructor() {
 	    var _this = this;
 
@@ -1661,7 +1701,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 	    var attrs = attributes;
 
-	    this.type = 'occurrence';
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
@@ -1807,14 +1846,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // images flattened separately
 	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
 	  }
-	});
+	}); /** *********************************************************************
+	     * OCCURRENCE
+	     **********************************************************************/
+
+
+	Occurrence.type = 'occurrence';
 
 	/**
 	 * Warehouse attributes and their values.
 	 */
-	/** *********************************************************************
-	 * OCCURRENCE
-	 **********************************************************************/
 	Occurrence.keys = {
 	  taxon: {
 	    id: ''
@@ -1896,7 +1937,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _localforage2 = _interopRequireDefault(_localforage);
 
-	var _Error = __webpack_require__(8);
+	var _Error = __webpack_require__(5);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
