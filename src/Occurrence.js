@@ -8,12 +8,13 @@ import Image from './Image';
 import Collection from './Collection';
 
 const Occurrence = Backbone.Model.extend({
+  type: 'occurrence',
   Image,
+
   constructor(attributes = {}, options = {}) {
     const that = this;
     let attrs = attributes;
 
-    this.type = 'occurrence';
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
@@ -154,6 +155,7 @@ const Occurrence = Backbone.Model.extend({
   },
 });
 
+Occurrence.type = 'occurrence';
 
 /**
  * Warehouse attributes and their values.

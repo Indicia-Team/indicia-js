@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import Error from '../src/Error';
 
 /* eslint-disable no-unused-expressions */
 
@@ -90,5 +91,19 @@ describe('Sample', () => {
     allInvalids = sample.validate();
     invalids = allInvalids.sample;
     expect(allInvalids.subModels[subSample.cid].subModels).to.not.be.empty;
+  });
+
+  it('should not allow mixed subModel types', (done) => {
+    const sample = new Sample();
+    const subSample = new Sample();
+    const subSample2 = new Occurrence();
+
+    sample.addSubModel(subSample);
+    try {
+      sample.addSubModel(subSample2);
+    } catch (err) {
+      expect(err instanceof Error).to.be.true;
+      done();
+    }
   });
 });

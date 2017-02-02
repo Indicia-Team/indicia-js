@@ -9,12 +9,14 @@
 import Backbone from 'backbone';
 import _ from 'underscore';
 import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED, SERVER, LOCAL } from './constants';
+import Error from './Error';
 import helpers from './helpers';
 import Image from './Image';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
 const Sample = Backbone.Model.extend({
+  type: 'sample',
   Image,
   Occurrence,
 
@@ -29,7 +31,6 @@ const Sample = Backbone.Model.extend({
 
     attrs = _.extend(defaultAttrs, attrs);
 
-    this.type = 'sample';
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
@@ -61,29 +62,41 @@ const Sample = Backbone.Model.extend({
     }
 
     if (options.subModels) {
+      // fill in existing ones
       const subModels = [];
+
+      let subModelType; // to check subModels' consistency
       _.each(options.subModels, (subModel) => {
+        // set parent sample's subModels type
+        if (!subModelType) {
+          subModelType = subModel.type;
+        } else if (subModelType !== subModel.type) {
+          // don't allow to add mixed type subModels
+          throw new Error('Sample cannot be initialised with mixed type submodels.');
+        }
+
         if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
           subModel.setParent(that);
           subModels.push(subModel);
         } else {
           const modelOptions = _.extend(subModel, { parent: that });
           let newSubModel;
-          if (subModel.type === 'sample') {
-            newSubModel = new Sample(subModel.attributes, modelOptions);
-          } else {
+          if (subModel.type === 'occurrence') {
             newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
+          } else {
+            newSubModel = new Sample(subModel.attributes, modelOptions);
           }
           subModels.push(newSubModel);
         }
       });
+
       this.subModels = new Collection(subModels, {
-        model: this.Occurrence,
+        model: subModelType === 'occurrence' ? this.Occurrence : Sample,
       });
     } else {
-      this.subModels = new Collection([], {
-        model: this.Occurrence,
-      });
+      // init empty subModels collection
+      // don't set model type for it will be done on first subModel add
+      this.subModels = new Collection([]);
     }
 
     if (options.images) {
@@ -179,6 +192,14 @@ const Sample = Backbone.Model.extend({
   addSubModel(subModel) {
     if (!subModel) return;
     subModel.setParent(this);
+
+    if (!this.subModels.model.type) {
+      this.subModels.model = subModel.type === 'occurrence' ? this.Occurrence : Sample;
+    } else if (this.subModels.model.type !== subModel.type) {
+      // don't allow to add mixed type subModels
+      throw new Error('Cannot add a different type submodel to a sample.');
+    }
+
     this.subModels.push(subModel);
   },
 
@@ -328,6 +349,15 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
+   * Returns submodel.
+   * @param index
+   * @returns {*}
+   */
+  getSubModel(index = 0) {
+    return this.subModels.at(index);
+  },
+
+  /**
    * Detach all the listeners.
    */
   offAll() {
@@ -338,6 +368,8 @@ const Sample = Backbone.Model.extend({
     }
   },
 });
+
+Sample.type = 'sample'; // need a static one
 
 /**
  * Warehouse attributes and their values.
