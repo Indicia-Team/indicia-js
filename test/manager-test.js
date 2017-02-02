@@ -7,8 +7,7 @@ import syncAllTests from './sync_all';
 
 const options = {
   host: '',
-  appname: 'test',
-  appsecret: 'mytest',
+  api_key: 'mytest',
   website_id: 23,
   survey_id: 42,
 };

@@ -302,15 +302,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        // append images
 	        var occCount = 0;
-	        var occurrenceProcesses = [];
-	        model.occurrences.each(function (occurrence) {
+	        var subModelProcesses = [];
+	        model.subModels.each(function (subModel) {
 	          // on async run occCount will be incremented before used for image name
 	          var localOccCount = occCount;
 	          var imgCount = 0;
 
 	          var imageProcesses = [];
 
-	          occurrence.images.each(function (image) {
+	          subModel.images.each(function (image) {
 	            var imagePromise = new Promise(function (_fulfill) {
 	              var url = image.getURL();
 	              var type = image.get('type');
@@ -355,11 +355,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            imageProcesses.push(imagePromise);
 	          });
 
-	          occurrenceProcesses.push(Promise.all(imageProcesses));
+	          subModelProcesses.push(Promise.all(imageProcesses));
 	          occCount++;
 	        });
 
-	        Promise.all(occurrenceProcesses).then(function () {
+	        Promise.all(subModelProcesses).then(function () {
 	          // append attributes
 	          var keys = Object.keys(flattened);
 	          for (var i = 0; i < keys.length; i++) {
@@ -477,8 +477,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    /**
-	     * Appends app authentication - Appname and Appsecret to
-	     * the passed object.
+	     * Appends app authentication to the passed object.
 	     * Note: object has to implement 'append' method.
 	     *
 	     * @param data An object to modify
@@ -488,8 +487,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: '_appendAppAuth',
 	    value: function _appendAppAuth(data) {
-	      data.append('appname', this.options.appname);
-	      data.append('appsecret', this.options.appsecret);
+	      data.append('api_key', this.options.api_key);
 
 	      return data;
 	    }
@@ -558,10 +556,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function setModelRemoteID(model, newRemoteIDs) {
 	          model.id = newRemoteIDs[model.cid];
 
-	          if (model.occurrences) {
-	            model.occurrences.each(function (occurrence) {
+	          if (model.subModels) {
+	            model.subModels.each(function (subModel) {
 	              // recursively iterate over submodels
-	              setModelRemoteID(occurrence, newRemoteIDs);
+	              setModelRemoteID(subModel, newRemoteIDs);
 	            });
 	          }
 	        }
@@ -710,8 +708,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    attrs = _underscore2.default.extend(defaultAttrs, attrs);
 
+	    this.type = 'sample';
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
+	    this.setParent(options.parent || this.parent);
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
@@ -738,24 +738,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	        server_on: null };
 	    }
 
-	    if (options.occurrences) {
+	    if (options.subModels) {
 	      (function () {
-	        var occurrences = [];
-	        _underscore2.default.each(options.occurrences, function (occ) {
-	          if (occ instanceof that.Occurrence) {
-	            occ.setSample(that);
-	            occurrences.push(occ);
+	        var subModels = [];
+	        _underscore2.default.each(options.subModels, function (subModel) {
+	          if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
+	            subModel.setParent(that);
+	            subModels.push(subModel);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(occ, { sample: that });
-	            occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
+	            var modelOptions = _underscore2.default.extend(subModel, { parent: that });
+	            var newSubModel = void 0;
+	            if (subModel.type === 'sample') {
+	              newSubModel = new Sample(subModel.attributes, modelOptions);
+	            } else {
+	              newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
+	            }
+	            subModels.push(newSubModel);
 	          }
 	        });
-	        _this.occurrences = new _Collection2.default(occurrences, {
+	        _this.subModels = new _Collection2.default(subModels, {
 	          model: _this.Occurrence
 	        });
 	      })();
 	    } else {
-	      this.occurrences = new _Collection2.default([], {
+	      this.subModels = new _Collection2.default([], {
 	        model: this.Occurrence
 	      });
 	    }
@@ -793,6 +799,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  save: function save() {
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
+	    if (this.parent) {
+	      return this.parent.save(options);
+	    }
+
 	    if (!this.manager) {
 	      return false;
 	    }
@@ -824,7 +834,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _this2.stopListening();
 	        _this2.trigger('destroy', _this2, _this2.collection, options);
 
-	        fulfill();
+	        if (_this2.parent && !options.noSave) {
+	          // save the changes permanentely
+	          _this2.save(options).then(fulfill);
+	        } else {
+	          fulfill();
+	        }
 	      }
 	    });
 
@@ -833,18 +848,33 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Adds an occurrence to sample and sets the occurrence's sample to this.
-	   * @param occurrence
+	   * Sets parent.
+	   * @param parent
 	   */
-	  addOccurrence: function addOccurrence(occurrence) {
-	    if (!occurrence) return;
-	    occurrence.setSample(this);
-	    this.occurrences.push(occurrence);
+	  setParent: function setParent(parent) {
+	    if (!parent) return;
+
+	    var that = this;
+	    this.parent = parent;
+	    this.parent.on('destroy', function () {
+	      that.destroy({ noSave: true });
+	    });
 	  },
 
 
 	  /**
-	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * Adds an subModel to sample and sets the subModel's sample to this.
+	   * @param subModel
+	   */
+	  addSubModel: function addSubModel(subModel) {
+	    if (!subModel) return;
+	    subModel.setParent(this);
+	    this.subModels.push(subModel);
+	  },
+
+
+	  /**
+	   * Adds an image to subModel and sets the images's subModel to this.
 	   * @param image
 	   */
 	  addImage: function addImage(image) {
@@ -856,7 +886,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
 
 	    var sample = {};
-	    var occurrences = {};
+	    var subModels = {};
 
 	    // location
 	    if (!attrs.location) {
@@ -878,23 +908,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 
-	    // occurrences
-	    if (this.occurrences.length === 0) {
-	      sample.occurrences = 'no occurrences';
+	    // subModels
+	    if (this.subModels.length === 0) {
+	      sample.subModels = 'no subModels';
 	    } else {
-	      this.occurrences.each(function (occurrence) {
-	        var errors = occurrence.validate();
+	      this.subModels.each(function (subModel) {
+	        var errors = subModel.validate();
 	        if (errors) {
-	          var occurrenceID = occurrence.cid;
-	          occurrences[occurrenceID] = errors;
+	          var subModelID = subModel.cid;
+	          subModels[subModelID] = errors;
 	        }
 	      });
 	    }
 
-	    if (!_underscore2.default.isEmpty(sample) || !_underscore2.default.isEmpty(occurrences)) {
+	    if (!_underscore2.default.isEmpty(sample) || !_underscore2.default.isEmpty(subModels)) {
 	      var errors = {
 	        sample: sample,
-	        occurrences: occurrences
+	        subModels: subModels
 	      };
 	      return errors;
 	    }
@@ -914,18 +944,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // images flattened separately
 	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
-	    // occurrences
-	    _underscore2.default.extend(flattened, this.occurrences.flatten(flattener));
+	    // subModels
+	    _underscore2.default.extend(flattened, this.subModels.flatten(flattener));
 	    return flattened;
 	  },
 	  toJSON: function toJSON() {
-	    var occurrences = void 0;
-	    var occurrencesCollection = this.occurrences;
-	    if (!occurrencesCollection) {
-	      occurrences = [];
-	      console.warn('toJSON occurrences missing');
+	    var subModels = void 0;
+	    var subModelsCollection = this.subModels;
+	    if (!subModelsCollection) {
+	      subModels = [];
+	      console.warn('toJSON subModels missing');
 	    } else {
-	      occurrences = occurrencesCollection.toJSON();
+	      subModels = subModelsCollection.toJSON();
 	    }
 
 	    var images = void 0;
@@ -938,11 +968,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    var data = {
+	      type: this.type,
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      occurrences: occurrences,
+	      subModels: subModels,
 	      images: images
 	    };
 
@@ -993,9 +1024,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  offAll: function offAll() {
 	    this._events = {};
-	    this.occurrences.offAll();
-	    for (var i = 0; i < this.occurrences.data.length; i++) {
-	      this.occurrences.models[i].offAll();
+	    this.subModels.offAll();
+	    for (var i = 0; i < this.subModels.data.length; i++) {
+	      this.subModels.models[i].offAll();
 	    }
 	  }
 	});
@@ -1008,7 +1039,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *
 	 * Refers to the event in which the sightings were observed, in other
 	 * words it describes the place, date, people, environmental conditions etc.
-	 * Within a sample, you can have zero or more occurrences which refer to each
+	 * Within a sample, you can have zero or more subModels which refer to each
 	 * species sighted as part of the sample.
 	 **********************************************************************/
 	Sample.keys = {
@@ -1630,9 +1661,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 	    var attrs = attributes;
 
+	    this.type = 'occurrence';
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
-	    this.setSample(options.sample || this.sample);
+	    this.setParent(options.parent || this.parent);
 
 	    if (options.Image) this.Image = options.Image;
 
@@ -1678,8 +1710,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  save: function save() {
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	    if (!this.sample) return false;
-	    return this.sample.save(options);
+	    if (!this.parent) return false;
+	    return this.parent.save(options);
 	  },
 	  destroy: function destroy() {
 	    var _this2 = this;
@@ -1691,7 +1723,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      _this2.stopListening();
 	      _this2.trigger('destroy', _this2, _this2.collection, options);
 
-	      if (_this2.sample && !options.noSave) {
+	      if (_this2.parent && !options.noSave) {
 	        // save the changes permanentely
 	        _this2.save(options).then(fulfill);
 	      } else {
@@ -1704,22 +1736,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Sets parent Sample.
-	   * @param occurrence
+	   * Sets parent.
+	   * @param parent
 	   */
-	  setSample: function setSample(sample) {
-	    if (!sample) return;
+	  setParent: function setParent(parent) {
+	    if (!parent) return;
 
 	    var that = this;
-	    this.sample = sample;
-	    this.sample.on('destroy', function () {
+	    this.parent = parent;
+	    this.parent.on('destroy', function () {
 	      that.destroy({ noSave: true });
 	    });
 	  },
 
 
 	  /**
-	   * Adds an image to occurrence and sets the images's occurrence to this.
+	   * Adds an image to occurrence and sets the images's parent to this.
 	   * @param image
 	   */
 	  addImage: function addImage(image) {
@@ -1753,6 +1785,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      images = imagesCollection.toJSON();
 	    }
 	    var data = {
+	      type: this.type,
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,

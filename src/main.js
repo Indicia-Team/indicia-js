@@ -419,16 +419,14 @@ class Morel {
   }
 
   /**
-   * Appends app authentication - Appname and Appsecret to
-   * the passed object.
+   * Appends app authentication to the passed object.
    * Note: object has to implement 'append' method.
    *
    * @param data An object to modify
    * @returns {*} A data object
    */
   _appendAppAuth(data) {
-    data.append('appname', this.options.appname);
-    data.append('appsecret', this.options.appsecret);
+    data.append('api_key', this.options.api_key);
 
     return data;
   }

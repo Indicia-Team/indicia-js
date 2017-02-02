@@ -9,8 +9,7 @@ import ImageModel from '../src/Image';
 
 const options = {
   host: API_BASE + API_VER + API_SAMPLES_PATH,
-  appname: 'test',
-  appsecret: 'mytest',
+  api_key: 'mytest',
   website_id: 23,
   survey_id: 42,
 };

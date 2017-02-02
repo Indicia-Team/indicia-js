@@ -10,13 +10,10 @@ import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
 const options = {
   host: SAMPLE_POST_URL,
-  appname: 'test',
-  appsecret: 'mytest',
+  api_key: 'mytest',
   website_id: 23,
   survey_id: 42,
 };
-
-
 
 export default function (manager) {
   describe('Sync', () => {

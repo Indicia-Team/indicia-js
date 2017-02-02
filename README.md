@@ -76,9 +76,7 @@ require(['path/to/morel.min.js'], function (Morel) {
 ```javascript
 var options = {
   url: 'http://example.com/mobile/submit',
-  appname: "appName",
-  appsecret: "appSecret",
-  website_id: 1,
+  api_key: "SAd123asdasd2132asdAFaaF",
   survey_id: 2,
 }
 
