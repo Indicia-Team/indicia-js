@@ -1,10 +1,10 @@
-import ImageModel from '../src/Image';
+import ImageModel from '../src/Media';
 
 /* eslint-disable no-unused-expressions */
 
-describe('Image', () => {
+describe('Media', () => {
   describe('getDataURI', () => {
-    it('should accept image path', (done) => {
+    it('should accept media path', (done) => {
       const file = '/base/test/images/image.jpg';
       ImageModel.getDataURI(file).then((args) => {
         const [dataURI, type, width, height] = args;
@@ -36,12 +36,12 @@ describe('Image', () => {
     });
 
     it('should return its absolute URL', () => {
-      const URL = 'http://domain.com/image.jpeg';
-      const image = new ImageModel({
+      const URL = 'http://domain.com/media.jpeg';
+      const media = new ImageModel({
         data: URL,
       });
-      expect(image.getURL).to.be.a.function;
-      expect(image.getURL()).to.be.equal(URL);
+      expect(media.getURL).to.be.a.function;
+      expect(media.getURL()).to.be.equal(URL);
     });
   });
 });

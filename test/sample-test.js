@@ -1,31 +1,21 @@
-import _ from 'underscore';
-import Error from '../src/Error';
-
 /* eslint-disable no-unused-expressions */
 
-import Morel from '../src/main';
+import Media from '../src/Media';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
 import helpers from '../src/helpers';
 
-const options = {
-  host: '',
-  api_key: 'mytest',
-  website_id: 23,
-  survey_id: 42,
-  user: 'x',
-  password: 'x',
-};
-
 describe('Sample', () => {
-  const morel = new Morel(_.extend(options, { }));
-
   it('new', () => {
     const sample = new Sample();
     expect(sample.cid).to.be.a.string;
     expect(sample.attributes).to.be.an.object;
-    expect(sample.subModels).to.be.instanceOf(Collection);
+    expect(sample.occurrences).to.be.instanceOf(Collection);
+    expect(sample.occurrences.model).to.be.equal(Occurrence);
+    expect(sample.samples).to.be.instanceOf(Collection);
+    expect(sample.samples.model).to.be.equal(Sample);
+    expect(sample.media.model).to.be.equal(Media);
   });
 
   it('should add missing date and location type if missing', () => {
@@ -45,21 +35,21 @@ describe('Sample', () => {
     const occurrence = new Occurrence();
     const sample = new Sample();
     const subSample = new Sample();
-    subSample.subModels.set(occurrence);
+    subSample.occurrences.set(occurrence);
 
     let json = sample.toJSON();
 
     expect(json).to.be.an.object;
-    expect(json.subModels.length).to.be.equal(0);
+    expect(json.occurrences.length).to.be.equal(0);
 
-    sample.subModels.set(subSample);
+    sample.samples.set(subSample);
     json = sample.toJSON();
 
-    expect(json.subModels.length).to.be.equal(1);
-    expect(json.subModels[0].cid).to.be.equal(subSample.cid);
+    expect(json.samples.length).to.be.equal(1);
+    expect(json.samples[0].cid).to.be.equal(subSample.cid);
 
-    expect(json.subModels[0].subModels.length).to.be.equal(1);
-    expect(json.subModels[0].subModels[0].cid).to.be.equal(occurrence.cid);
+    expect(json.samples[0].occurrences.length).to.be.equal(1);
+    expect(json.samples[0].occurrences[0].cid).to.be.equal(occurrence.cid);
   });
 
   it('should have a validator', () => {
@@ -67,7 +57,7 @@ describe('Sample', () => {
     expect(sample.validate).to.be.a('function');
   });
 
-  it('should validate location, location type, date and subModels', () => {
+  it('should validate location, location type, date and occurrences', () => {
     const sample = new Sample();
     const subSample = new Sample();
     const occurrence = new Occurrence();
@@ -79,33 +69,17 @@ describe('Sample', () => {
     expect(invalids).to.be.an('object');
     expect(invalids.location).to.be.a('string');
     expect(invalids.location_type).to.be.a('string');
-    expect(invalids.subModels).to.be.a('string');
 
-    sample.subModels.set(subSample);
-
-    allInvalids = sample.validate();
-    invalids = allInvalids.sample;
-    expect(invalids.subModels).to.be.undefined;
-    expect(allInvalids.subModels).to.not.be.empty;
-
-    subSample.subModels.set(occurrence);
+    sample.samples.set(subSample);
 
     allInvalids = sample.validate();
     invalids = allInvalids.sample;
-    expect(allInvalids.subModels[subSample.cid].subModels).to.not.be.empty;
-  });
+    expect(invalids.samples).to.be.undefined;
+    expect(allInvalids.samples).to.not.be.empty;
 
-  it('should not allow mixed subModel types', (done) => {
-    const sample = new Sample();
-    const subSample = new Sample();
-    const subSample2 = new Occurrence();
+    subSample.occurrences.set(occurrence);
 
-    sample.addSubModel(subSample);
-    try {
-      sample.addSubModel(subSample2);
-    } catch (err) {
-      expect(err instanceof Error).to.be.true;
-      done();
-    }
+    allInvalids = sample.validate();
+    expect(allInvalids.samples[subSample.cid].occurrences).to.not.be.empty;
   });
 });

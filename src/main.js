@@ -3,7 +3,7 @@ import Backbone from 'backbone';
 import Sample from './Sample';
 import Occurrence from './Occurrence';
 import Storage from './Storage';
-import ImageModel from './Image';
+import Media from './Media';
 import Error from './Error';
 import * as CONST from './constants';
 import helpers from './helpers';
@@ -171,13 +171,15 @@ class Morel {
         timeout: options.timeout || 30000, // 30s
       });
 
-      function getIDs(submodels = []) {
+      function getIDs(subModels = []) {
         const ids = {};
-        submodels.forEach((submodel) => {
-          ids[submodel.external_key] = submodel.id;
-          if (submodel.subModels) {
-            _.extend(ids, getIDs(submodel.subModels)); // recursive iterate
+        subModels.forEach((subModel) => {
+          ids[subModel.external_key] = subModel.id;
+          if (subModel.occurrences) {
+            _.extend(ids, getIDs(subModel.occurrences)); // recursive iterate
           }
+
+          // todo: samples & media
         });
         return ids;
       }
@@ -185,18 +187,32 @@ class Morel {
       function setModelRemoteID(model, newRemoteIDs) {
         model.id = newRemoteIDs[model.cid];
 
-        if (model.subModels) {
-          model.subModels.each((subModel) => {
-            // recursively iterate over submodels
-            setModelRemoteID(subModel, newRemoteIDs);
+        // if (model.samples) {
+        //   model.samples.each((sample) => {
+        //     // recursively iterate over samples
+        //     setModelRemoteID(sample, newRemoteIDs);
+        //   });
+        // }
+
+        if (model.occurrences) {
+          model.occurrences.each((occurrence) => {
+            // recursively iterate over occurrences
+            setModelRemoteID(occurrence, newRemoteIDs);
           });
         }
+        //
+        // if (model.media) {
+        //   model.media.each((media) => {
+        //     // recursively iterate over occurrences
+        //     setModelRemoteID(media, newRemoteIDs);
+        //   });
+        // }
       }
 
       xhr.done((responseData) => {
         model.synchronising = false;
 
-        // update the model and submodels with new remote IDs
+        // update the model and occurrences with new remote IDs
         const newRemoteIDs = {};
         newRemoteIDs[responseData.data.external_key] = responseData.data.id;
         _.extend(newRemoteIDs, getIDs(responseData.data.subModels));
@@ -256,15 +272,15 @@ class Morel {
 
       // append images
       let occCount = 0;
-      const subModelProcesses = [];
-      model.subModels.each((subModel) => {
+      const occurrenceProcesses = [];
+      model.occurrences.each((occurrence) => {
         // on async run occCount will be incremented before used for image name
         const localOccCount = occCount;
         let imgCount = 0;
 
         const imageProcesses = [];
 
-        subModel.images.each((image) => {
+        occurrence.media.each((image) => {
           const imagePromise = new Promise((_fulfill) => {
             const url = image.getURL();
             const type = image.get('type');
@@ -307,11 +323,11 @@ class Morel {
           imageProcesses.push(imagePromise);
         });
 
-        subModelProcesses.push(Promise.all(imageProcesses));
+        occurrenceProcesses.push(Promise.all(imageProcesses));
         occCount++;
       });
 
-      Promise.all(subModelProcesses).then(() => {
+      Promise.all(occurrenceProcesses).then(() => {
         // append attributes
         const keys = Object.keys(flattened);
         for (let i = 0; i < keys.length; i++) {
@@ -491,7 +507,7 @@ _.extend(Morel, CONST, {
 
   Sample,
   Occurrence,
-  Image: ImageModel,
+  Media,
   Error,
 });
 

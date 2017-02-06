@@ -4,12 +4,11 @@
 import Backbone from 'backbone';
 import _ from 'underscore';
 import helpers from './helpers';
-import Image from './Image';
+import Media from './Media';
 import Collection from './Collection';
 
 const Occurrence = Backbone.Model.extend({
-  type: 'occurrence',
-  Image,
+  Media,
 
   constructor(attributes = {}, options = {}) {
     const that = this;
@@ -19,7 +18,7 @@ const Occurrence = Backbone.Model.extend({
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 
-    if (options.Image) this.Image = options.Image;
+    if (options.Media) this.Media = options.Media;
 
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
@@ -36,23 +35,23 @@ const Occurrence = Backbone.Model.extend({
       };
     }
 
-    if (options.images) {
-      const images = [];
-      _.each(options.images, (image) => {
-        if (image instanceof this.Image) {
-          image.setParent(that);
-          images.push(image);
+    if (options.media) {
+      const mediaArray = [];
+      _.each(options.media, (media) => {
+        if (media instanceof this.Media) {
+          media.setParent(that);
+          mediaArray.push(media);
         } else {
-          const modelOptions = _.extend(image, { parent: that });
-          images.push(new this.Image(image.attributes, modelOptions));
+          const modelOptions = _.extend(media, { parent: that });
+          mediaArray.push(new this.Media(media.attributes, modelOptions));
         }
       });
-      this.images = new Collection(images, {
-        model: this.Image,
+      this.media = new Collection(mediaArray, {
+        model: this.Media,
       });
     } else {
-      this.images = new Collection([], {
-        model: this.Image,
+      this.media = new Collection([], {
+        model: this.Media,
       });
     }
 
@@ -96,13 +95,13 @@ const Occurrence = Backbone.Model.extend({
   },
 
   /**
-   * Adds an image to occurrence and sets the images's parent to this.
-   * @param image
+   * Adds an media to occurrence and sets the medias's parent to this.
+   * @param media
    */
-  addImage(image) {
-    if (!image) return;
-    image.setParent(this);
-    this.images.add(image);
+  addMedia(mediaObj) {
+    if (!mediaObj) return;
+    mediaObj.setParent(this);
+    this.media.add(mediaObj);
   },
 
   validate(attributes) {
@@ -123,21 +122,19 @@ const Occurrence = Backbone.Model.extend({
   },
 
   toJSON() {
-    let images;
-    const imagesCollection = this.images;
-    if (!imagesCollection) {
-      images = [];
-      console.warn('toJSON images missing');
+    let media;
+    if (!this.media) {
+      media = [];
+      console.warn('toJSON media missing');
     } else {
-      images = imagesCollection.toJSON();
+      media = this.media.toJSON();
     }
     const data = {
-      type: this.type,
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
-      images,
+      media,
     };
     return data;
   },
@@ -154,8 +151,6 @@ const Occurrence = Backbone.Model.extend({
     return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count }]);
   },
 });
-
-Occurrence.type = 'occurrence';
 
 /**
  * Warehouse attributes and their values.

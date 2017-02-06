@@ -3,21 +3,19 @@
  *
  * Refers to the event in which the sightings were observed, in other
  * words it describes the place, date, people, environmental conditions etc.
- * Within a sample, you can have zero or more subModels which refer to each
+ * Within a sample, you can have zero or more occurrences which refer to each
  * species sighted as part of the sample.
  **********************************************************************/
 import Backbone from 'backbone';
 import _ from 'underscore';
 import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED, SERVER, LOCAL } from './constants';
-import Error from './Error';
 import helpers from './helpers';
-import Image from './Image';
+import Media from './Media';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
 const Sample = Backbone.Model.extend({
-  type: 'sample',
-  Image,
+  Media,
   Occurrence,
 
   constructor(attributes = {}, options = {}) {
@@ -37,7 +35,7 @@ const Sample = Backbone.Model.extend({
     this.manager = options.manager || this.manager;
     if (this.manager) this.sync = this.manager.sync;
 
-    if (options.Image) this.Image = options.Image;
+    if (options.Media) this.Media = options.Media;
     if (options.Occurrence) this.Occurrence = options.Occurrence;
     if (options.onSend) this.onSend = options.onSend;
 
@@ -61,61 +59,61 @@ const Sample = Backbone.Model.extend({
       };
     }
 
-    if (options.subModels) {
+    if (options.occurrences) {
       // fill in existing ones
-      const subModels = [];
-
-      let subModelType; // to check subModels' consistency
-      _.each(options.subModels, (subModel) => {
-        // set parent sample's subModels type
-        if (!subModelType) {
-          subModelType = subModel.type;
-        } else if (subModelType !== subModel.type) {
-          // don't allow to add mixed type subModels
-          throw new Error('Sample cannot be initialised with mixed type submodels.');
-        }
-
-        if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
-          subModel.setParent(that);
-          subModels.push(subModel);
+      const occurrences = [];
+      _.each(options.occurrences, (occurrence) => {
+        if (occurrence instanceof that.Occurrence) {
+          occurrence.setParent(that);
+          occurrences.push(occurrence);
         } else {
-          const modelOptions = _.extend(subModel, { parent: that });
-          let newSubModel;
-          if (subModel.type === 'occurrence') {
-            newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
-          } else {
-            newSubModel = new Sample(subModel.attributes, modelOptions);
-          }
-          subModels.push(newSubModel);
+          const modelOptions = _.extend(occurrence, { parent: that });
+          const newOccurrence = new that.Occurrence(occurrence.attributes, modelOptions);
+          occurrences.push(newOccurrence);
         }
       });
-
-      this.subModels = new Collection(subModels, {
-        model: subModelType === 'occurrence' ? this.Occurrence : Sample,
-      });
+      this.occurrences = new Collection(occurrences, { model: this.Occurrence });
     } else {
-      // init empty subModels collection
-      // don't set model type for it will be done on first subModel add
-      this.subModels = new Collection([]);
+      // init empty occurrences collection
+      this.occurrences = new Collection([], { model: this.Occurrence });
     }
 
-    if (options.images) {
-      const images = [];
-      _.each(options.images, (image) => {
-        if (image instanceof this.Image) {
-          image.setParent(that);
-          images.push(image);
+    if (options.samples) {
+      // fill in existing ones
+      const samples = [];
+      _.each(options.samples, (sample) => {
+        if (sample instanceof Sample) {
+          sample.setParent(that);
+          samples.push(sample);
         } else {
-          const modelOptions = _.extend(image, { parent: that });
-          images.push(new this.Image(image.attributes, modelOptions));
+          const modelOptions = _.extend(sample, { parent: that });
+          const newSample = new Sample(sample.attributes, modelOptions);
+          samples.push(newSample);
         }
       });
-      this.images = new Collection(images, {
-        model: this.Image,
+      this.samples = new Collection(samples, { model: Sample });
+    } else {
+      // init empty occurrences collection
+      this.samples = new Collection([], { model: Sample });
+    }
+
+    if (options.media) {
+      const mediaArray = [];
+      _.each(options.media, (media) => {
+        if (media instanceof this.Media) {
+          media.setParent(that);
+          mediaArray.push(media);
+        } else {
+          const modelOptions = _.extend(media, { parent: that });
+          mediaArray.push(new this.Media(media.attributes, modelOptions));
+        }
+      });
+      this.media = new Collection(mediaArray, {
+        model: this.Media,
       });
     } else {
-      this.images = new Collection([], {
-        model: this.Image,
+      this.media = new Collection([], {
+        model: this.Media,
       });
     }
 
@@ -186,38 +184,44 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Adds an subModel to sample and sets the subModel's sample to this.
-   * @param subModel
+   * Adds a subsample to the sample and sets the samples's parent to this.
+   * @param sample
    */
-  addSubModel(subModel) {
-    if (!subModel) return;
-    subModel.setParent(this);
+  addOccurrence(sample) {
+    if (!sample) return;
+    sample.setParent(this);
 
-    if (!this.subModels.model.type) {
-      this.subModels.model = subModel.type === 'occurrence' ? this.Occurrence : Sample;
-    } else if (this.subModels.model.type !== subModel.type) {
-      // don't allow to add mixed type subModels
-      throw new Error('Cannot add a different type submodel to a sample.');
-    }
-
-    this.subModels.push(subModel);
+    this.samples.push(sample);
   },
 
   /**
-   * Adds an image to subModel and sets the images's subModel to this.
-   * @param image
+   * Adds an occurrence to sample and sets the occurrence's sample to this.
+   * @param occurrence
    */
-  addImage(image) {
-    if (!image) return;
-    image.setParent(this);
-    this.images.add(image);
+  addOccurrence(occurrence) {
+    if (!occurrence) return;
+    occurrence.setParent(this);
+
+    this.occurrences.push(occurrence);
+  },
+
+  /**
+   * Adds an media to occurrence and sets the media's occurrence to this.
+   * @param media
+   */
+  addMedia(media) {
+    if (!media) return;
+    media.setParent(this);
+    this.media.add(media);
   },
 
   validate(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const sample = {};
-    const subModels = {};
+    const samples = {};
+    const occurrences = {};
+    const media = {};
 
     // location
     if (!attrs.location) {
@@ -239,23 +243,41 @@ const Sample = Backbone.Model.extend({
       }
     }
 
-    // subModels
-    if (this.subModels.length === 0) {
-      sample.subModels = 'no subModels';
-    } else {
-      this.subModels.each((subModel) => {
-        const errors = subModel.validate();
+    // check if has any indirect occurrences
+    if (!this.samples.length && !this.occurrences.length) {
+      sample.occurrences = 'no occurrences';
+    }
+
+    // samples
+    if (this.samples.length) {
+      this.samples.each((sample) => {
+        const errors = sample.validate();
         if (errors) {
-          const subModelID = subModel.cid;
-          subModels[subModelID] = errors;
+          const sampleID = sample.cid;
+          samples[sampleID] = errors;
         }
       });
     }
 
-    if (!_.isEmpty(sample) || !_.isEmpty(subModels)) {
+    // occurrences
+    if (this.occurrences.length) {
+      this.occurrences.each((occurrence) => {
+        const errors = occurrence.validate();
+        if (errors) {
+          const occurrenceID = occurrence.cid;
+          occurrences[occurrenceID] = errors;
+        }
+      });
+    }
+
+    // todo: validate media
+
+    if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
       const errors = {
         sample,
-        subModels,
+        samples,
+        occurrences,
+        media,
       };
       return errors;
     }
@@ -271,41 +293,47 @@ const Sample = Backbone.Model.extend({
    * @returns {*}
    */
   flatten(flattener) {
-    // images flattened separately
+    // media flattened separately
     const flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
 
-    // subModels
-    _.extend(flattened, this.subModels.flatten(flattener));
+    // occurrences
+    _.extend(flattened, this.occurrences.flatten(flattener));
     return flattened;
   },
 
   toJSON() {
-    let subModels;
-    const subModelsCollection = this.subModels;
-    if (!subModelsCollection) {
-      subModels = [];
-      console.warn('toJSON subModels missing');
+    let occurrences;
+    if (!this.occurrences) {
+      occurrences = [];
+      console.warn('toJSON occurrences missing');
     } else {
-      subModels = subModelsCollection.toJSON();
+      occurrences = this.occurrences.toJSON();
     }
 
-    let images;
-    const imagesCollection = this.images;
-    if (!imagesCollection) {
-      images = [];
-      console.warn('toJSON images missing');
+    let samples;
+    if (!this.samples) {
+      samples = [];
+      console.warn('toJSON samples missing');
     } else {
-      images = imagesCollection.toJSON();
+      samples = this.samples.toJSON();
+    }
+
+    let media;
+    if (!this.media) {
+      media = [];
+      console.warn('toJSON media missing');
+    } else {
+      media = this.media.toJSON();
     }
 
     const data = {
-      type: this.type,
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attributes: this.attributes,
-      subModels,
-      images,
+      occurrences,
+      samples,
+      media,
     };
 
     return data;
@@ -349,27 +377,23 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Returns submodel.
+   * Returns occurrence.
    * @param index
    * @returns {*}
    */
-  getSubModel(index = 0) {
-    return this.subModels.at(index);
+  getOccurrence(index = 0) {
+    return this.occurrences.at(index);
   },
 
   /**
-   * Detach all the listeners.
+   * Returns occurrence.
+   * @param index
+   * @returns {*}
    */
-  offAll() {
-    this._events = {};
-    this.subModels.offAll();
-    for (let i = 0; i < this.subModels.data.length; i++) {
-      this.subModels.models[i].offAll();
-    }
+  getSample(index = 0) {
+    return this.samples.at(index);
   },
 });
-
-Sample.type = 'sample'; // need a static one
 
 /**
  * Warehouse attributes and their values.
@@ -379,7 +403,7 @@ Sample.keys = {
   survey: { id: 'survey_id' },
   date: { id: 'date' },
   comment: { id: 'comment' },
-  image: { id: 'image' },
+  media: { id: 'media' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',

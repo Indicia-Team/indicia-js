@@ -15,18 +15,42 @@ const responses = {
   },
 
   // model -> type
-  // children -> subModels
+  // children -> occurrences
   // struct -> data
   OK(options) {
     const data = {
       type: 'sample',
       id: Math.random(),
       external_key: options.cid,
-      subModels: [
+      occurrences: [
         {
-          type: 'subModel',
+          type: 'occurrence',
           id: Math.random(),
-          external_key: options.cid,
+          external_key: options.occurrence_cid,
+        },
+      ],
+    };
+
+    return [200, { data }];
+  },
+
+  OK_SUBSAMPLE(options) {
+    const data = {
+      type: 'sample',
+      id: Math.random(),
+      external_key: options.cid,
+      samples: [
+        {
+          type: 'sample',
+          id: Math.random(),
+          external_key: options.subsample_cid,
+          occurrences: [
+            {
+              type: 'occurrence',
+              id: Math.random(),
+              external_key: options.occurrence_cid,
+            },
+          ],
         },
       ],
     };

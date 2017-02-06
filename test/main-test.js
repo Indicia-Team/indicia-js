@@ -3,7 +3,7 @@ import Morel from '../src/main';
 import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
-import ImageModel from '../src/Image';
+import Media from '../src/Media';
 
 /* eslint-disable no-unused-expressions */
 
@@ -32,14 +32,14 @@ describe('Saving/destroying propagation', () => {
     manager.clear().then(done);
   });
 
-  describe('Image', () => {
-    it('should save sample on image save', (done) => {
-      const image = new ImageModel();
-      const subModel = new Occurrence(null, {
-        images: [image],
+  describe('Media', () => {
+    it('should save sample on media save', (done) => {
+      const media = new Media();
+      const occurrence = new Occurrence(null, {
+        media: [media],
       });
       const sample = new Sample(null, {
-        subModels: [subModel],
+        occurrences: [occurrence],
       });
 
       // add sample to storage
@@ -47,16 +47,16 @@ describe('Saving/destroying propagation', () => {
         .then(() => {
           expect(manager.storage._cache.length).to.be.equal(1);
 
-          // update the image and save it - the save should be permenant
-          image.set('data', '1234');
-          const req = image.save().then(() => {
+          // update the media and save it - the save should be permenant
+          media.set('data', '1234');
+          const req = media.save().then(() => {
             const newManager = new Morel(_.extend(options, { }));
             newManager.getAll()
               .then((samples) => {
                 expect(samples.length).to.be.equal(1);
-                const subModelFromDB = samples.at(0).subModels.at(0);
-                const imageFromDB = subModelFromDB.images.at(0);
-                // check if change to image is permenant
+                const occurrenceFromDB = samples.at(0).occurrences.at(0);
+                const imageFromDB = occurrenceFromDB.media.at(0);
+                // check if change to media is permenant
                 expect(imageFromDB.get('data')).to.be.equal('1234');
                 done();
               });
@@ -68,26 +68,26 @@ describe('Saving/destroying propagation', () => {
         });
     });
 
-    it('should save sample on image destroy', (done) => {
-      const image = new ImageModel();
-      const subModel = new Occurrence(null, {
-        images: [image],
+    it('should save sample on media destroy', (done) => {
+      const media = new Media();
+      const occurrence = new Occurrence(null, {
+        media: [media],
       });
       const sample = new Sample(null, {
-        subModels: [subModel],
+        occurrences: [occurrence],
       });
 
       // add sample to storage
       manager.set(sample).then(() => {
         expect(manager.storage._cache.length).to.be.equal(1);
 
-        image.destroy().then(() => {
+        media.destroy().then(() => {
           const newManager = new Morel(_.extend(options, { }));
           newManager.getAll().then((samples) => {
             expect(samples.length).to.be.equal(1);
-            const subModelFromDB = samples.at(0).subModels.at(0);
-            // check if change to image is permenant
-            expect(subModelFromDB.images.length).to.be.equal(0);
+            const occurrenceFromDB = samples.at(0).occurrences.at(0);
+            // check if change to media is permenant
+            expect(occurrenceFromDB.media.length).to.be.equal(0);
             done();
           });
         });
@@ -96,22 +96,22 @@ describe('Saving/destroying propagation', () => {
   });
 
   describe('Sample', () => {
-    it('destroys the images on sample destroy', (done) => {
-      const image = new ImageModel();
-      const subModel = new Occurrence(null, {
-        images: [image],
+    it('destroys the media on sample destroy', (done) => {
+      const media = new Media();
+      const occurrence = new Occurrence(null, {
+        media: [media],
       });
       const sample = new Sample(null, {
-        subModels: [subModel],
+        occurrences: [occurrence],
       });
 
       // add sample to storage
       manager.set(sample).then(() => {
-        sinon.spy(image, 'destroy');
+        sinon.spy(media, 'destroy');
 
         sample.destroy().then(() => {
-          expect(image.destroy.calledOnce).to.be.true;
-          image.destroy.restore();
+          expect(media.destroy.calledOnce).to.be.true;
+          media.destroy.restore();
           done();
         });
       });

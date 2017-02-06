@@ -2,7 +2,7 @@ import _ from 'underscore';
 import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
-import ImageModel from '../src/Image';
+import ImageModel from '../src/Media';
 import serverResponses from './server_responses.js';
 import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
@@ -27,20 +27,20 @@ export default function (manager) {
         SAMPLE_POST_URL,
         serverResponses('OK', {
             cid: sample.cid,
-            submodel_cid: sample.subModels.at(0).cid,
+            occurrence_cid: sample.occurrences.at(0).cid,
           },
         ),
       );
     }
 
     function getRandomSample() {
-      const subModel = new Occurrence({
+      const occurrence = new Occurrence({
         taxon: 1234,
       });
       const sample = new Sample({
         location: ' 12.12, -0.23',
       }, {
-        subModels: [subModel],
+        occurrences: [occurrence],
         manager,
       });
 
@@ -106,18 +106,28 @@ export default function (manager) {
           location: ' 12.12, -0.23',
         },
         {
-          subModels: [occurrence]
+          occurrences: [occurrence],
         },
       );
 
       const sample = new Sample({
         location: ' 12.12, -0.23',
       }, {
-        subModels: [subSample],
+        samples: [subSample],
         manager,
       });
 
-      generateSampleResponse(sample);
+      server.respondWith(
+        'POST',
+        SAMPLE_POST_URL,
+        serverResponses('OK_SUBSAMPLE', {
+            cid: sample.cid,
+            subsample_cid: subSample.cid,
+            occurrence_cid: subSample.occurrences.at(0).cid,
+          },
+        ),
+      );
+
       const valid = sample.save({ remote: true }).then(() => {
         expect(manager.sync.calledOnce).to.be.true;
         done();
@@ -142,9 +152,9 @@ export default function (manager) {
     });
 
     it('should validate before remote sending', () => {
-      const subModel = new Occurrence();
+      const occurrence = new Occurrence();
       const sample = new Sample(null, {
-        subModels: [subModel],
+        occurrences: [occurrence],
         manager,
       });
 
@@ -171,16 +181,16 @@ export default function (manager) {
       const sample = getRandomSample();
       server.respondWith('POST',
         SAMPLE_POST_URL,
-        serverResponses('duplicate', { cid: sample.subModels.at(0).cid },
+        serverResponses('duplicate', { cid: sample.occurrences.at(0).cid },
         ),
       );
       expect(sample.id).to.be.undefined;
-      expect(sample.subModels.at(0).id).to.be.undefined;
+      expect(sample.occurrences.at(0).id).to.be.undefined;
 
       sample.save({ remote: true })
         .then(() => {
           expect(sample.id).to.be.a('number');
-          expect(sample.subModels.at(0).id).to.be.a('number');
+          expect(sample.occurrences.at(0).id).to.be.a('number');
           expect(manager.sync.calledOnce).to.be.true;
           done();
         });
@@ -252,7 +262,7 @@ export default function (manager) {
     //   });
     // });
 
-    describe('subModels with images', () => {
+    describe('occurrences with media', () => {
       before((done) => {
         manager.clear().then(done);
       });
@@ -268,19 +278,19 @@ export default function (manager) {
         });
 
         const image2 = new ImageModel({
-          data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
+          data: 'data:media/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
           type: 'png',
         });
 
-        const subModel = new Occurrence({
+        const occurrence = new Occurrence({
           taxon: 1234,
         }, {
-          images: [image1, image2],
+          media: [image1, image2],
         });
         const sample = new Sample({
           location: ' 12.12, -0.23',
         }, {
-          subModels: [subModel],
+          occurrences: [occurrence],
           manager,
         });
         generateSampleResponse(sample);

@@ -10,14 +10,14 @@
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("underscore"), require("backbone"), require("jquery"), require("localforage"));
+		module.exports = factory(require("underscore"), require("backbone"), require("localforage"));
 	else if(typeof define === 'function' && define.amd)
-		define("Morel", ["_", "Backbone", "$", "localforage"], factory);
+		define("Morel", ["_", "Backbone", "localforage"], factory);
 	else if(typeof exports === 'object')
-		exports["Morel"] = factory(require("underscore"), require("backbone"), require("jquery"), require("localforage"));
+		exports["Morel"] = factory(require("underscore"), require("backbone"), require("localforage"));
 	else
-		root["Morel"] = factory(root["_"], root["Backbone"], root["$"], root["localforage"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_8__, __WEBPACK_EXTERNAL_MODULE_12__) {
+		root["Morel"] = factory(root["_"], root["Backbone"], root["localforage"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_11__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -87,19 +87,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(9);
+	var _Occurrence = __webpack_require__(8);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
-	var _Storage = __webpack_require__(11);
+	var _Storage = __webpack_require__(10);
 
 	var _Storage2 = _interopRequireDefault(_Storage);
 
-	var _Image = __webpack_require__(7);
+	var _Media = __webpack_require__(6);
 
-	var _Image2 = _interopRequireDefault(_Image);
+	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Error = __webpack_require__(5);
+	var _Error = __webpack_require__(7);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -107,7 +107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var CONST = _interopRequireWildcard(_constants);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -128,6 +128,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.storage = new _Storage2.default(options);
 	    this.onSend = options.onSend;
+	    this.user = options.user;
+	    this.password = options.password;
 	    this._attachListeners();
 	    this.synchronising = false;
 	  }
@@ -280,8 +282,121 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // async call to get the form data
 	      return that._getModelFormData(model).then(function (formData) {
-	        return Morel._ajaxModel(formData, model, options);
+	        return that._ajaxModel(formData, model, options);
 	      });
+	    }
+	  }, {
+	    key: '_ajaxModel',
+	    value: function _ajaxModel(formData, model, options) {
+	      var that = this;
+	      // todo: use ajax promise
+	      var promise = new Promise(function (fulfill, reject) {
+	        // AJAX post
+	        var fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
+	        var xhr = options.xhr = _backbone2.default.ajax({
+	          url: options.host + fullSamplePostPath,
+	          type: 'POST',
+	          data: formData,
+	          headers: {
+	            Authorization: 'Basic  ' + that.getUserAuth()
+	          },
+	          processData: false,
+	          contentType: false,
+	          timeout: options.timeout || 30000 });
+
+	        function getIDs() {
+	          var subModels = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
+	          var ids = {};
+	          subModels.forEach(function (subModel) {
+	            ids[subModel.external_key] = subModel.id;
+	            if (subModel.occurrences) {
+	              _underscore2.default.extend(ids, getIDs(subModel.occurrences)); // recursive iterate
+	            }
+
+	            // todo: samples & media
+	          });
+	          return ids;
+	        }
+
+	        function setModelRemoteID(model, newRemoteIDs) {
+	          model.id = newRemoteIDs[model.cid];
+
+	          // if (model.samples) {
+	          //   model.samples.each((sample) => {
+	          //     // recursively iterate over samples
+	          //     setModelRemoteID(sample, newRemoteIDs);
+	          //   });
+	          // }
+
+	          if (model.occurrences) {
+	            model.occurrences.each(function (occurrence) {
+	              // recursively iterate over occurrences
+	              setModelRemoteID(occurrence, newRemoteIDs);
+	            });
+	          }
+	          //
+	          // if (model.media) {
+	          //   model.media.each((media) => {
+	          //     // recursively iterate over occurrences
+	          //     setModelRemoteID(media, newRemoteIDs);
+	          //   });
+	          // }
+	        }
+
+	        xhr.done(function (responseData) {
+	          model.synchronising = false;
+
+	          // update the model and occurrences with new remote IDs
+	          var newRemoteIDs = {};
+	          newRemoteIDs[responseData.data.external_key] = responseData.data.id;
+	          _underscore2.default.extend(newRemoteIDs, getIDs(responseData.data.subModels));
+	          setModelRemoteID(model, newRemoteIDs);
+
+	          var timeNow = new Date();
+	          model.metadata.server_on = timeNow;
+	          model.metadata.updated_on = timeNow;
+	          model.metadata.synced_on = timeNow;
+
+	          model.save().then(fulfill);
+	        });
+
+	        xhr.fail(function (jqXHR, textStatus, errorThrown) {
+	          model.synchronising = false;
+
+	          if (errorThrown === 'Conflict') {
+	            var _ret = function () {
+	              // duplicate occurred
+	              var newRemoteIDs = {};
+	              jqXHR.responseJSON.errors.forEach(function (error) {
+	                newRemoteIDs[model.cid] = error.sample_id;
+	                newRemoteIDs[error.external_key] = error.id;
+	              });
+	              setModelRemoteID(model, newRemoteIDs);
+
+	              var timeNow = new Date();
+	              model.metadata.server_on = timeNow;
+	              model.metadata.updated_on = timeNow;
+	              model.metadata.synced_on = timeNow;
+	              model.save().then(fulfill);
+	              return {
+	                v: void 0
+	              };
+	            }();
+
+	            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	          }
+
+	          model.trigger('error');
+
+	          var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
+	          reject(error);
+	        });
+
+	        model.trigger('request', model, xhr, options);
+	      });
+
+	      return promise;
 	    }
 	  }, {
 	    key: '_attachListeners',
@@ -302,15 +417,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        // append images
 	        var occCount = 0;
-	        var subModelProcesses = [];
-	        model.subModels.each(function (subModel) {
+	        var occurrenceProcesses = [];
+	        model.occurrences.each(function (occurrence) {
 	          // on async run occCount will be incremented before used for image name
 	          var localOccCount = occCount;
 	          var imgCount = 0;
 
 	          var imageProcesses = [];
 
-	          subModel.images.each(function (image) {
+	          occurrence.media.each(function (image) {
 	            var imagePromise = new Promise(function (_fulfill) {
 	              var url = image.getURL();
 	              var type = image.get('type');
@@ -355,11 +470,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            imageProcesses.push(imagePromise);
 	          });
 
-	          subModelProcesses.push(Promise.all(imageProcesses));
+	          occurrenceProcesses.push(Promise.all(imageProcesses));
 	          occCount++;
 	        });
 
-	        Promise.all(subModelProcesses).then(function () {
+	        Promise.all(occurrenceProcesses).then(function () {
 	          // append attributes
 	          var keys = Object.keys(flattened);
 	          for (var i = 0; i < keys.length; i++) {
@@ -477,6 +592,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    /**
+	     * Appends user basic auth to a request.
+	     * @param xhr
+	     */
+
+	  }, {
+	    key: 'getUserAuth',
+	    value: function getUserAuth() {
+	      var user = typeof this.options.user === 'function' ? this.options.user() : this.options.user;
+	      var password = typeof this.options.password === 'function' ? this.options.password() : this.options.password;
+
+	      if (!user || !password) {
+	        throw new _Error2.default('User or password must be specified for basic authentication.');
+	      }
+
+	      return btoa(user + ':' + password);
+	    }
+
+	    /**
 	     * Appends app authentication to the passed object.
 	     * Note: object has to implement 'append' method.
 	     *
@@ -525,99 +658,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //   this.trigger.apply(this, args);
 	    // }
 
-	  }], [{
-	    key: '_ajaxModel',
-	    value: function _ajaxModel(formData, model, options) {
-	      // todo: use ajax promise
-	      var promise = new Promise(function (fulfill, reject) {
-	        // AJAX post
-	        var fullSamplePostPath = CONST.API_BASE + CONST.API_VER + CONST.API_SAMPLES_PATH;
-	        var xhr = options.xhr = _backbone2.default.ajax({
-	          url: options.host + fullSamplePostPath,
-	          type: 'POST',
-	          data: formData,
-	          processData: false,
-	          contentType: false,
-	          timeout: options.timeout || 30000 });
-
-	        function getIDs() {
-	          var submodels = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-
-	          var ids = {};
-	          submodels.forEach(function (submodel) {
-	            ids[submodel.external_key] = submodel.id;
-	            if (submodel.subModels) {
-	              _underscore2.default.extend(ids, getIDs(submodel.subModels)); // recursive iterate
-	            }
-	          });
-	          return ids;
-	        }
-
-	        function setModelRemoteID(model, newRemoteIDs) {
-	          model.id = newRemoteIDs[model.cid];
-
-	          if (model.subModels) {
-	            model.subModels.each(function (subModel) {
-	              // recursively iterate over submodels
-	              setModelRemoteID(subModel, newRemoteIDs);
-	            });
-	          }
-	        }
-
-	        xhr.done(function (responseData) {
-	          model.synchronising = false;
-
-	          // update the model and submodels with new remote IDs
-	          var newRemoteIDs = {};
-	          newRemoteIDs[responseData.data.external_key] = responseData.data.id;
-	          _underscore2.default.extend(newRemoteIDs, getIDs(responseData.data.subModels));
-	          setModelRemoteID(model, newRemoteIDs);
-
-	          var timeNow = new Date();
-	          model.metadata.server_on = timeNow;
-	          model.metadata.updated_on = timeNow;
-	          model.metadata.synced_on = timeNow;
-
-	          model.save().then(fulfill);
-	        });
-
-	        xhr.fail(function (jqXHR, textStatus, errorThrown) {
-	          model.synchronising = false;
-
-	          if (errorThrown === 'Conflict') {
-	            var _ret2 = function () {
-	              // duplicate occurred
-	              var newRemoteIDs = {};
-	              jqXHR.responseJSON.errors.forEach(function (error) {
-	                newRemoteIDs[model.cid] = error.sample_id;
-	                newRemoteIDs[error.external_key] = error.id;
-	              });
-	              setModelRemoteID(model, newRemoteIDs);
-
-	              var timeNow = new Date();
-	              model.metadata.server_on = timeNow;
-	              model.metadata.updated_on = timeNow;
-	              model.metadata.synced_on = timeNow;
-	              model.save().then(fulfill);
-	              return {
-	                v: void 0
-	              };
-	            }();
-
-	            if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
-	          }
-
-	          model.trigger('error');
-
-	          var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
-	          reject(error);
-	        });
-
-	        model.trigger('request', model, xhr, options);
-	      });
-
-	      return promise;
-	    }
 	  }]);
 
 	  return Morel;
@@ -631,7 +671,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
-	  Image: _Image2.default,
+	  Media: _Media2.default,
 	  Error: _Error2.default
 	});
 
@@ -660,6 +700,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
+	var _Backbone$Model$exten;
+
 	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -670,39 +712,36 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _constants = __webpack_require__(4);
 
-	var _Error = __webpack_require__(5);
-
-	var _Error2 = _interopRequireDefault(_Error);
-
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(7);
+	var _Media = __webpack_require__(6);
 
-	var _Image2 = _interopRequireDefault(_Image);
+	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Occurrence = __webpack_require__(9);
+	var _Occurrence = __webpack_require__(8);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
-	var _Collection = __webpack_require__(10);
+	var _Collection = __webpack_require__(9);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	/** *********************************************************************
-	 * SAMPLE
-	 *
-	 * Refers to the event in which the sightings were observed, in other
-	 * words it describes the place, date, people, environmental conditions etc.
-	 * Within a sample, you can have zero or more subModels which refer to each
-	 * species sighted as part of the sample.
-	 **********************************************************************/
-	var Sample = _backbone2.default.Model.extend({
-	  type: 'sample',
-	  Image: _Image2.default,
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; } /** *********************************************************************
+	                                                                                                                                                                                                                   * SAMPLE
+	                                                                                                                                                                                                                   *
+	                                                                                                                                                                                                                   * Refers to the event in which the sightings were observed, in other
+	                                                                                                                                                                                                                   * words it describes the place, date, people, environmental conditions etc.
+	                                                                                                                                                                                                                   * Within a sample, you can have zero or more occurrences which refer to each
+	                                                                                                                                                                                                                   * species sighted as part of the sample.
+	                                                                                                                                                                                                                   **********************************************************************/
+
+
+	var Sample = _backbone2.default.Model.extend((_Backbone$Model$exten = {
+	  Media: _Media2.default,
 	  Occurrence: _Occurrence2.default,
 
 	  constructor: function constructor() {
@@ -727,7 +766,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.manager = options.manager || this.manager;
 	    if (this.manager) this.sync = this.manager.sync;
 
-	    if (options.Image) this.Image = options.Image;
+	    if (options.Media) this.Media = options.Media;
 	    if (options.Occurrence) this.Occurrence = options.Occurrence;
 	    if (options.onSend) this.onSend = options.onSend;
 
@@ -750,65 +789,67 @@ return /******/ (function(modules) { // webpackBootstrap
 	        server_on: null };
 	    }
 
-	    if (options.subModels) {
+	    if (options.occurrences) {
 	      (function () {
 	        // fill in existing ones
-	        var subModels = [];
-
-	        var subModelType = void 0; // to check subModels' consistency
-	        _underscore2.default.each(options.subModels, function (subModel) {
-	          // set parent sample's subModels type
-	          if (!subModelType) {
-	            subModelType = subModel.type;
-	          } else if (subModelType !== subModel.type) {
-	            // don't allow to add mixed type subModels
-	            throw new _Error2.default('Sample cannot be initialised with mixed type submodels.');
-	          }
-
-	          if (subModel instanceof that.Occurrence || subModel instanceof Sample) {
-	            subModel.setParent(that);
-	            subModels.push(subModel);
+	        var occurrences = [];
+	        _underscore2.default.each(options.occurrences, function (occurrence) {
+	          if (occurrence instanceof that.Occurrence) {
+	            occurrence.setParent(that);
+	            occurrences.push(occurrence);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(subModel, { parent: that });
-	            var newSubModel = void 0;
-	            if (subModel.type === 'occurrence') {
-	              newSubModel = new that.Occurrence(subModel.attributes, modelOptions);
-	            } else {
-	              newSubModel = new Sample(subModel.attributes, modelOptions);
-	            }
-	            subModels.push(newSubModel);
+	            var modelOptions = _underscore2.default.extend(occurrence, { parent: that });
+	            var newOccurrence = new that.Occurrence(occurrence.attributes, modelOptions);
+	            occurrences.push(newOccurrence);
 	          }
 	        });
-
-	        _this.subModels = new _Collection2.default(subModels, {
-	          model: subModelType === 'occurrence' ? _this.Occurrence : Sample
-	        });
+	        _this.occurrences = new _Collection2.default(occurrences, { model: _this.Occurrence });
 	      })();
 	    } else {
-	      // init empty subModels collection
-	      // don't set model type for it will be done on first subModel add
-	      this.subModels = new _Collection2.default([]);
+	      // init empty occurrences collection
+	      this.occurrences = new _Collection2.default([], { model: this.Occurrence });
 	    }
 
-	    if (options.images) {
+	    if (options.samples) {
 	      (function () {
-	        var images = [];
-	        _underscore2.default.each(options.images, function (image) {
-	          if (image instanceof _this.Image) {
-	            image.setParent(that);
-	            images.push(image);
+	        // fill in existing ones
+	        var samples = [];
+	        _underscore2.default.each(options.samples, function (sample) {
+	          if (sample instanceof Sample) {
+	            sample.setParent(that);
+	            samples.push(sample);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(image, { parent: that });
-	            images.push(new _this.Image(image.attributes, modelOptions));
+	            var modelOptions = _underscore2.default.extend(sample, { parent: that });
+	            var newSample = new Sample(sample.attributes, modelOptions);
+	            samples.push(newSample);
 	          }
 	        });
-	        _this.images = new _Collection2.default(images, {
-	          model: _this.Image
+	        _this.samples = new _Collection2.default(samples, { model: Sample });
+	      })();
+	    } else {
+	      // init empty occurrences collection
+	      this.samples = new _Collection2.default([], { model: Sample });
+	    }
+
+	    if (options.media) {
+	      (function () {
+	        var mediaArray = [];
+	        _underscore2.default.each(options.media, function (media) {
+	          if (media instanceof _this.Media) {
+	            media.setParent(that);
+	            mediaArray.push(media);
+	          } else {
+	            var modelOptions = _underscore2.default.extend(media, { parent: that });
+	            mediaArray.push(new _this.Media(media.attributes, modelOptions));
+	          }
+	        });
+	        _this.media = new _Collection2.default(mediaArray, {
+	          model: _this.Media
 	        });
 	      })();
 	    } else {
-	      this.images = new _Collection2.default([], {
-	        model: this.Image
+	      this.media = new _Collection2.default([], {
+	        model: this.Media
 	      });
 	    }
 
@@ -887,195 +928,175 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Adds an subModel to sample and sets the subModel's sample to this.
-	   * @param subModel
+	   * Adds a subsample to the sample and sets the samples's parent to this.
+	   * @param sample
 	   */
-	  addSubModel: function addSubModel(subModel) {
-	    if (!subModel) return;
-	    subModel.setParent(this);
+	  addOccurrence: function addOccurrence(sample) {
+	    if (!sample) return;
+	    sample.setParent(this);
 
-	    if (!this.subModels.model.type) {
-	      this.subModels.model = subModel.type === 'occurrence' ? this.Occurrence : Sample;
-	    } else if (this.subModels.model.type !== subModel.type) {
-	      // don't allow to add mixed type subModels
-	      throw new _Error2.default('Cannot add a different type submodel to a sample.');
-	    }
+	    this.samples.push(sample);
+	  }
+	}, _defineProperty(_Backbone$Model$exten, 'addOccurrence', function addOccurrence(occurrence) {
+	  if (!occurrence) return;
+	  occurrence.setParent(this);
 
-	    this.subModels.push(subModel);
-	  },
+	  this.occurrences.push(occurrence);
+	}), _defineProperty(_Backbone$Model$exten, 'addMedia', function addMedia(media) {
+	  if (!media) return;
+	  media.setParent(this);
+	  this.media.add(media);
+	}), _defineProperty(_Backbone$Model$exten, 'validate', function validate(attributes) {
+	  var attrs = _underscore2.default.extend({}, this.attributes, attributes);
 
+	  var sample = {};
+	  var samples = {};
+	  var occurrences = {};
+	  var media = {};
 
-	  /**
-	   * Adds an image to subModel and sets the images's subModel to this.
-	   * @param image
-	   */
-	  addImage: function addImage(image) {
-	    if (!image) return;
-	    image.setParent(this);
-	    this.images.add(image);
-	  },
-	  validate: function validate(attributes) {
-	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
+	  // location
+	  if (!attrs.location) {
+	    sample.location = 'can\'t be blank';
+	  }
 
-	    var sample = {};
-	    var subModels = {};
+	  // location type
+	  if (!attrs.location_type) {
+	    sample.location_type = 'can\'t be blank';
+	  }
 
-	    // location
-	    if (!attrs.location) {
-	      sample.location = 'can\'t be blank';
-	    }
-
-	    // location type
-	    if (!attrs.location_type) {
-	      sample.location_type = 'can\'t be blank';
-	    }
-
-	    // date
-	    if (!attrs.date) {
-	      sample.date = 'can\'t be blank';
-	    } else {
-	      var date = new Date(attrs.date);
-	      if (date === 'Invalid Date' || date > new Date()) {
-	        sample.date = new Date(date) > new Date() ? 'future date' : 'invalid';
-	      }
-	    }
-
-	    // subModels
-	    if (this.subModels.length === 0) {
-	      sample.subModels = 'no subModels';
-	    } else {
-	      this.subModels.each(function (subModel) {
-	        var errors = subModel.validate();
-	        if (errors) {
-	          var subModelID = subModel.cid;
-	          subModels[subModelID] = errors;
-	        }
-	      });
-	    }
-
-	    if (!_underscore2.default.isEmpty(sample) || !_underscore2.default.isEmpty(subModels)) {
-	      var errors = {
-	        sample: sample,
-	        subModels: subModels
-	      };
-	      return errors;
-	    }
-
-	    return null;
-	  },
-
-
-	  /**
-	   * Returns an object with attributes and their values flattened and
-	   * mapped for warehouse submission.
-	   *
-	   * @param flattener
-	   * @returns {*}
-	   */
-	  flatten: function flatten(flattener) {
-	    // images flattened separately
-	    var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
-
-	    // subModels
-	    _underscore2.default.extend(flattened, this.subModels.flatten(flattener));
-	    return flattened;
-	  },
-	  toJSON: function toJSON() {
-	    var subModels = void 0;
-	    var subModelsCollection = this.subModels;
-	    if (!subModelsCollection) {
-	      subModels = [];
-	      console.warn('toJSON subModels missing');
-	    } else {
-	      subModels = subModelsCollection.toJSON();
-	    }
-
-	    var images = void 0;
-	    var imagesCollection = this.images;
-	    if (!imagesCollection) {
-	      images = [];
-	      console.warn('toJSON images missing');
-	    } else {
-	      images = imagesCollection.toJSON();
-	    }
-
-	    var data = {
-	      type: this.type,
-	      id: this.id,
-	      cid: this.cid,
-	      metadata: this.metadata,
-	      attributes: this.attributes,
-	      subModels: subModels,
-	      images: images
-	    };
-
-	    return data;
-	  },
-
-
-	  /**
-	   * Sync statuses:
-	   * synchronising, synced, local, server, changed_locally, changed_server, conflict
-	   */
-	  getSyncStatus: function getSyncStatus() {
-	    var meta = this.metadata;
-	    // on server
-	    if (this.synchronising) {
-	      return _constants.SYNCHRONISING;
-	    }
-
-	    if (this.id >= 0) {
-	      // fully initialized
-	      if (meta.synced_on) {
-	        // changed_locally
-	        if (meta.synced_on < meta.updated_on) {
-	          // changed_server - conflict!
-	          if (meta.synced_on < meta.server_on) {
-	            return _constants.CONFLICT;
-	          }
-	          return _constants.CHANGED_LOCALLY;
-	          // changed_server
-	        } else if (meta.synced_on < meta.server_on) {
-	          return _constants.CHANGED_SERVER;
-	        }
-	        return _constants.SYNCED;
-
-	        // partially initialized - we know the record exists on
-	        // server but has not yet been downloaded
-	      }
-	      return _constants.SERVER;
-
-	      // local only
-	    }
-	    return _constants.LOCAL;
-	  },
-
-
-	  /**
-	   * Returns submodel.
-	   * @param index
-	   * @returns {*}
-	   */
-	  getSubModel: function getSubModel() {
-	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-
-	    return this.subModels.at(index);
-	  },
-
-
-	  /**
-	   * Detach all the listeners.
-	   */
-	  offAll: function offAll() {
-	    this._events = {};
-	    this.subModels.offAll();
-	    for (var i = 0; i < this.subModels.data.length; i++) {
-	      this.subModels.models[i].offAll();
+	  // date
+	  if (!attrs.date) {
+	    sample.date = 'can\'t be blank';
+	  } else {
+	    var date = new Date(attrs.date);
+	    if (date === 'Invalid Date' || date > new Date()) {
+	      sample.date = new Date(date) > new Date() ? 'future date' : 'invalid';
 	    }
 	  }
-	});
 
-	Sample.type = 'sample'; // need a static one
+	  // check if has any indirect occurrences
+	  if (!this.samples.length && !this.occurrences.length) {
+	    sample.occurrences = 'no occurrences';
+	  }
+
+	  // samples
+	  if (this.samples.length) {
+	    this.samples.each(function (sample) {
+	      var errors = sample.validate();
+	      if (errors) {
+	        var sampleID = sample.cid;
+	        samples[sampleID] = errors;
+	      }
+	    });
+	  }
+
+	  // occurrences
+	  if (this.occurrences.length) {
+	    this.occurrences.each(function (occurrence) {
+	      var errors = occurrence.validate();
+	      if (errors) {
+	        var occurrenceID = occurrence.cid;
+	        occurrences[occurrenceID] = errors;
+	      }
+	    });
+	  }
+
+	  // todo: validate media
+
+	  if (!_underscore2.default.isEmpty(sample) || !_underscore2.default.isEmpty(occurrences)) {
+	    var errors = {
+	      sample: sample,
+	      samples: samples,
+	      occurrences: occurrences,
+	      media: media
+	    };
+	    return errors;
+	  }
+
+	  return null;
+	}), _defineProperty(_Backbone$Model$exten, 'flatten', function flatten(flattener) {
+	  // media flattened separately
+	  var flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
+
+	  // occurrences
+	  _underscore2.default.extend(flattened, this.occurrences.flatten(flattener));
+	  return flattened;
+	}), _defineProperty(_Backbone$Model$exten, 'toJSON', function toJSON() {
+	  var occurrences = void 0;
+	  if (!this.occurrences) {
+	    occurrences = [];
+	    console.warn('toJSON occurrences missing');
+	  } else {
+	    occurrences = this.occurrences.toJSON();
+	  }
+
+	  var samples = void 0;
+	  if (!this.samples) {
+	    samples = [];
+	    console.warn('toJSON samples missing');
+	  } else {
+	    samples = this.samples.toJSON();
+	  }
+
+	  var media = void 0;
+	  if (!this.media) {
+	    media = [];
+	    console.warn('toJSON media missing');
+	  } else {
+	    media = this.media.toJSON();
+	  }
+
+	  var data = {
+	    id: this.id,
+	    cid: this.cid,
+	    metadata: this.metadata,
+	    attributes: this.attributes,
+	    occurrences: occurrences,
+	    samples: samples,
+	    media: media
+	  };
+
+	  return data;
+	}), _defineProperty(_Backbone$Model$exten, 'getSyncStatus', function getSyncStatus() {
+	  var meta = this.metadata;
+	  // on server
+	  if (this.synchronising) {
+	    return _constants.SYNCHRONISING;
+	  }
+
+	  if (this.id >= 0) {
+	    // fully initialized
+	    if (meta.synced_on) {
+	      // changed_locally
+	      if (meta.synced_on < meta.updated_on) {
+	        // changed_server - conflict!
+	        if (meta.synced_on < meta.server_on) {
+	          return _constants.CONFLICT;
+	        }
+	        return _constants.CHANGED_LOCALLY;
+	        // changed_server
+	      } else if (meta.synced_on < meta.server_on) {
+	        return _constants.CHANGED_SERVER;
+	      }
+	      return _constants.SYNCED;
+
+	      // partially initialized - we know the record exists on
+	      // server but has not yet been downloaded
+	    }
+	    return _constants.SERVER;
+
+	    // local only
+	  }
+	  return _constants.LOCAL;
+	}), _defineProperty(_Backbone$Model$exten, 'getOccurrence', function getOccurrence() {
+	  var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+	  return this.occurrences.at(index);
+	}), _defineProperty(_Backbone$Model$exten, 'getSample', function getSample() {
+	  var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+	  return this.samples.at(index);
+	}), _Backbone$Model$exten));
 
 	/**
 	 * Warehouse attributes and their values.
@@ -1085,7 +1106,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  survey: { id: 'survey_id' },
 	  date: { id: 'date' },
 	  comment: { id: 'comment' },
-	  image: { id: 'image' },
+	  media: { id: 'media' },
 	  location: { id: 'entered_sref' },
 	  location_type: {
 	    id: 'entered_sref_system',
@@ -1125,38 +1146,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	/** *********************************************************************
-	 * ERROR
-	 **********************************************************************/
-	var Error = function Error() {
-	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	  _classCallCheck(this, Error);
-
-	  if (typeof options === 'string') {
-	    this.code = -1;
-	    this.message = options;
-	    return;
-	  }
-
-	  this.code = options.code || -1;
-	  this.message = options.message || '';
-	};
-
-	exports.default = Error;
-
-/***/ },
-/* 6 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1327,7 +1316,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1344,10 +1333,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          **********************************************************************/
 
 
-	var _jquery = __webpack_require__(8);
-
-	var _jquery2 = _interopRequireDefault(_jquery);
-
 	var _backbone = __webpack_require__(2);
 
 	var _backbone2 = _interopRequireDefault(_backbone);
@@ -1356,11 +1341,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Error = __webpack_require__(5);
+	var _Error = __webpack_require__(7);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1369,7 +1354,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var THUMBNAIL_WIDTH = 100; // px
 	var THUMBNAIL_HEIGHT = 100; // px
 
-	var ImageModel = _backbone2.default.Model.extend({
+	var Media = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
 	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -1461,7 +1446,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var that = this;
 	    var promise = new Promise(function (fulfill, reject) {
-	      ImageModel.resize(_this2.getURL(), _this2.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (args) {
+	      Media.resize(_this2.getURL(), _this2.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (args) {
 	        var _args = _slicedToArray(args, 2),
 	            image = _args[0],
 	            data = _args[1];
@@ -1489,7 +1474,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // check if data source is dataURI
 	      var re = /^data:/i;
 	      if (re.test(_this3.getURL())) {
-	        ImageModel.resize(_this3.getURL(), _this3.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (args) {
+	        Media.resize(_this3.getURL(), _this3.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (args) {
 	          var _args2 = _slicedToArray(args, 2),
 	              image = _args2[0],
 	              data = _args2[1];
@@ -1500,7 +1485,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return;
 	      }
 
-	      ImageModel.getDataURI(_this3.getURL(), {
+	      Media.getDataURI(_this3.getURL(), {
 	        width: THUMBNAIL_WIDTH || options.width,
 	        height: THUMBNAIL_HEIGHT || options.height
 	      }).then(function (data) {
@@ -1522,7 +1507,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	});
 
-	_underscore2.default.extend(ImageModel, {
+	_underscore2.default.extend(Media, {
 	  /**
 	   * Transforms and resizes an image file into a string.
 	   * Can accept file image path and a file input file.
@@ -1543,7 +1528,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
 	          if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-	          ImageModel.resize(file, fileType, options.width, options.height).then(function (args) {
+	          Media.resize(file, fileType, options.width, options.height).then(function (args) {
 	            var _args3 = _slicedToArray(args, 2),
 	                image = _args3[0],
 	                dataURI = _args3[1];
@@ -1572,7 +1557,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      reader.onload = function (event) {
 	        if (options.width || options.height) {
 	          // resize
-	          ImageModel.resize(event.target.result, file.type, options.width, options.height).then(function (args) {
+	          Media.resize(event.target.result, file.type, options.width, options.height).then(function (args) {
 	            var _args4 = _slicedToArray(args, 2),
 	                image = _args4[0],
 	                dataURI = _args4[1];
@@ -1647,16 +1632,49 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	});
 
-	exports.default = ImageModel;
+	exports.default = Media;
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/** *********************************************************************
+	 * ERROR
+	 **********************************************************************/
+	var Error = function Error() {
+	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	  _classCallCheck(this, Error);
+
+	  if (typeof options === 'string') {
+	    // message only
+	    this.code = -1;
+	    this.message = options;
+	    return;
+	  } else if (options instanceof Array) {
+	    // array of errors
+	    this.message = options.reduce(function (message, error) {
+	      return '' + message + error.title + '\n';
+	    }, '');
+	    return;
+	  }
+
+	  this.code = options.code || -1;
+	  this.message = options.message || '';
+	};
+
+	exports.default = Error;
 
 /***/ },
 /* 8 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_8__;
-
-/***/ },
-/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1674,23 +1692,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(6);
+	var _helpers = __webpack_require__(5);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _Image = __webpack_require__(7);
+	var _Media = __webpack_require__(6);
 
-	var _Image2 = _interopRequireDefault(_Image);
+	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Collection = __webpack_require__(10);
+	var _Collection = __webpack_require__(9);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var Occurrence = _backbone2.default.Model.extend({
-	  type: 'occurrence',
-	  Image: _Image2.default,
+	  Media: _Media2.default,
 
 	  constructor: function constructor() {
 	    var _this = this;
@@ -1705,7 +1722,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
 
-	    if (options.Image) this.Image = options.Image;
+	    if (options.Media) this.Media = options.Media;
 
 	    this.attributes = {};
 	    if (options.collection) this.collection = options.collection;
@@ -1722,25 +1739,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	      };
 	    }
 
-	    if (options.images) {
+	    if (options.media) {
 	      (function () {
-	        var images = [];
-	        _underscore2.default.each(options.images, function (image) {
-	          if (image instanceof _this.Image) {
-	            image.setParent(that);
-	            images.push(image);
+	        var mediaArray = [];
+	        _underscore2.default.each(options.media, function (media) {
+	          if (media instanceof _this.Media) {
+	            media.setParent(that);
+	            mediaArray.push(media);
 	          } else {
-	            var modelOptions = _underscore2.default.extend(image, { parent: that });
-	            images.push(new _this.Image(image.attributes, modelOptions));
+	            var modelOptions = _underscore2.default.extend(media, { parent: that });
+	            mediaArray.push(new _this.Media(media.attributes, modelOptions));
 	          }
 	        });
-	        _this.images = new _Collection2.default(images, {
-	          model: _this.Image
+	        _this.media = new _Collection2.default(mediaArray, {
+	          model: _this.Media
 	        });
 	      })();
 	    } else {
-	      this.images = new _Collection2.default([], {
-	        model: this.Image
+	      this.media = new _Collection2.default([], {
+	        model: this.Media
 	      });
 	    }
 
@@ -1790,13 +1807,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  /**
-	   * Adds an image to occurrence and sets the images's parent to this.
-	   * @param image
+	   * Adds an media to occurrence and sets the medias's parent to this.
+	   * @param media
 	   */
-	  addImage: function addImage(image) {
-	    if (!image) return;
-	    image.setParent(this);
-	    this.images.add(image);
+	  addMedia: function addMedia(mediaObj) {
+	    if (!mediaObj) return;
+	    mediaObj.setParent(this);
+	    this.media.add(mediaObj);
 	  },
 	  validate: function validate(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
@@ -1815,21 +1832,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return null;
 	  },
 	  toJSON: function toJSON() {
-	    var images = void 0;
-	    var imagesCollection = this.images;
-	    if (!imagesCollection) {
-	      images = [];
-	      console.warn('toJSON images missing');
+	    var media = void 0;
+	    if (!this.media) {
+	      media = [];
+	      console.warn('toJSON media missing');
 	    } else {
-	      images = imagesCollection.toJSON();
+	      media = this.media.toJSON();
 	    }
 	    var data = {
-	      type: this.type,
 	      id: this.id,
 	      cid: this.cid,
 	      metadata: this.metadata,
 	      attributes: this.attributes,
-	      images: images
+	      media: media
 	    };
 	    return data;
 	  },
@@ -1846,16 +1861,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // images flattened separately
 	    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count: count }]);
 	  }
-	}); /** *********************************************************************
-	     * OCCURRENCE
-	     **********************************************************************/
-
-
-	Occurrence.type = 'occurrence';
+	});
 
 	/**
 	 * Warehouse attributes and their values.
 	 */
+	/** *********************************************************************
+	 * OCCURRENCE
+	 **********************************************************************/
 	Occurrence.keys = {
 	  taxon: {
 	    id: ''
@@ -1868,7 +1881,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Occurrence;
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1908,7 +1921,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Collection;
 
 /***/ },
-/* 11 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1933,11 +1946,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
-	var _localforage = __webpack_require__(12);
+	var _localforage = __webpack_require__(11);
 
 	var _localforage2 = _interopRequireDefault(_localforage);
 
-	var _Error = __webpack_require__(5);
+	var _Error = __webpack_require__(7);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -1945,7 +1958,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Collection = __webpack_require__(10);
+	var _Collection = __webpack_require__(9);
 
 	var _Collection2 = _interopRequireDefault(_Collection);
 
@@ -1999,7 +2012,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      customDriversPromise.then(function () {
 	        var dbConfig = {
 	          name: customConfig.name || 'morel',
-	          storeName: customConfig.storeName || 'models'
+	          storeName: customConfig.storeName || 'samples'
 	        };
 
 	        if (customConfig.version) {
@@ -2252,10 +2265,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Storage;
 
 /***/ },
-/* 12 */
+/* 11 */
 /***/ function(module, exports) {
 
-	module.exports = __WEBPACK_EXTERNAL_MODULE_12__;
+	module.exports = __WEBPACK_EXTERNAL_MODULE_11__;
 
 /***/ }
 /******/ ])

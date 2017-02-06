@@ -1,7 +1,6 @@
 /** *********************************************************************
  * IMAGE
  **********************************************************************/
-import $ from 'jquery';
 import Backbone from 'backbone';
 import _ from 'underscore';
 
@@ -11,7 +10,7 @@ import Error from './Error';
 const THUMBNAIL_WIDTH = 100; // px
 const THUMBNAIL_HEIGHT = 100; // px
 
-const ImageModel = Backbone.Model.extend({
+const Media = Backbone.Model.extend({
   constructor(attributes = {}, options = {}) {
     let attrs = attributes;
     if (typeof attributes === 'string') {
@@ -91,7 +90,7 @@ const ImageModel = Backbone.Model.extend({
   resize(MAX_WIDTH, MAX_HEIGHT) {
     const that = this;
     const promise = new Promise((fulfill, reject) => {
-      ImageModel.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT)
+      Media.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT)
         .then((args) => {
           const [image, data] = args;
           that.set('data', data);
@@ -113,7 +112,7 @@ const ImageModel = Backbone.Model.extend({
       // check if data source is dataURI
       const re = /^data:/i;
       if (re.test(this.getURL())) {
-        ImageModel.resize(
+        Media.resize(
           this.getURL(),
           this.get('type'),
           THUMBNAIL_WIDTH || options.width,
@@ -128,7 +127,7 @@ const ImageModel = Backbone.Model.extend({
         return;
       }
 
-      ImageModel.getDataURI(this.getURL(), {
+      Media.getDataURI(this.getURL(), {
         width: THUMBNAIL_WIDTH || options.width,
         height: THUMBNAIL_HEIGHT || options.height,
       })
@@ -153,7 +152,7 @@ const ImageModel = Backbone.Model.extend({
   },
 });
 
-_.extend(ImageModel, {
+_.extend(Media, {
   /**
    * Transforms and resizes an image file into a string.
    * Can accept file image path and a file input file.
@@ -171,7 +170,7 @@ _.extend(ImageModel, {
         let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
         if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-        ImageModel.resize(file, fileType, options.width, options.height)
+        Media.resize(file, fileType, options.width, options.height)
           .then((args) => {
             const [image, dataURI] = args;
             fulfill([dataURI, fileType, image.width, image.height]);
@@ -193,7 +192,7 @@ _.extend(ImageModel, {
       reader.onload = function (event) {
         if (options.width || options.height) {
           // resize
-          ImageModel.resize(event.target.result, file.type, options.width, options.height)
+          Media.resize(event.target.result, file.type, options.width, options.height)
             .then((args) => {
               const [image, dataURI] = args;
               fulfill([dataURI, file.type, image.width, image.height]);
@@ -263,4 +262,4 @@ _.extend(ImageModel, {
   },
 });
 
-export { ImageModel as default };
+export { Media as default };

@@ -4,40 +4,40 @@ import Occurrence from '../src/Occurrence';
 
 describe('Occurrence', () => {
   it('should create new', () => {
-    const subModel = new Occurrence();
-    expect(subModel.attributes).to.be.an.object;
-    expect(subModel instanceof Occurrence).to.be.true;
-    expect(Object.keys(subModel.attributes).length).to.be.equal(0);
-    expect(subModel.cid).to.be.a.string;
+    const occurrence = new Occurrence();
+    expect(occurrence.attributes).to.be.an.object;
+    expect(occurrence instanceof Occurrence).to.be.true;
+    expect(Object.keys(occurrence.attributes).length).to.be.equal(0);
+    expect(occurrence.cid).to.be.a.string;
   });
 
   it('should return JSON', () => {
     const item = Date.now().toString();
     const value = Math.random();
-    const subModel = new Occurrence();
-    subModel.set(item, value);
+    const occurrence = new Occurrence();
+    occurrence.set(item, value);
 
-    const json = subModel.toJSON();
+    const json = occurrence.toJSON();
 
-    expect(json.cid).to.be.equal(subModel.cid);
+    expect(json.cid).to.be.equal(occurrence.cid);
     expect(json.attributes[item]).to.be.equal(value);
   });
 
   it('should have a validator', () => {
-    const subModel = new Occurrence();
-    expect(subModel.validate).to.be.a('function');
+    const occurrence = new Occurrence();
+    expect(occurrence.validate).to.be.a('function');
   });
 
   it('should validate taxon', () => {
-    const subModel = new Occurrence();
-    let invalids = subModel.validate();
+    const occurrence = new Occurrence();
+    let invalids = occurrence.validate();
 
     expect(invalids).to.be.an('object');
     expect(invalids.taxon).to.be.a('string');
 
-    subModel.set('taxon', 1234);
+    occurrence.set('taxon', 1234);
 
-    invalids = subModel.validate();
+    invalids = occurrence.validate();
     expect(invalids).to.be.null;
   });
 });
