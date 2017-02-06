@@ -15,6 +15,8 @@ class Morel {
 
     this.storage = new Storage(options);
     this.onSend = options.onSend;
+    this.user = options.user;
+    this.password = options.password;
     this._attachListeners();
     this.synchronising = false;
   }
@@ -148,10 +150,11 @@ class Morel {
 
     // async call to get the form data
     return that._getModelFormData(model)
-      .then(formData => Morel._ajaxModel(formData, model, options));
+      .then(formData => that._ajaxModel(formData, model, options));
   }
 
-  static _ajaxModel(formData, model, options) {
+  _ajaxModel(formData, model, options) {
+    const that = this;
     // todo: use ajax promise
     const promise = new Promise((fulfill, reject) => {
       // AJAX post
@@ -160,6 +163,9 @@ class Morel {
         url: options.host + fullSamplePostPath,
         type: 'POST',
         data: formData,
+        headers: {
+          Authorization: `Basic  ${that.getUserAuth()}`,
+        },
         processData: false,
         contentType: false,
         timeout: options.timeout || 30000, // 30s
@@ -416,6 +422,21 @@ class Morel {
     this._appendWarehouseAuth(data);
 
     return data;
+  }
+
+  /**
+   * Appends user basic auth to a request.
+   * @param xhr
+   */
+  getUserAuth() {
+    const user = typeof this.options.user === 'function' ? this.options.user() : this.options.user;
+    const password = typeof this.options.password === 'function' ? this.options.password() : this.options.password;
+
+    if (!user || !password) {
+      throw new Error('User or password must be specified for basic authentication.');
+    }
+
+    return btoa(`${user}:${password}`);
   }
 
   /**

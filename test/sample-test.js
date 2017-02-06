@@ -14,6 +14,8 @@ const options = {
   api_key: 'mytest',
   website_id: 23,
   survey_id: 42,
+  user: 'x',
+  password: 'x',
 };
 
 describe('Sample', () => {
