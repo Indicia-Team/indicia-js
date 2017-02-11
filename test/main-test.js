@@ -16,20 +16,20 @@ const options = {
   password: 'x',
 };
 
-let manager;
+let recordStorage;
 
 describe('Saving/destroying propagation', () => {
   before((done) => {
-    manager = new Morel(_.extend(options, { }));
-    manager.clear().then(done);
+    recordStorage = new Morel.Storage(_.extend(options, { }));
+    recordStorage.clear().then(done);
   });
 
   beforeEach(() => {
-    manager = new Morel(_.extend(options, { }));
+    recordStorage = new Morel.Storage(_.extend(options, { }));
   });
 
   afterEach((done) => {
-    manager.clear().then(done);
+    recordStorage.clear().then(done);
   });
 
   describe('Media', () => {
@@ -43,15 +43,15 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample)
+      recordStorage.save(sample)
         .then(() => {
-          expect(manager.storage._cache.length).to.be.equal(1);
+          expect(recordStorage.length).to.be.equal(1);
 
           // update the media and save it - the save should be permenant
           media.set('data', '1234');
           const req = media.save().then(() => {
-            const newManager = new Morel(_.extend(options, { }));
-            newManager.getAll()
+            const newRecordStorage = new Morel.Storage(_.extend(options, { }));
+            newRecordStorage.getAll()
               .then((samples) => {
                 expect(samples.length).to.be.equal(1);
                 const occurrenceFromDB = samples.at(0).occurrences.at(0);
@@ -78,12 +78,12 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample).then(() => {
-        expect(manager.storage._cache.length).to.be.equal(1);
+      recordStorage.save(sample).then(() => {
+        expect(recordStorage.length).to.be.equal(1);
 
         media.destroy().then(() => {
-          const newManager = new Morel(_.extend(options, { }));
-          newManager.getAll().then((samples) => {
+          const newRecordStorage = new Morel.Storage(_.extend(options, { }));
+          newRecordStorage.getAll().then((samples) => {
             expect(samples.length).to.be.equal(1);
             const occurrenceFromDB = samples.at(0).occurrences.at(0);
             // check if change to media is permenant
@@ -106,7 +106,7 @@ describe('Saving/destroying propagation', () => {
       });
 
       // add sample to storage
-      manager.set(sample).then(() => {
+      recordStorage.save(sample).then(() => {
         sinon.spy(media, 'destroy');
 
         sample.destroy().then(() => {

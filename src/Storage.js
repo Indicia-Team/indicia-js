@@ -7,9 +7,9 @@ import LocalForage from 'localforage';
 
 import Error from './Error';
 import Sample from './Sample';
-import Collection from './Collection';
 
-class Storage {
+const Storage = Backbone.Collection.extend({
+  model: Sample,
   /**
    * From ionic storage
    * https://github.com/driftyco/ionic-storage/blob/master/src/storage.ts
@@ -20,17 +20,12 @@ class Storage {
    storeName   : 'keyvaluepairs', // Should be alphanumeric, with underscores.
    description : 'some description'
    Sample
-   manager
+   storage
    * @param options
    */
-  constructor(options = {}) {
+  initialize(options = {}) {
     const that = this;
-
     this._initialized = false;
-
-    this.Sample = options.Sample || Sample;
-    this.manager = options.manager;
-
     const customConfig = options.storage || {};
 
     // initialize db
@@ -57,7 +52,7 @@ class Storage {
         }
 
         const driverOrder = customConfig.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-        const drivers = Storage._getDriverOrder(driverOrder);
+        const drivers = that._getDriverOrder(driverOrder);
         const DB = customConfig.LocalForage || LocalForage;
 
         // init
@@ -70,29 +65,25 @@ class Storage {
       });
     });
 
-    // initialize db cache
-    this._cache = {};
+    // initialize the cache
     _dbPromise.then(() => {
       // build up samples
       const samples = [];
       this.db.iterate((value) => {
-        const modelOptions = _.extend(value, { manager: that.manager });
-        const sample = new that.Sample(value.attributes, modelOptions);
+        const modelOptions = _.extend(value, { storage: that });
+        const sample = new that.model(value.attributes, modelOptions);
         samples.push(sample);
       }).then(() => {
         // attach the samples as collection
-        that._cache = new Collection(samples, {
-          model: that.Sample,
-        });
-        that._attachListeners();
+        that.reset(samples, _.extend({ silent: true }, options));
 
         that._initialized = true;
         that.trigger('init');
       });
     });
-  }
+  },
 
-  static _getDriverOrder(driverOrder) {
+  _getDriverOrder(driverOrder) {
     return driverOrder.map((driver) => {
       switch (driver) {
         case 'indexeddb':
@@ -109,59 +100,34 @@ class Storage {
           return console.error('No such db driver!');
       }
     });
-  }
+  },
 
   ready() {
     return this._initialized;
-  }
+  },
 
-  get(model, options = {}) {
-    const that = this;
+  get(model) {
+    if (model == null) return void 0;
 
     const promise = new Promise((resolve, reject) => {
       if (!this.ready()) {
         this.on('init', () => {
-          this.get(model, options).then(resolve, reject);
+          this.get(model).then(resolve, reject);
         });
         return;
       }
 
-      const key = typeof model === 'object' ? model.cid : model;
+      const cachedModel = this._byId[model] ||
+        this._byId[this.modelId(model.attributes || model)] ||
+        (model.cid && this._byId[model.cid]);
 
-      // a non cached version straight from storage medium
-      if (options.nonCached) {
-        this.db.getItem(key)
-          .then((data) => {
-            const modelOptions = _.extend(data, { manager: that.manager });
-            const sample = new that.Sample(data.attributes, modelOptions);
-            resolve(sample);
-          })
-          .catch(reject);
-        return;
-      }
-
-      const cachedModel = this._cache.get(key);
       resolve(cachedModel);
     });
 
     return promise;
-  }
+  },
 
-  getAll() {
-    const promise = new Promise((resolve, reject) => {
-      if (!this.ready()) {
-        this.on('init', () => {
-          this.getAll().then(resolve, reject);
-        });
-        return;
-      }
-      resolve(this._cache);
-    });
-
-    return promise;
-  }
-
-  set(model = {}) {
+  save(model = {}) {
     const promise = new Promise((resolve, reject) => {
       // early return if no id or cid
       if (!model.cid) {
@@ -173,7 +139,7 @@ class Storage {
       // needs to be on and running
       if (!this.ready()) {
         this.on('init', () => {
-          this.set(model).then(resolve, reject);
+          this.save(model).then(resolve, reject);
         });
         return;
       }
@@ -183,12 +149,12 @@ class Storage {
       const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
       this.db.setItem(key, dataJSON)
         .then(() => {
-          if (model instanceof that.Sample) {
-            that._cache.set(model, { remove: false });
+          if (model instanceof that.model) {
+            that.add(model, { remove: false });
           } else {
-            const modelOptions = _.extend(model, { manager: that.manager });
-            const sample = new that.Sample(model.attributes, modelOptions);
-            that._cache.set(sample, { remove: false });
+            const modelOptions = _.extend(model, { storage: that.storage });
+            const sample = new that.model(model.attributes, modelOptions);
+            that.add(sample, { remove: false });
           }
           resolve(model);
         })
@@ -196,7 +162,7 @@ class Storage {
     });
 
     return promise;
-  }
+  },
 
   remove(model) {
     const promise = new Promise((resolve, reject) => {
@@ -209,14 +175,20 @@ class Storage {
       const key = typeof model === 'object' ? model.cid : model;
       this.db.removeItem(key)
         .then(() => {
-          delete model.manager; // delete a reference
+          delete model.storage; // delete a reference
           return model.destroy().then(resolve); // removes from cache
         })
         .catch(reject);
     });
 
     return promise;
-  }
+  },
+
+  sync(method, model, options = {}) {
+    this.each((model) => {
+      model.sync(method, model, options);
+    });
+  },
 
   has(model) {
     const promise = new Promise((resolve, reject) => {
@@ -226,14 +198,14 @@ class Storage {
         }, this);
         return;
       }
+
       this.get(model).then((data) => {
-        const found = typeof data === 'object';
-        resolve(found);
+        resolve(data != null);
       });
     });
 
     return promise;
-  }
+  },
 
   clear() {
     const promise = new Promise((resolve, reject) => {
@@ -246,14 +218,14 @@ class Storage {
       const that = this;
       this.db.clear()
         .then(() => {
-          that._cache.reset();
+          that.reset();
           resolve();
         })
         .catch(reject);
     });
 
     return promise;
-  }
+  },
 
   size() {
     const promise = new Promise((resolve, reject) => {
@@ -261,16 +233,8 @@ class Storage {
     });
 
     return promise;
-  }
-
-  _attachListeners() {
-    const that = this;
-    // listen on cache because it is last updated
-    this._cache.on('update', () => {
-      that.trigger('update');
-    });
-  }
-}
+  },
+});
 
 // add events
 _.extend(Storage.prototype, Backbone.Events);

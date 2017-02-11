@@ -14,21 +14,21 @@ const options = {
   password: 'x',
 };
 
-describe('Manager', () => {
-  const manager = new Morel(options);
+describe('RecordStorage', () => {
+  const recordStorage = new Morel.Storage(options);
 
   before((done) => {
-    manager.clear().then(done);
+    recordStorage.clear().then(done);
   });
 
   // clean up
   after((done) => {
-    manager.clear().then(done);
+    recordStorage.clear().then(done);
   });
 
   it('should have HOST passed through options', () => {
     const HOST = options.host;
-    expect(manager.options.host).to.be.equal(HOST);
+    expect(recordStorage.options.host).to.be.equal(HOST);
   });
 
   it('should set, get and has', (done) => {
@@ -38,17 +38,17 @@ describe('Manager', () => {
 
     sample.set(key, value);
 
-    manager.clear()
-      .then(() => manager.set(sample))
-      .then(() => manager.get(sample))
+    recordStorage.clear()
+      .then(() => recordStorage.save(sample))
+      .then(() => recordStorage.get(sample))
       .then((data) => {
         expect(data).to.be.instanceof(Sample);
         expect(sample.get(key)).to.be.equal(data.get(key));
       })
-      .then(() => manager.has(sample))
+      .then(() => recordStorage.has(sample))
       .then((contains) => {
         expect(contains).to.be.true;
-        return manager.has(new Sample());
+        return recordStorage.has(new Sample());
       })
       .then((finalContains) => {
         expect(finalContains).to.be.false;
@@ -66,20 +66,20 @@ describe('Manager', () => {
 
     sample.set(key, value);
 
-    manager.clear()
+    recordStorage.clear()
       .then(() => {
-        manager.set(sample)
+        recordStorage.save(sample)
           .then(() => {
-            manager.get(sample)
+            recordStorage.get(sample)
               .then((data) => {
                 expect(data).to.be.instanceof(Sample);
                 expect(sample.get(key)).to.be.equal(data.get(key));
               });
 
-            manager.has(sample)
+            recordStorage.has(sample)
               .then((contains) => {
                 expect(contains).to.be.true;
-                manager.has(new Sample())
+                recordStorage.has(new Sample())
                   .then((finalContains) => {
                     expect(finalContains).to.be.false;
                     done();
@@ -93,21 +93,21 @@ describe('Manager', () => {
     const sample = new Sample();
     const sample2 = new Sample();
 
-    manager.clear()
-      .then(() => manager.set(sample))
-      .then(() => manager.set(sample2))
-      .then(() => manager.has(sample))
+    recordStorage.clear()
+      .then(() => recordStorage.save(sample))
+      .then(() => recordStorage.save(sample2))
+      .then(() => recordStorage.has(sample))
       .then((contains) => {
         expect(contains).to.be.true;
 
         // getall
-        manager.getAll()
+        recordStorage.getAll()
           .then((collection) => {
             expect(collection.length).to.be.equal(2);
 
-            manager.clear()
+            recordStorage.clear()
               .then(() => {
-                manager.has(sample)
+                recordStorage.has(sample)
                   .then((finalContains) => {
                     expect(finalContains).to.be.false;
                     done();
@@ -120,14 +120,14 @@ describe('Manager', () => {
   it('should remove', (done) => {
     const sample = new Sample();
 
-    manager.clear()
-      .then(() => manager.set(sample))
-      .then(() => manager.has(sample))
+    recordStorage.clear()
+      .then(() => recordStorage.save(sample))
+      .then(() => recordStorage.has(sample))
       .then((contains) => {
         expect(contains).to.be.true;
-        return manager.remove(sample);
+        return recordStorage.remove(sample);
       })
-      .then(() => manager.has(sample))
+      .then(() => recordStorage.has(sample))
       .then((finalContains) => {
         expect(finalContains).to.be.false;
         done();
@@ -135,7 +135,7 @@ describe('Manager', () => {
   });
 
   describe('Synchronisation', () => {
-    syncTests(manager);
-    syncAllTests(manager);
+    syncTests(recordStorage);
+    syncAllTests(recordStorage);
   });
 });

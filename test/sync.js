@@ -17,7 +17,7 @@ const options = {
   password: 'x',
 };
 
-export default function (manager) {
+export default function (recordStorage) {
   describe('Sync', () => {
     let server;
 
@@ -41,7 +41,7 @@ export default function (manager) {
         location: ' 12.12, -0.23',
       }, {
         occurrences: [occurrence],
-        manager,
+        recordStorage,
       });
 
       return sample;
@@ -50,26 +50,26 @@ export default function (manager) {
     before((done) => {
       server = sinon.fakeServer.create();
       server.respondImmediately = true;
-      manager.clear().then(done);
+      recordStorage.clear().then(done);
     });
 
     beforeEach(() => {
-      sinon.spy(manager, 'sync');
-      sinon.spy(Morel.prototype, 'post');
+      sinon.spy(recordStorage, 'sync');
+      sinon.spy(Morel.Storage.prototype, 'post');
     });
 
     after((done) => {
       server.restore();
-      manager.clear().then(done);
+      recordStorage.clear().then(done);
     });
 
     afterEach((done) => {
-      Morel.prototype.post.restore();
-      manager.sync.restore();
-      manager.clear().then(done);
+      Morel.Storage.prototype.post.restore();
+      recordStorage.sync.restore();
+      recordStorage.clear().then(done);
     });
 
-    it('should return false if no manager', () => {
+    it('should return false if no recordStorage', () => {
       const sample = new Sample();
       const promise = sample.save();
       expect(promise).to.be.false;
@@ -79,7 +79,7 @@ export default function (manager) {
       const sample = getRandomSample();
 
       const valid = sample.save().then(() => {
-        expect(manager.sync.called).to.be.false;
+        expect(recordStorage.sync.called).to.be.false;
         done();
       });
 
@@ -91,7 +91,7 @@ export default function (manager) {
 
       generateSampleResponse(sample);
       const valid = sample.save({ remote: true }).then(() => {
-        expect(manager.sync.calledOnce).to.be.true;
+        expect(recordStorage.sync.calledOnce).to.be.true;
         done();
       });
 
@@ -114,7 +114,7 @@ export default function (manager) {
         location: ' 12.12, -0.23',
       }, {
         samples: [subSample],
-        manager,
+        recordStorage,
       });
 
       server.respondWith(
@@ -129,7 +129,7 @@ export default function (manager) {
       );
 
       const valid = sample.save({ remote: true }).then(() => {
-        expect(manager.sync.calledOnce).to.be.true;
+        expect(recordStorage.sync.calledOnce).to.be.true;
         done();
       });
 
@@ -141,9 +141,9 @@ export default function (manager) {
       generateSampleResponse(sample);
 
       sample.save({ remote: true }).then(() => {
-        // get new manager without cached samples
-        const newManager = new Morel(_.extend(options));
-        newManager.get(sample)
+        // get new recordStorage without cached samples
+        const newRecordStorage = new Morel.Storage(_.extend(options));
+        newRecordStorage.get(sample)
           .then((savedSample) => {
             expect(savedSample.getSyncStatus()).to.be.equal(Morel.SYNCED);
             done();
@@ -155,7 +155,7 @@ export default function (manager) {
       const occurrence = new Occurrence();
       const sample = new Sample(null, {
         occurrences: [occurrence],
-        manager,
+        recordStorage,
       });
 
       const valid = sample.save({ remote: true });
@@ -168,7 +168,7 @@ export default function (manager) {
 
       const valid = sample.save({ remote: true })
         .catch((err) => {
-          expect(manager.sync.calledOnce).to.be.true;
+          expect(recordStorage.sync.calledOnce).to.be.true;
           expect(err.message).to.not.be.null;
           done();
         });
@@ -191,7 +191,7 @@ export default function (manager) {
         .then(() => {
           expect(sample.id).to.be.a('number');
           expect(sample.occurrences.at(0).id).to.be.a('number');
-          expect(manager.sync.calledOnce).to.be.true;
+          expect(recordStorage.sync.calledOnce).to.be.true;
           done();
         });
     });
@@ -212,8 +212,8 @@ export default function (manager) {
         const newValid = sample.save({ remote: true });
 
         expect(newValid).to.be.false;
-        expect(manager.sync.calledTwice).to.be.true;
-        expect(Morel.prototype.post.calledOnce).to.be.true;
+        expect(recordStorage.sync.calledTwice).to.be.true;
+        expect(Morel.Storage.prototype.post.calledOnce).to.be.true;
         done();
       });
 
@@ -250,8 +250,8 @@ export default function (manager) {
     //   const events = ['sync', 'request', 'error'];
     //   const sample = getRandomSample();
     //
-    //   manager.set(sample, () => {
-    //     manager.on(events.join(' '), () => {
+    //   recordStorage.save(sample, () => {
+    //     recordStorage.on(events.join(' '), () => {
     //       events.pop();
     //       if (!events.length) done();
     //     });
@@ -264,11 +264,11 @@ export default function (manager) {
 
     describe('occurrences with media', () => {
       before((done) => {
-        manager.clear().then(done);
+        recordStorage.clear().then(done);
       });
 
       after((done) => {
-        manager.clear().then(done);
+        recordStorage.clear().then(done);
       });
 
       it('should send both dataURI and absolute pathed images', (done) => {
@@ -291,7 +291,7 @@ export default function (manager) {
           location: ' 12.12, -0.23',
         }, {
           occurrences: [occurrence],
-          manager,
+          recordStorage,
         });
         generateSampleResponse(sample);
 

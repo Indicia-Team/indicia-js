@@ -8,7 +8,7 @@ import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 /* eslint-disable no-unused-expressions */
 const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
 
-export default function (manager) {
+export default function (recordStorage) {
   describe('Sync All', () => {
     let server;
 
@@ -32,7 +32,7 @@ export default function (manager) {
         location: ' 12.12, -0.23',
       }, {
         occurrences: [occurrence],
-        manager,
+        recordStorage,
       });
 
       return sample;
@@ -41,33 +41,33 @@ export default function (manager) {
     before((done) => {
       server = sinon.fakeServer.create();
       server.respondImmediately = true;
-      manager.clear().then(done);
+      recordStorage.clear().then(done);
     });
 
     beforeEach(() => {
-      sinon.spy(manager, 'sync');
-      sinon.spy(Morel.prototype, 'post');
+      sinon.spy(recordStorage, 'sync');
+      sinon.spy(Morel.Storage.prototype, 'post');
     });
 
     after((done) => {
       server.restore();
-      manager.clear().then(done);
+      recordStorage.clear().then(done);
     });
 
     afterEach((done) => {
-      Morel.prototype.post.restore();
-      manager.sync.restore();
-      manager.clear().then(done);
+      Morel.Storage.prototype.post.restore();
+      recordStorage.sync.restore();
+      recordStorage.clear().then(done);
     });
 
 
     it('should return a promise', () => {
-      const promise = manager.syncAll();
+      const promise = recordStorage.syncAll();
       expect(promise.then).to.be.a.function;
     });
 
     it('should post all', (done) => {
-      manager.getAll()
+      recordStorage.getAll()
         .then((models) => {
           // check if collection is empty
           expect(models.length).to.be.equal(0);
@@ -87,10 +87,10 @@ export default function (manager) {
             .then(() => {
               expect(models.length).to.be.equal(2);
               // synchronise collection
-              return manager.syncAll();
+              return recordStorage.syncAll();
             })
             .then(() => {
-              expect(manager.sync.calledOnce).to.be.true;
+              expect(recordStorage.sync.calledOnce).to.be.true;
 
               // check sample status
               models.each((model) => {
@@ -117,10 +117,10 @@ export default function (manager) {
       Promise.all([sample.save()])
         .then(() => {
           // synchronise collection twice
-          Promise.all([manager.syncAll(), manager.syncAll()])
+          Promise.all([recordStorage.syncAll(), recordStorage.syncAll()])
             .then(() => {
-              expect(manager.sync.callCount).to.be.equal(2);
-              expect(Morel.prototype.post.calledOnce).to.be.true;
+              expect(recordStorage.sync.callCount).to.be.equal(2);
+              expect(Morel.Storage.prototype.post.calledOnce).to.be.true;
               done();
             });
         });
