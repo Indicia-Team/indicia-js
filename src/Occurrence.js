@@ -104,7 +104,15 @@ const Occurrence = Backbone.Model.extend({
     this.media.add(mediaObj);
   },
 
-  validate(attributes) {
+  // overwrite if you want to validate before saving remotely
+  validate(attributes, options = {}) {
+    if (options.remote) {
+      return this.validateRemote(attributes, options);
+    }
+    return null;
+  },
+
+  validateRemote(attributes, options) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const errors = {};

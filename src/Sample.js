@@ -19,38 +19,52 @@ const Sample = Backbone.Model.extend({
   Media,
   Occurrence,
 
+  remote_host: null, // must be set up for remote sync
+  api_key: null, // must be set up for remote sync
+
+  user: null, // must be set up for remote sync
+  password: null, // must be set up for remote sync
+
   constructor(attributes = {}, options = {}) {
     const that = this;
-    let attrs = attributes;
-
-    const defaultAttrs = {
-      date: new Date(),
-      location_type: 'latlon',
-    };
-
-    attrs = _.extend(defaultAttrs, attrs);
 
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
-    this.storage = options.storage || this.storage;
+    this.store = options.store || this.store;
 
     if (options.Media) this.Media = options.Media;
     if (options.Occurrence) this.Occurrence = options.Occurrence;
     if (options.onSend) this.onSend = options.onSend;
 
+    // remote host defaults
+    this.remote_host = options.remote_host || this.remote_host;
+    this.api_key = options.api_key || this.api_key;
+    this.user = options.user || this.user;
+    this.password = options.password || this.password;
+
+    // attrs
     this.attributes = {};
+    const defaultAttrs = {
+      date: new Date(),
+      location_type: 'latlon',
+    };
+    let attrs = _.extend(defaultAttrs, attributes);
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
     attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
     this.changed = {};
 
+    // metadata
     if (options.metadata) {
       this.metadata = options.metadata;
     } else {
       const today = new Date();
       this.metadata = {
+        survey_id: null,
+        training: false,
+
         created_on: today,
         updated_on: today,
 
@@ -59,6 +73,7 @@ const Sample = Backbone.Model.extend({
       };
     }
 
+    // occurrences
     if (options.occurrences) {
       // fill in existing ones
       const occurrences = [];
@@ -78,6 +93,7 @@ const Sample = Backbone.Model.extend({
       this.occurrences = new Collection([], { model: this.Occurrence });
     }
 
+    // samples
     if (options.samples) {
       // fill in existing ones
       const samples = [];
@@ -97,6 +113,7 @@ const Sample = Backbone.Model.extend({
       this.samples = new Collection([], { model: Sample });
     }
 
+    // media
     if (options.media) {
       const mediaArray = [];
       _.each(options.media, (media) => {
@@ -122,16 +139,25 @@ const Sample = Backbone.Model.extend({
 
 
   /**
-   * Synchronises the model with the remote server.
+   * Synchronises the model with the store.
    * @param method
    * @param model
    * @param options
    */
   sync(method, model, options = {}) {
-    if (options.local) {
-      return this._syncLocal(method, model, options);
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
     }
 
+    return this.store.sync(method, model, options);
+  },
+
+
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote(method, model, options) {
     const that = this;
 
     // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
@@ -151,7 +177,7 @@ const Sample = Backbone.Model.extend({
     // Ensure that we have a URL.
     params.url = options.url || _.result(model, 'url');
     if (!params.url) {
-      throw new Error('A "url" property or function must be specified')
+      throw new Error('A "url" property or function must be specified');
     }
 
     // model.trigger('request', model, xhr, options);
@@ -177,49 +203,6 @@ const Sample = Backbone.Model.extend({
     return promise;
   },
 
-
-  /**
-   * Saves the record to the record storage and if valid syncs it with DB
-   * Returns on success: model, response, options
-   */
-  _syncLocal(method, model, options) {
-    switch (method) {
-      case 'create':
-        if (this.parent) {
-          return this.parent.sync(method, model, options);
-        }
-
-        if (!this.storage) {
-          return false;
-        }
-
-        return this.storage.set(this);
-
-      case 'delete':
-        const promise = new Promise((fulfill, reject) => {
-          if (this.storage && !options.noSave) {
-            // save the changes permanentely
-            this.storage.remove(this).then(fulfill, reject);
-          } else {
-            // removes from all collections etc
-            this.stopListening();
-            this.trigger('destroy', this, this.collection, options);
-
-            if (this.parent && !options.noSave) {
-              // save the changes permanentely
-              this.save(options).then(fulfill);
-            } else {
-              fulfill();
-            }
-          }
-        });
-
-        return promise;
-      default:
-        return null;
-    }
-  },
-
   /**
    * Posts a record to remote server.
    * @param model
@@ -239,13 +222,13 @@ const Sample = Backbone.Model.extend({
     // todo: use ajax promise
     const promise = new Promise((fulfill, reject) => {
       // AJAX post
-      const fullSamplePostPath = API_BASE + API_VER + API_SAMPLES_PATH;
+      const url = that.remote_host + API_BASE + API_VER + API_SAMPLES_PATH;
       const xhr = options.xhr = Backbone.ajax({
-        url: options.host + fullSamplePostPath,
+        url,
         type: 'POST',
         data: formData,
         headers: {
-          Authorization: `Basic  ${that.getUserAuth()}`,
+          Authorization: that.getUserAuth(),
         },
         processData: false,
         contentType: false,
@@ -421,26 +404,31 @@ const Sample = Backbone.Model.extend({
 
   destroy(options) {
     options = options ? _.clone(options) : {};
-    var model = this;
-    var success = options.success;
-    var wait = options.wait;
+    const model = this;
+    const success = options.success;
+    const wait = options.wait;
 
-    var destroy = function() {
+    const destroy = () => {
       model.stopListening();
       model.trigger('destroy', model, model.collection, options);
     };
 
-    options.success = function(resp) {
+    options.success = (resp) => {
       if (wait) destroy();
       if (success) success.call(options.context, model, resp, options);
       if (!model.isNew()) model.trigger('sync', model, resp, options);
     };
 
-    var xhr = false;
-    if (!options.local && this.isNew()) {
+    let xhr = false;
+    if (!options.remote && this.isNew()) {
       _.defer(options.success);
     } else {
-      wrapError(this, options);
+      const error = options.error;
+      options.error = (resp) => {
+        if (error) error.call(options.context, model, resp, options);
+        model.trigger('error', model, resp, options);
+      };
+
       xhr = this.sync('delete', this, options);
     }
     if (!wait) destroy();
@@ -493,11 +481,15 @@ const Sample = Backbone.Model.extend({
     this.media.add(media);
   },
 
+// overwrite if you want to validate before saving locally
   validate(attributes, options = {}) {
-    if (options.local) {
-      return this.validateLocal(attributes, options);
+    if (options.remote) {
+      return this.validateRemote(attributes, options);
     }
+    return null;
+  },
 
+  validateRemote(attributes, options) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const sample = {};
@@ -533,7 +525,7 @@ const Sample = Backbone.Model.extend({
     // samples
     if (this.samples.length) {
       this.samples.each((sample) => {
-        const errors = sample.validateLocal();
+        const errors = sample.validateRemote();
         if (errors) {
           const sampleID = sample.cid;
           samples[sampleID] = errors;
@@ -544,7 +536,7 @@ const Sample = Backbone.Model.extend({
     // occurrences
     if (this.occurrences.length) {
       this.occurrences.each((occurrence) => {
-        const errors = occurrence.validateLocal();
+        const errors = occurrence.validateRemote();
         if (errors) {
           const occurrenceID = occurrence.cid;
           occurrences[occurrenceID] = errors;
@@ -552,7 +544,7 @@ const Sample = Backbone.Model.extend({
       });
     }
 
-    // todo: validateLocal media
+    // todo: validateRemote media
 
     if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
       const errors = {
@@ -565,10 +557,6 @@ const Sample = Backbone.Model.extend({
     }
 
     return null;
-  },
-
-  validateLocal() {
-    // overwrite if you want to validate before saving locally
   },
 
   /**
@@ -627,7 +615,7 @@ const Sample = Backbone.Model.extend({
 
   /**
    * Sync statuses:
-   * synchronising, synced, local, server, changed_locally, changed_server, conflict
+   * synchronising, synced, remote, server, changed_remotely, changed_server, conflict
    */
   getSyncStatus() {
     const meta = this.metadata;
@@ -639,7 +627,7 @@ const Sample = Backbone.Model.extend({
     if (this.id >= 0) {
       // fully initialized
       if (meta.synced_on) {
-        // changed_locally
+        // changed_remotely
         if (meta.synced_on < meta.updated_on) {
           // changed_server - conflict!
           if (meta.synced_on < meta.server_on) {
@@ -678,6 +666,14 @@ const Sample = Backbone.Model.extend({
    */
   getSample(index = 0) {
     return this.samples.at(index);
+  },
+
+  getUserAuth() {
+    const user = typeof this.user === 'function' ? this.user() : this.user;
+    const password = typeof this.password === 'function' ? this.password() : this.password;
+    const basicAuth = btoa(`${user}:${password}`);
+
+    return `Basic  ${basicAuth}`;
   },
 });
 

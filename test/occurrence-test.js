@@ -37,7 +37,7 @@ describe('Occurrence', () => {
 
     occurrence.set('taxon', 1234);
 
-    invalids = occurrence.validate();
+    invalids = occurrence.validate(null, { remote: true });
     expect(invalids).to.be.null;
   });
 });
