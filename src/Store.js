@@ -81,32 +81,14 @@ class Store {
     }
   }
 
-  save(model, options) {
-    if (model.parent) {
-      return this.parent.sync('create', model, options);
-    }
-
+  save(model) {
     // early return if no id or cid
     if (!model.id && !model.cid) {
       return Promise.reject(new Error('Invalid model passed to store'));
     }
 
     const key = model.cid;
-    const dataJSON = (typeof model.toJSON === 'function') ? model.toJSON() : model;
-    return this.store.db.setItem(key, dataJSON);
-
-    // return this.store.db.setItem(key, dataJSON)
-    //   .then(() => {
-    //     if (model instanceof that.model) {
-    //       that.add(model, { remove: false });
-    //     } else {
-    //       const modelOptions = _.extend(model, { store: model.store });
-    //       const sample = new model.store.model(model.attributes, modelOptions);
-    //       that.add(sample, { remove: false });
-    //     }
-    //     resolve(model);
-    //   })
-    //   .catch(reject);
+    return this.localForage.setItem(key, model.toJSON());
   }
 
   create(model, options) {
@@ -119,8 +101,13 @@ class Store {
     return this.save(model, options);
   }
 
-  find(model, options) {
-    return this.localForage.getItem(model.cid);
+  find(model) {
+    return this.localForage.getItem(model.cid).then((data) => {
+      if (!data) {
+        return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
+      }
+      return data;
+    });
   }
 
   // Only used by `Backbone.Collection#sync`.
@@ -148,33 +135,15 @@ class Store {
     return promise;
   }
 
-  destroy(model, options) {
-    if (this.store && !options.noSave) {
-      // save the changes permanently
-      const key = typeof model === 'object' ? model.cid : model;
-      this.store.db.removeItem(key)
-        .then(() => {
-          delete model.store; // delete a reference
-          return model.destroy().then(fulfill); // removes from collections
-        })
-        .catch(reject);
-    } else {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      if (this.parent && !options.noSave) {
-        // save the changes permanently
-        this.save(options).then(fulfill);
-      } else {
-        fulfill();
-      }
+  destroy(model) {
+    // early return if no id or cid
+    if (!model.id && !model.cid) {
+      return Promise.reject(new Error('Invalid model passed to store'));
     }
 
-    return this.localForage.removeItem(model.cid)
-      .then(() => {
-        return Promise.resolve(model.toJSON());
-      });
+    const key = model.cid;
+    return this.localForage.removeItem(key)
+      .then(() => Promise.resolve(model.toJSON()));
   }
 }
 

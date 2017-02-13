@@ -31,6 +31,7 @@ const Sample = Backbone.Model.extend({
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
+
     this.store = options.store || this.store;
 
     if (options.Media) this.Media = options.Media;
@@ -73,73 +74,17 @@ const Sample = Backbone.Model.extend({
       };
     }
 
-    // occurrences
-    if (options.occurrences) {
-      // fill in existing ones
-      const occurrences = [];
-      _.each(options.occurrences, (occurrence) => {
-        if (occurrence instanceof that.Occurrence) {
-          occurrence.setParent(that);
-          occurrences.push(occurrence);
-        } else {
-          const modelOptions = _.extend(occurrence, { parent: that });
-          const newOccurrence = new that.Occurrence(occurrence.attributes, modelOptions);
-          occurrences.push(newOccurrence);
-        }
-      });
-      this.occurrences = new Collection(occurrences, { model: this.Occurrence });
-    } else {
-      // init empty occurrences collection
-      this.occurrences = new Collection([], { model: this.Occurrence });
-    }
-
-    // samples
-    if (options.samples) {
-      // fill in existing ones
-      const samples = [];
-      _.each(options.samples, (sample) => {
-        if (sample instanceof Sample) {
-          sample.setParent(that);
-          samples.push(sample);
-        } else {
-          const modelOptions = _.extend(sample, { parent: that });
-          const newSample = new Sample(sample.attributes, modelOptions);
-          samples.push(newSample);
-        }
-      });
-      this.samples = new Collection(samples, { model: Sample });
-    } else {
-      // init empty occurrences collection
-      this.samples = new Collection([], { model: Sample });
-    }
-
-    // media
-    if (options.media) {
-      const mediaArray = [];
-      _.each(options.media, (media) => {
-        if (media instanceof this.Media) {
-          media.setParent(that);
-          mediaArray.push(media);
-        } else {
-          const modelOptions = _.extend(media, { parent: that });
-          mediaArray.push(new this.Media(media.attributes, modelOptions));
-        }
-      });
-      this.media = new Collection(mediaArray, {
-        model: this.Media,
-      });
-    } else {
-      this.media = new Collection([], {
-        model: this.Media,
-      });
-    }
+    // initialise sub models
+    this.occurrences = this._parseModels(options.occurrences);
+    this.samples = this._parseModels(options.samples);
+    this.media = this._parseModels(options.media);
 
     this.initialize.apply(this, arguments);
   },
 
 
   /**
-   * Synchronises the model with the store.
+   * Synchronises the model with the collection.
    * @param method
    * @param model
    * @param options
@@ -147,6 +92,10 @@ const Sample = Backbone.Model.extend({
   sync(method, model, options = {}) {
     if (options.remote) {
       return this._syncRemote(method, model, options);
+    }
+
+    if (!this.store) {
+      throw new Error('Trying to locally save a model without a store');
     }
 
     return this.store.sync(method, model, options);
@@ -289,7 +238,7 @@ const Sample = Backbone.Model.extend({
         model.metadata.updated_on = timeNow;
         model.metadata.synced_on = timeNow;
 
-        fulfill();
+        fulfill(model);
       });
 
       xhr.fail((jqXHR, textStatus, errorThrown) => {
@@ -308,7 +257,7 @@ const Sample = Backbone.Model.extend({
           model.metadata.server_on = timeNow;
           model.metadata.updated_on = timeNow;
           model.metadata.synced_on = timeNow;
-          fulfill();
+          fulfill(model);
           return;
         }
 
@@ -402,37 +351,153 @@ const Sample = Backbone.Model.extend({
     return promise;
   },
 
-  destroy(options) {
-    options = options ? _.clone(options) : {};
+  save(key, val, options) {
     const model = this;
-    const success = options.success;
+
+    // Handle both `"key", value` and `{key: value}` -style arguments.
+    let attrs;
+    if (key == null || typeof key === 'object') {
+      attrs = key;
+      options = val;
+    } else {
+      (attrs = {})[key] = val;
+    }
+
+    options = _.extend({ validate: true, parse: true }, options);
     const wait = options.wait;
 
-    const destroy = () => {
-      model.stopListening();
-      model.trigger('destroy', model, model.collection, options);
-    };
-
-    options.success = (resp) => {
-      if (wait) destroy();
-      if (success) success.call(options.context, model, resp, options);
-      if (!model.isNew()) model.trigger('sync', model, resp, options);
-    };
-
-    let xhr = false;
-    if (!options.remote && this.isNew()) {
-      _.defer(options.success);
-    } else {
-      const error = options.error;
-      options.error = (resp) => {
-        if (error) error.call(options.context, model, resp, options);
-        model.trigger('error', model, resp, options);
-      };
-
-      xhr = this.sync('delete', this, options);
+    // If we're not waiting and attributes exist, save acts as
+    // `set(attr).save(null, opts)` with validation. Otherwise, check if
+    // the model will be valid when the attributes, if any, are set.
+    if (attrs && !wait) {
+      if (!this.set(attrs, options)) return false;
+    } else if (!this._validate(attrs, options)) {
+      return false;
     }
-    if (!wait) destroy();
-    return xhr;
+
+    const promise = new Promise((fulfill, reject) => {
+      // After a successful server-side save, the client is (optionally)
+      // updated with the server-side state.
+      const success = options.success;
+      const attributes = model.attributes;
+
+      // Set temporary attributes if `{wait: true}` to properly find new ids.
+      if (attrs && wait) model.attributes = _.extend({}, attributes, attrs);
+
+      let method = 'create';
+      if (!model.isNew() || options.remote) {
+        method = options.patch ? 'patch' : 'update';
+      }
+      if (method === 'patch' && !options.attrs) options.attrs = attrs;
+
+      if (model.parent && !options.remote) {
+        // parent save
+        model.parent.save(key, val, options)
+          .then(() => {
+            // Ensure attributes are restored during synchronous saves.
+            model.attributes = attributes;
+            model.trigger('sync', model, null, options);
+            fulfill(model);
+          })
+          .catch(reject);
+      } else {
+        // model save
+        model.sync(method, model, options)
+          .then((resp) => {
+            // Ensure attributes are restored during synchronous saves.
+            model.attributes = attributes;
+            let serverAttrs = options.parse ? model.parse(resp, options) : resp;
+            if (wait) serverAttrs = _.extend({}, attrs, serverAttrs);
+            if (serverAttrs && !model.set(serverAttrs, options)) return false;
+            if (success) success.call(options.context, model, resp, options);
+            model.trigger('sync', model, resp, options);
+            fulfill(model);
+            return null;
+          })
+          .catch(reject);
+      }
+
+      // Restore attributes.
+      model.attributes = attributes;
+    });
+
+    return promise;
+  },
+
+  // Fetch the model from the server, merging the response with the model's
+  // local attributes. Any changed attributes will trigger a "change" event.
+  fetch(options) {
+    const model = this;
+    const promise = new Promise((fulfill, reject) => {
+      options = _.extend({ parse: true }, options);
+      return this.sync('read', this, options)
+        .then((resp) => {
+          // set the returned model's data
+          if (!model.set(resp.attributes, options)) return false;
+          model.metadata = resp.metadata;
+
+          // initialise sub models
+          model.occurrences = model._parseModels(resp.occurrences);
+          model.samples = model._parseModels(resp.samples);
+          model.media = model._parseModels(resp.media);
+
+          model.trigger('sync', model, resp, options);
+
+          fulfill(model);
+          return null;
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  },
+
+  /**
+   *
+   * @param options
+   * @returns {Promise}
+   */
+  destroy(options) {
+    const model = this;
+    const collection = this.collection; // keep reference for triggering
+
+    const promise = new Promise((fulfill, reject) => {
+      function finalise() {
+        // removes from all collections etc
+        model.stopListening();
+        model.trigger('destroy', model, collection, options);
+
+        // parent save the changes permanently
+        model.parent.save(null, options).then(() => {
+          model.trigger('sync', model, null, options);
+          fulfill(model);
+        });
+      }
+
+      if (model.parent) {
+        if (options.remote) {
+          // destroy remotely
+          model.sync('delete', model, options)
+            .then(finalise);
+        } else {
+          finalise();
+        }
+      } else {
+        // destroy locally/remotely
+        model.sync('delete', model, options)
+          .then(() => {
+            // removes from all collections etc
+            model.stopListening();
+            model.trigger('destroy', model, collection, options);
+            model.trigger('sync', model, null, options);
+
+            fulfill(model);
+          })
+          .catch(reject);
+      }
+    });
+
+    return promise;
   },
 
   /**
@@ -489,7 +554,7 @@ const Sample = Backbone.Model.extend({
     return null;
   },
 
-  validateRemote(attributes, options) {
+  validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const sample = {};
@@ -513,7 +578,7 @@ const Sample = Backbone.Model.extend({
     } else {
       const date = new Date(attrs.date);
       if (date === 'Invalid Date' || date > new Date()) {
-        sample.date = (new Date(date) > new Date) ? 'future date' : 'invalid';
+        sample.date = (new Date(date) > new Date()) ? 'future date' : 'invalid';
       }
     }
 
@@ -524,10 +589,10 @@ const Sample = Backbone.Model.extend({
 
     // samples
     if (this.samples.length) {
-      this.samples.each((sample) => {
-        const errors = sample.validateRemote();
+      this.samples.each((model) => {
+        const errors = model.validateRemote();
         if (errors) {
-          const sampleID = sample.cid;
+          const sampleID = model.cid;
           samples[sampleID] = errors;
         }
       });
@@ -674,6 +739,29 @@ const Sample = Backbone.Model.extend({
     const basicAuth = btoa(`${user}:${password}`);
 
     return `Basic  ${basicAuth}`;
+  },
+
+  _parseModels(models, Model) {
+    if(!models) {
+      // init empty samples collection
+      return new Collection([], { model: Model });
+    }
+
+    const that = this;
+
+    const modelsArray = [];
+    _.each(models, (model) => {
+      if (model instanceof Model) {
+        model.setParent(that);
+        model.push(model);
+      } else {
+        const modelOptions = _.extend(model, { parent: that });
+        const newModel = new Model(model.attributes, modelOptions);
+        modelsArray.push(newModel);
+      }
+    });
+
+    return new Collection(modelsArray, { model: Model });
   },
 });
 

@@ -23,6 +23,10 @@ const Collection = Backbone.Collection.extend({
    * @returns {Promise<any>|Promise<TAll[]>|Promise.<*>}
    */
   destroy() {
+    if (!this.models.length) {
+      return Promise.resolve();
+    }
+
     const toWait = [];
     _.each(_.clone(this.models), (model) => {
       toWait.push(model.destroy());

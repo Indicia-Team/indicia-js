@@ -16,23 +16,23 @@ describe('Sample', () => {
   const store = new Store();
   const storedCollection = new Collection(null, { store });
 
-  before((done) => {
-    // clean up in case of trash
-    storedCollection.destroy().then(() => done());
-  });
-
-  beforeEach((done) => {
-    // clean up in case of trash
-    storedCollection.destroy().then(() => done());
-  });
-
-  after((done) => {
-    // clean up afterwards
-    storedCollection.destroy().then(() => done());
-  });
+  // before((done) => {
+  //   // clean up in case of trash
+  //   storedCollection.destroy().then(() => done());
+  // });
+  //
+  // beforeEach((done) => {
+  //   // clean up in case of trash
+  //   storedCollection.destroy().then(() => done());
+  // });
+  //
+  // after((done) => {
+  //   // clean up afterwards
+  //   storedCollection.destroy().then(() => done());
+  // });
 
   it('new', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.cid).to.be.a.string;
     expect(sample.attributes).to.be.an.object;
     expect(sample.occurrences).to.be.instanceOf(Collection);
@@ -43,74 +43,46 @@ describe('Sample', () => {
   });
 
 
-  it('should save', (done) => {
-    model.save({hello: 'world!'}, {
-      success: function(model) {
-        id = model.get('id');
+  it('should save and fetch and update', (done) => {
+    const sample = new Sample(null, { store });
 
-        expect(model).toBeDefined();
-        expect(id).toBeDefined();
-        expect(model.get('hello')).toEqual('world!');
+    sample.save({ hello: 'world!' })
+      .then((model) => {
+        const cid = model.get('cid');
 
-        done();
-      }
-    });
-  });
+        expect(model).to.exist;
+        expect(cid).to.exist;
+        expect(model.get('hello')).to.be.equal('world!');
 
-  it('should fetch', (done) => {
-    model.fetch({
-      success: function() {
-        expect(model).toBeDefined();
-        expect(model.attributes).toEqual({
-          id: id,
-          hello: 'world!'
-        });
-
-        done();
-      }
-    });
-  });
-
-  it('should update', (done) => {
-    model.save({hello: 'you!'}, {
-      success: function() {
-        expect(model.get('hello')).toEqual('you!');
-
-        done();
-      }
-    });
-  });
-
-  it('should remove', (done) => {
-    model.destroy({
-      success: function(model, resp, options) { // jshint unused:false
-        expect(model.attributes).toEqual(resp);
-        var handlers = {
-          success: function() {
-            testComplete();
-          },
-          error: function() {
-            testComplete();
-          }
-        };
-        spyOn(handlers, 'success').and.callThrough();
-        spyOn(handlers, 'error').and.callThrough();
-
-        var testComplete = function() {
-          expect(handlers.error).toHaveBeenCalled();
-          expect(handlers.success).not.toHaveBeenCalled();
+        // get direct from storage
+        const sampleStored = new Sample(null, { cid, store });
+        sampleStored.fetch().then((modelStored) => {
+          expect(sampleStored.get('hello')).to.be.equal('world!');
+          expect(modelStored.get('hello')).to.be.equal('world!');
           done();
-        };
+        });
+      });
+  });
 
-        model.fetch(handlers);
-      }
-    });
+
+  it('should destroy', (done) => {
+    const sample = new Sample(null, { store });
+
+    sample.destroy()
+      .then((model) => {
+        const cid = model.cid;
+        expect(cid).to.be.equal(sample.cid);
+
+        // get direct from storage
+        const sampleStored = new Sample(null, { cid, store });
+        sampleStored.fetch().catch(() => done());
+      });
   });
 
   it('should return JSON', () => {
     const occurrence = new Occurrence();
-    const sample = new Sample();
-    const subSample = new Sample();
+    const sample = new Sample(null, { store });
+    const subSample = new Sample(null, { store });
     subSample.occurrences.set(occurrence);
 
     let json = sample.toJSON();
@@ -131,7 +103,7 @@ describe('Sample', () => {
   // defaults
 
   it('should have default metadata', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.metadata).to.be.an('object');
     expect(sample.metadata.training).to.be.equal(false);
     expect(sample.metadata.created_on).to.be.instanceOf(Date);
@@ -139,32 +111,32 @@ describe('Sample', () => {
   });
 
   it('should have default occurrences storedCollection', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.occurrences).to.be.instanceOf(Backbone.Collection);
   });
 
   it('should have default samples storedCollection', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.samples).to.be.instanceOf(Backbone.Collection);
   });
 
   it('should have default media storedCollection', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.media).to.be.instanceOf(Backbone.Collection);
   });
 
   // validation
 
   it('should have remote and local validators', () => {
-    const sample = new Sample();
+    const sample = new Sample(null, { store });
     expect(sample.validate).to.be.a('function');
     expect(sample.validateRemote).to.be.a('function');
   });
 
 
   it('should validate location, location type, date and occurrences', () => {
-    const sample = new Sample();
-    const subSample = new Sample();
+    const sample = new Sample(null, { store });
+    const subSample = new Sample(null, { store });
     const occurrence = new Occurrence();
 
     delete sample.attributes.location_type;
@@ -215,7 +187,7 @@ describe('Sample', () => {
     });
 
     it('should return false if no store', () => {
-      const sample = new Sample();
+      const sample = new Sample(null, { store });
       const promise = sample.save();
       expect(promise).to.be.false;
     });
