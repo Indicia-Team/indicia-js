@@ -16,28 +16,38 @@ describe('Sample', () => {
 
   before((done) => {
     // clean up in case of trash
-    storedCollection.destroy().then(() => done());
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
   });
 
   beforeEach((done) => {
     // clean up in case of trash
-    storedCollection.destroy().then(() => done());
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
   });
 
   after((done) => {
     // clean up afterwards
-    storedCollection.destroy().then(() => done());
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
   });
 
   afterEach((done) => {
     // clean up afterwards
-    storedCollection.destroy().then(() => done());
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
   });
 
-  it('new', () => {
+  it('should be a Backbone model', () => {
     const sample = new Sample(null, { store });
+
+    expect(sample).to.be.instanceOf(Backbone.Model);
     expect(sample.cid).to.be.a.string;
-    expect(sample.attributes).to.be.an.object;
+    expect(sample.attributes).to.be.an.object
   });
 
   it('should return JSON', () => {

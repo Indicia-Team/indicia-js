@@ -84,7 +84,7 @@ const Sample = Backbone.Model.extend({
 
 
   /**
-   * Synchronises the model with the collection.
+   * Synchronises the model.
    * @param method
    * @param model
    * @param options
@@ -95,7 +95,7 @@ const Sample = Backbone.Model.extend({
     }
 
     if (!this.store) {
-      return Promise.reject(new Error('Trying to locally save a model without a store'));
+      return Promise.reject(new Error('Trying to locally sync a model without a store'));
     }
 
     this.trigger('request', model, null, options);
@@ -163,80 +163,33 @@ const Sample = Backbone.Model.extend({
         timeout: options.timeout || 30000, // 30s
       });
 
-      function getIDs(subModels = []) {
-        const ids = {};
-        subModels.forEach((subModel) => {
-          ids[subModel.external_key] = subModel.id;
-          if (subModel.occurrences) {
-            _.extend(ids, getIDs(subModel.occurrences)); // recursive iterate
-          }
-
-          // todo: samples & media
-        });
-        return ids;
-      }
-
-      function setModelRemoteID(model, newRemoteIDs) {
-        model.id = newRemoteIDs[model.cid];
-
-        // todo
-        // if (model.samples) {
-        //   model.samples.each((sample) => {
-        //     // recursively iterate over samples
-        //     setModelRemoteID(sample, newRemoteIDs);
-        //   });
-        // }
-
-        if (model.occurrences) {
-          model.occurrences.each((occurrence) => {
-            // recursively iterate over occurrences
-            setModelRemoteID(occurrence, newRemoteIDs);
-          });
-        }
-
-        // todo
-        // if (model.media) {
-        //   model.media.each((media) => {
-        //     // recursively iterate over occurrences
-        //     setModelRemoteID(media, newRemoteIDs);
-        //   });
-        // }
-      }
-
-      xhr.done((responseData) => {
-        model.synchronising = false;
-
-        // update the model and occurrences with new remote IDs
-        const newRemoteIDs = {};
-        newRemoteIDs[responseData.data.external_key] = responseData.data.id;
-        _.extend(newRemoteIDs, getIDs(responseData.data.subModels));
-        setModelRemoteID(model, newRemoteIDs);
-
-        const timeNow = new Date();
-        model.metadata.server_on = timeNow;
-        model.metadata.updated_on = timeNow;
-        model.metadata.synced_on = timeNow;
-
-        fulfill();
-      });
+      xhr.done((responseData) => fulfill(responseData));
 
       xhr.fail((jqXHR, textStatus, errorThrown) => {
         model.synchronising = false;
 
         if (errorThrown === 'Conflict') {
-          // duplicate occurred
-          const newRemoteIDs = {};
-          jqXHR.responseJSON.errors.forEach((error) => {
-            newRemoteIDs[model.cid] = error.sample_id;
-            newRemoteIDs[error.external_key] = error.id;
-          });
-          setModelRemoteID(model, newRemoteIDs);
+          // duplicate occurred - this fixes only occurrence duplicates!
+          // todo: remove once this is sorted
+          const responseData = {
+            data: {
+              id: null,
+              external_key: null,
+              occurrences: [],
+            },
+          };
 
-          const timeNow = new Date();
-          model.metadata.server_on = timeNow;
-          model.metadata.updated_on = timeNow;
-          model.metadata.synced_on = timeNow;
-          fulfill();
+          jqXHR.responseJSON.errors.forEach((error) => {
+            responseData.data.id = error.sample_id;
+            responseData.data.external_key = error.sample_external_key;
+            responseData.occurrences.push({
+              id: error.id,
+              external_key: error.external_key,
+            });
+          });
+
+
+          fulfill(responseData);
           return;
         }
 
@@ -249,6 +202,57 @@ const Sample = Backbone.Model.extend({
     });
 
     return promise;
+  },
+
+  /**
+   * Sets new server IDs to the models.
+   */
+  _setNewRemoteID(model, responseData) {
+    const that = this;
+
+    // extracts ids from collection of response models
+    function getIDs(collection = []) {
+      const ids = {};
+      collection.forEach((subModel) => {
+        ids[subModel.external_key] = subModel.id;
+        if (subModel.occurrences) {
+          _.extend(ids, getIDs(subModel.occurrences)); // recursive iterate
+        }
+
+        // todo: samples & media
+      });
+      return ids;
+    }
+
+    const newRemoteIDs = {};
+    newRemoteIDs[responseData.external_key] = responseData.id;
+
+    this.id = newRemoteIDs[this.cid];
+
+    // todo
+    // if (model.samples) {
+    //   model.samples.each((sample) => {
+    //     // recursively iterate over samples
+    //     setModelRemoteID(sample, newRemoteIDs);
+    //   });
+    // }
+
+    if (this.occurrences) {
+      const occIDs = getIDs(responseData.occurrences);
+
+      this.occurrences.each((occurrence) => {
+        // recursively iterate over occurrences
+        that._setNewRemoteID(occurrence, occIDs);
+      });
+    }
+
+    // todo
+    // if (model.media) {
+    //   model.media.each((media) => {
+    //     // recursively iterate over occurrences
+    //     setModelRemoteID(media, newRemoteIDs);
+    //   });
+    // }
   },
 
   _getModelFormData(model) {
@@ -372,6 +376,18 @@ const Sample = Backbone.Model.extend({
         // model save
         model.sync(method, model, options)
           .then((resp) => {
+            model.synchronising = false;
+
+            // update the model and occurrences with new remote IDs
+            model._setNewRemoteID(model, resp.data);
+
+            const timeNow = new Date();
+            model.metadata.server_on = timeNow;
+            model.metadata.updated_on = timeNow;
+            model.metadata.synced_on = timeNow;
+
+
+
             // Ensure attributes are restored during synchronous saves.
             model.attributes = attributes;
             let serverAttrs = options.parse ? model.parse(resp, options) : resp;

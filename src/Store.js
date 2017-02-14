@@ -88,7 +88,8 @@ class Store {
     }
 
     const key = model.cid;
-    return this.localForage.setItem(key, model.toJSON());
+    return this.localForage.setItem(key, model.toJSON())
+      .then(() => Promise.resolve()); // don't return anything to update the model
   }
 
   create(model, options) {
@@ -111,26 +112,12 @@ class Store {
   }
 
   // Only used by `Backbone.Collection#sync`.
-  findAll(collection, options) {
-    const that = this;
-
+  findAll() {
     // build up samples
-    const samples = [];
+    const models = [];
     const promise = this.localForage.iterate((value) => {
-      const modelOptions = _.extend(value, { store: that });
-      const sample = new that.model(value.attributes, modelOptions);
-      samples.push(sample);
-    }).then(() => {
-      // attach the samples as collection
-      if (samples.length) {
-        that.reset(samples, _.extend({ silent: true }, options));
-      }
-
-      that._initialized = true;
-      that.trigger('init');
-
-      return Promise.resolve(samples);
-    });
+      models.push(value);
+    }).then(() => Promise.resolve(models));
 
     return promise;
   }

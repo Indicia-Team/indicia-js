@@ -1,14 +1,16 @@
+import Backbone from 'backbone';
 import Occurrence from '../src/Occurrence';
 
 /* eslint-disable no-unused-expressions */
 
 describe('Occurrence', () => {
-  it('should create new', () => {
+  it('should be a Backbone model', () => {
     const occurrence = new Occurrence();
-    expect(occurrence.attributes).to.be.an.object;
-    expect(occurrence instanceof Occurrence).to.be.true;
-    expect(Object.keys(occurrence.attributes).length).to.be.equal(0);
+
+    expect(occurrence).to.be.instanceOf(Backbone.Model);
     expect(occurrence.cid).to.be.a.string;
+    expect(occurrence.attributes).to.be.an.object;
+    expect(Object.keys(occurrence.attributes).length).to.be.equal(0);
   });
 
   it('should return JSON', () => {
