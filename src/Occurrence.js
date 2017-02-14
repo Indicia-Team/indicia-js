@@ -147,17 +147,65 @@ const Occurrence = Backbone.Model.extend({
     return data;
   },
 
+
   /**
-   * Returns an object with attributes and their values flattened and
+   * Returns an object with attributes and their values
    * mapped for warehouse submission.
    *
-   * @param flattener
    * @returns {*}
    */
-  flatten(flattener, count) {
-    // images flattened separately
-    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count }]);
+  _getSubmission() {
+    const that = this;
+    const keys = Occurrence.keys; // warehouse keys/values to transform
+    const media = _.clone(this.media.models); // all media within this and child models
+
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+      fields: {},
+      media: [],
+    };
+
+    // add media references
+    this.media.models.forEach((model) => {
+      submission.media.push(model.cid);
+    });
+
+    // transform attributes
+    Object.keys(this.attributes).forEach((attr) => {
+      // no need to send attributes with no values
+      let value = that.attributes[attr];
+      if (!value) return;
+
+      if (!keys[attr]) {
+        if (attr !== 'email') {
+          console.warn(`Morel: no such key: ${attr}`);
+        }
+        submission.fields[attr] = value;
+        return;
+      }
+
+      const warehouseAttr = keys[attr].id || attr;
+
+      // check if has values to choose from
+      if (keys[attr].values) {
+        if (typeof keys[attr].values === 'function') {
+          // get a value from a function
+          value = keys[attr].values(value, submission);
+        } else {
+          value = keys[attr].values[value];
+        }
+      }
+
+      // don't need to send null or undefined
+      if (value) {
+        submission.fields[warehouseAttr] = value;
+      }
+    });
+
+    return [submission, media];
   },
+
 });
 
 /**

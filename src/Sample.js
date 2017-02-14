@@ -75,9 +75,9 @@ const Sample = Backbone.Model.extend({
     }
 
     // initialise sub models
-    this.occurrences = this._parseModels(options.occurrences);
-    this.samples = this._parseModels(options.samples);
-    this.media = this._parseModels(options.media);
+    this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
+    this.samples = this._parseModels(options.samples, Sample);
+    this.media = this._parseModels(options.media, this.Media);
 
     this.initialize.apply(this, arguments);
   },
@@ -95,7 +95,7 @@ const Sample = Backbone.Model.extend({
     }
 
     if (!this.store) {
-      throw new Error('Trying to locally save a model without a store');
+      return Promise.reject(new Error('Trying to locally save a model without a store'));
     }
 
     return this.store.sync(method, model, options);
@@ -124,9 +124,8 @@ const Sample = Backbone.Model.extend({
     const params = { type };
 
     // Ensure that we have a URL.
-    params.url = options.url || _.result(model, 'url');
-    if (!params.url) {
-      throw new Error('A "url" property or function must be specified');
+    if (!this.remote_host) {
+      return Promise.reject(new Error('A "url" property or function must be specified'));
     }
 
     // model.trigger('request', model, xhr, options);
@@ -134,9 +133,9 @@ const Sample = Backbone.Model.extend({
       switch (method) {
         case 'create':
           that.post(model, options)
-            .then((successModel) => {
-              successModel.trigger('sync');
-              fulfill(successModel);
+            .then((resp) => {
+              model.trigger('sync');
+              fulfill(resp);
             })
             .catch(reject);
           break;
@@ -238,7 +237,7 @@ const Sample = Backbone.Model.extend({
         model.metadata.updated_on = timeNow;
         model.metadata.synced_on = timeNow;
 
-        fulfill(model);
+        fulfill();
       });
 
       xhr.fail((jqXHR, textStatus, errorThrown) => {
@@ -257,7 +256,7 @@ const Sample = Backbone.Model.extend({
           model.metadata.server_on = timeNow;
           model.metadata.updated_on = timeNow;
           model.metadata.synced_on = timeNow;
-          fulfill(model);
+          fulfill();
           return;
         }
 
@@ -274,81 +273,71 @@ const Sample = Backbone.Model.extend({
   },
 
   _getModelFormData(model) {
+    const that = this;
+
     const promise = new Promise((fulfill) => {
-      const flattened = model.flatten(this._flattener);
-      let formData = new FormData();
+      let formData = new FormData(); // for submission
 
-      // append images
-      let occCount = 0;
-      const occurrenceProcesses = [];
-      model.occurrences.each((occurrence) => {
-        // on async run occCount will be incremented before used for image name
-        const localOccCount = occCount;
-        let imgCount = 0;
+      // get submission model and all the media
+      const [submission, media] = model._getSubmission();
+      formData.append('submission', submission);
 
-        const imageProcesses = [];
+      // append media
+      that._mediaAppend(media, formData).then(() => {
+        // Add authentication and survey id
+        formData.append('api_key', that.api_key);
+        formData.append('survey_id', that.metadata.survey_id);
 
-        occurrence.media.each((image) => {
-          const imagePromise = new Promise((_fulfill) => {
-            const url = image.getURL();
-            const type = image.get('type');
-
-            function onSuccess(err, img, dataURI, blob) {
-              const name = `sc:${localOccCount}::photo${imgCount}`;
-
-              // can provide both image/jpeg and jpeg
-              let extension = type;
-              let mediaType = type;
-              if (type.match(/image.*/)) {
-                extension = type.split('/')[1];
-              } else {
-                mediaType = `image/${mediaType}`;
-              }
-              if (!blob) {
-                blob = helpers.dataURItoBlob(dataURI, mediaType);
-              }
-
-              formData.append(name, blob, `pic.${extension}`);
-              imgCount++;
-              _fulfill();
-            }
-
-            if (!helpers.isDataURL(url)) {
-              // load image
-              const xhr = new XMLHttpRequest();
-              xhr.open('GET', url, true);
-              xhr.responseType = 'blob';
-              xhr.onload = () => {
-                onSuccess(null, null, null, xhr.response);
-              };
-              // todo check error case
-
-              xhr.send();
-            } else {
-              onSuccess(null, null, url);
-            }
-          });
-          imageProcesses.push(imagePromise);
-        });
-
-        occurrenceProcesses.push(Promise.all(imageProcesses));
-        occCount++;
-      });
-
-      Promise.all(occurrenceProcesses).then(() => {
-        // append attributes
-        const keys = Object.keys(flattened);
-        for (let i = 0; i < keys.length; i++) {
-          formData.append(keys[i], flattened[keys[i]]);
-        }
-
-        // Add authentication
-        formData = this.appendAuth(formData);
         fulfill(formData);
       });
     });
 
     return promise;
+  },
+
+  _mediaAppend(media, formdata) {
+    const mediaProcesses = [];
+    media.forEach((media) => {
+      const imagePromise = new Promise((_fulfill) => {
+        const url = image.getURL();
+        const type = image.get('type');
+
+        function onSuccess(err, img, dataURI, blob) {
+          // can provide both image/jpeg and jpeg
+          let extension = type;
+          let mediaType = type;
+          if (type.match(/image.*/)) {
+            extension = type.split('/')[1];
+          } else {
+            mediaType = `image/${mediaType}`;
+          }
+          if (!blob) {
+            blob = helpers.dataURItoBlob(dataURI, mediaType);
+          }
+
+          formData.append(media.cid, blob, `pic.${extension}`);
+          _fulfill();
+        }
+
+        if (!helpers.isDataURL(url)) {
+          // load image
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.responseType = 'blob';
+          xhr.onload = () => {
+            onSuccess(null, null, null, xhr.response);
+          };
+          // todo check error case
+
+          xhr.send();
+        } else {
+          onSuccess(null, null, url);
+        }
+      });
+      mediaProcesses.push(imagePromise);
+    });
+
+    return Promise.all(mediaProcesses);
   },
 
   save(key, val, options) {
@@ -385,7 +374,7 @@ const Sample = Backbone.Model.extend({
       if (attrs && wait) model.attributes = _.extend({}, attributes, attrs);
 
       let method = 'create';
-      if (!model.isNew() || options.remote) {
+      if (!model.isNew() && options.remote) {
         method = options.patch ? 'patch' : 'update';
       }
       if (method === 'patch' && !options.attrs) options.attrs = attrs;
@@ -433,13 +422,14 @@ const Sample = Backbone.Model.extend({
       return this.sync('read', this, options)
         .then((resp) => {
           // set the returned model's data
-          if (!model.set(resp.attributes, options)) return false;
+          model.id = resp.id;
           model.metadata = resp.metadata;
+          if (!model.set(resp.attributes, options)) return false;
 
           // initialise sub models
-          model.occurrences = model._parseModels(resp.occurrences);
-          model.samples = model._parseModels(resp.samples);
-          model.media = model._parseModels(resp.media);
+          model.occurrences = model._parseModels(resp.occurrences, model.Occurrence);
+          model.samples = model._parseModels(resp.samples, Sample);
+          model.media = model._parseModels(resp.media, model.Media);
 
           model.trigger('sync', model, resp, options);
 
@@ -625,19 +615,71 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Returns an object with attributes and their values flattened and
+   * Returns an object with attributes and their values
    * mapped for warehouse submission.
    *
-   * @param flattener
    * @returns {*}
    */
-  flatten(flattener) {
-    // media flattened separately
-    const flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
+  _getSubmission() {
+    const that = this;
+    const keys = Sample.keys; // warehouse keys/values to transform
+    const media = _.clone(this.media.models); // all media within this and child models
 
-    // occurrences
-    _.extend(flattened, this.occurrences.flatten(flattener));
-    return flattened;
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+      fields: {},
+      media: [],
+    };
+
+    // add media references
+    this.media.models.forEach((model) => {
+      submission.media.push(model.cid);
+    });
+
+    // transform attributes
+    Object.keys(this.attributes).forEach((attr) => {
+      // no need to send attributes with no values
+      let value = that.attributes[attr];
+      if (!value) return;
+
+      if (!keys[attr]) {
+        if (attr !== 'email') {
+          console.warn(`Morel: no such key: ${attr}`);
+        }
+        submission.fields[attr] = value;
+        return;
+      }
+
+      const warehouseAttr = keys[attr].id || attr;
+
+      // check if has values to choose from
+      if (keys[attr].values) {
+        if (typeof keys[attr].values === 'function') {
+          // get a value from a function
+          value = keys[attr].values(value, submission);
+        } else {
+          value = keys[attr].values[value];
+        }
+      }
+
+      // don't need to send null or undefined
+      if (value) {
+        submission.fields[warehouseAttr] = value;
+      }
+    });
+
+    // transform child occurrences
+    const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
+    submission.occurrences = occurrences;
+    _.extend(media, occurrencesMedia);
+
+    // transform child samples
+    const [samples, samplesMedia] = this.samples._getSubmission();
+    submission.samples = samples;
+    _.extend(media, samplesMedia);
+
+    return [submission, media];
   },
 
   toJSON() {
@@ -742,7 +784,7 @@ const Sample = Backbone.Model.extend({
   },
 
   _parseModels(models, Model) {
-    if(!models) {
+    if (!models) {
       // init empty samples collection
       return new Collection([], { model: Model });
     }
@@ -753,7 +795,7 @@ const Sample = Backbone.Model.extend({
     _.each(models, (model) => {
       if (model instanceof Model) {
         model.setParent(that);
-        model.push(model);
+        modelsArray.push(model);
       } else {
         const modelOptions = _.extend(model, { parent: that });
         const newModel = new Model(model.attributes, modelOptions);

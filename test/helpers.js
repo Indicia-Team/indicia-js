@@ -3,18 +3,24 @@ import Occurrence from '../src/Occurrence';
 import serverResponses from './server_responses.js';
 import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
-function getRandomSample(storage) {
-  const occurrence = new Occurrence({
-    taxon: 1234,
-  });
+function getRandomSample(store, samples = [], occurrences = []) {
+  if (!occurrences.length) {
+    const occurrence = new Occurrence({
+      taxon: 1234,
+    });
+    occurrences.push(occurrence);
+  }
+
   const sample = new Sample(
     {
       location: ' 12.12, -0.23',
     },
     {
       api_key: 'x',
-      storage,
-      occurrences: [occurrence],
+      remote_host: 'x',
+      store,
+      occurrences,
+      samples,
     }
   );
 
@@ -22,7 +28,7 @@ function getRandomSample(storage) {
 }
 
 function generateSampleResponse(server, sample) {
-  const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
+  const SAMPLE_POST_URL = 'x' + API_BASE + API_VER + API_SAMPLES_PATH;
   server.respondWith(
     'POST',
     SAMPLE_POST_URL,
@@ -34,7 +40,7 @@ function generateSampleResponse(server, sample) {
   );
 }
 
-export default {
+export {
   getRandomSample,
   generateSampleResponse,
 };

@@ -5,15 +5,6 @@ import Backbone from 'backbone';
 import _ from 'underscore';
 
 const Collection = Backbone.Collection.extend({
-  flatten(flattener) {
-    const flattened = {};
-
-    for (let i = 0; i < this.length; i++) {
-      _.extend(flattened, this.models[i].flatten(flattener, i));
-    }
-    return flattened;
-  },
-
   comparator(a) {
     return a.metadata.created_on;
   },
@@ -47,6 +38,26 @@ const Collection = Backbone.Collection.extend({
 
   size() {
     return Promise.resolve(this.size());
+  },
+
+  /**
+   * Returns an object with attributes and their values
+   * mapped for warehouse submission.
+   *
+   * @returns {*}
+   */
+  _getSubmission() {
+    const submission = [];
+    const media = [];
+
+    // transform its models
+    this.models.forEach((model) => {
+      const [modelSubmission, modelMedia] = model._getSubmission();
+      submission.push(modelSubmission);
+      _.extend(media, modelMedia);
+    });
+
+    return [submission, media];
   },
 });
 
