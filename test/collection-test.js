@@ -41,19 +41,19 @@ describe('Collection', () => {
     sample.set(key, value);
 
     storedCollection.destroy()
-      .then(() => storedCollection.set(sample))
-      .then(() => storedCollection.get(sample))
-      .then((data) => {
+      .then(() => {
+        storedCollection.set(sample);
+
+        const data = storedCollection.get(sample);
         expect(data).to.be.instanceof(Sample);
         expect(sample.get(key)).to.be.equal(data.get(key));
-      })
-      .then(() => storedCollection.has(sample))
-      .then((contains) => {
+
+        let contains = storedCollection.has(sample)
         expect(contains).to.be.true;
-        return storedCollection.has(new Sample());
-      })
-      .then((finalContains) => {
-        expect(finalContains).to.be.false;
+
+        contains = storedCollection.has(new Sample());
+        expect(contains).to.be.false;
+
         done();
       })
       .catch((err) => {
@@ -90,34 +90,6 @@ describe('Collection', () => {
 
         done();
       }
-    });
-  });
-
-  it('should update', (done) => {
-    storedCollection.get(id).save({hello: 'you!'}, {
-      success: function() {
-        expect(storedCollection.get(id).get('hello')).toEqual('you!');
-
-        done();
-      }
-    });
-  });
-
-  it('should remove', (done) => {
-    localforage.getItem(storedCollection.sync.localforageKey, function(err, values) {
-      storedCollection.get(id).destroy({
-        success: function() {
-          expect(storedCollection.length).toEqual(0);
-
-          // expect storedCollection references to be reset
-          localforage.getItem(storedCollection.sync.localforageKey, function(err, values2) {
-            expect(values2.length).toEqual(values.length - 1);
-
-            // test complete
-            done();
-          });
-        }
-      });
     });
   });
 
@@ -167,47 +139,45 @@ describe('Collection', () => {
       });
   });
 
-  it('should fetch and destroy', (done) => {
-    const sample = new Sample();
-    const sample2 = new Sample();
-
-    throw 'todo';
-
-    storedCollection.destroy()
-      .then(() => storedCollection.set(sample))
-      .then(() => storedCollection.set(sample2))
-      .then(() => storedCollection.has(sample))
-      .then((contains) => {
-        expect(contains).to.be.true;
-        expect(storedCollection.length).to.be.equal(2);
-
-        storedCollection.destroy()
-          .then(() => {
-            storedCollection.has(sample)
-              .then((finalContains) => {
-                expect(finalContains).to.be.false;
-                done();
-              });
-          });
-      });
-  });
-
-  it('should remove', (done) => {
-    const sample = new Sample();
-
-    storedCollection.destroy()
-      .then(() => storedCollection.set(sample))
-      .then(() => storedCollection.has(sample))
-      .then((contains) => {
-        expect(contains).to.be.true;
-        return storedCollection.remove(sample);
-      })
-      .then(() => storedCollection.has(sample))
-      .then((finalContains) => {
-        expect(finalContains).to.be.false;
-        done();
-      });
-  });
+  // it('should fetch and destroy', (done) => {
+  //   const sample = new Sample();
+  //   const sample2 = new Sample();
+  //
+  //   storedCollection.destroy()
+  //     .then(() => storedCollection.set(sample))
+  //     .then(() => storedCollection.set(sample2))
+  //     .then(() => storedCollection.has(sample))
+  //     .then((contains) => {
+  //       expect(contains).to.be.true;
+  //       expect(storedCollection.length).to.be.equal(2);
+  //
+  //       storedCollection.destroy()
+  //         .then(() => {
+  //           storedCollection.has(sample)
+  //             .then((finalContains) => {
+  //               expect(finalContains).to.be.false;
+  //               done();
+  //             });
+  //         });
+  //     });
+  // });
+  //
+  // it('should remove', (done) => {
+  //   const sample = new Sample();
+  //
+  //   storedCollection.destroy()
+  //     .then(() => storedCollection.set(sample))
+  //     .then(() => storedCollection.has(sample))
+  //     .then((contains) => {
+  //       expect(contains).to.be.true;
+  //       return storedCollection.remove(sample);
+  //     })
+  //     .then(() => storedCollection.has(sample))
+  //     .then((finalContains) => {
+  //       expect(finalContains).to.be.false;
+  //       done();
+  //     });
+  // });
 
 
   it('should be a storedCollection', (done) => {

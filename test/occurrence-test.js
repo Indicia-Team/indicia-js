@@ -30,7 +30,7 @@ describe('Occurrence', () => {
 
   it('should validate taxon', () => {
     const occurrence = new Occurrence();
-    let invalids = occurrence.validate();
+    let invalids = occurrence.validate(null, { remote: true });
 
     expect(invalids).to.be.an('object');
     expect(invalids.taxon).to.be.a('string');
