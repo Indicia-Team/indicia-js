@@ -98,6 +98,7 @@ const Sample = Backbone.Model.extend({
       return Promise.reject(new Error('Trying to locally save a model without a store'));
     }
 
+    this.trigger('request', model, null, options);
     return this.store.sync(method, model, options);
   },
 
@@ -107,48 +108,27 @@ const Sample = Backbone.Model.extend({
    * Returns on success: model, response, options
    */
   _syncRemote(method, model, options) {
-    const that = this;
-
-    // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
-    const methodMap = {
-      create: 'POST',
-      update: 'PUT',
-      patch: 'PATCH',
-      delete: 'DELETE',
-      read: 'GET',
-    };
-
-    const type = methodMap[method];
-
-    // Default JSON-request options.
-    const params = { type };
-
     // Ensure that we have a URL.
     if (!this.remote_host) {
       return Promise.reject(new Error('A "url" property or function must be specified'));
     }
 
     // model.trigger('request', model, xhr, options);
-    const promise = new Promise((fulfill, reject) => {
-      switch (method) {
-        case 'create':
-          that.post(model, options)
-            .then((resp) => {
-              model.trigger('sync');
-              fulfill(resp);
-            })
-            .catch(reject);
-          break;
+    switch (method) {
+      case 'create':
+        return this._create(model, options);
 
-        case 'read':
-          // todo
-          break;
+      case 'update':
+        // todo
+        return Promise.resolve();
 
-        default:
-      }
-    });
+      case 'read':
+        // todo
+        return Promise.resolve();
 
-    return promise;
+      default:
+        return Promise.reject(new Error(`No such remote sync option: ${method}`));
+    }
   },
 
   /**
@@ -156,7 +136,7 @@ const Sample = Backbone.Model.extend({
    * @param model
    * @param options
    */
-  post(model, options) {
+  _create(model, options) {
     const that = this;
     model.synchronising = true;
 
@@ -260,9 +240,8 @@ const Sample = Backbone.Model.extend({
           return;
         }
 
-        model.trigger('error');
-
         const error = new Error({ code: jqXHR.status, message: errorThrown });
+        model.trigger('error', error);
         reject(error);
       });
 
@@ -295,12 +274,12 @@ const Sample = Backbone.Model.extend({
     return promise;
   },
 
-  _mediaAppend(media, formdata) {
+  _mediaAppend(media, formData) {
     const mediaProcesses = [];
-    media.forEach((media) => {
+    media.forEach((mediaModel) => {
       const imagePromise = new Promise((_fulfill) => {
-        const url = image.getURL();
-        const type = image.get('type');
+        const url = mediaModel.getURL();
+        const type = mediaModel.get('type');
 
         function onSuccess(err, img, dataURI, blob) {
           // can provide both image/jpeg and jpeg
@@ -403,7 +382,10 @@ const Sample = Backbone.Model.extend({
             fulfill(model);
             return null;
           })
-          .catch(reject);
+          .catch((err) => {
+            model.trigger('error', err);
+            reject(err);
+          });
       }
 
       // Restore attributes.
@@ -804,6 +786,10 @@ const Sample = Backbone.Model.extend({
     });
 
     return new Collection(modelsArray, { model: Model });
+  },
+
+  isNew() {
+    return !this.id;
   },
 });
 

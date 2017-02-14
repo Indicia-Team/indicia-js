@@ -10,8 +10,6 @@ import { API_BASE, API_VER, API_SAMPLES_PATH, SYNCED } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
 
-const SAMPLE_POST_URL = 'x' + API_BASE + API_VER + API_SAMPLES_PATH;
-
 describe('Sample', () => {
   const store = new Store();
   const storedCollection = new Collection(null, { store });
@@ -139,6 +137,7 @@ describe('Sample', () => {
 
     beforeEach(() => {
       sinon.spy(Sample.prototype, '_syncRemote');
+      sinon.spy(Sample.prototype, '_create');
     });
 
     after(() => {
@@ -147,6 +146,7 @@ describe('Sample', () => {
 
     afterEach(() => {
       Sample.prototype._syncRemote.restore();
+      Sample.prototype._create.restore();
     });
 
     it('should throw an error if sync with no store', (done) => {
@@ -190,13 +190,47 @@ describe('Sample', () => {
             sampleStored.fetch().catch(() => done());
           });
       });
+
+      it('should fire model sync events', (done) => {
+        const events = ['request', 'sync', 'error'];
+        const eventsFired = [];
+        const sample = getRandomSample(store);
+
+        sample.on('request', () => {
+          eventsFired.push('request');
+        });
+
+        sample.on('sync', () => {
+          eventsFired.push('sync');
+        });
+
+        sample.save()
+          .then(() => {
+            // send an error
+            const newSample = getRandomSample(store);
+
+            newSample.on('error', () => {
+              newSample.store.sync.restore();
+
+              eventsFired.push('error');
+              if (events.length === 3) {
+                done();
+              }
+            });
+
+            sinon.stub(newSample.store, 'sync')
+              .returns(Promise.reject('Some problem'));
+
+            newSample.save().catch(() => {});
+          });
+      });
     });
 
     describe('Remote', () => {
       it('should post with remote option', (done) => {
         const sample = getRandomSample(store);
 
-        generateSampleResponse(server, sample);
+        generateSampleResponse(server, 'OK', sample);
         const valid = sample.save(null, { remote: true }).then(() => {
           expect(sample._syncRemote.calledOnce).to.be.true;
           done();
@@ -209,15 +243,7 @@ describe('Sample', () => {
         const subSample = getRandomSample(store);
         const sample = getRandomSample(store, [subSample]);
 
-        server.respondWith(
-          'POST',
-          SAMPLE_POST_URL,
-          serverResponses('OK_SUBSAMPLE', {
-            cid: sample.cid,
-            subsample_cid: subSample.cid,
-            occurrence_cid: subSample.getOccurrence().cid,
-          }),
-        );
+        generateSampleResponse(server, 'OK_SUBSAMPLE', sample);
 
         const valid = sample.save(null, { remote: true }).then(() => {
           expect(sample._syncRemote.calledOnce).to.be.true;
@@ -229,7 +255,7 @@ describe('Sample', () => {
 
       it('should update remotely synced record', (done) => {
         const sample = getRandomSample(store);
-        generateSampleResponse(server, sample);
+        generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true })
           .then(() => sample.save())
@@ -257,8 +283,9 @@ describe('Sample', () => {
       });
 
       it('should return error if unsuccessful remote sync', (done) => {
-        server.respondWith('POST', SAMPLE_POST_URL, serverResponses('err'));
         const sample = getRandomSample(store);
+
+        generateSampleResponse(server, 'ERR');
 
         const valid = sample.save(null, { remote: true })
           .catch((err) => {
@@ -273,11 +300,9 @@ describe('Sample', () => {
       // todo: we should fix this eventually
       it('should ignore the duplication error', (done) => {
         const sample = getRandomSample(store);
-        server.respondWith('POST',
-          SAMPLE_POST_URL,
-          serverResponses('duplicate', { cid: sample.getOccurrence().cid },
-          ),
-        );
+
+        generateSampleResponse(server, 'DUPLICATE', sample);
+
         expect(sample.id).to.be.undefined;
         expect(sample.getOccurrence().id).to.be.undefined;
 
@@ -298,21 +323,26 @@ describe('Sample', () => {
       });
 
 
-      it('should not double sync', (done) => {
+      it('should not double create the record', (done) => {
         const sample = getRandomSample(store);
-        generateSampleResponse(server, sample);
+        generateSampleResponse(server, 'OK', sample);
 
-        const valid = sample.save(null, { remote: true }).then(() => {
-          const newValid = sample.save(null, { remote: true });
+        let promise = sample.save(null, { remote: true }).then(() => {
+          let newPromise = sample.save(null, { remote: true })
+            .then(() => {
+              expect(newPromise).to.be.instanceOf(Promise);
 
-          expect(newValid).to.be.false;
-          expect(sample._syncRemote.calledTwice).to.be.true;
-          expect(sample.post.calledOnce).to.be.true;
-          done();
+              expect(sample._syncRemote.calledTwice).to.be.true;
+              expect(sample._create.calledOnce).to.be.true;
+              done();
+            });
         });
 
-        expect(valid).to.be.instanceOf(Promise);
+        expect(promise).to.be.instanceOf(Promise);
       });
+
+      // todo: should update
+
 
       // it('should timeout', (done) => {
       //   server.respondImmediately = false;
@@ -340,23 +370,38 @@ describe('Sample', () => {
       //   clock.tick(29000);
       // });
 
-      // it('should fire model sync events', (done) => {
-      //   const events = ['sync', 'request', 'error'];
-      //   const sample = getRandomSample(store);
-      //
-      //   store.set(sample, () => {
-      //     store.on(events.join(' '), () => {
-      //       events.pop();
-      //       if (!events.length) done();
-      //     });
-      //
-      //     sample.trigger('sync');
-      //     sample.trigger('request');
-      //     sample.trigger('error');
-      //   });
-      // });
-    });
+      it('should fire model sync events', (done) => {
+        const events = ['request', 'sync', 'error'];
+        const eventsFired = [];
+        const sample = getRandomSample(store);
 
+        sample.on('request', () => {
+          eventsFired.push('request');
+        });
+
+        sample.on('sync', () => {
+          eventsFired.push('sync');
+        });
+
+        generateSampleResponse(server, 'OK', sample);
+
+        sample.save(null, { remote: true })
+          .then(() => {
+            // send an error
+            const newSample = getRandomSample(store);
+            generateSampleResponse(server, 'ERR');
+
+            newSample.on('error', () => {
+              eventsFired.push('error');
+              if (events.length === 3) {
+                done();
+              }
+            });
+
+            newSample.save(null, { remote: true }).catch(() => {});
+          });
+      });
+    });
 
     describe('occurrences with media', () => {
       before((done) => {
@@ -385,7 +430,7 @@ describe('Sample', () => {
         });
 
         const sample = getRandomSample(store, null, [occurrence]);
-        generateSampleResponse(server, sample);
+        generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => done());
       });
