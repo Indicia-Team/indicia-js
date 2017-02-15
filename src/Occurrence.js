@@ -166,11 +166,6 @@ const Occurrence = Backbone.Model.extend({
       media: [],
     };
 
-    // add media references
-    this.media.models.forEach((model) => {
-      submission.media.push(model.cid);
-    });
-
     // transform attributes
     Object.keys(this.attributes).forEach((attr) => {
       // no need to send attributes with no values
@@ -201,6 +196,16 @@ const Occurrence = Backbone.Model.extend({
       if (value) {
         submission.fields[warehouseAttr] = value;
       }
+    });
+
+
+    // transform sub models
+    // media does not return any media-models only JSON data about them
+    // media files will be attached separately
+    const [mediaSubmission] = this.media._getSubmission();
+    submission.media = mediaSubmission;
+    this.media.models.forEach((model) => {
+      submission.media.push(model.cid);
     });
 
     return [submission, media];

@@ -260,6 +260,21 @@ _.extend(Media, {
 
     return promise;
   },
+
+  /**
+   * Returns an object with attributes and their values
+   * mapped for warehouse submission.
+   *
+   * @returns {*}
+   */
+  _getSubmission() {
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+    };
+
+    return [submission];
+  },
 });
 
 export { Media as default };
