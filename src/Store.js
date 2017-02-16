@@ -34,7 +34,7 @@ class Store {
         }
 
         const driverOrder = options.driverOrder || ['indexeddb', 'websql', 'localstorage'];
-        const drivers = that._getDriverOrder(driverOrder);
+        const drivers = Store._getDriverOrder(driverOrder);
         const DB = options.LocalForage || LocalForage;
 
         // init
@@ -48,7 +48,7 @@ class Store {
     });
   }
 
-  _getDriverOrder(driverOrder) {
+  static _getDriverOrder(driverOrder) {
     return driverOrder.map((driver) => {
       switch (driver) {
         case 'indexeddb':
@@ -77,6 +77,8 @@ class Store {
         return this.update(model, options);
       case 'delete':
         return this.destroy(model, options);
+      default:
+        return Promise.reject(new Error(`Local Sync method not found ${method}`));
     }
   }
 
@@ -104,7 +106,7 @@ class Store {
   }
 
   find(model) {
-    return this._callWhenReady(() => {
+    return this._callWhenReady(() => {  // eslint-disable-line
       return this.localForage.getItem(model.cid).then((data) => {
         if (!data) {
           return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
@@ -122,7 +124,7 @@ class Store {
       return this.localForage.iterate((value) => {
         models.push(value);
       }).then(() => Promise.resolve(models));
-    })
+    });
   }
 
   destroy(model) {

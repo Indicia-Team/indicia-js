@@ -77,7 +77,7 @@ const Sample = Backbone.Model.extend({
     this.samples = this._parseModels(options.samples, Sample);
     this.media = this._parseModels(options.media, this.Media);
 
-    this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
 

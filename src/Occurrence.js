@@ -55,7 +55,7 @@ const Occurrence = Backbone.Model.extend({
       });
     }
 
-    this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
   save(options = {}) {
@@ -112,7 +112,7 @@ const Occurrence = Backbone.Model.extend({
     return null;
   },
 
-  validateRemote(attributes, options) {
+  validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const errors = {};

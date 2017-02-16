@@ -39,10 +39,9 @@ const Collection = Backbone.Collection.extend({
     return this.store.sync(method, model, options);
   },
 
-
   /**
    * New function to destroy all models within the collection.
-   * @returns {Promise<any>|Promise<TAll[]>|Promise.<*>}
+   * @returns {*}
    */
   destroy() {
     if (!this.models.length) {
@@ -73,8 +72,7 @@ const Collection = Backbone.Collection.extend({
   },
 
   _syncRemote() {
-    const error = new Error()
-    return Promise.reject(error);
+    return Promise.reject(new Error('Collection sync remote has not been implemented yet.'));
   },
 
   /**
@@ -110,7 +108,7 @@ const Collection = Backbone.Collection.extend({
     options = options ? _.clone(options) : {};
     options.collection = this;
     options.store = this.store;
-    const model = new this.model(attrs, options);
+    const model = new this.model(attrs, options); // eslint-disable-line
     if (!model.validationError) return model;
     this.trigger('invalid', this, model.validationError, options);
     return false;

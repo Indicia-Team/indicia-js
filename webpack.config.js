@@ -25,6 +25,7 @@ const plugins = [
     _: 'underscore',
     Backbone: 'backbone',
     $: 'jquery',
+    LocalForage: 'localforage',
   }),
 
 ];
@@ -70,8 +71,8 @@ module.exports = {
     localforage: {
       commonjs: 'localforage',
       commonjs2: 'localforage',
-      amd: 'localforage',
-      root: 'localforage',
+      amd: 'LocalForage',
+      root: 'LocalForage',
     },
   },
   resolve: {

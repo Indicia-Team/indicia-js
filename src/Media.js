@@ -38,7 +38,7 @@ const Media = Backbone.Model.extend({
       };
     }
 
-    this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
   save(options = {}) {
@@ -119,7 +119,7 @@ const Media = Backbone.Model.extend({
           THUMBNAIL_WIDTH || options.width
         )
           .then((args) => {
-            const [image, data] = args;
+            const [, data] = args;
             that.set('thumbnail', data);
             fulfill();
           })
@@ -236,7 +236,7 @@ _.extend(Media, {
    * @param MAX_HEIGHT
    */
   resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
-    const promise = new Promise((fulfill, reject) => {
+    const promise = new Promise((fulfill) => {
       const image = new window.Image(); // native one
 
       image.onload = () => {
@@ -245,7 +245,6 @@ _.extend(Media, {
         const maxWidth = MAX_WIDTH || width;
         const maxHeight = MAX_HEIGHT || height;
 
-        let canvas = null;
         let res = null;
 
         // resizing
@@ -255,11 +254,11 @@ _.extend(Media, {
           res = height / maxHeight;
         }
 
-        width = width / res;
-        height = height / res;
+        width /= res;
+        height /= res;
 
         // Create a canvas with the desired dimensions
-        canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
 
