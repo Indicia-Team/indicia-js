@@ -1,4 +1,3 @@
-import Backbone from 'backbone';
 import LocalForage from 'localforage';
 
 /*!
@@ -13,7 +12,7 @@ class Store {
 
     // initialize db
     this.localForage = null;
-    const _dbPromise = new Promise((resolve, reject) => {
+    this.ready = new Promise((resolve, reject) => {
       // check custom drivers (eg. SQLite)
       const customDriversPromise = new Promise((_resolve) => {
         if (options.driverOrder && typeof options.driverOrder[0] === 'object') {
@@ -87,9 +86,11 @@ class Store {
       return Promise.reject(new Error('Invalid model passed to store'));
     }
 
-    const key = model.cid;
-    return this.localForage.setItem(key, model.toJSON())
-      .then(() => Promise.resolve()); // don't return anything to update the model
+    return this._callWhenReady(() => {
+      const key = model.cid;
+      return this.localForage.setItem(key, model.toJSON())
+        .then(() => Promise.resolve()); // don't return anything to update the model
+    });
   }
 
   create(model, options) {
@@ -103,34 +104,43 @@ class Store {
   }
 
   find(model) {
-    return this.localForage.getItem(model.cid).then((data) => {
-      if (!data) {
-        return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
-      }
-      return data;
+    return this._callWhenReady(() => {
+      return this.localForage.getItem(model.cid).then((data) => {
+        if (!data) {
+          return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
+        }
+        return data;
+      });
     });
   }
 
   // Only used by `Backbone.Collection#sync`.
   findAll() {
-    // build up samples
-    const models = [];
-    const promise = this.localForage.iterate((value) => {
-      models.push(value);
-    }).then(() => Promise.resolve(models));
-
-    return promise;
+    return this._callWhenReady(() => {
+      // build up samples
+      const models = [];
+      return this.localForage.iterate((value) => {
+        models.push(value);
+      }).then(() => Promise.resolve(models));
+    })
   }
 
   destroy(model) {
-    // early return if no id or cid
-    if (!model.id && !model.cid) {
-      return Promise.reject(new Error('Invalid model passed to store'));
-    }
+    return this._callWhenReady(() => {
+      // early return if no id or cid
+      if (!model.id && !model.cid) {
+        return Promise.reject(new Error('Invalid model passed to store'));
+      }
 
-    const key = model.cid;
-    return this.localForage.removeItem(key)
-      .then(() => Promise.resolve(model.toJSON()));
+      const key = model.cid;
+      return this.localForage.removeItem(key)
+        .then(() => Promise.resolve(model.toJSON()));
+    });
+  }
+
+  _callWhenReady(func) {
+    const that = this;
+    return this.ready.then(() => func.bind(that)());
   }
 }
 

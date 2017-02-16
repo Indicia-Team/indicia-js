@@ -91,7 +91,7 @@ describe('Collection', () => {
           const model = collection.get(sample);
 
           expect(model).to.exist;
-          expect(model.attributes).to.be.equal(sample.attributes);
+          expect(model.get('myattr')).to.be.equal(sample.get('myattr'));
 
           done();
         });

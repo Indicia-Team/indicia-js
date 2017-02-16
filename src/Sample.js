@@ -129,12 +129,12 @@ const Sample = Backbone.Model.extend({
       case 'update':
         // todo
         model.synchronising = false;
-        return Promise.resolve();
+        return Promise.reject(new Error('Updating the model is not possible yet.'));
 
       case 'read':
         // todo
         model.synchronising = false;
-        return Promise.resolve();
+        return Promise.reject(new Error('Reading the model is not possible yet.'));
 
       default:
         model.synchronising = false;
@@ -190,7 +190,7 @@ const Sample = Backbone.Model.extend({
           jqXHR.responseJSON.errors.forEach((error) => {
             responseData.data.id = error.sample_id;
             responseData.data.external_key = error.sample_external_key;
-            responseData.occurrences.push({
+            responseData.data.occurrences.push({
               id: error.id,
               external_key: error.external_key,
             });
@@ -217,22 +217,15 @@ const Sample = Backbone.Model.extend({
 
     // recursively extracts ids from collection of response models
     function getIDs(data) {
-      remoteIDs[responseData.external_key] = responseData.id;
-
-      if (data.samples) {
-        data.samples.forEach(subModel => getIDs(subModel));
-      }
-
-      if (data.occurrences) {
-        data.occurrences.forEach(subModel => getIDs(subModel));
-      }
-
-      if (data.media) {
-        data.media.forEach(subModel => getIDs(subModel));
-      }
+      remoteIDs[data.external_key] = data.id;
+      if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
+      if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
+      if (data.media) data.media.forEach(subModel => getIDs(subModel));
     }
 
     getIDs(responseData);
+
+    this._setNewRemoteID(model, remoteIDs);
   },
 
 
@@ -380,7 +373,7 @@ const Sample = Backbone.Model.extend({
           .then((resp) => {
             if (options.remote) {
               // update the model and occurrences with new remote IDs
-              model._setNewRemoteID(model, resp.data);
+              model._remoteCreateParse(model, resp.data);
 
               // update metadata
               const timeNow = new Date();

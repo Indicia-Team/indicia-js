@@ -8,6 +8,11 @@ const Collection = Backbone.Collection.extend({
   constructor(attributes = {}, options = {}) {
     this.store = options.store || this.store;
 
+    if (!options.model) {
+      console.error('Collection\'s model must be provided');
+      return;
+    }
+
     Backbone.Collection.prototype.constructor.apply(this, arguments);
   },
 
@@ -65,6 +70,11 @@ const Collection = Backbone.Collection.extend({
 
   size() {
     return Promise.resolve(this.size());
+  },
+
+  _syncRemote() {
+    const error = new Error()
+    return Promise.reject(error);
   },
 
   /**

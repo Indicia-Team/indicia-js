@@ -150,6 +150,21 @@ const Media = Backbone.Model.extend({
     };
     return data;
   },
+
+  /**
+   * Returns an object with attributes and their values
+   * mapped for warehouse submission.
+   *
+   * @returns {*}
+   */
+  _getSubmission() {
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+    };
+
+    return [submission];
+  },
 });
 
 _.extend(Media, {
@@ -259,21 +274,6 @@ _.extend(Media, {
     });
 
     return promise;
-  },
-
-  /**
-   * Returns an object with attributes and their values
-   * mapped for warehouse submission.
-   *
-   * @returns {*}
-   */
-  _getSubmission() {
-    const submission = {
-      id: this.id,
-      external_key: this.cid,
-    };
-
-    return [submission];
   },
 });
 

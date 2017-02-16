@@ -4,8 +4,9 @@ const responses = {
       errors: [
         {
           id: Math.random(),
-          external_key: data.cid,
+          external_key: data.occurrence_cid,
           sample_id: Math.random(),
+          sample_external_key: data.cid,
           title: 'Occurrence already exists.',
         },
       ],

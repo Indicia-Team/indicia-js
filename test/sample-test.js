@@ -4,15 +4,14 @@ import Media from '../src/Media';
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
-import serverResponses from './server_responses.js';
 import { getRandomSample, generateSampleResponse } from './helpers';
-import { API_BASE, API_VER, API_SAMPLES_PATH, SYNCED } from '../src/constants';
+import { SYNCED } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
 
 describe('Sample', () => {
   const store = new Store();
-  const storedCollection = new Collection(null, { store });
+  const storedCollection = new Collection(null, { store, model: Sample });
 
   before((done) => {
     // clean up in case of trash
@@ -171,7 +170,7 @@ describe('Sample', () => {
 
         sample.save({ hello: 'world!' })
           .then((model) => {
-            const cid = model.get('cid');
+            const cid = model.cid;
 
             expect(model).to.exist;
             expect(cid).to.exist;
@@ -339,7 +338,7 @@ describe('Sample', () => {
 
         let promise = sample.save(null, { remote: true }).then(() => {
           let newPromise = sample.save(null, { remote: true })
-            .then(() => {
+            .catch(() => {
               expect(newPromise).to.be.instanceOf(Promise);
 
               expect(sample._syncRemote.calledTwice).to.be.true;

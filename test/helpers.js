@@ -60,7 +60,8 @@ function generateSampleResponse(server, type, data) {
         'POST',
         SAMPLE_POST_URL,
         serverResponses(type, {
-            cid: data.getOccurrence().cid,
+            occurrence_cid: data.getOccurrence().cid,
+            cid: data.cid,
           },
         ),
       );
