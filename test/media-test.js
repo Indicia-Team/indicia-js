@@ -1,9 +1,14 @@
 import Backbone from 'backbone';
+import Collection from '../src/Collection';
+import Store from '../src/Store';
 import Media from '../src/Media';
+import { getRandomSample } from './helpers';
 
 /* eslint-disable no-unused-expressions */
 
 describe('Media', () => {
+  const store = new Store();
+
   it('should be a Backbone model', () => {
     const media = new Media();
 
@@ -52,6 +57,59 @@ describe('Media', () => {
       });
       expect(media.getURL).to.be.a.function;
       expect(media.getURL()).to.be.equal(URL);
+    });
+
+
+
+    describe('Media', () => {
+      it('should save sample on media save', (done) => {
+        const media = new Media();
+        const sample = getRandomSample(store);
+        sample.getOccurrence().media.add(media);
+
+        // update the media and save it - the save should be permenant
+        media.set('data', '1234');
+        const req = media.save().then(() => {
+          const collection = new Collection(null, { store });
+
+          expect(collection.length).to.be.equal(1);
+
+          const savedSample = collection.get(sample);
+          const savedMedia = savedSample.getOccurrence().getMedia();
+
+          // check if change to media is permenant
+          expect(savedMedia.get('data')).to.be.equal('1234');
+          done();
+        });
+
+        expect(req).to.be.an.instanceof(Promise);
+      });
+
+      it('should save sample on media destroy', (done) => {
+        const media = new Media();
+        const occurrence = new Occurrence(null, {
+          media: [media],
+        });
+        const sample = new Sample(null, {
+          occurrences: [occurrence],
+        });
+
+        // add sample to storedCollection
+        storedCollection.set(sample).then(() => {
+          expect(storedCollection.length).to.be.equal(1);
+
+          media.destroy().then(() => {
+            const newCollection = new Morel.Collection(null, { store });
+            expect(newCollection.length).to.be.equal(1);
+
+            const occurrenceFromDB = newCollection.at(0).getOccurrence();
+
+            // check if change to media is permenant
+            expect(occurrenceFromDB.media.length).to.be.equal(0);
+            done();
+          });
+        });
+      });
     });
   });
 });

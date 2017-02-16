@@ -200,6 +200,25 @@ describe('Sample', () => {
           });
       });
 
+      it('destroys the media on sample destroy', (done) => {
+        const media = new Media();
+        const occurrence = new Occurrence(null, {
+          media: [media],
+        });
+        const sample = new Sample(null, {
+          occurrences: [occurrence],
+        });
+
+        // add sample to storedCollection
+        sinon.spy(media, 'destroy');
+
+        sample.destroy().then(() => {
+          expect(media.destroy.calledOnce).to.be.true;
+          media.destroy.restore();
+          done();
+        });
+      });
+
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
         const eventsFired = [];

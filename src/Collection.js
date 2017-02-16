@@ -68,7 +68,7 @@ const Collection = Backbone.Collection.extend({
   },
 
   size() {
-    return Promise.resolve(this.size());
+    return Promise.resolve(this.length);
   },
 
   _syncRemote() {
