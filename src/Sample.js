@@ -80,245 +80,6 @@ const Sample = Backbone.Model.extend({
     this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
-
-  /**
-   * Synchronises the model.
-   * @param method
-   * @param model
-   * @param options
-   */
-  sync(method, model, options = {}) {
-    if (options.remote) {
-      return this._syncRemote(method, model, options);
-    }
-
-    if (!this.store) {
-      return Promise.reject(new Error('Trying to locally sync a model without a store'));
-    }
-
-    this.trigger('request', model, null, options);
-    return this.store.sync(method, model, options);
-  },
-
-
-  /**
-   * Syncs the record to the remote server.
-   * Returns on success: model, response, options
-   */
-  _syncRemote(method, model, options) {
-    // Ensure that we have a URL.
-    if (!this.remote_host) {
-      return Promise.reject(new Error('A "url" property or function must be specified'));
-    }
-
-    model.synchronising = true;
-
-    // model.trigger('request', model, xhr, options);
-    switch (method) {
-      case 'create':
-        return this._create(model, options)
-          .then((val) => {
-            model.synchronising = false;
-            return val;
-          })
-          .catch((err) => {
-            model.synchronising = false;
-            return Promise.reject(err);
-          });
-
-      case 'update':
-        // todo
-        model.synchronising = false;
-        return Promise.reject(new Error('Updating the model is not possible yet.'));
-
-      case 'read':
-        // todo
-        model.synchronising = false;
-        return Promise.reject(new Error('Reading the model is not possible yet.'));
-
-      default:
-        model.synchronising = false;
-        return Promise.reject(new Error(`No such remote sync option: ${method}`));
-    }
-  },
-
-  /**
-   * Posts a record to remote server.
-   * @param model
-   * @param options
-   */
-  _create(model, options) {
-    const that = this;
-
-    // async call to get the form data
-    return that._getModelFormData(model)
-      .then(formData => that._ajaxModel(formData, model, options));
-  },
-
-  _ajaxModel(formData, model, options) {
-    const that = this;
-    // todo: use ajax promise
-    const promise = new Promise((fulfill, reject) => {
-      // AJAX post
-      const url = that.remote_host + API_BASE + API_VER + API_SAMPLES_PATH;
-      const xhr = options.xhr = Backbone.ajax({
-        url,
-        type: 'POST',
-        data: formData,
-        headers: {
-          Authorization: that.getUserAuth(),
-        },
-        processData: false,
-        contentType: false,
-        timeout: options.timeout || 30000, // 30s
-      });
-
-      xhr.done(responseData => fulfill(responseData));
-
-      xhr.fail((jqXHR, textStatus, errorThrown) => {
-        if (errorThrown === 'Conflict') {
-          // duplicate occurred - this fixes only occurrence duplicates!
-          // todo: remove once this is sorted
-          const responseData = {
-            data: {
-              id: null,
-              external_key: null,
-              occurrences: [],
-            },
-          };
-
-          jqXHR.responseJSON.errors.forEach((error) => {
-            responseData.data.id = error.sample_id;
-            responseData.data.external_key = error.sample_external_key;
-            responseData.data.occurrences.push({
-              id: error.id,
-              external_key: error.external_key,
-            });
-          });
-
-          fulfill(responseData);
-          return;
-        }
-
-        const error = new Error({ code: jqXHR.status, message: errorThrown });
-        model.trigger('error', error);
-        reject(error);
-      });
-
-      model.trigger('request', model, xhr, options);
-    });
-
-    return promise;
-  },
-
-  _remoteCreateParse(model, responseData) {
-    // get new ids
-    const remoteIDs = {};
-
-    // recursively extracts ids from collection of response models
-    function getIDs(data) {
-      remoteIDs[data.external_key] = data.id;
-      if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
-      if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
-      if (data.media) data.media.forEach(subModel => getIDs(subModel));
-    }
-
-    getIDs(responseData);
-
-    this._setNewRemoteID(model, remoteIDs);
-  },
-
-
-  /**
-   * Sets new server IDs to the models.
-   */
-  _setNewRemoteID(model, remoteIDs) {
-    // set new remote ID
-    const remoteID = remoteIDs[model.cid];
-    if (remoteID) {
-      model.id = remoteID;
-    }
-
-    // do that for all submodels
-    if (model.samples) {
-      model.samples.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
-    }
-    if (model.occurrences) {
-      model.occurrences.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
-    }
-    if (model.media) {
-      model.media.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
-    }
-  },
-
-  _getModelFormData(model) {
-    const that = this;
-
-    const promise = new Promise((fulfill) => {
-      const formData = new FormData(); // for submission
-
-      // get submission model and all the media
-      const [submission, media] = model._getSubmission();
-      formData.append('submission', submission);
-
-      // append media
-      that._mediaAppend(media, formData).then(() => {
-        // Add authentication and survey id
-        formData.append('api_key', that.api_key);
-        formData.append('survey_id', that.metadata.survey_id);
-
-        fulfill(formData);
-      });
-    });
-
-    return promise;
-  },
-
-  _mediaAppend(media, formData) {
-    const mediaProcesses = [];
-    media.forEach((mediaModel) => {
-      const imagePromise = new Promise((_fulfill) => {
-        const url = mediaModel.getURL();
-        const type = mediaModel.get('type');
-
-        function onSuccess(err, img, dataURI, blob) {
-          // can provide both image/jpeg and jpeg
-          let extension = type;
-          let mediaType = type;
-          if (type.match(/image.*/)) {
-            extension = type.split('/')[1];
-          } else {
-            mediaType = `image/${mediaType}`;
-          }
-          if (!blob) {
-            blob = helpers.dataURItoBlob(dataURI, mediaType);
-          }
-
-          formData.append(media.cid, blob, `pic.${extension}`);
-          _fulfill();
-        }
-
-        if (!helpers.isDataURL(url)) {
-          // load image
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.responseType = 'blob';
-          xhr.onload = () => {
-            onSuccess(null, null, null, xhr.response);
-          };
-          // todo check error case
-
-          xhr.send();
-        } else {
-          onSuccess(null, null, url);
-        }
-      });
-      mediaProcesses.push(imagePromise);
-    });
-
-    return Promise.all(mediaProcesses);
-  },
-
   save(key, val, options) {
     const model = this;
 
@@ -607,6 +368,250 @@ const Sample = Backbone.Model.extend({
     }
 
     return null;
+  },
+
+
+  /**
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    if (!this.store) {
+      return Promise.reject(new Error('Trying to locally sync a model without a store'));
+    }
+
+    this.trigger('request', model, null, options);
+    return this.store.sync(method, model, options);
+  },
+
+
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote(method, model, options) {
+    // Ensure that we have a URL.
+    if (!this.remote_host) {
+      return Promise.reject(new Error('A "url" property or function must be specified'));
+    }
+
+    model.synchronising = true;
+
+    // model.trigger('request', model, xhr, options);
+    switch (method) {
+      case 'create':
+        return this._create(model, options)
+          .then((val) => {
+            model.synchronising = false;
+            return val;
+          })
+          .catch((err) => {
+            model.synchronising = false;
+            return Promise.reject(err);
+          });
+
+      case 'update':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Updating the model is not possible yet.'));
+
+      case 'read':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Reading the model is not possible yet.'));
+
+      case 'delete':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Deleting the model is not possible yet.'));
+
+      default:
+        model.synchronising = false;
+        return Promise.reject(new Error(`No such remote sync option: ${method}`));
+    }
+  },
+
+  /**
+   * Posts a record to remote server.
+   * @param model
+   * @param options
+   */
+  _create(model, options) {
+    const that = this;
+
+    // async call to get the form data
+    return that._getModelFormData(model)
+      .then(formData => that._ajaxModel(formData, model, options));
+  },
+
+  _ajaxModel(formData, model, options) {
+    const that = this;
+    // todo: use ajax promise
+    const promise = new Promise((fulfill, reject) => {
+      // AJAX post
+      const url = that.remote_host + API_BASE + API_VER + API_SAMPLES_PATH;
+      const xhr = options.xhr = Backbone.ajax({
+        url,
+        type: 'POST',
+        data: formData,
+        headers: {
+          Authorization: that.getUserAuth(),
+        },
+        processData: false,
+        contentType: false,
+        timeout: options.timeout || 30000, // 30s
+      });
+
+      xhr.done(responseData => fulfill(responseData));
+
+      xhr.fail((jqXHR, textStatus, errorThrown) => {
+        if (errorThrown === 'Conflict') {
+          // duplicate occurred - this fixes only occurrence duplicates!
+          // todo: remove once this is sorted
+          const responseData = {
+            data: {
+              id: null,
+              external_key: null,
+              occurrences: [],
+            },
+          };
+
+          jqXHR.responseJSON.errors.forEach((error) => {
+            responseData.data.id = error.sample_id;
+            responseData.data.external_key = error.sample_external_key;
+            responseData.data.occurrences.push({
+              id: error.id,
+              external_key: error.external_key,
+            });
+          });
+
+          fulfill(responseData);
+          return;
+        }
+
+        const error = new Error({ code: jqXHR.status, message: errorThrown });
+        model.trigger('error', error);
+        reject(error);
+      });
+
+      model.trigger('request', model, xhr, options);
+    });
+
+    return promise;
+  },
+
+  _remoteCreateParse(model, responseData) {
+    // get new ids
+    const remoteIDs = {};
+
+    // recursively extracts ids from collection of response models
+    function getIDs(data) {
+      remoteIDs[data.external_key] = data.id;
+      if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
+      if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
+      if (data.media) data.media.forEach(subModel => getIDs(subModel));
+    }
+
+    getIDs(responseData);
+
+    this._setNewRemoteID(model, remoteIDs);
+  },
+
+
+  /**
+   * Sets new server IDs to the models.
+   */
+  _setNewRemoteID(model, remoteIDs) {
+    // set new remote ID
+    const remoteID = remoteIDs[model.cid];
+    if (remoteID) {
+      model.id = remoteID;
+    }
+
+    // do that for all submodels
+    if (model.samples) {
+      model.samples.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+    if (model.occurrences) {
+      model.occurrences.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+    if (model.media) {
+      model.media.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+  },
+
+  _getModelFormData(model) {
+    const that = this;
+
+    const promise = new Promise((fulfill) => {
+      const formData = new FormData(); // for submission
+
+      // get submission model and all the media
+      const [submission, media] = model._getSubmission();
+      formData.append('submission', JSON.stringify(submission));
+
+      // append media
+      that._mediaAppend(media, formData).then(() => {
+        // Add authentication and survey id
+        formData.append('api_key', that.api_key);
+        formData.append('survey_id', that.metadata.survey_id);
+
+        fulfill(formData);
+      });
+    });
+
+    return promise;
+  },
+
+  _mediaAppend(media, formData) {
+    const mediaProcesses = [];
+    media.forEach((mediaModel) => {
+      const imagePromise = new Promise((_fulfill) => {
+        const url = mediaModel.getURL();
+        const type = mediaModel.get('type');
+
+        function onSuccess(err, img, dataURI, blob) {
+          // can provide both image/jpeg and jpeg
+          let extension = type;
+          let mediaType = type;
+          if (type.match(/image.*/)) {
+            extension = type.split('/')[1];
+          } else {
+            mediaType = `image/${mediaType}`;
+          }
+          if (!blob) {
+            blob = helpers.dataURItoBlob(dataURI, mediaType);
+          }
+
+          formData.append(media.cid, blob, `pic.${extension}`);
+          _fulfill();
+        }
+
+        if (!helpers.isDataURL(url)) {
+          // load image
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.responseType = 'blob';
+          xhr.onload = () => {
+            onSuccess(null, null, null, xhr.response);
+          };
+          // todo check error case
+
+          xhr.send();
+        } else {
+          onSuccess(null, null, url);
+        }
+      });
+      mediaProcesses.push(imagePromise);
+    });
+
+    return Promise.all(mediaProcesses);
   },
 
   /**

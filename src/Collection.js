@@ -20,41 +20,31 @@ const Collection = Backbone.Collection.extend({
     return a.metadata.created_on;
   },
 
+  size() {
+    return Promise.resolve(this.length);
+  },
+
   /**
-   * Synchronises the collection.
-   * @param method
-   * @param model
+   * New function to save all models within the collection.
+   * @param models
    * @param options
    */
-  sync(method, model, options = {}) {
-    if (options.remote) {
-      return this._syncRemote(method, model, options);
-    }
-
-    if (!this.store) {
-      return Promise.reject(new Error('Trying to locally sync a model without a store'));
-    }
-
-    this.trigger('request', model, null, options);
-    return this.store.sync(method, model, options);
+  save(collection, options) {
+    return this.sync('create', collection || this, options);
   },
 
   /**
    * New function to destroy all models within the collection.
    * @returns {*}
    */
-  destroy() {
-    if (!this.models.length) {
-      return Promise.resolve();
-    }
-
-    const toWait = [];
-    _.each(_.clone(this.models), (model) => {
-      if (model.store) toWait.push(model.destroy());
-    });
-    return Promise.all(toWait);
+  destroy(collection, options) {
+    return this.sync('delete', collection || this, options);
   },
 
+  /**
+   * New function to fetch all models within the collection.
+   * @returns {*}
+   */
   fetch(options) {
     options = _.extend({ parse: true }, options);
     const collection = this;
@@ -67,12 +57,64 @@ const Collection = Backbone.Collection.extend({
     });
   },
 
-  size() {
-    return Promise.resolve(this.length);
+  /**
+   * Synchronises the collection.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, collection, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, collection, options);
+    }
+
+    if (!this.store) {
+      return Promise.reject(new Error('Trying to locally sync a collection without a store'));
+    }
+
+    this.trigger('request', collection, null, options);
+    return this.store.sync(method, collection, options);
   },
 
-  _syncRemote() {
-    return Promise.reject(new Error('Collection sync remote has not been implemented yet.'));
+
+  /**
+   * Syncs the collection to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote(method, collection, options) {
+    collection.synchronising = true;
+
+    // model.trigger('request', model, xhr, options);
+    switch (method) {
+      case 'create':
+        if (!collection.models.length) {
+          return Promise.resolve();
+        }
+        const toWait = [];
+        _.each(collection.models, (model) => {
+          if (model.store) toWait.push(model.save(null, options));
+        });
+        return Promise.all(toWait);
+
+      case 'update':
+        // todo
+        collection.synchronising = false;
+        return Promise.reject(new Error('Updating the model is not possible yet.'));
+
+      case 'read':
+        // todo
+        collection.synchronising = false;
+        return Promise.reject(new Error('Reading the model is not possible yet.'));
+
+      case 'delete':
+        // todo
+        collection.synchronising = false;
+        return Promise.reject(new Error('Deleting the model is not possible yet.'));
+
+      default:
+        collection.synchronising = false;
+        return Promise.reject(new Error(`No such remote sync option: ${method}`));
+    }
   },
 
   /**

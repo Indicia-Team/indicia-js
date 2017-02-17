@@ -32,15 +32,20 @@ function generateSampleResponse(server, type, data) {
 
   switch (type) {
     case 'OK':
-      server.respondWith(
-        'POST',
-        SAMPLE_POST_URL,
-        serverResponses(type, {
-            cid: data.cid,
-            occurrence_cid: data.getOccurrence().cid,
-          },
-        ),
-      );
+      server.respondWith((req) => {
+        let model = data;
+        if (typeof data === 'function') {
+          const submission = JSON.parse(req.requestBody.get('submission'));
+          model = data(submission.external_key);
+        }
+
+        req.respond.apply(req, serverResponses(type, {
+              cid: model.cid,
+              occurrence_cid: model.getOccurrence().cid,
+            },
+          )
+        );
+      });
       break;
 
     case 'OK_SUBSAMPLE':

@@ -1,3 +1,4 @@
+import Backbone from 'backbone';
 import LocalForage from 'localforage';
 
 /*!
@@ -82,13 +83,26 @@ class Store {
     }
   }
 
-  save(model) {
-    // early return if no id or cid
-    if (!model.id && !model.cid) {
-      return Promise.reject(new Error('Invalid model passed to store'));
-    }
-
+  save(model, options) {
     return this._callWhenReady(() => {
+      // save collection
+      if (model instanceof Backbone.Collection) {
+        if (!model.models.length) {
+          return Promise.resolve();
+        }
+
+        const toWait = [];
+        _.each(model.models, (collectionModel) => {
+          if (collectionModel.store) toWait.push(collectionModel.save(null, options));
+        });
+        return Promise.all(toWait);
+      }
+
+      // early return if no id or cid
+      if (!model.id && !model.cid) {
+        return Promise.reject(new Error('Invalid model passed to store'));
+      }
+
       const key = model.cid;
       return this.localForage.setItem(key, model.toJSON())
         .then(() => Promise.resolve()); // don't return anything to update the model
@@ -129,6 +143,21 @@ class Store {
 
   destroy(model) {
     return this._callWhenReady(() => {
+      // collection destroy
+      if (model instanceof Backbone.Collection) {
+        if (!model.models.length) {
+          return Promise.resolve();
+        }
+
+        const toWait = [];
+        // need to clone:
+        // http://stackoverflow.com/questions/10858935/cleanest-way-to-destroy-every-model-in-a-collection-in-backbone
+        _.each(_.clone(model.models), (collectionModel) => {
+          if (collectionModel.store) toWait.push(collectionModel.destroy());
+        });
+        return Promise.all(toWait);
+      }
+
       // early return if no id or cid
       if (!model.id && !model.cid) {
         return Promise.reject(new Error('Invalid model passed to store'));

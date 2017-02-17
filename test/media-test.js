@@ -1,6 +1,7 @@
 import Backbone from 'backbone';
 import Collection from '../src/Collection';
 import Store from '../src/Store';
+import Occurrence from '../src/Occurrence';
 import Media from '../src/Media';
 import { getRandomSample } from './helpers';
 

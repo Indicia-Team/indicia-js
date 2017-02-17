@@ -1,18 +1,13 @@
 import Backbone from 'backbone';
-import _ from 'underscore';
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
-import Morel from '../src/main';
 import Sample from '../src/Sample';
 import Store from '../src/Store';
-import Media from '../src/Media';
 import helpers from '../src/helpers';
-import serverResponses from './server_responses.js';
-import { getRandomSample } from './helpers';
-import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
+import { SYNCED } from '../src/constants';
+import { getRandomSample, generateSampleResponse } from './helpers';
 
 /* eslint-disable no-unused-expressions */
-const SAMPLE_POST_URL = API_BASE + API_VER + API_SAMPLES_PATH;
 
 describe('Collection', () => {
   const store = new Store();
@@ -56,7 +51,7 @@ describe('Collection', () => {
     expect(data).to.be.instanceof(Sample);
     expect(sample.get(key)).to.be.equal(data.get(key));
 
-    let contains = storedCollection.has(sample)
+    let contains = storedCollection.has(sample);
     expect(contains).to.be.true;
 
     contains = storedCollection.has(new Sample());
@@ -68,7 +63,7 @@ describe('Collection', () => {
   it('should remove', () => {
     const sample = new Sample();
 
-    storedCollection.set(sample)
+    storedCollection.set(sample);
     let contains = storedCollection.has(sample);
     expect(contains).to.be.true;
 
@@ -81,9 +76,9 @@ describe('Collection', () => {
     storedCollection.size()
       .then((size) => {
         expect(size).to.be.equal(0);
-        return storedCollection.set({ cid: helpers.getNewUUID() });
+        storedCollection.set({ cid: helpers.getNewUUID() });
+        return storedCollection.size();
       })
-      .then(() => storedCollection.size())
       .then((newSize) => {
         expect(newSize).to.be.equal(1);
         return storedCollection.destroy();
@@ -178,50 +173,71 @@ describe('Collection', () => {
         });
       });
 
-      it('should save', () => {
-        throw 'todo';
+      it('should save', (done) => {
+        const sample = getRandomSample(store);
+        const sample2 = getRandomSample(store);
+        const collection = new Collection([], { store, model: Sample });
+
+        // add and save samples
+        collection.add(sample);
+        collection.add(sample2);
+        collection.save().then(() => {
+          const savedCollection = new Collection([], { store, model: Sample });
+
+          savedCollection.fetch().then(() => {
+            expect(savedCollection.length).to.be.equal(2);
+            done();
+          });
+        });
       });
     });
 
     describe('Remote', () => {
-      // it('should post all', (done) => {
-      //   // check if storedCollection is empty
-      //   expect(storedCollection.length).to.be.equal(0);
-      //
-      //   // add two valid samples
-      //   const sample = getRandomSample();
-      //   const sample2 = getRandomSample();
-      //
-      //   generateSampleResponse(sample);
-      //
-      //   // delete occurrences for the sample to become invalid to sync
-      //   _.each(_.clone(sample2.occurrences.models), (model) => {
-      //     model.destroy({ noSave: true });
-      //   });
-      //
-      //   Promise.all([sample.save(), sample2.save()])
-      //     .then(() => {
-      //       expect(storedCollection.length).to.be.equal(2);
-      //       // synchronise storedCollection
-      //       return storedCollection.syncAll();
-      //     })
-      //     .then(() => {
-      //       expect(storedCollection.sync.calledOnce).to.be.true;
-      //
-      //       // check sample status
-      //       storedCollection.each((model) => {
-      //         const status = model.getSyncStatus();
-      //         if (model.cid === sample2.cid) {
-      //           // invalid record (without occurrences)
-      //           // should not be synced
-      //           expect(status).to.be.equal(Morel.LOCAL);
-      //         } else {
-      //           expect(status).to.be.equal(Morel.SYNCED);
-      //         }
-      //       });
-      //       done();
-      //     });
-      // });
+      let server;
+
+      before(() => {
+        server = sinon.fakeServer.create();
+        server.respondImmediately = true;
+      });
+
+      beforeEach(() => {
+        sinon.spy(Sample.prototype, '_syncRemote');
+        sinon.spy(Sample.prototype, '_create');
+      });
+
+      after(() => {
+        server.restore();
+      });
+
+      afterEach(() => {
+        Sample.prototype._syncRemote.restore();
+        Sample.prototype._create.restore();
+      });
+
+      it('should post all', (done) => {
+        const sample = getRandomSample(store);
+        const sample2 = getRandomSample(store);
+        const collection = new Collection([], { store, model: Sample });
+
+        generateSampleResponse(server, 'OK', (cid) => collection.get(cid));
+
+        // add and save samples
+        collection.add(sample);
+        collection.add(sample2);
+        collection.save(null, { remote: true }).then(() => {
+          const savedCollection = new Collection([], { store, model: Sample });
+
+          expect(Sample.prototype._create.calledTwice).to.be.true;
+
+          savedCollection.fetch().then(() => {
+            savedCollection.forEach((model) => {
+              expect(model.getSyncStatus()).to.be.equal(SYNCED);
+            });
+            expect(savedCollection.length).to.be.equal(2);
+            done();
+          });
+        });
+      });
       //
       // it('should not double sync all', (done) => {
       //   // add two valid samples
