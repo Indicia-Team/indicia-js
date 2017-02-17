@@ -11,6 +11,7 @@ import _ from 'underscore';
 import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
   SERVER, LOCAL, API_BASE, API_VER, API_SAMPLES_PATH } from './constants';
 import helpers from './helpers';
+import syncHelpers from './sync_helpers';
 import Media from './Media';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
@@ -59,17 +60,7 @@ const Sample = Backbone.Model.extend({
     if (options.metadata) {
       this.metadata = options.metadata;
     } else {
-      const today = new Date();
-      this.metadata = {
-        survey_id: null,
-        training: false,
-
-        created_on: today,
-        updated_on: today,
-
-        synced_on: null, // set when fully initialized only
-        server_on: null, // updated on server
-      };
+      this.metadata = this._getDefaultMetadata();
     }
 
     // initialise sub models
@@ -78,172 +69,6 @@ const Sample = Backbone.Model.extend({
     this.media = this._parseModels(options.media, this.Media);
 
     this.initialize.apply(this, arguments); // eslint-disable-line
-  },
-
-  save(key, val, options) {
-    const model = this;
-
-    // Handle both `"key", value` and `{key: value}` -style arguments.
-    let attrs;
-    if (key == null || typeof key === 'object') {
-      attrs = key;
-      options = val;
-    } else {
-      (attrs = {})[key] = val;
-    }
-
-    options = _.extend({ validate: true, parse: true }, options);
-    const wait = options.wait;
-
-    // If we're not waiting and attributes exist, save acts as
-    // `set(attr).save(null, opts)` with validation. Otherwise, check if
-    // the model will be valid when the attributes, if any, are set.
-    if (attrs && !wait) {
-      if (!this.set(attrs, options)) return false;
-    } else if (!this._validate(attrs, options)) {
-      return false;
-    }
-
-    const promise = new Promise((fulfill, reject) => {
-      // After a successful server-side save, the client is (optionally)
-      // updated with the server-side state.
-      const attributes = model.attributes;
-
-      // Set temporary attributes if `{wait: true}` to properly find new ids.
-      if (attrs && wait) model.attributes = _.extend({}, attributes, attrs);
-
-      let method = 'create';
-      if (!model.isNew() && options.remote) {
-        method = options.patch ? 'patch' : 'update';
-      }
-      if (method === 'patch' && !options.attrs) options.attrs = attrs;
-
-      if (model.parent && !options.remote) {
-        // parent save
-        model.parent.save(key, val, options)
-          .then(() => {
-            // Ensure attributes are restored during synchronous saves.
-            model.attributes = attributes;
-            model.trigger('sync', model, null, options);
-            fulfill(model);
-          })
-          .catch(reject);
-      } else {
-        // model save
-        model.sync(method, model, options)
-          .then((resp) => {
-            if (options.remote) {
-              // update the model and occurrences with new remote IDs
-              model._remoteCreateParse(model, resp.data);
-
-              // update metadata
-              const timeNow = new Date();
-              model.metadata.server_on = timeNow;
-              model.metadata.updated_on = timeNow;
-              model.metadata.synced_on = timeNow;
-
-              // Ensure attributes are restored during synchronous saves.
-              model.attributes = attributes;
-
-              // save model's changes locally
-              model.save().then(() => {
-                model.trigger('sync', model, resp, options);
-                fulfill(model);
-              });
-              return;
-            }
-
-            model.trigger('sync', model, resp, options);
-            fulfill(model);
-          })
-          .catch((err) => {
-            model.trigger('error', err);
-            reject(err);
-          });
-      }
-
-      // Restore attributes.
-      model.attributes = attributes;
-    });
-
-    return promise;
-  },
-
-  // Fetch the model from the server, merging the response with the model's
-  // local attributes. Any changed attributes will trigger a "change" event.
-  fetch(options) {
-    const model = this;
-    const promise = new Promise((fulfill, reject) => {
-      options = _.extend({ parse: true }, options);
-      return this.sync('read', this, options)
-        .then((resp) => {
-          // set the returned model's data
-          model.id = resp.id;
-          model.metadata = resp.metadata;
-          if (!model.set(resp.attributes, options)) return false;
-
-          // initialise sub models
-          model.occurrences = model._parseModels(resp.occurrences, model.Occurrence);
-          model.samples = model._parseModels(resp.samples, Sample);
-          model.media = model._parseModels(resp.media, model.Media);
-
-          model.trigger('sync', model, resp, options);
-
-          fulfill(model);
-          return null;
-        })
-        .catch(reject);
-    });
-
-    return promise;
-  },
-
-  /**
-   *
-   * @param options
-   * @returns {Promise}
-   */
-  destroy(options) {
-    const model = this;
-    const collection = this.collection; // keep reference for triggering
-
-    const promise = new Promise((fulfill, reject) => {
-      function finalise() {
-        // removes from all collections etc
-        model.stopListening();
-        model.trigger('destroy', model, collection, options);
-
-        // parent save the changes permanently
-        model.parent.save(null, options).then(() => {
-          model.trigger('sync', model, null, options);
-          fulfill(model);
-        });
-      }
-
-      if (model.parent) {
-        if (options.remote) {
-          // destroy remotely
-          model.sync('delete', model, options)
-            .then(finalise);
-        } else {
-          finalise();
-        }
-      } else {
-        // destroy locally/remotely
-        model.sync('delete', model, options)
-          .then(() => {
-            // removes from all collections etc
-            model.stopListening();
-            model.trigger('destroy', model, collection, options);
-            model.trigger('sync', model, null, options);
-
-            fulfill(model);
-          })
-          .catch(reject);
-      }
-    });
-
-    return promise;
   },
 
   /**
@@ -760,7 +585,7 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Returns occurrence.
+   * Returns child occurrence.
    * @param index
    * @returns {*}
    */
@@ -769,12 +594,21 @@ const Sample = Backbone.Model.extend({
   },
 
   /**
-   * Returns occurrence.
+   * Returns child sample.
    * @param index
    * @returns {*}
    */
   getSample(index = 0) {
     return this.samples.at(index);
+  },
+
+  /**
+   * Returns child media.
+   * @param index
+   * @returns {*}
+   */
+  getMedia(index = 0) {
+    return this.media.at(index);
   },
 
   getUserAuth() {
@@ -811,7 +645,53 @@ const Sample = Backbone.Model.extend({
   isNew() {
     return !this.id;
   },
+
+
+  // Fetch the model from the server, merging the response with the model's
+  // local attributes. Any changed attributes will trigger a "change" event.
+  fetch(options) {
+    const model = this;
+    const promise = new Promise((fulfill, reject) => {
+      options = _.extend({ parse: true }, options);
+      return this.sync('read', this, options)
+        .then((resp) => {
+          // set the returned model's data
+          model.id = resp.id;
+          model.metadata = resp.metadata;
+          if (!model.set(resp.attributes, options)) return false;
+
+          // initialise sub models
+          model.occurrences = model._parseModels(resp.occurrences, model.Occurrence);
+          model.samples = model._parseModels(resp.samples, Sample);
+          model.media = model._parseModels(resp.media, model.Media);
+
+          model.trigger('sync', model, resp, options);
+
+          fulfill(model);
+          return null;
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  },
+
+  _getDefaultMetadata() {
+    const today = new Date();
+    return {
+      survey_id: null,
+      training: false,
+
+      created_on: today,
+      updated_on: today,
+
+      synced_on: null, // set when fully initialized only
+      server_on: null, // updated on server
+    };
+  },
 });
+
+_.extend(Sample.prototype, syncHelpers);
 
 /**
  * Warehouse attributes and their values.

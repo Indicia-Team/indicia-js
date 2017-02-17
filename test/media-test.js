@@ -1,5 +1,6 @@
 import Backbone from 'backbone';
 import Collection from '../src/Collection';
+import Sample from '../src/Sample';
 import Store from '../src/Store';
 import Occurrence from '../src/Occurrence';
 import Media from '../src/Media';
@@ -9,6 +10,35 @@ import { getRandomSample } from './helpers';
 
 describe('Media', () => {
   const store = new Store();
+  const storedCollection = new Collection(null, { store, model: Sample });
+
+  before((done) => {
+    // clean up in case of trash
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
+  });
+
+  beforeEach((done) => {
+    // clean up in case of trash
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
+  });
+
+  after((done) => {
+    // clean up afterwards
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
+  });
+
+  afterEach((done) => {
+    // clean up afterwards
+    storedCollection.fetch()
+      .then(() => storedCollection.destroy())
+      .then(() => done());
+  });
 
   it('should be a Backbone model', () => {
     const media = new Media();
@@ -18,7 +48,7 @@ describe('Media', () => {
     expect(media.attributes).to.be.an.object;
     expect(Object.keys(media.attributes).length).to.be.equal(0);
   });
-  
+
   describe('getDataURI', () => {
     it('should accept media path', (done) => {
       const file = '/base/test/images/image.jpg';
@@ -60,30 +90,30 @@ describe('Media', () => {
       expect(media.getURL()).to.be.equal(URL);
     });
 
-
-
     describe('Media', () => {
-      it('should save sample on media save', (done) => {
+      it('should save parent on media save', (done) => {
         const media = new Media();
         const sample = getRandomSample(store);
-        sample.getOccurrence().media.add(media);
+        sample.getOccurrence().addMedia(media);
 
-        // update the media and save it - the save should be permenant
+        // update the media and save it - the save should be permanent
         media.set('data', '1234');
-        const req = media.save().then(() => {
-          const collection = new Collection(null, { store });
+        const promise = media.save().then(() => {
+          const collection = new Collection(null, { store, model: Sample });
 
-          expect(collection.length).to.be.equal(1);
+          collection.fetch().then(() => {
+            expect(collection.length).to.be.equal(1);
 
-          const savedSample = collection.get(sample);
-          const savedMedia = savedSample.getOccurrence().getMedia();
+            const savedSample = collection.get(sample);
+            const savedMedia = savedSample.getOccurrence().getMedia();
 
-          // check if change to media is permenant
-          expect(savedMedia.get('data')).to.be.equal('1234');
-          done();
+            // check if change to media is permenant
+            expect(savedMedia.get('data')).to.be.equal('1234');
+            done();
+          });
         });
 
-        expect(req).to.be.an.instanceof(Promise);
+        expect(promise).to.be.an.instanceof(Promise);
       });
 
       it('should save sample on media destroy', (done) => {
@@ -91,23 +121,23 @@ describe('Media', () => {
         const occurrence = new Occurrence(null, {
           media: [media],
         });
-        const sample = new Sample(null, {
-          occurrences: [occurrence],
-        });
+        const sample = getRandomSample(store, null, [occurrence]);
 
         // add sample to storedCollection
-        storedCollection.set(sample).then(() => {
-          expect(storedCollection.length).to.be.equal(1);
-
+        const collection = new Collection(null, { store, model: Sample });
+        collection.set(sample);
+        collection.save().then(() => {
           media.destroy().then(() => {
-            const newCollection = new Morel.Collection(null, { store });
-            expect(newCollection.length).to.be.equal(1);
+            const newCollection = new Collection(null, { store, model: Sample });
+            newCollection.fetch().then(() => {
+              expect(newCollection.length).to.be.equal(1);
 
-            const occurrenceFromDB = newCollection.at(0).getOccurrence();
+              const occurrenceFromDB = newCollection.at(0).getOccurrence();
 
-            // check if change to media is permenant
-            expect(occurrenceFromDB.media.length).to.be.equal(0);
-            done();
+              // check if change to media is permenant
+              expect(occurrenceFromDB.media.length).to.be.equal(0);
+              done();
+            });
           });
         });
       });

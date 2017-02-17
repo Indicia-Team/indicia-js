@@ -4,6 +4,7 @@
 import Backbone from 'backbone';
 import _ from 'underscore';
 import helpers from './helpers';
+import syncHelpers from './sync_helpers';
 import Media from './Media';
 import Collection from './Collection';
 
@@ -30,9 +31,7 @@ const Occurrence = Backbone.Model.extend({
     if (options.metadata) {
       this.metadata = options.metadata;
     } else {
-      this.metadata = {
-        created_on: new Date(),
-      };
+      this.metadata = this._getDefaultMetadata();
     }
 
     if (options.media) {
@@ -58,28 +57,6 @@ const Occurrence = Backbone.Model.extend({
     this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
-  save(options = {}) {
-    if (!this.parent) return false;
-    return this.parent.save(options);
-  },
-
-  destroy(options = {}) {
-    const promise = new Promise((fulfill) => {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      if (this.parent && !options.noSave) {
-        // save the changes permanentely
-        this.save(options).then(fulfill);
-      } else {
-        fulfill();
-      }
-    });
-
-    return promise;
-  },
-
   /**
    * Sets parent.
    * @param parent
@@ -102,6 +79,15 @@ const Occurrence = Backbone.Model.extend({
     if (!mediaObj) return;
     mediaObj.setParent(this);
     this.media.add(mediaObj);
+  },
+
+  /**
+   * Returns child media.
+   * @param index
+   * @returns {*}
+   */
+  getMedia(index = 0) {
+    return this.media.at(index);
   },
 
   // overwrite if you want to validate before saving remotely
@@ -211,7 +197,45 @@ const Occurrence = Backbone.Model.extend({
     return [submission, media];
   },
 
+  /**
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    return Promise.reject(new Error('Local sync is not possible yet.'));
+  },
+
+
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote() {
+    return Promise.reject(new Error('Remote sync is not possible yet.'));
+  },
+
+  _getDefaultMetadata() {
+    const today = new Date();
+    return {
+      survey_id: null,
+      training: false,
+
+      created_on: today,
+      updated_on: today,
+
+      synced_on: null, // set when fully initialized only
+      server_on: null, // updated on server
+    };
+  },
 });
+
+_.extend(Occurrence.prototype, syncHelpers);
 
 /**
  * Warehouse attributes and their values.

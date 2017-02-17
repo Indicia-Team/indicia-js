@@ -200,17 +200,14 @@ describe('Sample', () => {
           });
       });
 
-      it('destroys the media on sample destroy', (done) => {
+      it('should destroy submodels on sample destroy', (done) => {
         const media = new Media();
+        sinon.spy(media, 'destroy');
+
         const occurrence = new Occurrence(null, {
           media: [media],
         });
-        const sample = new Sample(null, {
-          occurrences: [occurrence],
-        });
-
-        // add sample to storedCollection
-        sinon.spy(media, 'destroy');
+        const sample = getRandomSample(store, null, [occurrence]);
 
         sample.destroy().then(() => {
           expect(media.destroy.calledOnce).to.be.true;

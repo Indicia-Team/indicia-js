@@ -5,6 +5,7 @@ import Backbone from 'backbone';
 import _ from 'underscore';
 
 import helpers from './helpers';
+import syncHelpers from './sync_helpers';
 import Error from './Error';
 
 const THUMBNAIL_WIDTH = 100; // px
@@ -41,26 +42,26 @@ const Media = Backbone.Model.extend({
     this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
-  save(options = {}) {
-    if (!this.parent) return false;
-    return this.parent.save(options);
+  /**
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    return Promise.reject(new Error('Local sync is not possible yet.'));
   },
 
-  destroy(options = {}) {
-    const promise = new Promise((fulfill) => {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      if (this.parent && !options.noSave) {
-        // save the changes permanentely
-        this.save(options).then(fulfill);
-        return;
-      }
-      fulfill();
-    });
-
-    return promise;
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote() {
+    return Promise.reject(new Error('Remote sync is not possible yet.'));
   },
 
   /**
@@ -166,6 +167,8 @@ const Media = Backbone.Model.extend({
     return [submission];
   },
 });
+
+_.extend(Media.prototype, syncHelpers);
 
 _.extend(Media, {
   /**
