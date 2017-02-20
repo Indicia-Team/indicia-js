@@ -7,6 +7,7 @@
  * species sighted as part of the sample.
  **********************************************************************/
 import Backbone from 'backbone';
+import $ from 'jquery';
 import _ from 'underscore';
 import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
   SERVER, LOCAL, API_BASE, API_VER, API_SAMPLES_PATH } from './constants';
@@ -32,6 +33,7 @@ const Sample = Backbone.Model.extend({
     this.setParent(options.parent || this.parent);
 
     this.store = options.store || this.store;
+    this.keys = options.keys || this.keys; // warehouse attribute keys
 
     if (options.Media) this.Media = options.Media;
     if (options.Occurrence) this.Occurrence = options.Occurrence;
@@ -277,9 +279,11 @@ const Sample = Backbone.Model.extend({
 
   _ajaxModel(formData, model, options) {
     const that = this;
-    // todo: use ajax promise
     const promise = new Promise((fulfill, reject) => {
-      // AJAX post
+      // get timeout
+      let timeout = options.timeout || that.timeout || 30000; // 30s
+      timeout = typeof timeout === 'function' ? timeout() : timeout;
+
       const url = that.remote_host + API_BASE + API_VER + API_SAMPLES_PATH;
       const xhr = options.xhr = Backbone.ajax({
         url,
@@ -290,7 +294,7 @@ const Sample = Backbone.Model.extend({
         },
         processData: false,
         contentType: false,
-        timeout: options.timeout || 30000, // 30s
+        timeout,
       });
 
       xhr.done(responseData => fulfill(responseData));
@@ -447,7 +451,7 @@ const Sample = Backbone.Model.extend({
    */
   _getSubmission() {
     const that = this;
-    const keys = Sample.keys; // warehouse keys/values to transform
+    const keys = $.extend(true, Sample.keys, this.keys); // warehouse keys/values to transform
     const media = _.clone(this.media.models); // all media within this and child models
 
     const submission = {

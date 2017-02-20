@@ -19,6 +19,8 @@ const Occurrence = Backbone.Model.extend({
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 
+    this.keys = options.keys || this.keys; // warehouse attribute keys
+
     if (options.Media) this.Media = options.Media;
 
     this.attributes = {};
@@ -142,7 +144,7 @@ const Occurrence = Backbone.Model.extend({
    */
   _getSubmission() {
     const that = this;
-    const keys = Occurrence.keys; // warehouse keys/values to transform
+    const keys = $.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
     const media = _.clone(this.media.models); // all media within this and child models
 
     const submission = {

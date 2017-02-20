@@ -10,14 +10,14 @@
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("underscore"), require("backbone"), require("localforage"));
+		module.exports = factory(require("underscore"), require("backbone"), require("localforage"), require("jquery"));
 	else if(typeof define === 'function' && define.amd)
-		define("Morel", ["_", "Backbone", "localforage"], factory);
+		define("Morel", ["_", "Backbone", "localforage", "$"], factory);
 	else if(typeof exports === 'object')
-		exports["Morel"] = factory(require("underscore"), require("backbone"), require("localforage"));
+		exports["Morel"] = factory(require("underscore"), require("backbone"), require("localforage"), require("jquery"));
 	else
-		root["Morel"] = factory(root["_"], root["Backbone"], root["localforage"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_3__, __WEBPACK_EXTERNAL_MODULE_4__) {
+		root["Morel"] = factory(root["_"], root["Backbone"], root["localforage"], root["$"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_3__, __WEBPACK_EXTERNAL_MODULE_4__, __WEBPACK_EXTERNAL_MODULE_7__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -87,19 +87,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(12);
+	var _Occurrence = __webpack_require__(13);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
-	var _Media = __webpack_require__(10);
+	var _Media = __webpack_require__(11);
 
 	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Error = __webpack_require__(11);
+	var _Error = __webpack_require__(12);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
-	var _constants = __webpack_require__(7);
+	var _constants = __webpack_require__(8);
 
 	var CONST = _interopRequireWildcard(_constants);
 
@@ -428,7 +428,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this.store = options.store || this.store;
 
-	    if (!options.model) {
+	    if (!options.model && !this.model) {
 	      console.error('Collection\'s model must be provided');
 	      return;
 	    }
@@ -633,25 +633,29 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _backbone2 = _interopRequireDefault(_backbone);
 
+	var _jquery = __webpack_require__(7);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
 	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _constants = __webpack_require__(7);
+	var _constants = __webpack_require__(8);
 
-	var _helpers = __webpack_require__(8);
+	var _helpers = __webpack_require__(9);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _sync_helpers = __webpack_require__(9);
+	var _sync_helpers = __webpack_require__(10);
 
 	var _sync_helpers2 = _interopRequireDefault(_sync_helpers);
 
-	var _Media = __webpack_require__(10);
+	var _Media = __webpack_require__(11);
 
 	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Occurrence = __webpack_require__(12);
+	var _Occurrence = __webpack_require__(13);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -680,6 +684,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.setParent(options.parent || this.parent);
 
 	    this.store = options.store || this.store;
+	    this.keys = options.keys || this.keys; // warehouse attribute keys
 
 	    if (options.Media) this.Media = options.Media;
 	    if (options.Occurrence) this.Occurrence = options.Occurrence;
@@ -932,9 +937,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  _ajaxModel: function _ajaxModel(formData, model, options) {
 	    var that = this;
-	    // todo: use ajax promise
 	    var promise = new Promise(function (fulfill, reject) {
-	      // AJAX post
+	      // get timeout
+	      var timeout = options.timeout || that.timeout || 30000; // 30s
+	      timeout = typeof timeout === 'function' ? timeout() : timeout;
+
 	      var url = that.remote_host + _constants.API_BASE + _constants.API_VER + _constants.API_SAMPLES_PATH;
 	      var xhr = options.xhr = _backbone2.default.ajax({
 	        url: url,
@@ -945,7 +952,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        },
 	        processData: false,
 	        contentType: false,
-	        timeout: options.timeout || 30000 });
+	        timeout: timeout
+	      });
 
 	      xhr.done(function (responseData) {
 	        return fulfill(responseData);
@@ -1128,7 +1136,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  _getSubmission: function _getSubmission() {
 	    var that = this;
-	    var keys = Sample.keys; // warehouse keys/values to transform
+	    var keys = _jquery2.default.extend(true, Sample.keys, this.keys); // warehouse keys/values to transform
 	    var media = _underscore2.default.clone(this.media.models); // all media within this and child models
 
 	    var submission = {
@@ -1420,6 +1428,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports) {
 
+	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
@@ -1438,7 +1452,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    CONFLICT = exports.CONFLICT = -1;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1589,7 +1603,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1749,7 +1763,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = helpers;
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1774,15 +1788,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(8);
+	var _helpers = __webpack_require__(9);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _sync_helpers = __webpack_require__(9);
+	var _sync_helpers = __webpack_require__(10);
 
 	var _sync_helpers2 = _interopRequireDefault(_sync_helpers);
 
-	var _Error = __webpack_require__(11);
+	var _Error = __webpack_require__(12);
 
 	var _Error2 = _interopRequireDefault(_Error);
 
@@ -2088,7 +2102,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Media;
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2127,10 +2141,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Error;
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	/* WEBPACK VAR INJECTION */(function($) {'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -2150,15 +2164,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _helpers = __webpack_require__(8);
+	var _helpers = __webpack_require__(9);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 
-	var _sync_helpers = __webpack_require__(9);
+	var _sync_helpers = __webpack_require__(10);
 
 	var _sync_helpers2 = _interopRequireDefault(_sync_helpers);
 
-	var _Media = __webpack_require__(10);
+	var _Media = __webpack_require__(11);
 
 	var _Media2 = _interopRequireDefault(_Media);
 
@@ -2183,6 +2197,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
 	    this.setParent(options.parent || this.parent);
+
+	    this.keys = options.keys || this.keys; // warehouse attribute keys
 
 	    if (options.Media) this.Media = options.Media;
 
@@ -2315,7 +2331,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  _getSubmission: function _getSubmission() {
 	    var that = this;
-	    var keys = Occurrence.keys; // warehouse keys/values to transform
+	    var keys = $.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
 	    var media = _underscore2.default.clone(this.media.models); // all media within this and child models
 
 	    var submission = {
@@ -2427,6 +2443,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	exports.default = Occurrence;
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
 
 /***/ }
 /******/ ])

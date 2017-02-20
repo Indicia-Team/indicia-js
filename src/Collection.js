@@ -8,7 +8,7 @@ const Collection = Backbone.Collection.extend({
   constructor(attributes = {}, options = {}) {
     this.store = options.store || this.store;
 
-    if (!options.model) {
+    if (!options.model && !this.model) {
       console.error('Collection\'s model must be provided');
       return;
     }
