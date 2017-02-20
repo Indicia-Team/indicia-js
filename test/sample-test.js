@@ -137,27 +137,6 @@ describe('Sample', () => {
   // synchronisation
 
   describe('Sync', () => {
-    let server;
-
-    before(() => {
-      server = sinon.fakeServer.create();
-      server.respondImmediately = true;
-    });
-
-    beforeEach(() => {
-      sinon.spy(Sample.prototype, '_syncRemote');
-      sinon.spy(Sample.prototype, '_create');
-    });
-
-    after(() => {
-      server.restore();
-    });
-
-    afterEach(() => {
-      Sample.prototype._syncRemote.restore();
-      Sample.prototype._create.restore();
-    });
-
     it('should throw an error if sync with no store', (done) => {
       const sample = new Sample();
       sample.save()
@@ -216,6 +195,28 @@ describe('Sample', () => {
         });
       });
 
+      it('should save parent on destroy', (done) => {
+        const sample = getRandomSample(store);
+        const sample2 = getRandomSample(store);
+        sample.addSample(sample2);
+
+        // add sample to local storage
+        sample.save().then(() => {
+          sample.getSample().destroy()
+            .then(() => {
+              const newCollection = new Collection(null, { store, model: Sample });
+              newCollection.fetch().then(() => {
+                expect(newCollection.length).to.be.equal(1);
+                const subsampleFromDB = newCollection.at(0).getSample();
+
+                expect(subsampleFromDB).to.not.exist;
+                expect(sample.samples.length).to.be.equal(0);
+                done();
+              });
+            });
+        });
+      });
+
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
         const eventsFired = [];
@@ -252,6 +253,21 @@ describe('Sample', () => {
     });
 
     describe('Remote', () => {
+      let server;
+
+      beforeEach(() => {
+        server = sinon.fakeServer.create();
+        server.respondImmediately = true;
+        sinon.spy(Sample.prototype, '_syncRemote');
+        sinon.spy(Sample.prototype, '_create');
+      });
+
+      afterEach(() => {
+        server.restore();
+        Sample.prototype._syncRemote.restore();
+        Sample.prototype._create.restore();
+      });
+
       it('should post with remote option', (done) => {
         const sample = getRandomSample(store);
 
@@ -262,6 +278,30 @@ describe('Sample', () => {
         });
 
         expect(valid).to.be.instanceOf(Promise);
+      });
+
+
+      it('should send both dataURI and absolute pathed images', (done) => {
+        const image1 = new Media({
+          data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
+          type: 'png',
+        });
+
+        const image2 = new Media({
+          data: 'data:media/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
+          type: 'png',
+        });
+
+        const occurrence = new Occurrence({
+          taxon: 1234,
+        }, {
+          media: [image1, image2],
+        });
+
+        const sample = getRandomSample(store, null, [occurrence]);
+        generateSampleResponse(server, 'OK', sample);
+
+        sample.save(null, { remote: true }).then(() => done());
       });
 
       it('should post with remote option (subsample)', (done) => {
@@ -340,10 +380,11 @@ describe('Sample', () => {
           });
       });
 
-      it('should set synchronising flag on sample', () => {
+      it('should set synchronising flag on sample', (done) => {
         const sample = getRandomSample(store);
+        generateSampleResponse(server, 'OK', sample);
 
-        sample.save(null, { remote: true });
+        sample.save(null, { remote: true }).then(() => done());
         expect(sample.synchronising).to.be.true;
       });
 
@@ -352,48 +393,46 @@ describe('Sample', () => {
         const sample = getRandomSample(store);
         generateSampleResponse(server, 'OK', sample);
 
-        let promise = sample.save(null, { remote: true }).then(() => {
-          let newPromise = sample.save(null, { remote: true })
+        sample.save(null, { remote: true }).then(() => {
+          sample.save(null, { remote: true })
             .catch(() => {
-              expect(newPromise).to.be.instanceOf(Promise);
-
               expect(sample._syncRemote.calledTwice).to.be.true;
               expect(sample._create.calledOnce).to.be.true;
               done();
             });
         });
-
-        expect(promise).to.be.instanceOf(Promise);
       });
 
       // todo: should update
 
 
-      // it('should timeout', (done) => {
-      //   server.respondImmediately = false;
-      //   const clock = sinon.useFakeTimers();
-      //   const errorCallback = sinon.spy();
-      //
-      //   const origCall = $.ajax;
-      //   const stub = sinon.stub($, 'ajax', (...args) => {
-      //     stub.restore();
-      //     origCall.apply($, args).catch(() => {
-      //       errorCallback();
-      //     });
-      //     clock.tick(29000);
-      //     expect(errorCallback.calledOnce).to.be.false;
-      //     clock.tick(2000);
-      //     expect(errorCallback.calledOnce).to.be.true;
-      //     done();
-      //   });
-      //
-      //   const sample = getRandomSample(store);
-      //
-      //   sample.save(null, { remote: true }).catch(() => {
-      //     done();
-      //   });
-      //   clock.tick(29000);
-      // });
+      it('should timeout', (done) => {
+        server.respondImmediately = false;
+        const clock = sinon.useFakeTimers();
+        const errorCallback = sinon.spy();
+
+        // hook onto exact time when ajax is called - it is all async in between
+        const origCall = Backbone.$.ajax;
+        const stub = sinon.stub(Backbone.$, 'ajax', (...args) => {
+          stub.restore();
+          origCall.apply(Backbone.$, args).catch((jqXHR, textStatus) => {
+            expect(textStatus).to.be.equal('timeout');
+            errorCallback();
+          });
+          clock.tick(29000);
+          expect(errorCallback.calledOnce).to.be.false;
+          clock.tick(2000);
+          expect(errorCallback.calledOnce).to.be.true;
+          done();
+        });
+
+        const sample = getRandomSample(store);
+
+        sample.save(null, { remote: true }).catch((err) => {
+          done();
+        });
+        clock.tick(29000);
+      });
 
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
@@ -425,39 +464,6 @@ describe('Sample', () => {
 
             newSample.save(null, { remote: true }).catch(() => {});
           });
-      });
-    });
-
-    describe('occurrences with media', () => {
-      before((done) => {
-        storedCollection.destroy().then(() => done());
-      });
-
-      after((done) => {
-        storedCollection.destroy().then(() => done());
-      });
-
-      it('should send both dataURI and absolute pathed images', (done) => {
-        const image1 = new Media({
-          data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
-          type: 'png',
-        });
-
-        const image2 = new Media({
-          data: 'data:media/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
-          type: 'png',
-        });
-
-        const occurrence = new Occurrence({
-          taxon: 1234,
-        }, {
-          media: [image1, image2],
-        });
-
-        const sample = getRandomSample(store, null, [occurrence]);
-        generateSampleResponse(server, 'OK', sample);
-
-        sample.save(null, { remote: true }).then(() => done());
       });
     });
   });

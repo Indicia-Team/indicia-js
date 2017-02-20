@@ -116,14 +116,14 @@ describe('Media', () => {
         expect(promise).to.be.an.instanceof(Promise);
       });
 
-      it('should save sample on media destroy', (done) => {
+      it('should save parent on destroy', (done) => {
         const media = new Media();
         const occurrence = new Occurrence(null, {
           media: [media],
         });
         const sample = getRandomSample(store, null, [occurrence]);
 
-        // add sample to storedCollection
+        // add sample to local storage
         const collection = new Collection(null, { store, model: Sample });
         collection.set(sample);
         collection.save().then(() => {
@@ -134,7 +134,7 @@ describe('Media', () => {
 
               const occurrenceFromDB = newCollection.at(0).getOccurrence();
 
-              // check if change to media is permenant
+              // check if change to media is permanent
               expect(occurrenceFromDB.media.length).to.be.equal(0);
               done();
             });
