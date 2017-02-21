@@ -98,6 +98,13 @@ describe('Sample', () => {
     sample = new NewSample(null, {
       store,
       survey_id: 1,
+    });
+    expect(sample.metadata.survey_id).to.be.equal(3);
+    expect(sample.metadata.created_on).to.be.equal('y');
+
+    sample = new NewSample(null, {
+      store,
+      survey_id: 1,
       metadata: { survey_id: 2, created_on: 'x' },
     });
     expect(sample.metadata.survey_id).to.be.equal(2);
@@ -106,10 +113,10 @@ describe('Sample', () => {
     sample = new NewSample(null, {
       store,
       survey_id: 1,
+      metadata: { survey_id: null, created_on: null },
     });
-    expect(sample.metadata.survey_id).to.be.equal(3);
-    expect(sample.metadata.created_on).to.be.equal('y');
-
+    expect(sample.metadata.survey_id).to.not.exist;
+    expect(sample.metadata.created_on).to.not.exist;
   });
 
   it('should have default occurrences collection', () => {

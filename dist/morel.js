@@ -1382,20 +1382,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return promise;
 	  },
 	  _getDefaultMetadata: function _getDefaultMetadata(options) {
-	    options.metadata = options.metadata || {};
-
 	    var today = new Date();
 	    var defaults = {
-	      survey_id: options.survey_id || options.metadata.survey_id,
-	      input_form: options.input_form || options.metadata.input_form,
+	      survey_id: options.survey_id,
+	      input_form: options.input_form,
 
-	      created_on: options.metadata.created_on || today,
-	      updated_on: options.metadata.updated_on || today,
+	      created_on: today,
+	      updated_on: today,
 
-	      synced_on: options.metadata.synced_on, // set when fully initialized only
-	      server_on: options.metadata.server_on };
+	      synced_on: null, // set when fully initialized only
+	      server_on: null };
 
-	    return _jquery2.default.extend(true, defaults, this.metadata);
+	    return _jquery2.default.extend(true, defaults, this.metadata, options.metadata);
 	  }
 	});
 
@@ -2422,15 +2420,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var today = new Date();
 	    var defaults = {
-	      training: options.training || options.metadata.training,
+	      training: options.training,
 
-	      created_on: options.metadata.created_on || today,
-	      updated_on: options.metadata.updated_on || today,
+	      created_on: today,
+	      updated_on: today,
 
-	      synced_on: options.metadata.synced_on, // set when fully initialized only
-	      server_on: options.metadata.server_on };
+	      synced_on: null, // set when fully initialized only
+	      server_on: null };
 
-	    return _jquery2.default.extend(true, defaults, this.metadata);
+	    return _jquery2.default.extend(true, defaults, this.metadata, options.metadata);
 	  }
 	});
 
