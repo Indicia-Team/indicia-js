@@ -75,7 +75,6 @@ describe('Sample', () => {
   it('should have default metadata', () => {
     const sample = new Sample(null, { store });
     expect(sample.metadata).to.be.an('object');
-    expect(sample.metadata.training).to.be.equal(false);
     expect(sample.metadata.created_on).to.be.instanceOf(Date);
     expect(sample.metadata.updated_on).to.be.instanceOf(Date);
   });

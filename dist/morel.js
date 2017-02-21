@@ -710,11 +710,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.changed = {};
 
 	    // metadata
-	    if (options.metadata) {
-	      this.metadata = options.metadata;
-	    } else {
-	      this.metadata = this._getDefaultMetadata();
-	    }
+	    this.metadata = this._getDefaultMetadata(options);
 
 	    // initialise sub models
 	    this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
@@ -1142,6 +1138,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var submission = {
 	      id: this.id,
 	      external_key: this.cid,
+	      survey_id: this.metadata.survey_id,
+	      input_form: this.metadata.input_form,
 	      fields: {},
 	      media: []
 	    };
@@ -1383,17 +1381,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    return promise;
 	  },
-	  _getDefaultMetadata: function _getDefaultMetadata() {
+	  _getDefaultMetadata: function _getDefaultMetadata(options) {
+	    options.metadata = options.metadata || {};
+
 	    var today = new Date();
-	    return {
-	      survey_id: null,
-	      training: false,
+	    var defaults = {
+	      survey_id: options.survey_id || options.metadata.survey_id,
+	      input_form: options.input_form || options.metadata.input_form,
 
-	      created_on: today,
-	      updated_on: today,
+	      created_on: options.metadata.created_on || today,
+	      updated_on: options.metadata.updated_on || today,
 
-	      synced_on: null, // set when fully initialized only
-	      server_on: null };
+	      synced_on: options.metadata.synced_on, // set when fully initialized only
+	      server_on: options.metadata.server_on };
+
+	    return _jquery2.default.extend(true, defaults, this.metadata);
 	  }
 	});
 
@@ -2144,7 +2146,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function($) {'use strict';
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -2163,6 +2165,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _underscore = __webpack_require__(1);
 
 	var _underscore2 = _interopRequireDefault(_underscore);
+
+	var _jquery = __webpack_require__(7);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
 
 	var _helpers = __webpack_require__(9);
 
@@ -2209,11 +2215,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.set(attrs, options);
 	    this.changed = {};
 
-	    if (options.metadata) {
-	      this.metadata = options.metadata;
-	    } else {
-	      this.metadata = this._getDefaultMetadata();
-	    }
+	    this.metadata = this._getDefaultMetadata(options);
 
 	    if (options.media) {
 	      (function () {
@@ -2331,12 +2333,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  _getSubmission: function _getSubmission() {
 	    var that = this;
-	    var keys = $.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
+	    var keys = _jquery2.default.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
 	    var media = _underscore2.default.clone(this.media.models); // all media within this and child models
 
 	    var submission = {
 	      id: this.id,
 	      external_key: this.cid,
+	      training: this.metadata.training,
 	      fields: {},
 	      media: []
 	    };
@@ -2414,17 +2417,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _syncRemote: function _syncRemote() {
 	    return Promise.reject(new Error('Remote sync is not possible yet.'));
 	  },
-	  _getDefaultMetadata: function _getDefaultMetadata() {
+	  _getDefaultMetadata: function _getDefaultMetadata(options) {
+	    options.metadata = options.metadata || {};
+
 	    var today = new Date();
-	    return {
-	      survey_id: null,
-	      training: false,
+	    var defaults = {
+	      training: options.training || options.metadata.training,
 
-	      created_on: today,
-	      updated_on: today,
+	      created_on: options.metadata.created_on || today,
+	      updated_on: options.metadata.updated_on || today,
 
-	      synced_on: null, // set when fully initialized only
-	      server_on: null };
+	      synced_on: options.metadata.synced_on, // set when fully initialized only
+	      server_on: options.metadata.server_on };
+
+	    return _jquery2.default.extend(true, defaults, this.metadata);
 	  }
 	});
 
@@ -2443,7 +2449,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	exports.default = Occurrence;
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
 
 /***/ }
 /******/ ])

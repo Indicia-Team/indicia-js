@@ -3,6 +3,7 @@
  **********************************************************************/
 import Backbone from 'backbone';
 import _ from 'underscore';
+import $ from 'jquery';
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
@@ -30,11 +31,7 @@ const Occurrence = Backbone.Model.extend({
     this.set(attrs, options);
     this.changed = {};
 
-    if (options.metadata) {
-      this.metadata = options.metadata;
-    } else {
-      this.metadata = this._getDefaultMetadata();
-    }
+    this.metadata = this._getDefaultMetadata(options);
 
     if (options.media) {
       const mediaArray = [];
@@ -150,6 +147,7 @@ const Occurrence = Backbone.Model.extend({
     const submission = {
       id: this.id,
       external_key: this.cid,
+      training: this.metadata.training,
       fields: {},
       media: [],
     };
@@ -222,18 +220,21 @@ const Occurrence = Backbone.Model.extend({
     return Promise.reject(new Error('Remote sync is not possible yet.'));
   },
 
-  _getDefaultMetadata() {
+  _getDefaultMetadata(options) {
+    options.metadata = options.metadata || {};
+
     const today = new Date();
-    return {
-      survey_id: null,
-      training: false,
+    const defaults = {
+      training: options.training || options.metadata.training,
 
-      created_on: today,
-      updated_on: today,
+      created_on: options.metadata.created_on || today,
+      updated_on: options.metadata.updated_on || today,
 
-      synced_on: null, // set when fully initialized only
-      server_on: null, // updated on server
+      synced_on: options.metadata.synced_on, // set when fully initialized only
+      server_on: options.metadata.server_on, // updated on server
     };
+
+    return $.extend(true, defaults, this.metadata);
   },
 });
 

@@ -59,11 +59,7 @@ const Sample = Backbone.Model.extend({
     this.changed = {};
 
     // metadata
-    if (options.metadata) {
-      this.metadata = options.metadata;
-    } else {
-      this.metadata = this._getDefaultMetadata();
-    }
+    this.metadata = this._getDefaultMetadata(options);
 
     // initialise sub models
     this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
@@ -457,6 +453,8 @@ const Sample = Backbone.Model.extend({
     const submission = {
       id: this.id,
       external_key: this.cid,
+      survey_id: this.metadata.survey_id,
+      input_form: this.metadata.input_form,
       fields: {},
       media: [],
     };
@@ -680,18 +678,22 @@ const Sample = Backbone.Model.extend({
     return promise;
   },
 
-  _getDefaultMetadata() {
+  _getDefaultMetadata(options) {
+    options.metadata = options.metadata || {};
+
     const today = new Date();
-    return {
-      survey_id: null,
-      training: false,
+    const defaults = {
+      survey_id: options.survey_id || options.metadata.survey_id,
+      input_form: options.input_form || options.metadata.input_form,
 
-      created_on: today,
-      updated_on: today,
+      created_on: options.metadata.created_on || today,
+      updated_on: options.metadata.updated_on || today,
 
-      synced_on: null, // set when fully initialized only
-      server_on: null, // updated on server
+      synced_on: options.metadata.synced_on, // set when fully initialized only
+      server_on: options.metadata.server_on, // updated on server
     };
+
+    return $.extend(true, defaults, this.metadata);
   },
 });
 
