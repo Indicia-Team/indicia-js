@@ -321,7 +321,10 @@ const Sample = Backbone.Model.extend({
           return;
         }
 
-        const error = new Error({ code: jqXHR.status, message: errorThrown });
+        let error = new Error({ code: jqXHR.status, message: errorThrown });
+        if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
+          error = new Error(jqXHR.responseJSON.errors);
+        }
         model.trigger('error', error);
         reject(error);
       });

@@ -991,6 +991,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
+	        if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
+	          error = new _Error2.default(jqXHR.responseJSON.errors);
+	        }
 	        model.trigger('error', error);
 	        reject(error);
 	      });
