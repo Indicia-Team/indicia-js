@@ -14,6 +14,7 @@ import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
+import Error from './Error';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 

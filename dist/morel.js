@@ -655,6 +655,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Media2 = _interopRequireDefault(_Media);
 
+	var _Error = __webpack_require__(12);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
 	var _Occurrence = __webpack_require__(13);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
@@ -865,7 +869,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    if (!this.store) {
-	      return Promise.reject(new Error('Trying to locally sync a model without a store'));
+	      return Promise.reject(new _Error2.default('Trying to locally sync a model without a store'));
 	    }
 
 	    this.trigger('request', model, null, options);
@@ -880,7 +884,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _syncRemote: function _syncRemote(method, model, options) {
 	    // Ensure that we have a URL.
 	    if (!this.remote_host) {
-	      return Promise.reject(new Error('A "url" property or function must be specified'));
+	      return Promise.reject(new _Error2.default('A "url" property or function must be specified'));
 	    }
 
 	    model.synchronising = true;
@@ -899,21 +903,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	      case 'update':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new Error('Updating the model is not possible yet.'));
+	        return Promise.reject(new _Error2.default('Updating the model is not possible yet.'));
 
 	      case 'read':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new Error('Reading the model is not possible yet.'));
+	        return Promise.reject(new _Error2.default('Reading the model is not possible yet.'));
 
 	      case 'delete':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new Error('Deleting the model is not possible yet.'));
+	        return Promise.reject(new _Error2.default('Deleting the model is not possible yet.'));
 
 	      default:
 	        model.synchronising = false;
-	        return Promise.reject(new Error('No such remote sync option: ' + method));
+	        return Promise.reject(new _Error2.default('No such remote sync option: ' + method));
 	    }
 	  },
 
@@ -986,7 +990,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	        }
 
-	        var error = new Error({ code: jqXHR.status, message: errorThrown });
+	        var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
 	        model.trigger('error', error);
 	        reject(error);
 	      });
