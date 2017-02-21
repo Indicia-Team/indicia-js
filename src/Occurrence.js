@@ -225,16 +225,16 @@ const Occurrence = Backbone.Model.extend({
 
     const today = new Date();
     const defaults = {
-      training: options.training || options.metadata.training,
+      training: options.training,
 
-      created_on: options.metadata.created_on || today,
-      updated_on: options.metadata.updated_on || today,
+      created_on: today,
+      updated_on: today,
 
-      synced_on: options.metadata.synced_on, // set when fully initialized only
-      server_on: options.metadata.server_on, // updated on server
+      synced_on: null, // set when fully initialized only
+      server_on: null, // updated on server
     };
 
-    return $.extend(true, defaults, this.metadata);
+    return $.extend(true, defaults, this.metadata, options.metadata);
   },
 });
 

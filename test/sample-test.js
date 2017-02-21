@@ -79,6 +79,39 @@ describe('Sample', () => {
     expect(sample.metadata.updated_on).to.be.instanceOf(Date);
   });
 
+  it('should overwrite default metadata', () => {
+    let sample = new Sample(null, {
+      store,
+      survey_id: 1,
+    });
+    expect(sample.metadata.survey_id).to.be.equal(1);
+
+    sample = new Sample(null, {
+      store,
+      survey_id: 1,
+      metadata: { survey_id: 2, created_on: 'x' },
+    });
+    expect(sample.metadata.survey_id).to.be.equal(2);
+    expect(sample.metadata.created_on).to.be.equal('x');
+
+    const NewSample = Sample.extend({ metadata: { survey_id: 3, created_on: 'y' } });
+    sample = new NewSample(null, {
+      store,
+      survey_id: 1,
+      metadata: { survey_id: 2, created_on: 'x' },
+    });
+    expect(sample.metadata.survey_id).to.be.equal(2);
+    expect(sample.metadata.created_on).to.be.equal('x');
+
+    sample = new NewSample(null, {
+      store,
+      survey_id: 1,
+    });
+    expect(sample.metadata.survey_id).to.be.equal(3);
+    expect(sample.metadata.created_on).to.be.equal('y');
+
+  });
+
   it('should have default occurrences collection', () => {
     const sample = new Sample(null, { store });
     expect(sample.occurrences).to.be.instanceOf(Backbone.Collection);
