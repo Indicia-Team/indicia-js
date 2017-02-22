@@ -190,9 +190,6 @@ const Occurrence = Backbone.Model.extend({
     // media files will be attached separately
     const [mediaSubmission] = this.media._getSubmission();
     submission.media = mediaSubmission;
-    this.media.models.forEach((model) => {
-      submission.media.push(model.cid);
-    });
 
     return [submission, media];
   },
@@ -245,10 +242,7 @@ _.extend(Occurrence.prototype, syncHelpers);
  */
 Occurrence.keys = {
   taxon: {
-    id: '',
-  },
-  comment: {
-    id: 'comment',
+    id: 'taxa_taxon_list_id',
   },
 };
 

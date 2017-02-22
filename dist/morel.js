@@ -1016,9 +1016,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (data.occurrences) data.occurrences.forEach(function (subModel) {
 	        return getIDs(subModel);
 	      });
-	      if (data.media) data.media.forEach(function (subModel) {
-	        return getIDs(subModel);
-	      });
+	      // Images don't store external_keys yet.
+	      // if (data.media) data.media.forEach(subModel => getIDs(subModel));
 	    }
 
 	    getIDs(responseData);
@@ -1089,6 +1088,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var imagePromise = new Promise(function (_fulfill) {
 	        var url = mediaModel.getURL();
 	        var type = mediaModel.get('type');
+	        var name = mediaModel.cid;
 
 	        function onSuccess(err, img, dataURI, blob) {
 	          // can provide both image/jpeg and jpeg
@@ -1103,7 +1103,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            blob = _helpers2.default.dataURItoBlob(dataURI, mediaType);
 	          }
 
-	          formData.append(media.cid, blob, 'pic.' + extension);
+	          formData.append(name, blob, name + '.' + extension);
 	          _fulfill();
 	        }
 
@@ -1202,16 +1202,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _underscore2.default.extend(media, samplesMedia);
 
 	    // media does not return any media-models only JSON data about them
-	    // media files will be attached separately
 
 	    var _media$_getSubmission = this.media._getSubmission(),
 	        _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1),
 	        mediaSubmission = _media$_getSubmission2[0];
 
 	    submission.media = mediaSubmission;
-	    this.media.models.forEach(function (model) {
-	      submission.media.push(model.cid);
-	    });
 
 	    return [submission, media];
 	  },
@@ -1410,11 +1406,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Warehouse attributes and their values.
 	 */
 	Sample.keys = {
-	  id: { id: 'id' },
-	  survey: { id: 'survey_id' },
-	  date: { id: 'date' },
-	  comment: { id: 'comment' },
-	  media: { id: 'media' },
 	  location: { id: 'entered_sref' },
 	  location_type: {
 	    id: 'entered_sref_system',
@@ -1423,10 +1414,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      irish: 'OSIE', // for Irish Grid
 	      latlon: 4326 }
 	  },
-	  location_name: { id: 'location_name' },
 	  form: { id: 'input_form' },
-	  group: { id: 'group_id' },
-	  deleted: { id: 'deleted' }
+	  group: { id: 'group_id' }
 	};
 
 	exports.default = Sample;
@@ -1973,7 +1962,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _getSubmission: function _getSubmission() {
 	    var submission = {
 	      id: this.id,
-	      external_key: this.cid
+	      name: this.cid
 	    };
 
 	    return [submission];
@@ -2390,9 +2379,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        mediaSubmission = _media$_getSubmission2[0];
 
 	    submission.media = mediaSubmission;
-	    this.media.models.forEach(function (model) {
-	      submission.media.push(model.cid);
-	    });
 
 	    return [submission, media];
 	  },
@@ -2446,10 +2432,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	Occurrence.keys = {
 	  taxon: {
-	    id: ''
-	  },
-	  comment: {
-	    id: 'comment'
+	    id: 'taxa_taxon_list_id'
 	  }
 	};
 

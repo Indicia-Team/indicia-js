@@ -344,7 +344,8 @@ const Sample = Backbone.Model.extend({
       remoteIDs[data.external_key] = data.id;
       if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
       if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
-      if (data.media) data.media.forEach(subModel => getIDs(subModel));
+      // Images don't store external_keys yet.
+      // if (data.media) data.media.forEach(subModel => getIDs(subModel));
     }
 
     getIDs(responseData);
@@ -404,6 +405,7 @@ const Sample = Backbone.Model.extend({
       const imagePromise = new Promise((_fulfill) => {
         const url = mediaModel.getURL();
         const type = mediaModel.get('type');
+        const name = mediaModel.cid;
 
         function onSuccess(err, img, dataURI, blob) {
           // can provide both image/jpeg and jpeg
@@ -418,7 +420,7 @@ const Sample = Backbone.Model.extend({
             blob = helpers.dataURItoBlob(dataURI, mediaType);
           }
 
-          formData.append(media.cid, blob, `pic.${extension}`);
+          formData.append(name, blob, `${name}.${extension}`);
           _fulfill();
         }
 
@@ -505,12 +507,8 @@ const Sample = Backbone.Model.extend({
     _.extend(media, samplesMedia);
 
     // media does not return any media-models only JSON data about them
-    // media files will be attached separately
     const [mediaSubmission] = this.media._getSubmission();
     submission.media = mediaSubmission;
-    this.media.models.forEach((model) => {
-      submission.media.push(model.cid);
-    });
 
     return [submission, media];
   },
@@ -705,11 +703,6 @@ _.extend(Sample.prototype, syncHelpers);
  * Warehouse attributes and their values.
  */
 Sample.keys = {
-  id: { id: 'id' },
-  survey: { id: 'survey_id' },
-  date: { id: 'date' },
-  comment: { id: 'comment' },
-  media: { id: 'media' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',
@@ -719,10 +712,8 @@ Sample.keys = {
       latlon: 4326, // for Latitude and Longitude in decimal form (WGS84 datum)
     },
   },
-  location_name: { id: 'location_name' },
   form: { id: 'input_form' },
   group: { id: 'group_id' },
-  deleted: { id: 'deleted' },
 };
 
 export { Sample as default };

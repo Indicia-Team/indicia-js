@@ -161,7 +161,7 @@ const Media = Backbone.Model.extend({
   _getSubmission() {
     const submission = {
       id: this.id,
-      external_key: this.cid,
+      name: this.cid,
     };
 
     return [submission];
