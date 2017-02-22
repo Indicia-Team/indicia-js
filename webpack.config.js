@@ -25,6 +25,7 @@ const plugins = [
     _: 'underscore',
     Backbone: 'backbone',
     $: 'jquery',
+    LocalForage: 'localforage',
   }),
 
 ];

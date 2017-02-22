@@ -1,73 +1,78 @@
 const responses = {
-  duplicate(options) {
-    const reponse = {
+  DUPLICATE(data) {
+    const resp = {
       errors: [
         {
           id: Math.random(),
-          external_key: options.cid,
+          external_key: data.occurrence_cid,
           sample_id: Math.random(),
+          sample_external_key: data.cid,
           title: 'Occurrence already exists.',
         },
       ],
     };
 
-    return [409, reponse];
+    return [409, resp];
   },
 
   // model -> type
   // children -> occurrences
   // struct -> data
-  OK(options) {
-    const data = {
-      type: 'sample',
-      id: Math.random(),
-      external_key: options.cid,
-      occurrences: [
-        {
-          type: 'occurrence',
-          id: Math.random(),
-          external_key: options.occurrence_cid,
-        },
-      ],
+  OK(data) {
+    const resp = {
+      data: {
+        type: 'sample',
+        id: Math.random(),
+        external_key: data.cid,
+        occurrences: [
+          {
+            type: 'occurrence',
+            id: Math.random(),
+            external_key: data.occurrence_cid,
+          },
+        ],
+      },
     };
 
-    return [200, { data }];
+    return [200, resp];
   },
 
-  OK_SUBSAMPLE(options) {
-    const data = {
-      type: 'sample',
-      id: Math.random(),
-      external_key: options.cid,
-      samples: [
-        {
-          type: 'sample',
-          id: Math.random(),
-          external_key: options.subsample_cid,
-          occurrences: [
-            {
-              type: 'occurrence',
-              id: Math.random(),
-              external_key: options.occurrence_cid,
-            },
-          ],
-        },
-      ],
+  OK_SUBSAMPLE(data) {
+    const resp = {
+      data: {
+        type: 'sample',
+        id: Math.random(),
+        external_key: data.cid,
+        samples: [
+          {
+            type: 'sample',
+            id: Math.random(),
+            external_key: data.subsample_cid,
+            occurrences: [
+              {
+                type: 'occurrence',
+                id: Math.random(),
+                external_key: data.occurrence_cid,
+              },
+            ],
+          },
+        ],
+      },
     };
 
-    return [200, { data }];
+    return [200, resp];
   },
 
-  err() {
+  ERR() {
     return [502, {}];
   },
 };
 
-export default function (functionName, options) {
+export default function (functionName, data) {
   const func = responses[functionName];
   if (!func) {
     throw 'No such return function';
   }
-  const [code, data] = func(options);
-  return [code, { 'Content-Type': 'application/json' }, JSON.stringify(data)];
+  const [code, resp] = func(data);
+  return [code, { 'Content-Type': 'application/json' }, JSON.stringify(resp)];
 }

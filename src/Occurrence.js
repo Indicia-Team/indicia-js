@@ -3,7 +3,9 @@
  **********************************************************************/
 import Backbone from 'backbone';
 import _ from 'underscore';
+import $ from 'jquery';
 import helpers from './helpers';
+import syncHelpers from './sync_helpers';
 import Media from './Media';
 import Collection from './Collection';
 
@@ -18,6 +20,8 @@ const Occurrence = Backbone.Model.extend({
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 
+    this.keys = options.keys || this.keys; // warehouse attribute keys
+
     if (options.Media) this.Media = options.Media;
 
     this.attributes = {};
@@ -27,13 +31,7 @@ const Occurrence = Backbone.Model.extend({
     this.set(attrs, options);
     this.changed = {};
 
-    if (options.metadata) {
-      this.metadata = options.metadata;
-    } else {
-      this.metadata = {
-        created_on: new Date(),
-      };
-    }
+    this.metadata = this._getDefaultMetadata(options);
 
     if (options.media) {
       const mediaArray = [];
@@ -55,29 +53,7 @@ const Occurrence = Backbone.Model.extend({
       });
     }
 
-    this.initialize.apply(this, arguments);
-  },
-
-  save(options = {}) {
-    if (!this.parent) return false;
-    return this.parent.save(options);
-  },
-
-  destroy(options = {}) {
-    const promise = new Promise((fulfill) => {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      if (this.parent && !options.noSave) {
-        // save the changes permanentely
-        this.save(options).then(fulfill);
-      } else {
-        fulfill();
-      }
-    });
-
-    return promise;
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
   /**
@@ -104,7 +80,24 @@ const Occurrence = Backbone.Model.extend({
     this.media.add(mediaObj);
   },
 
-  validate(attributes) {
+  /**
+   * Returns child media.
+   * @param index
+   * @returns {*}
+   */
+  getMedia(index = 0) {
+    return this.media.at(index);
+  },
+
+  // overwrite if you want to validate before saving remotely
+  validate(attributes, options = {}) {
+    if (options.remote) {
+      return this.validateRemote(attributes, options);
+    }
+    return null;
+  },
+
+  validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const errors = {};
@@ -139,28 +132,117 @@ const Occurrence = Backbone.Model.extend({
     return data;
   },
 
+
   /**
-   * Returns an object with attributes and their values flattened and
+   * Returns an object with attributes and their values
    * mapped for warehouse submission.
    *
-   * @param flattener
    * @returns {*}
    */
-  flatten(flattener, count) {
-    // images flattened separately
-    return flattener.apply(this, [this.attributes, { keys: Occurrence.keys, count }]);
+  _getSubmission() {
+    const that = this;
+    const keys = $.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
+    const media = _.clone(this.media.models); // all media within this and child models
+
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+      training: this.metadata.training,
+      fields: {},
+      media: [],
+    };
+
+    // transform attributes
+    Object.keys(this.attributes).forEach((attr) => {
+      // no need to send attributes with no values
+      let value = that.attributes[attr];
+      if (!value) return;
+
+      if (!keys[attr]) {
+        if (attr !== 'email') {
+          console.warn(`Morel: no such key: ${attr}`);
+        }
+        submission.fields[attr] = value;
+        return;
+      }
+
+      const warehouseAttr = keys[attr].id || attr;
+
+      // check if has values to choose from
+      if (keys[attr].values) {
+        if (typeof keys[attr].values === 'function') {
+          // get a value from a function
+          value = keys[attr].values(value, submission);
+        } else {
+          value = keys[attr].values[value];
+        }
+      }
+
+      // don't need to send null or undefined
+      if (value) {
+        submission.fields[warehouseAttr] = value;
+      }
+    });
+
+
+    // transform sub models
+    // media does not return any media-models only JSON data about them
+    // media files will be attached separately
+    const [mediaSubmission] = this.media._getSubmission();
+    submission.media = mediaSubmission;
+
+    return [submission, media];
+  },
+
+  /**
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    return Promise.reject(new Error('Local sync is not possible yet.'));
+  },
+
+
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote() {
+    return Promise.reject(new Error('Remote sync is not possible yet.'));
+  },
+
+  _getDefaultMetadata(options) {
+    options.metadata = options.metadata || {};
+
+    const today = new Date();
+    const defaults = {
+      training: options.training,
+
+      created_on: today,
+      updated_on: today,
+
+      synced_on: null, // set when fully initialized only
+      server_on: null, // updated on server
+    };
+
+    return $.extend(true, defaults, this.metadata, options.metadata);
   },
 });
+
+_.extend(Occurrence.prototype, syncHelpers);
 
 /**
  * Warehouse attributes and their values.
  */
 Occurrence.keys = {
   taxon: {
-    id: '',
-  },
-  comment: {
-    id: 'comment',
+    id: 'taxa_taxon_list_id',
   },
 };
 

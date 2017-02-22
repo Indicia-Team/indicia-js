@@ -5,6 +5,7 @@ import Backbone from 'backbone';
 import _ from 'underscore';
 
 import helpers from './helpers';
+import syncHelpers from './sync_helpers';
 import Error from './Error';
 
 const THUMBNAIL_WIDTH = 100; // px
@@ -38,29 +39,29 @@ const Media = Backbone.Model.extend({
       };
     }
 
-    this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
-  save(options = {}) {
-    if (!this.parent) return false;
-    return this.parent.save(options);
+  /**
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    return Promise.reject(new Error('Local sync is not possible yet.'));
   },
 
-  destroy(options = {}) {
-    const promise = new Promise((fulfill) => {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      if (this.parent && !options.noSave) {
-        // save the changes permanentely
-        this.save(options).then(fulfill);
-        return;
-      }
-      fulfill();
-    });
-
-    return promise;
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote() {
+    return Promise.reject(new Error('Remote sync is not possible yet.'));
   },
 
   /**
@@ -119,7 +120,7 @@ const Media = Backbone.Model.extend({
           THUMBNAIL_WIDTH || options.width
         )
           .then((args) => {
-            const [image, data] = args;
+            const [, data] = args;
             that.set('thumbnail', data);
             fulfill();
           })
@@ -150,7 +151,24 @@ const Media = Backbone.Model.extend({
     };
     return data;
   },
+
+  /**
+   * Returns an object with attributes and their values
+   * mapped for warehouse submission.
+   *
+   * @returns {*}
+   */
+  _getSubmission() {
+    const submission = {
+      id: this.id,
+      name: this.cid,
+    };
+
+    return [submission];
+  },
 });
+
+_.extend(Media.prototype, syncHelpers);
 
 _.extend(Media, {
   /**
@@ -221,7 +239,7 @@ _.extend(Media, {
    * @param MAX_HEIGHT
    */
   resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
-    const promise = new Promise((fulfill, reject) => {
+    const promise = new Promise((fulfill) => {
       const image = new window.Image(); // native one
 
       image.onload = () => {
@@ -230,7 +248,6 @@ _.extend(Media, {
         const maxWidth = MAX_WIDTH || width;
         const maxHeight = MAX_HEIGHT || height;
 
-        let canvas = null;
         let res = null;
 
         // resizing
@@ -240,11 +257,11 @@ _.extend(Media, {
           res = height / maxHeight;
         }
 
-        width = width / res;
-        height = height / res;
+        width /= res;
+        height /= res;
 
         // Create a canvas with the desired dimensions
-        canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
 
