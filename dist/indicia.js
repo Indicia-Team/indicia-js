@@ -1,8 +1,8 @@
 /*!
  * 
- * morel 3.2.0
- * Mobile Recording Library for biological data collection.
- * https://github.com/NERC-CEH/morel
+ * indicia 4.0.0
+ * Indicia JavaScript SDK.
+ * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
  * Released under the GNU GPL v3 license.
  * http://www.gnu.org/licenses/gpl.html
@@ -12,11 +12,11 @@
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("underscore"), require("backbone"), require("localforage"), require("jquery"));
 	else if(typeof define === 'function' && define.amd)
-		define("Morel", ["_", "Backbone", "localforage", "$"], factory);
+		define("Indicia", ["_", "Backbone", "localforage", "$"], factory);
 	else if(typeof exports === 'object')
-		exports["Morel"] = factory(require("underscore"), require("backbone"), require("localforage"), require("jquery"));
+		exports["Indicia"] = factory(require("underscore"), require("backbone"), require("localforage"), require("jquery"));
 	else
-		root["Morel"] = factory(root["_"], root["Backbone"], root["localforage"], root["$"]);
+		root["Indicia"] = factory(root["_"], root["Backbone"], root["localforage"], root["$"]);
 })(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_3__, __WEBPACK_EXTERNAL_MODULE_4__, __WEBPACK_EXTERNAL_MODULE_7__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -107,9 +107,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var Morel = {
+	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("3.2.0"), // replaced by build
+	  VERSION: ("4.0.0"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -120,9 +120,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Error: _Error2.default
 	};
 
-	_underscore2.default.extend(Morel, CONST);
+	_underscore2.default.extend(Indicia, CONST);
 
-	exports.default = Morel;
+	exports.default = Indicia;
 
 /***/ },
 /* 1 */
@@ -185,7 +185,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // config
 	      customDriversPromise.then(function () {
 	        var dbConfig = {
-	          name: options.name || 'morel',
+	          name: options.name || 'indicia',
 	          storeName: options.storeName || 'models'
 	        };
 
@@ -1159,7 +1159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      if (!keys[attr]) {
 	        if (attr !== 'email') {
-	          console.warn('Morel: no such key: ' + attr);
+	          console.warn('Indicia: no such key: ' + attr);
 	        }
 	        submission.fields[attr] = value;
 	        return;
@@ -2346,7 +2346,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      if (!keys[attr]) {
 	        if (attr !== 'email') {
-	          console.warn('Morel: no such key: ' + attr);
+	          console.warn('Indicia: no such key: ' + attr);
 	        }
 	        submission.fields[attr] = value;
 	        return;

@@ -473,7 +473,7 @@ const Sample = Backbone.Model.extend({
 
       if (!keys[attr]) {
         if (attr !== 'email') {
-          console.warn(`Morel: no such key: ${attr}`);
+          console.warn(`Indicia: no such key: ${attr}`);
         }
         submission.fields[attr] = value;
         return;

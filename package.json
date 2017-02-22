@@ -1,9 +1,9 @@
 {
-  "name": "morel",
-  "title": "morel",
-  "description": "Mobile Recording Library for biological data collection.",
-  "version": "3.2.0",
-  "homepage": "https://github.com/NERC-CEH/morel",
+  "name": "indicia",
+  "title": "IndiciaJS",
+  "description": "Indicia JavaScript SDK.",
+  "version": "4.0.0",
+  "homepage": "https://github.com/Indicia-Team/indicia-js",
   "author": {
     "name": "Karolis Kazlauskis",
     "email": "karkaz@ceh.ac.uk",
@@ -11,10 +11,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NERC-CEH/morel"
+    "url": "https://github.com/Indicia-Team/indicia-js"
   },
   "bugs": {
-    "url": "https://github.com/NERC-CEH/morel/issues"
+    "url": "https://github.com/Indicia-Team/indicia-js/issues"
   },
   "licenses": [
     {
@@ -22,7 +22,7 @@
       "url": "http://www.gnu.org/licenses/gpl.html"
     }
   ],
-  "main": "dist/morel.js",
+  "main": "dist/indicia.js",
   "scripts": {
     "start": "webpack && webpack --uglify",
     "test": "karma start test/_karma.conf.js"
@@ -64,7 +64,7 @@
     "webpack-merge": "^0.14.1"
   },
   "keywords": [
-    "morel",
+    "indicia",
     "mobile",
     "biological",
     "bio",

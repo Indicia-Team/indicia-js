@@ -3,7 +3,7 @@ const _ = require('underscore');
 const webpack = require('webpack');
 const pkg = require('./package.json');
 
-var filename = 'morel.js';
+var filename = 'indicia.js';
 
 const banner = `
 ${pkg.name} ${pkg.version}
@@ -34,18 +34,18 @@ if (uglify) {
   plugins.push(new webpack.optimize.UglifyJsPlugin({
     minimize: true,
   }));
-  filename = 'morel.min.js';
+  filename = 'indicia.min.js';
 }
 
 module.exports = {
   context: './src',
   entry: {
-    morel: './main.js',
+    indicia: './main.js',
   },
   output: {
     path: 'dist',
     filename,
-    library: 'Morel',
+    library: 'Indicia',
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },

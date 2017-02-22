@@ -1,4 +1,4 @@
-# Morel [![Build Status](https://travis-ci.org/Indicia-Team/morel.svg?branch=v3.1)](https://travis-ci.org/Indicia-Team/morel)
+# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg?branch=v3.1)](https://travis-ci.org/Indicia-Team/indicia-js)
 
 Indicia Javascript SDK
 
@@ -11,7 +11,7 @@ Biological record management and communication with Indicia Drupal API (mobile_a
 
 ## Requirements
 
-[Backbone](http://backbonejs.org/) - used as Morel core to structure the data and its management.
+[Backbone](http://backbonejs.org/) - used as IndiciaJS core to structure the data and its management.
 
 [IndexedDBShim](http://nparashuram.com/IndexedDBShim/) - optional, if no IndexedDB 
 is not in use or is fully supported by targeted browsers, or localStorage is enough.
@@ -21,25 +21,25 @@ is not in use or is fully supported by targeted browsers, or localStorage is eno
 ```javascript
 
 //Sample
-var sample = new Morel.Sample();
+var sample = new Indicia.Sample();
 sample.set('date', '12/2/2012')
 sample.set('location', '12.345, -12.345')
 
 //Occurrence
-var occurrence = new Morel.Occurrence();
+var occurrence = new Indicia.Occurrence();
 occurrence.set('taxon', 'bee')
 occurrence.set('number', 5);
 
 sample.occurrences.set(occurrence);
 
 //Image
-var image = new Morel.Image()
+var image = new Indicia.Image()
 image.resize(800, 400)
 
 occurrence.images.set(image);
 
 //Manager
-var manager = new Morel.Manager()
+var manager = new Indicia.Manager()
 manager.set(sample);
 manager.syncAll();
 
@@ -48,8 +48,8 @@ manager.syncAll();
 ## Initialization
 
 ### Step 1: Get the library
-- Install using Bower: `bower install 'Indicia-Team/morel'` or 
-- Git clone: `git clone git://github.com/Indicia-Team/morel.git`
+- Install using Bower: `bower install 'Indicia-Team/indicia-js'` or
+- Git clone: `git clone git://github.com/Indicia-Team/indicia-js.git`
 
 
 ### Step 2: include JS files
@@ -58,15 +58,15 @@ You can find them in the root folder of the library.
 
 ```html
 <!-- Add JS library file -->
-<script src="path/to/morel.min.js"></script>
+<script src="path/to/indicia.min.js"></script>
 ```
 
 It doesn't matter how and where you load the library. Code is executed only when you 
-initialize the library. `Morel` also supports AMD loaders like RequireJS or CommonJS:
+initialize the library. `IndiciaJS` also supports AMD loaders like RequireJS or CommonJS:
 
 ```javascript
-require(['path/to/morel.min.js'], function (Morel) {
-    //var Manager = new Morel.Manager();
+require(['path/to/indicia.min.js'], function (Indicia) {
+    //var Manager = new Indicia.Manager();
 });
 
 ```
@@ -80,7 +80,7 @@ var options = {
   survey_id: 2,
 }
 
-var manager = new Morel.Manager(options);
+var manager = new Indicia.Manager(options);
 
 ```
 
@@ -92,7 +92,7 @@ So instead of `occurrence.set(232, 12343)` one can
 
 ```javascript
  //Samples
- Morel.extend(Morel.Sample.keys, {
+ Indicia.extend(Indicia.Sample.keys, {
         name: {
             id: 574
         },
@@ -103,7 +103,7 @@ So instead of `occurrence.set(232, 12343)` one can
 
 
    //Occurrences
-   Morel.extend(Morel.Occurrence.keys, {
+   Indicia.extend(Indicia.Occurrence.keys, {
         certain: {
             id: 398
         },
@@ -168,18 +168,18 @@ It uses Backbone Models and Collections, so each Sample and Occurrence has also 
 
 ## Building
 
-To compile morel by yourself make sure that you have  [Node.js](http://nodejs.org/) and [Grunt.js](https://github.com/cowboy/grunt) 
+To compile IndiciaJS by yourself make sure that you have  [Node.js](http://nodejs.org/) and [Grunt.js](https://github.com/cowboy/grunt)
 
 - Get a copy of the source by running:
 
 ```bash
-git clone git://github.com/Indicia-Team/morel.git
+git clone git://github.com/Indicia-Team/indicia-js.git
 ```
 
-- Enter the `morel` directory and install the npm build dependancies:
+- Enter the `indicia-js` directory and install the npm build dependancies:
 
 ```bash
-cd morel && npm install
+cd indicia-js && npm install
 ```
 
 - Build the library: 
@@ -188,7 +188,7 @@ cd morel && npm install
 npm start
 ```
 
-This will update a `morel.js` and `morel.min.js`.
+This will update a `indicia.js` and `indicia.min.js`.
 
 - Test the code
  
@@ -198,7 +198,7 @@ This will update a `morel.js` and `morel.min.js`.
 
 ## Bugs and feature requests
 
-Have a bug or a feature request? search for existing and closed issues. [Please open a new issue](https://github.com/Indicia-Team/morel/issues).
+Have a bug or a feature request? search for existing and closed issues. [Please open a new issue](https://github.com/Indicia-Team/indicia-js/issues).
 
 
 ## Creators

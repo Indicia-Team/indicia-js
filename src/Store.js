@@ -26,7 +26,7 @@ class Store {
       // config
       customDriversPromise.then(() => {
         const dbConfig = {
-          name: options.name || 'morel',
+          name: options.name || 'indicia',
           storeName: options.storeName || 'models',
         };
 

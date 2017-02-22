@@ -7,7 +7,7 @@ import Media from './Media';
 import Error from './Error';
 import * as CONST from './constants';
 
-const Morel = {
+const Indicia = {
   /* global LIB_VERSION */
   VERSION: LIB_VERSION, // replaced by build
 
@@ -20,6 +20,6 @@ const Morel = {
   Error,
 };
 
-_.extend(Morel, CONST);
+_.extend(Indicia, CONST);
 
-export { Morel as default };
+export { Indicia as default };

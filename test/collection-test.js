@@ -250,7 +250,7 @@ describe('Collection', () => {
       //       Promise.all([storedCollection.syncAll(), storedCollection.syncAll()])
       //         .then(() => {
       //           expect(storedCollection.sync.callCount).to.be.equal(2);
-      //           expect(Morel.Collection.prototype.post.calledOnce).to.be.true;
+      //           expect(Indicia.Collection.prototype.post.calledOnce).to.be.true;
       //           done();
       //         });
       //     });
