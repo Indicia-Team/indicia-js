@@ -29,7 +29,13 @@ class Report {
           xhr.setRequestHeader('Authorization', `Basic ${that.getUserAuth()}`);
         },
         success: fulfill,
-        error: reject,
+        error: (jqXHR, textStatus, errorThrown) => {
+          let error = new Error({ code: jqXHR.status, message: errorThrown });
+          if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
+            error = new Error(jqXHR.responseJSON.errors);
+          }
+          reject(error);
+        },
       });
     });
 
