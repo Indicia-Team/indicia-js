@@ -20,9 +20,10 @@ class Report {
       const url = this.host_url + API_BASE + API_VER + API_REPORTS_PATH +
         this.report;
 
+      params = $.extend(params || that.params, { api_key: that.api_key });
       $.get({
         url,
-        params: params || that.params,
+        params,
         timeout: that.timeout,
         beforeSend(xhr) {
           xhr.setRequestHeader('Authorization', `Basic ${that.getUserAuth()}`);

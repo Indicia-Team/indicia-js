@@ -2491,9 +2491,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var promise = new Promise(function (fulfill, reject) {
 	        var url = _this.host_url + _constants.API_BASE + _constants.API_VER + _constants.API_REPORTS_PATH + _this.report;
 
+	        params = _jquery2.default.extend(params || that.params, { api_key: that.api_key });
 	        _jquery2.default.get({
 	          url: url,
-	          params: params || that.params,
+	          params: params,
 	          timeout: that.timeout,
 	          beforeSend: function beforeSend(xhr) {
 	            xhr.setRequestHeader('Authorization', 'Basic ' + that.getUserAuth());
