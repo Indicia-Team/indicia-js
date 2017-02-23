@@ -2460,6 +2460,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
+	var _Error = __webpack_require__(12);
+
+	var _Error2 = _interopRequireDefault(_Error);
+
 	var _constants = __webpack_require__(8);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -2502,9 +2506,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	          success: fulfill,
 	          error: function error(jqXHR, textStatus, errorThrown) {
-	            var error = new Error({ code: jqXHR.status, message: errorThrown });
+	            var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
 	            if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
-	              error = new Error(jqXHR.responseJSON.errors);
+	              error = new _Error2.default(jqXHR.responseJSON.errors);
 	            }
 	            reject(error);
 	          }

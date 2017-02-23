@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import Error from './Error';
 import { API_BASE, API_VER, API_REPORTS_PATH } from './constants';
 
 class Report {
