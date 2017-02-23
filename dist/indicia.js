@@ -2510,9 +2510,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'getUserAuth',
 	    value: function getUserAuth() {
-	      var name = typeof this.name === 'function' ? this.name() : this.name;
+	      var user = typeof this.user === 'function' ? this.user() : this.user;
 	      var password = typeof this.password === 'function' ? this.password() : this.password;
-	      return btoa(name + ':' + password);
+	      return btoa(user + ':' + password);
 	    }
 	  }]);
 

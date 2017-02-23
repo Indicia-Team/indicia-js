@@ -37,9 +37,9 @@ class Report {
   }
 
   getUserAuth() {
-    const name = typeof this.name === 'function' ? this.name() : this.name;
+    const user = typeof this.user === 'function' ? this.user() : this.user;
     const password = typeof this.password === 'function' ? this.password() : this.password;
-    return btoa(`${name}:${password}`);
+    return btoa(`${user}:${password}`);
   }
 
 }
