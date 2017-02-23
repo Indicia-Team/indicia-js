@@ -23,7 +23,7 @@ class Report {
       params = $.extend(params || that.params, { api_key: that.api_key });
       $.get({
         url,
-        params,
+        data: params,
         timeout: that.timeout,
         beforeSend(xhr) {
           xhr.setRequestHeader('Authorization', `Basic ${that.getUserAuth()}`);
