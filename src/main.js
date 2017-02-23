@@ -4,6 +4,7 @@ import Collection from './Collection';
 import Sample from './Sample';
 import Occurrence from './Occurrence';
 import Media from './Media';
+import Report from './Report';
 import Error from './Error';
 import * as CONST from './constants';
 
@@ -17,6 +18,7 @@ const Indicia = {
   Sample,
   Occurrence,
   Media,
+  Report,
   Error,
 };
 

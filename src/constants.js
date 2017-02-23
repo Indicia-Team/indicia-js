@@ -1,8 +1,9 @@
 /* eslint-disable */
 export const
   API_BASE = 'api/',
-  API_VER = 'v0.1',
+  API_VER = 'v1beta1',
   API_SAMPLES_PATH = '/samples',
+  API_REPORTS_PATH = '/reports',
   SYNCHRONISING = 0,
   SYNCED = 1,
   LOCAL = 2,

@@ -95,6 +95,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Media2 = _interopRequireDefault(_Media);
 
+	var _Report = __webpack_require__(14);
+
+	var _Report2 = _interopRequireDefault(_Report);
+
 	var _Error = __webpack_require__(12);
 
 	var _Error2 = _interopRequireDefault(_Error);
@@ -117,6 +121,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
 	  Media: _Media2.default,
+	  Report: _Report2.default,
 	  Error: _Error2.default
 	};
 
@@ -1437,8 +1442,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	/* eslint-disable */
 	var API_BASE = exports.API_BASE = 'api/',
-	    API_VER = exports.API_VER = 'v0.1',
+	    API_VER = exports.API_VER = 'v1beta1',
 	    API_SAMPLES_PATH = exports.API_SAMPLES_PATH = '/samples',
+	    API_REPORTS_PATH = exports.API_REPORTS_PATH = '/reports',
 	    SYNCHRONISING = exports.SYNCHRONISING = 0,
 	    SYNCED = exports.SYNCED = 1,
 	    LOCAL = exports.LOCAL = 2,
@@ -2437,6 +2443,82 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	exports.default = Occurrence;
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _jquery = __webpack_require__(7);
+
+	var _jquery2 = _interopRequireDefault(_jquery);
+
+	var _constants = __webpack_require__(8);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Report = function () {
+	  function Report() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    _classCallCheck(this, Report);
+
+	    this.remote_host = options.remote_host || this.remote_host;
+	    this.user = options.user || this.user;
+	    this.password = options.password || this.password;
+	    this.report_path = options.report_path || this.report_path;
+
+	    this.api_key = options.api_key || this.api_key;
+	    this.params = options.params || this.params;
+	    this.timeout = options.timeout || 180000; // 3 min;
+	  }
+
+	  _createClass(Report, [{
+	    key: 'run',
+	    value: function run(params) {
+	      var _this = this;
+
+	      var that = this;
+	      var promise = new Promise(function (fulfill, reject) {
+	        var url = _this.remote_host + _constants.API_BASE + _constants.API_VER + _constants.API_REPORTS_PATH + _this.report_path;
+
+	        _jquery2.default.get({
+	          url: url,
+	          params: params || that.params,
+	          timeout: that.timeout,
+	          beforeSend: function beforeSend(xhr) {
+	            xhr.setRequestHeader('Authorization', 'Basic ' + that.getUserAuth());
+	          },
+
+	          success: fulfill,
+	          error: reject
+	        });
+	      });
+
+	      return promise;
+	    }
+	  }, {
+	    key: 'getUserAuth',
+	    value: function getUserAuth() {
+	      var name = typeof this.name === 'function' ? this.name() : this.name;
+	      var password = typeof this.password === 'function' ? this.password() : this.password;
+	      return btoa(name + ':' + password);
+	    }
+	  }]);
+
+	  return Report;
+	}();
+
+	exports.default = Report;
 
 /***/ }
 /******/ ])
