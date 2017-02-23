@@ -17,7 +17,7 @@ function getRandomSample(store, samples = [], occurrences = []) {
     },
     {
       api_key: 'x',
-      remote_host: 'x',
+      host_url: 'x',
       store,
       occurrences,
       samples,

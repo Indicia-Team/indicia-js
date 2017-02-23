@@ -678,7 +678,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Media: _Media2.default,
 	  Occurrence: _Occurrence2.default,
 
-	  remote_host: null, // must be set up for remote sync
+	  host_url: null, // must be set up for remote sync
 	  api_key: null, // must be set up for remote sync
 
 	  user: null, // must be set up for remote sync
@@ -700,7 +700,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (options.onSend) this.onSend = options.onSend;
 
 	    // remote host defaults
-	    this.remote_host = options.remote_host || this.remote_host;
+	    this.host_url = options.host_url || this.host_url;
 	    this.api_key = options.api_key || this.api_key;
 	    this.user = options.user || this.user;
 	    this.password = options.password || this.password;
@@ -888,7 +888,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  _syncRemote: function _syncRemote(method, model, options) {
 	    // Ensure that we have a URL.
-	    if (!this.remote_host) {
+	    if (!this.host_url) {
 	      return Promise.reject(new _Error2.default('A "url" property or function must be specified'));
 	    }
 
@@ -947,7 +947,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var timeout = options.timeout || that.timeout || 30000; // 30s
 	      timeout = typeof timeout === 'function' ? timeout() : timeout;
 
-	      var url = that.remote_host + _constants.API_BASE + _constants.API_VER + _constants.API_SAMPLES_PATH;
+	      var url = that.host_url + _constants.API_BASE + _constants.API_VER + _constants.API_SAMPLES_PATH;
 	      var xhr = options.xhr = _backbone2.default.ajax({
 	        url: url,
 	        type: 'POST',
@@ -2472,10 +2472,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    _classCallCheck(this, Report);
 
-	    this.remote_host = options.remote_host || this.remote_host;
+	    this.host_url = options.host_url || this.host_url;
 	    this.user = options.user || this.user;
 	    this.password = options.password || this.password;
-	    this.report_path = options.report_path || this.report_path;
+	    this.report = options.report || this.report;
 
 	    this.api_key = options.api_key || this.api_key;
 	    this.params = options.params || this.params;
@@ -2489,7 +2489,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var that = this;
 	      var promise = new Promise(function (fulfill, reject) {
-	        var url = _this.remote_host + _constants.API_BASE + _constants.API_VER + _constants.API_REPORTS_PATH + _this.report_path;
+	        var url = _this.host_url + _constants.API_BASE + _constants.API_VER + _constants.API_REPORTS_PATH + _this.report;
 
 	        _jquery2.default.get({
 	          url: url,

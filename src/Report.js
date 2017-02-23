@@ -4,10 +4,10 @@ import { API_BASE, API_VER, API_REPORTS_PATH } from './constants';
 class Report {
 
   constructor(options = {}) {
-    this.remote_host = options.remote_host || this.remote_host;
+    this.host_url = options.host_url || this.host_url;
     this.user = options.user || this.user;
     this.password = options.password || this.password;
-    this.report_path = options.report_path || this.report_path;
+    this.report = options.report || this.report;
 
     this.api_key = options.api_key || this.api_key;
     this.params = options.params || this.params;
@@ -17,8 +17,8 @@ class Report {
   run(params) {
     const that = this;
     const promise = new Promise((fulfill, reject) => {
-      const url = this.remote_host + API_BASE + API_VER + API_REPORTS_PATH +
-        this.report_path;
+      const url = this.host_url + API_BASE + API_VER + API_REPORTS_PATH +
+        this.report;
 
       $.get({
         url,

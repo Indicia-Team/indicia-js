@@ -22,7 +22,7 @@ const Sample = Backbone.Model.extend({
   Media,
   Occurrence,
 
-  remote_host: null, // must be set up for remote sync
+  host_url: null, // must be set up for remote sync
   api_key: null, // must be set up for remote sync
 
   user: null, // must be set up for remote sync
@@ -41,7 +41,7 @@ const Sample = Backbone.Model.extend({
     if (options.onSend) this.onSend = options.onSend;
 
     // remote host defaults
-    this.remote_host = options.remote_host || this.remote_host;
+    this.host_url = options.host_url || this.host_url;
     this.api_key = options.api_key || this.api_key;
     this.user = options.user || this.user;
     this.password = options.password || this.password;
@@ -221,7 +221,7 @@ const Sample = Backbone.Model.extend({
    */
   _syncRemote(method, model, options) {
     // Ensure that we have a URL.
-    if (!this.remote_host) {
+    if (!this.host_url) {
       return Promise.reject(new Error('A "url" property or function must be specified'));
     }
 
@@ -281,7 +281,7 @@ const Sample = Backbone.Model.extend({
       let timeout = options.timeout || that.timeout || 30000; // 30s
       timeout = typeof timeout === 'function' ? timeout() : timeout;
 
-      const url = that.remote_host + API_BASE + API_VER + API_SAMPLES_PATH;
+      const url = that.host_url + API_BASE + API_VER + API_SAMPLES_PATH;
       const xhr = options.xhr = Backbone.ajax({
         url,
         type: 'POST',
