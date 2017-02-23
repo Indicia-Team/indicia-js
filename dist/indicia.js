@@ -2494,7 +2494,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        params = _jquery2.default.extend(params || that.params, { api_key: that.api_key });
 	        _jquery2.default.get({
 	          url: url,
-	          params: params,
+	          data: params,
 	          timeout: that.timeout,
 	          beforeSend: function beforeSend(xhr) {
 	            xhr.setRequestHeader('Authorization', 'Basic ' + that.getUserAuth());
