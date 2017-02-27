@@ -31,7 +31,7 @@ class Report {
         },
         success: fulfill,
         error: (jqXHR, textStatus, errorThrown) => {
-          let error = new Error({ code: jqXHR.status, message: errorThrown });
+          let error = new Error(errorThrown);
           if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
             error = new Error(jqXHR.responseJSON.errors);
           }

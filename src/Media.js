@@ -198,11 +198,7 @@ _.extend(Media, {
 
       // file inputs
       if (!window.FileReader) {
-        const message = 'No File Reader';
-        const error = new Error(message);
-        console.error(message);
-
-        reject(error);
+        reject(new Error('No File Reader'));
         return;
       }
 

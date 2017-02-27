@@ -1,24 +1,27 @@
 /** *********************************************************************
  * ERROR
+ * http://stackoverflow.com/questions/31089801/extending-error-in-javascript-with-es6-syntax/32749533#32749533
  **********************************************************************/
-class Error {
-  constructor(options = {}) {
-    if (typeof options === 'string') {
-      // message only
-      this.code = -1;
-      this.message = options;
-      return;
-    } else if (options instanceof Array) {
-      // array of errors
-      this.message = options.reduce(
-        (message, error) => `${message}${error.title}\n`,
-        '');
-      return;
+
+class IndiciaError extends Error {
+  constructor(message) {
+    // array of errors
+    if (message instanceof Array) {
+      const concaMessage = message.reduce(
+        (name, error) => `${name}${error.title}\n`,
+        ''
+      );
+      message = concaMessage;
     }
 
-    this.code = options.code || -1;
-    this.message = options.message || '';
+    super(message);
+    this.name = this.constructor.name;
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, this.constructor);
+    } else {
+      this.stack = (new Error(message)).stack;
+    }
   }
 }
 
-export { Error as default };
+export { IndiciaError as default };

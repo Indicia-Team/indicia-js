@@ -995,7 +995,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	        }
 
-	        var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
+	        var error = new _Error2.default(errorThrown);
 	        if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
 	          error = new _Error2.default(jqXHR.responseJSON.errors);
 	        }
@@ -2015,11 +2015,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // file inputs
 	      if (!window.FileReader) {
-	        var message = 'No File Reader';
-	        var error = new _Error2.default(message);
-	        console.error(message);
-
-	        reject(error);
+	        reject(new _Error2.default('No File Reader'));
 	        return;
 	      }
 
@@ -2115,32 +2111,44 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 	/** *********************************************************************
 	 * ERROR
+	 * http://stackoverflow.com/questions/31089801/extending-error-in-javascript-with-es6-syntax/32749533#32749533
 	 **********************************************************************/
-	var Error = function Error() {
-	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	  _classCallCheck(this, Error);
+	var IndiciaError = function (_Error) {
+	  _inherits(IndiciaError, _Error);
 
-	  if (typeof options === 'string') {
-	    // message only
-	    this.code = -1;
-	    this.message = options;
-	    return;
-	  } else if (options instanceof Array) {
+	  function IndiciaError(message) {
+	    _classCallCheck(this, IndiciaError);
+
 	    // array of errors
-	    this.message = options.reduce(function (message, error) {
-	      return '' + message + error.title + '\n';
-	    }, '');
-	    return;
+	    if (message instanceof Array) {
+	      var concaMessage = message.reduce(function (name, error) {
+	        return '' + name + error.title + '\n';
+	      }, '');
+	      message = concaMessage;
+	    }
+
+	    var _this = _possibleConstructorReturn(this, (IndiciaError.__proto__ || Object.getPrototypeOf(IndiciaError)).call(this, message));
+
+	    _this.name = _this.constructor.name;
+	    if (typeof Error.captureStackTrace === 'function') {
+	      Error.captureStackTrace(_this, _this.constructor);
+	    } else {
+	      _this.stack = new Error(message).stack;
+	    }
+	    return _this;
 	  }
 
-	  this.code = options.code || -1;
-	  this.message = options.message || '';
-	};
+	  return IndiciaError;
+	}(Error);
 
-	exports.default = Error;
+	exports.default = IndiciaError;
 
 /***/ },
 /* 13 */
@@ -2506,7 +2514,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	          success: fulfill,
 	          error: function error(jqXHR, textStatus, errorThrown) {
-	            var error = new _Error2.default({ code: jqXHR.status, message: errorThrown });
+	            var error = new _Error2.default(errorThrown);
 	            if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
 	              error = new _Error2.default(jqXHR.responseJSON.errors);
 	            }
