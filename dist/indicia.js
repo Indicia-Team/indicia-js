@@ -87,7 +87,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Sample2 = _interopRequireDefault(_Sample);
 
-	var _Occurrence = __webpack_require__(13);
+	var _Occurrence = __webpack_require__(12);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -95,13 +95,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Report = __webpack_require__(14);
+	var _Report = __webpack_require__(13);
 
 	var _Report2 = _interopRequireDefault(_Report);
-
-	var _Error = __webpack_require__(12);
-
-	var _Error2 = _interopRequireDefault(_Error);
 
 	var _constants = __webpack_require__(8);
 
@@ -121,8 +117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Sample: _Sample2.default,
 	  Occurrence: _Occurrence2.default,
 	  Media: _Media2.default,
-	  Report: _Report2.default,
-	  Error: _Error2.default
+	  Report: _Report2.default
 	};
 
 	_underscore2.default.extend(Indicia, CONST);
@@ -660,11 +655,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Media2 = _interopRequireDefault(_Media);
 
-	var _Error = __webpack_require__(12);
-
-	var _Error2 = _interopRequireDefault(_Error);
-
-	var _Occurrence = __webpack_require__(13);
+	var _Occurrence = __webpack_require__(12);
 
 	var _Occurrence2 = _interopRequireDefault(_Occurrence);
 
@@ -874,7 +865,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    if (!this.store) {
-	      return Promise.reject(new _Error2.default('Trying to locally sync a model without a store'));
+	      return Promise.reject(new Error('Trying to locally sync a model without a store'));
 	    }
 
 	    this.trigger('request', model, null, options);
@@ -889,7 +880,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _syncRemote: function _syncRemote(method, model, options) {
 	    // Ensure that we have a URL.
 	    if (!this.host_url) {
-	      return Promise.reject(new _Error2.default('A "url" property or function must be specified'));
+	      return Promise.reject(new Error('A "url" property or function must be specified'));
 	    }
 
 	    model.synchronising = true;
@@ -908,21 +899,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	      case 'update':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new _Error2.default('Updating the model is not possible yet.'));
+	        return Promise.reject(new Error('Updating the model is not possible yet.'));
 
 	      case 'read':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new _Error2.default('Reading the model is not possible yet.'));
+	        return Promise.reject(new Error('Reading the model is not possible yet.'));
 
 	      case 'delete':
 	        // todo
 	        model.synchronising = false;
-	        return Promise.reject(new _Error2.default('Deleting the model is not possible yet.'));
+	        return Promise.reject(new Error('Deleting the model is not possible yet.'));
 
 	      default:
 	        model.synchronising = false;
-	        return Promise.reject(new _Error2.default('No such remote sync option: ' + method));
+	        return Promise.reject(new Error('No such remote sync option: ' + method));
 	    }
 	  },
 
@@ -995,9 +986,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	        }
 
-	        var error = new _Error2.default(errorThrown);
+	        var error = new Error(errorThrown);
 	        if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
-	          error = new _Error2.default(jqXHR.responseJSON.errors);
+	          var message = jqXHR.responseJSON.errors.reduce(function (name, err) {
+	            return '' + name + err.title + '\n';
+	          }, '');
+	          error = new Error(message);
 	        }
 	        model.trigger('error', error);
 	        reject(error);
@@ -1798,10 +1792,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _sync_helpers2 = _interopRequireDefault(_sync_helpers);
 
-	var _Error = __webpack_require__(12);
-
-	var _Error2 = _interopRequireDefault(_Error);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var THUMBNAIL_WIDTH = 100; // px
@@ -1855,7 +1845,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this._syncRemote(method, model, options);
 	    }
 
-	    return Promise.reject(new _Error2.default('Local sync is not possible yet.'));
+	    return Promise.reject(new Error('Local sync is not possible yet.'));
 	  },
 
 
@@ -1864,7 +1854,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * Returns on success: model, response, options
 	   */
 	  _syncRemote: function _syncRemote() {
-	    return Promise.reject(new _Error2.default('Remote sync is not possible yet.'));
+	    return Promise.reject(new Error('Remote sync is not possible yet.'));
 	  },
 
 
@@ -2015,7 +2005,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // file inputs
 	      if (!window.FileReader) {
-	        reject(new _Error2.default('No File Reader'));
+	        reject(new Error('No File Reader'));
 	        return;
 	      }
 
@@ -2101,57 +2091,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 12 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	/** *********************************************************************
-	 * ERROR
-	 * http://stackoverflow.com/questions/31089801/extending-error-in-javascript-with-es6-syntax/32749533#32749533
-	 **********************************************************************/
-
-	var IndiciaError = function (_Error) {
-	  _inherits(IndiciaError, _Error);
-
-	  function IndiciaError(message) {
-	    _classCallCheck(this, IndiciaError);
-
-	    // array of errors
-	    if (message instanceof Array) {
-	      var concaMessage = message.reduce(function (name, error) {
-	        return '' + name + error.title + '\n';
-	      }, '');
-	      message = concaMessage;
-	    }
-
-	    var _this = _possibleConstructorReturn(this, (IndiciaError.__proto__ || Object.getPrototypeOf(IndiciaError)).call(this, message));
-
-	    _this.name = _this.constructor.name;
-	    if (typeof Error.captureStackTrace === 'function') {
-	      Error.captureStackTrace(_this, _this.constructor);
-	    } else {
-	      _this.stack = new Error(message).stack;
-	    }
-	    return _this;
-	  }
-
-	  return IndiciaError;
-	}(Error);
-
-	exports.default = IndiciaError;
-
-/***/ },
-/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2453,7 +2392,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Occurrence;
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2467,10 +2406,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _jquery = __webpack_require__(7);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
-
-	var _Error = __webpack_require__(12);
-
-	var _Error2 = _interopRequireDefault(_Error);
 
 	var _constants = __webpack_require__(8);
 
@@ -2514,9 +2449,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	          success: fulfill,
 	          error: function error(jqXHR, textStatus, errorThrown) {
-	            var error = new _Error2.default(errorThrown);
+	            var error = new Error(errorThrown);
 	            if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
-	              error = new _Error2.default(jqXHR.responseJSON.errors);
+	              var message = jqXHR.responseJSON.errors.reduce(function (name, err) {
+	                return '' + name + err.title + '\n';
+	              }, '');
+	              error = new Error(message);
 	            }
 	            reject(error);
 	          }

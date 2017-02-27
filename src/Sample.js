@@ -14,7 +14,6 @@ import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
-import Error from './Error';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
@@ -323,7 +322,11 @@ const Sample = Backbone.Model.extend({
 
         let error = new Error(errorThrown);
         if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
-          error = new Error(jqXHR.responseJSON.errors);
+          const message = jqXHR.responseJSON.errors.reduce(
+            (name, err) => `${name}${err.title}\n`,
+            ''
+          );
+          error = new Error(message);
         }
         model.trigger('error', error);
         reject(error);

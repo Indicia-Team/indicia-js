@@ -1,5 +1,4 @@
 import $ from 'jquery';
-import Error from './Error';
 import { API_BASE, API_VER, API_REPORTS_PATH } from './constants';
 
 class Report {
@@ -33,7 +32,11 @@ class Report {
         error: (jqXHR, textStatus, errorThrown) => {
           let error = new Error(errorThrown);
           if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
-            error = new Error(jqXHR.responseJSON.errors);
+            const message = jqXHR.responseJSON.errors.reduce(
+              (name, err) => `${name}${err.title}\n`,
+              ''
+            );
+            error = new Error(message);
           }
           reject(error);
         },

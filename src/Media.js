@@ -6,7 +6,6 @@ import _ from 'underscore';
 
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
-import Error from './Error';
 
 const THUMBNAIL_WIDTH = 100; // px
 const THUMBNAIL_HEIGHT = 100; // px

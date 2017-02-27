@@ -5,7 +5,6 @@ import Sample from './Sample';
 import Occurrence from './Occurrence';
 import Media from './Media';
 import Report from './Report';
-import Error from './Error';
 import * as CONST from './constants';
 
 const Indicia = {
@@ -19,7 +18,6 @@ const Indicia = {
   Occurrence,
   Media,
   Report,
-  Error,
 };
 
 _.extend(Indicia, CONST);
