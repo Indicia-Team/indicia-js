@@ -218,6 +218,9 @@ const Occurrence = Backbone.Model.extend({
   },
 
   _getDefaultMetadata(options) {
+    const metadata = typeof this.metadata === 'function' ?
+      this.metadata() : this.metadata;
+
     options.metadata = options.metadata || {};
 
     const today = new Date();
@@ -231,7 +234,7 @@ const Occurrence = Backbone.Model.extend({
       server_on: null, // updated on server
     };
 
-    return $.extend(true, defaults, this.metadata, options.metadata);
+    return $.extend(true, defaults, metadata, options.metadata);
   },
 });
 

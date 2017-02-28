@@ -2363,6 +2363,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Promise.reject(new Error('Remote sync is not possible yet.'));
 	  },
 	  _getDefaultMetadata: function _getDefaultMetadata(options) {
+	    var metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
+
 	    options.metadata = options.metadata || {};
 
 	    var today = new Date();
@@ -2375,7 +2377,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      synced_on: null, // set when fully initialized only
 	      server_on: null };
 
-	    return _jquery2.default.extend(true, defaults, this.metadata, options.metadata);
+	    return _jquery2.default.extend(true, defaults, metadata, options.metadata);
 	  }
 	});
 
