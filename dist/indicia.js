@@ -1384,6 +1384,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return promise;
 	  },
 	  _getDefaultMetadata: function _getDefaultMetadata(options) {
+	    var metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
 	    var today = new Date();
 	    var defaults = {
 	      survey_id: options.survey_id,
@@ -1395,7 +1396,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      synced_on: null, // set when fully initialized only
 	      server_on: null };
 
-	    return _jquery2.default.extend(true, defaults, this.metadata, options.metadata);
+	    return _jquery2.default.extend(true, defaults, metadata, options.metadata);
 	  }
 	});
 

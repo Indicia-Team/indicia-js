@@ -684,6 +684,8 @@ const Sample = Backbone.Model.extend({
   },
 
   _getDefaultMetadata(options) {
+    const metadata = typeof this.metadata === 'function' ?
+      this.metadata() : this.metadata;
     const today = new Date();
     const defaults = {
       survey_id: options.survey_id,
@@ -696,7 +698,7 @@ const Sample = Backbone.Model.extend({
       server_on: null, // updated on server
     };
 
-    return $.extend(true, defaults, this.metadata, options.metadata);
+    return $.extend(true, defaults, metadata, options.metadata);
   },
 });
 
