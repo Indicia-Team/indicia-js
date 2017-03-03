@@ -1170,7 +1170,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (keys[attr].values) {
 	        if (typeof keys[attr].values === 'function') {
 	          // get a value from a function
-	          value = keys[attr].values(value, submission);
+	          value = keys[attr].values(value, submission, that);
 	        } else {
 	          value = keys[attr].values[value];
 	        }
@@ -2312,7 +2312,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (keys[attr].values) {
 	        if (typeof keys[attr].values === 'function') {
 	          // get a value from a function
-	          value = keys[attr].values(value, submission);
+	          value = keys[attr].values(value, submission, that);
 	        } else {
 	          value = keys[attr].values[value];
 	        }
