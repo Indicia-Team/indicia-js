@@ -394,7 +394,9 @@ const Sample = Backbone.Model.extend({
         // Add authentication and survey id
         formData.append('api_key', that.api_key);
         formData.append('survey_id', that.metadata.survey_id);
-
+        if (that.metadata.anonymous) {
+          formData.append('anonymous', true);
+        }
         fulfill(formData);
       });
     });
@@ -619,6 +621,10 @@ const Sample = Backbone.Model.extend({
   },
 
   getUserAuth() {
+    if (!this.user || !this.password) {
+      return null;
+    }
+
     const user = typeof this.user === 'function' ? this.user() : this.user;
     const password = typeof this.password === 'function' ? this.password() : this.password;
     const basicAuth = btoa(`${user}:${password}`);

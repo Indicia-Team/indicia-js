@@ -1074,7 +1074,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // Add authentication and survey id
 	        formData.append('api_key', that.api_key);
 	        formData.append('survey_id', that.metadata.survey_id);
-
+	        if (that.metadata.anonymous) {
+	          formData.append('anonymous', true);
+	        }
 	        fulfill(formData);
 	      });
 	    });
@@ -1322,6 +1324,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this.media.at(index);
 	  },
 	  getUserAuth: function getUserAuth() {
+	    if (!this.user || !this.password) {
+	      return null;
+	    }
+
 	    var user = typeof this.user === 'function' ? this.user() : this.user;
 	    var password = typeof this.password === 'function' ? this.password() : this.password;
 	    var basicAuth = btoa(user + ':' + password);
