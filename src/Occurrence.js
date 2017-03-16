@@ -147,10 +147,29 @@ const Occurrence = Backbone.Model.extend({
     const submission = {
       id: this.id,
       external_key: this.cid,
-      training: this.metadata.training,
       fields: {},
       media: [],
     };
+
+    if (this.metadata.training) {
+      submission.training = this.metadata.training;
+    }
+
+    if (this.metadata.release_status) {
+      submission.release_status = this.metadata.release_status;
+    }
+
+    if (this.metadata.record_status) {
+      submission.record_status = this.metadata.record_status;
+    }
+
+    if (this.metadata.sensitive) {
+      submission.sensitive = this.metadata.sensitive;
+    }
+
+    if (this.metadata.sensitivity_precision) {
+      submission.sensitivity_precision = this.metadata.sensitivity_precision;
+    }
 
     // transform attributes
     Object.keys(this.attributes).forEach((attr) => {
