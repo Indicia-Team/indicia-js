@@ -1437,7 +1437,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	/* eslint-disable */
 	var API_BASE = exports.API_BASE = 'api/',
-	    API_VER = exports.API_VER = 'v1beta1',
+	    API_VER = exports.API_VER = 'v1',
 	    API_SAMPLES_PATH = exports.API_SAMPLES_PATH = '/samples',
 	    API_REPORTS_PATH = exports.API_REPORTS_PATH = '/reports',
 	    SYNCHRONISING = exports.SYNCHRONISING = 0,
