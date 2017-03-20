@@ -388,7 +388,9 @@ const Sample = Backbone.Model.extend({
 
       // get submission model and all the media
       const [submission, media] = model._getSubmission();
-      formData.append('submission', JSON.stringify(submission));
+      formData.append('submission', JSON.stringify({
+        data: submission,
+      }));
 
       // append media
       that._mediaAppend(media, formData).then(() => {
