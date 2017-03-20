@@ -388,6 +388,7 @@ const Sample = Backbone.Model.extend({
 
       // get submission model and all the media
       const [submission, media] = model._getSubmission();
+      submission.type = 'samples';
       formData.append('submission', JSON.stringify({
         data: submission,
       }));

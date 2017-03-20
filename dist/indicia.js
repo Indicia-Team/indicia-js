@@ -1068,6 +1068,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          submission = _model$_getSubmission2[0],
 	          media = _model$_getSubmission2[1];
 
+	      submission.type = 'samples';
 	      formData.append('submission', JSON.stringify({
 	        data: submission
 	      }));
