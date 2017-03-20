@@ -2311,6 +2311,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      submission.sensitive = this.metadata.sensitive;
 	    }
 
+	    if (this.metadata.confidential) {
+	      submission.confidential = this.metadata.confidential;
+	    }
+
 	    if (this.metadata.sensitivity_precision) {
 	      submission.sensitivity_precision = this.metadata.sensitivity_precision;
 	    }
