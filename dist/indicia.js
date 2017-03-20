@@ -944,7 +944,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        type: 'POST',
 	        data: formData,
 	        headers: {
-	          Authorization: that.getUserAuth()
+	          authorization: that.getUserAuth(),
+	          'x-api-key': that.api_key
 	        },
 	        processData: false,
 	        contentType: false,
@@ -1071,12 +1072,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      // append media
 	      that._mediaAppend(media, formData).then(function () {
-	        // Add authentication and survey id
-	        formData.append('api_key', that.api_key);
-	        formData.append('survey_id', that.metadata.survey_id);
-	        if (that.metadata.anonymous) {
-	          formData.append('anonymous', true);
-	        }
 	        fulfill(formData);
 	      });
 	    });
@@ -2471,10 +2466,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	          url: url,
 	          data: params,
 	          timeout: that.timeout,
-	          beforeSend: function beforeSend(xhr) {
-	            xhr.setRequestHeader('Authorization', 'Basic ' + that.getUserAuth());
+	          headers: {
+	            authorization: that.getUserAuth(),
+	            'x-api-key': that.api_key
 	          },
-
 	          success: fulfill,
 	          error: function error(jqXHR, textStatus, errorThrown) {
 	            var error = new Error(errorThrown);
@@ -2494,9 +2489,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'getUserAuth',
 	    value: function getUserAuth() {
+	      if (!this.user || !this.password) {
+	        return null;
+	      }
+
 	      var user = typeof this.user === 'function' ? this.user() : this.user;
 	      var password = typeof this.password === 'function' ? this.password() : this.password;
-	      return btoa(user + ':' + password);
+	      var basicAuth = btoa(user + ':' + password);
+
+	      return 'Basic  ' + basicAuth;
 	    }
 	  }]);
 

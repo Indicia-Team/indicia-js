@@ -25,8 +25,9 @@ class Report {
         url,
         data: params,
         timeout: that.timeout,
-        beforeSend(xhr) {
-          xhr.setRequestHeader('Authorization', `Basic ${that.getUserAuth()}`);
+        headers: {
+          authorization: that.getUserAuth(),
+          'x-api-key': that.api_key,
         },
         success: fulfill,
         error: (jqXHR, textStatus, errorThrown) => {
@@ -47,9 +48,15 @@ class Report {
   }
 
   getUserAuth() {
+    if (!this.user || !this.password) {
+      return null;
+    }
+
     const user = typeof this.user === 'function' ? this.user() : this.user;
     const password = typeof this.password === 'function' ? this.password() : this.password;
-    return btoa(`${user}:${password}`);
+    const basicAuth = btoa(`${user}:${password}`);
+
+    return `Basic  ${basicAuth}`;
   }
 
 }

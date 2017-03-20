@@ -286,7 +286,8 @@ const Sample = Backbone.Model.extend({
         type: 'POST',
         data: formData,
         headers: {
-          Authorization: that.getUserAuth(),
+          authorization: that.getUserAuth(),
+          'x-api-key': that.api_key,
         },
         processData: false,
         contentType: false,
@@ -391,12 +392,6 @@ const Sample = Backbone.Model.extend({
 
       // append media
       that._mediaAppend(media, formData).then(() => {
-        // Add authentication and survey id
-        formData.append('api_key', that.api_key);
-        formData.append('survey_id', that.metadata.survey_id);
-        if (that.metadata.anonymous) {
-          formData.append('anonymous', true);
-        }
         fulfill(formData);
       });
     });
