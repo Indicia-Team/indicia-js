@@ -269,11 +269,11 @@ const Sample = Backbone.Model.extend({
     const that = this;
 
     // async call to get the form data
-    return that._getModelFormData(model)
-      .then(formData => that._ajaxModel(formData, model, options));
+    return that._getModelData(model)
+      .then(data => that._ajaxModel(data, model, options));
   },
 
-  _ajaxModel(formData, model, options) {
+  _ajaxModel(data, model, options) {
     const that = this;
     const promise = new Promise((fulfill, reject) => {
       // get timeout
@@ -284,7 +284,7 @@ const Sample = Backbone.Model.extend({
       const xhr = options.xhr = Backbone.ajax({
         url,
         type: 'POST',
-        data: formData,
+        data,
         headers: {
           authorization: that.getUserAuth(),
           'x-api-key': that.api_key,
@@ -380,23 +380,30 @@ const Sample = Backbone.Model.extend({
     }
   },
 
-  _getModelFormData(model) {
+  _getModelData(model) {
     const that = this;
 
     const promise = new Promise((fulfill) => {
-      const formData = new FormData(); // for submission
-
       // get submission model and all the media
       const [submission, media] = model._getSubmission();
       submission.type = 'samples';
-      formData.append('submission', JSON.stringify({
+      const stringSubmission = JSON.stringify({
         data: submission,
-      }));
-
-      // append media
-      that._mediaAppend(media, formData).then(() => {
-        fulfill(formData);
       });
+
+      // with media send form-data in one request
+      if (media) {
+        const formData = new FormData(); // for submission
+        formData.append('submission', stringSubmission);
+        // append media
+        that._mediaAppend(media, formData).then(() => {
+          fulfill(formData);
+        });
+
+        return;
+      }
+
+      fulfill(stringSubmission);
     });
 
     return promise;

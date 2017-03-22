@@ -35,8 +35,14 @@ function generateSampleResponse(server, type, data) {
       server.respondWith((req) => {
         let model = data;
         if (typeof data === 'function') {
-          const submission = JSON.parse(req.requestBody.get('submission'));
-          model = data(submission.external_key);
+          let submission;
+          if (req.requestBody instanceof FormData) {
+            submission = JSON.parse(req.requestBody.get('submission'));
+          } else {
+            submission = JSON.parse(req.requestBody);
+          }
+
+          model = data(submission.data.external_key);
         }
 
         req.respond.apply(req, serverResponses(type, {

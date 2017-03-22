@@ -927,11 +927,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 
 	    // async call to get the form data
-	    return that._getModelFormData(model).then(function (formData) {
-	      return that._ajaxModel(formData, model, options);
+	    return that._getModelData(model).then(function (data) {
+	      return that._ajaxModel(data, model, options);
 	    });
 	  },
-	  _ajaxModel: function _ajaxModel(formData, model, options) {
+	  _ajaxModel: function _ajaxModel(data, model, options) {
 	    var that = this;
 	    var promise = new Promise(function (fulfill, reject) {
 	      // get timeout
@@ -942,7 +942,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var xhr = options.xhr = _backbone2.default.ajax({
 	        url: url,
 	        type: 'POST',
-	        data: formData,
+	        data: data,
 	        headers: {
 	          authorization: that.getUserAuth(),
 	          'x-api-key': that.api_key
@@ -1055,28 +1055,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    }
 	  },
-	  _getModelFormData: function _getModelFormData(model) {
+	  _getModelData: function _getModelData(model) {
 	    var that = this;
 
 	    var promise = new Promise(function (fulfill) {
-	      var formData = new FormData(); // for submission
-
 	      // get submission model and all the media
-
 	      var _model$_getSubmission = model._getSubmission(),
 	          _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2),
 	          submission = _model$_getSubmission2[0],
 	          media = _model$_getSubmission2[1];
 
 	      submission.type = 'samples';
-	      formData.append('submission', JSON.stringify({
+	      var stringSubmission = JSON.stringify({
 	        data: submission
-	      }));
-
-	      // append media
-	      that._mediaAppend(media, formData).then(function () {
-	        fulfill(formData);
 	      });
+
+	      // with media send form-data in one request
+	      if (media) {
+	        var _ret2 = function () {
+	          var formData = new FormData(); // for submission
+	          formData.append('submission', stringSubmission);
+	          // append media
+	          that._mediaAppend(media, formData).then(function () {
+	            fulfill(formData);
+	          });
+
+	          return {
+	            v: void 0
+	          };
+	        }();
+
+	        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	      }
+
+	      fulfill(stringSubmission);
 	    });
 
 	    return promise;
