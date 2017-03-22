@@ -392,7 +392,7 @@ const Sample = Backbone.Model.extend({
       });
 
       // with media send form-data in one request
-      if (media) {
+      if (media.length) {
         const formData = new FormData(); // for submission
         formData.append('submission', stringSubmission);
         // append media

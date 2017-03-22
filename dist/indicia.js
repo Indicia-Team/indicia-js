@@ -1071,7 +1071,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 
 	      // with media send form-data in one request
-	      if (media) {
+	      if (media.length) {
 	        var _ret2 = function () {
 	          var formData = new FormData(); // for submission
 	          formData.append('submission', stringSubmission);
