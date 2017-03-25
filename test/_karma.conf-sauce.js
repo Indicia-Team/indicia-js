@@ -18,7 +18,7 @@ var sauceBrowsers = _.reduce([
   ['chrome', '39'],
   ['chrome', '30'],
 
-  ['microsoftedge', '20.10240', 'Windows 10'],
+  ['MicrosoftEdge', '14.14393', 'Windows 10'],
   ['internet explorer', '11', 'Windows 10'],
   ['internet explorer', '10', 'Windows 8'],
 

@@ -3,26 +3,6 @@
  **********************************************************************/
 
 /**
- * Clones an object.
- *
- * @param obj
- * @returns {*}
- */
-const cloneDeep = (obj) => {
-  if (null === obj || 'object' !== typeof obj) {
-    return obj;
-  }
-  const copy = {};
-  for (const attr in obj) {
-    if (obj.hasOwnProperty(attr)) {
-      copy[attr] = objClone(obj[attr]);
-    }
-  }
-  return copy;
-};
-
-
-/**
  * Generate UUID.
  */
 const getNewUUID = () => {
@@ -160,7 +140,6 @@ const formatDate = (dateToFormat) => {
 };
 
 export default {
-  cloneDeep,
   getNewUUID,
   dataURItoBlob,
   isDataURL,

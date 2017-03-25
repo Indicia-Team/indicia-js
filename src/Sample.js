@@ -7,165 +7,92 @@
  * species sighted as part of the sample.
  **********************************************************************/
 import Backbone from 'backbone';
+import $ from 'jquery';
 import _ from 'underscore';
-import CONST from './constants';
+import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
+  SERVER, LOCAL, API_BASE, API_VER, API_SAMPLES_PATH } from './constants';
 import helpers from './helpers';
-import Image from './Image';
+import syncHelpers from './sync_helpers';
+import Media from './Media';
+import Store from './Store';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
 const Sample = Backbone.Model.extend({
-  Image,
+  Media,
   Occurrence,
 
-  constructor(attributes = {}, options = {}) {
-    const that = this;
-    let attrs = attributes;
+  host_url: null, // must be set up for remote sync
+  api_key: null, // must be set up for remote sync
 
+  user: null, // must be set up for remote sync
+  password: null, // must be set up for remote sync
+
+  constructor(attributes = {}, options = {}) {
+    this.id = options.id; // remote ID
+    this.cid = options.cid || helpers.getNewUUID();
+    this.setParent(options.parent || this.parent);
+
+    this.store = options.store || this.store || new Store();
+    this.keys = options.keys || this.keys; // warehouse attribute keys
+
+    if (options.Media) this.Media = options.Media;
+    if (options.Occurrence) this.Occurrence = options.Occurrence;
+    if (options.onSend) this.onSend = options.onSend;
+
+    // remote host defaults
+    this.host_url = options.host_url || this.host_url;
+    this.api_key = options.api_key || this.api_key;
+    this.user = options.user || this.user;
+    this.password = options.password || this.password;
+
+    // attrs
+    this.attributes = {};
     const defaultAttrs = {
       date: new Date(),
       location_type: 'latlon',
     };
-
-    attrs = _.extend(defaultAttrs, attrs);
-
-    this.cid = options.cid || options.id || helpers.getNewUUID();
-    this.manager = options.manager || this.manager;
-    if (this.manager) this.sync = this.manager.sync;
-
-    if (options.Image) this.Image = options.Image;
-    if (options.Occurrence) this.Occurrence = options.Occurrence;
-    if (options.onSend) this.onSend = options.onSend;
-
-    this.attributes = {};
+    let attrs = _.extend(defaultAttrs, attributes);
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
     attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
     this.changed = {};
 
-    if (options.metadata) {
-      this.metadata = options.metadata;
-    } else {
-      const today = new Date();
-      this.metadata = {
-        created_on: today,
-        updated_on: today,
+    // metadata
+    this.metadata = this._getDefaultMetadata(options);
 
-        warehouse_id: null,
+    // initialise sub models
+    this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
+    this.samples = this._parseModels(options.samples, Sample);
+    this.media = this._parseModels(options.media, this.Media);
 
-        synced_on: null, // set when fully initialized only
-        server_on: null, // updated on server
-      };
-    }
-
-    if (options.occurrences) {
-      const occurrences = [];
-      _.each(options.occurrences, (occ) => {
-        if (occ instanceof that.Occurrence) {
-          occ.setSample(that);
-          occurrences.push(occ);
-        } else {
-          const modelOptions = _.extend(occ, { sample: that });
-          occurrences.push(new that.Occurrence(occ.attributes, modelOptions));
-        }
-      });
-      this.occurrences = new Collection(occurrences, {
-        model: this.Occurrence,
-      });
-    } else {
-      this.occurrences = new Collection([], {
-        model: this.Occurrence,
-      });
-    }
-
-    if (options.images) {
-      const images = [];
-      _.each(options.images, (image) => {
-        if (image instanceof this.Image) {
-          image.setParent(that);
-          images.push(image);
-        } else {
-          const modelOptions = _.extend(image, { parent: that });
-          images.push(new this.Image(image.attributes, modelOptions));
-        }
-      });
-      this.images = new Collection(images, {
-        model: this.Image,
-      });
-    } else {
-      this.images = new Collection([], {
-        model: this.Image,
-      });
-    }
-
-    this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments); // eslint-disable-line
   },
 
   /**
-   * Saves the record to the record manager and if valid syncs it with DB
-   * Returns on success: model, response, options
+   * Sets parent.
+   * @param parent
    */
-  save(attrs, options = {}) {
-    const model = this;
-    let promise;
+  setParent(parent) {
+    if (!parent) return;
 
-    if (!this.manager) return false;
-
-    // only update local cache and DB
-    if (!options.remote) {
-      // todo: add attrs if passed to model
-
-      let promiseResolve;
-      let promiseReject;
-      promise = new Promise((fulfill, reject) => {
-        promiseResolve = fulfill;
-        promiseReject = reject;
-      });
-
-      this.manager.set(this, (err) => {
-        if (err) {
-          promiseReject(err);
-          options.error && options.error(err);
-          return;
-        }
-        promiseResolve(model, {}, options);
-        options.success && options.success(model, {}, options);
-      });
-      return promise;
-    }
-
-    // remote
-    promise = Backbone.Model.prototype.save.apply(this, arguments);
-    return promise;
+    const that = this;
+    this.parent = parent;
+    this.parent.on('destroy', () => {
+      that.destroy({ noSave: true });
+    });
   },
 
-  destroy(options = {}) {
-    let promiseResolve;
-    const promise = new Promise((fulfill) => {
-      promiseResolve = fulfill;
-    });
+  /**
+   * Adds a subsample to the sample and sets the samples's parent to this.
+   * @param sample
+   */
+  addSample(sample) {
+    if (!sample) return;
+    sample.setParent(this);
 
-    if (this.manager && !options.noSave) {
-      // save the changes permanentely
-      this.manager.remove(this, (err) => {
-        if (err) {
-          options.error && options.error(err);
-          return;
-        }
-        promiseResolve();
-        options.success && options.success();
-      });
-    } else {
-      // removes from all collections etc
-      this.stopListening();
-      this.trigger('destroy', this, this.collection, options);
-
-      promiseResolve();
-      options.success && options.success();
-    }
-
-    return promise;
+    this.samples.push(sample);
   },
 
   /**
@@ -174,26 +101,36 @@ const Sample = Backbone.Model.extend({
    */
   addOccurrence(occurrence) {
     if (!occurrence) return;
-    occurrence.setSample(this);
+    occurrence.setParent(this);
+
     this.occurrences.push(occurrence);
   },
 
   /**
-   * Adds an image to occurrence and sets the images's occurrence to this.
-   * @param image
+   * Adds an media to occurrence and sets the media's occurrence to this.
+   * @param media
    */
-  addImage(image) {
-    if (!image) return;
-    image.setParent(this);
-    this.images.add(image);
+  addMedia(media) {
+    if (!media) return;
+    media.setParent(this);
+    this.media.add(media);
   },
 
+// overwrite if you want to validate before saving locally
+  validate(attributes, options = {}) {
+    if (options.remote) {
+      return this.validateRemote(attributes, options);
+    }
+    return null;
+  },
 
-  validate(attributes) {
+  validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
     const sample = {};
+    const samples = {};
     const occurrences = {};
+    const media = {};
 
     // location
     if (!attrs.location) {
@@ -211,27 +148,45 @@ const Sample = Backbone.Model.extend({
     } else {
       const date = new Date(attrs.date);
       if (date === 'Invalid Date' || date > new Date()) {
-        sample.date = (new Date(date) > new Date) ? 'future date' : 'invalid';
+        sample.date = (new Date(date) > new Date()) ? 'future date' : 'invalid';
       }
     }
 
-    // occurrences
-    if (this.occurrences.length === 0) {
+    // check if has any indirect occurrences
+    if (!this.samples.length && !this.occurrences.length) {
       sample.occurrences = 'no occurrences';
-    } else {
-      this.occurrences.each((occurrence) => {
-        const errors = occurrence.validate();
+    }
+
+    // samples
+    if (this.samples.length) {
+      this.samples.each((model) => {
+        const errors = model.validateRemote();
         if (errors) {
-          const occurrenceID = occurrence.id || occurrence.cid;
+          const sampleID = model.cid;
+          samples[sampleID] = errors;
+        }
+      });
+    }
+
+    // occurrences
+    if (this.occurrences.length) {
+      this.occurrences.each((occurrence) => {
+        const errors = occurrence.validateRemote();
+        if (errors) {
+          const occurrenceID = occurrence.cid;
           occurrences[occurrenceID] = errors;
         }
       });
     }
 
+    // todo: validateRemote media
+
     if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
       const errors = {
         sample,
+        samples,
         occurrences,
+        media,
       };
       return errors;
     }
@@ -239,39 +194,359 @@ const Sample = Backbone.Model.extend({
     return null;
   },
 
+
   /**
-   * Returns an object with attributes and their values flattened and
+   * Synchronises the model.
+   * @param method
+   * @param model
+   * @param options
+   */
+  sync(method, model, options = {}) {
+    if (options.remote) {
+      return this._syncRemote(method, model, options);
+    }
+
+    if (!this.store) {
+      return Promise.reject(new Error('Trying to locally sync a model without a store'));
+    }
+
+    this.trigger('request', model, null, options);
+    return this.store.sync(method, model, options);
+  },
+
+
+  /**
+   * Syncs the record to the remote server.
+   * Returns on success: model, response, options
+   */
+  _syncRemote(method, model, options) {
+    // Ensure that we have a URL.
+    if (!this.host_url) {
+      return Promise.reject(new Error('A "url" property or function must be specified'));
+    }
+
+    model.synchronising = true;
+
+    // model.trigger('request', model, xhr, options);
+    switch (method) {
+      case 'create':
+        return this._create(model, options)
+          .then((val) => {
+            model.synchronising = false;
+            return val;
+          })
+          .catch((err) => {
+            model.synchronising = false;
+            return Promise.reject(err);
+          });
+
+      case 'update':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Updating the model is not possible yet.'));
+
+      case 'read':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Reading the model is not possible yet.'));
+
+      case 'delete':
+        // todo
+        model.synchronising = false;
+        return Promise.reject(new Error('Deleting the model is not possible yet.'));
+
+      default:
+        model.synchronising = false;
+        return Promise.reject(new Error(`No such remote sync option: ${method}`));
+    }
+  },
+
+  /**
+   * Posts a record to remote server.
+   * @param model
+   * @param options
+   */
+  _create(model, options) {
+    const that = this;
+
+    // async call to get the form data
+    return that._getModelData(model)
+      .then(data => that._ajaxModel(data, model, options));
+  },
+
+  _ajaxModel(data, model, options) {
+    const that = this;
+    const promise = new Promise((fulfill, reject) => {
+      // get timeout
+      let timeout = options.timeout || that.timeout || 30000; // 30s
+      timeout = typeof timeout === 'function' ? timeout() : timeout;
+
+      const url = that.host_url + API_BASE + API_VER + API_SAMPLES_PATH;
+      const xhr = options.xhr = Backbone.ajax({
+        url,
+        type: 'POST',
+        data,
+        headers: {
+          authorization: that.getUserAuth(),
+          'x-api-key': that.api_key,
+        },
+        processData: false,
+        contentType: false,
+        timeout,
+      });
+
+      xhr.done(responseData => fulfill(responseData));
+
+      xhr.fail((jqXHR, textStatus, errorThrown) => {
+        if (errorThrown === 'Conflict') {
+          // duplicate occurred - this fixes only occurrence duplicates!
+          // todo: remove once this is sorted
+          const responseData = {
+            data: {
+              id: null,
+              external_key: null,
+              occurrences: [],
+            },
+          };
+
+          jqXHR.responseJSON.errors.forEach((error) => {
+            responseData.data.id = error.sample_id;
+            responseData.data.external_key = error.sample_external_key;
+            responseData.data.occurrences.push({
+              id: error.id,
+              external_key: error.external_key,
+            });
+          });
+
+          fulfill(responseData);
+          return;
+        }
+
+        let error = new Error(errorThrown);
+        if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
+          const message = jqXHR.responseJSON.errors.reduce(
+            (name, err) => `${name}${err.title}\n`,
+            ''
+          );
+          error = new Error(message);
+        }
+        model.trigger('error', error);
+        reject(error);
+      });
+
+      model.trigger('request', model, xhr, options);
+    });
+
+    return promise;
+  },
+
+  _remoteCreateParse(model, responseData) {
+    // get new ids
+    const remoteIDs = {};
+
+    // recursively extracts ids from collection of response models
+    function getIDs(data) {
+      remoteIDs[data.external_key] = data.id;
+      if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
+      if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
+      // Images don't store external_keys yet.
+      // if (data.media) data.media.forEach(subModel => getIDs(subModel));
+    }
+
+    getIDs(responseData);
+
+    this._setNewRemoteID(model, remoteIDs);
+  },
+
+
+  /**
+   * Sets new server IDs to the models.
+   */
+  _setNewRemoteID(model, remoteIDs) {
+    // set new remote ID
+    const remoteID = remoteIDs[model.cid];
+    if (remoteID) {
+      model.id = remoteID;
+    }
+
+    // do that for all submodels
+    if (model.samples) {
+      model.samples.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+    if (model.occurrences) {
+      model.occurrences.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+    if (model.media) {
+      model.media.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+    }
+  },
+
+  _getModelData(model) {
+    const that = this;
+
+    const promise = new Promise((fulfill) => {
+      // get submission model and all the media
+      const [submission, media] = model._getSubmission();
+      submission.type = 'samples';
+      const stringSubmission = JSON.stringify({
+        data: submission,
+      });
+
+      // with media send form-data in one request
+      if (media.length) {
+        const formData = new FormData(); // for submission
+        formData.append('submission', stringSubmission);
+        // append media
+        that._mediaAppend(media, formData).then(() => {
+          fulfill(formData);
+        });
+
+        return;
+      }
+
+      fulfill(stringSubmission);
+    });
+
+    return promise;
+  },
+
+  _mediaAppend(media, formData) {
+    const mediaProcesses = [];
+    media.forEach((mediaModel) => {
+      const imagePromise = new Promise((_fulfill) => {
+        const url = mediaModel.getURL();
+        const type = mediaModel.get('type');
+        const name = mediaModel.cid;
+
+        function onSuccess(err, img, dataURI, blob) {
+          // can provide both image/jpeg and jpeg
+          let extension = type;
+          let mediaType = type;
+          if (type.match(/image.*/)) {
+            extension = type.split('/')[1];
+          } else {
+            mediaType = `image/${mediaType}`;
+          }
+          if (!blob) {
+            blob = helpers.dataURItoBlob(dataURI, mediaType);
+          }
+
+          formData.append(name, blob, `${name}.${extension}`);
+          _fulfill();
+        }
+
+        if (!helpers.isDataURL(url)) {
+          // load image
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.responseType = 'blob';
+          xhr.onload = () => {
+            onSuccess(null, null, null, xhr.response);
+          };
+          // todo check error case
+
+          xhr.send();
+        } else {
+          onSuccess(null, null, url);
+        }
+      });
+      mediaProcesses.push(imagePromise);
+    });
+
+    return Promise.all(mediaProcesses);
+  },
+
+  /**
+   * Returns an object with attributes and their values
    * mapped for warehouse submission.
    *
-   * @param flattener
    * @returns {*}
    */
-  flatten(flattener) {
-    // images flattened separately
-    const flattened = flattener.apply(this, [this.attributes, { keys: Sample.keys }]);
+  _getSubmission() {
+    const that = this;
+    const keys = $.extend(true, Sample.keys, this.keys); // warehouse keys/values to transform
+    const media = _.clone(this.media.models); // all media within this and child models
 
-    // occurrences
-    _.extend(flattened, this.occurrences.flatten(flattener));
-    return flattened;
+    const submission = {
+      id: this.id,
+      external_key: this.cid,
+      survey_id: this.metadata.survey_id,
+      input_form: this.metadata.input_form,
+      fields: {},
+      media: [],
+    };
+
+    // transform attributes
+    Object.keys(this.attributes).forEach((attr) => {
+      // no need to send attributes with no values
+      let value = that.attributes[attr];
+      if (!value) return;
+
+      if (!keys[attr]) {
+        if (attr !== 'email') {
+          console.warn(`Indicia: no such key: ${attr}`);
+        }
+        submission.fields[attr] = value;
+        return;
+      }
+
+      const warehouseAttr = keys[attr].id || attr;
+
+      // check if has values to choose from
+      if (keys[attr].values) {
+        if (typeof keys[attr].values === 'function') {
+          // get a value from a function
+          value = keys[attr].values(value, submission, that);
+        } else {
+          value = keys[attr].values[value];
+        }
+      }
+
+      // don't need to send null or undefined
+      if (value) {
+        submission.fields[warehouseAttr] = value;
+      }
+    });
+
+    // transform sub models
+    const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
+    submission.occurrences = occurrences;
+    _.extend(media, occurrencesMedia);
+
+    const [samples, samplesMedia] = this.samples._getSubmission();
+    submission.samples = samples;
+    _.extend(media, samplesMedia);
+
+    // media does not return any media-models only JSON data about them
+    const [mediaSubmission] = this.media._getSubmission();
+    submission.media = mediaSubmission;
+
+    return [submission, media];
   },
 
   toJSON() {
     let occurrences;
-    const occurrencesCollection = this.occurrences;
-    if (!occurrencesCollection) {
+    if (!this.occurrences) {
       occurrences = [];
       console.warn('toJSON occurrences missing');
     } else {
-      occurrences = occurrencesCollection.toJSON();
+      occurrences = this.occurrences.toJSON();
     }
 
-    let images;
-    const imagesCollection = this.images;
-    if (!imagesCollection) {
-      images = [];
-      console.warn('toJSON images missing');
+    let samples;
+    if (!this.samples) {
+      samples = [];
+      console.warn('toJSON samples missing');
     } else {
-      images = imagesCollection.toJSON();
+      samples = this.samples.toJSON();
+    }
+
+    let media;
+    if (!this.media) {
+      media = [];
+      console.warn('toJSON media missing');
+    } else {
+      media = this.media.toJSON();
     }
 
     const data = {
@@ -280,7 +555,8 @@ const Sample = Backbone.Model.extend({
       metadata: this.metadata,
       attributes: this.attributes,
       occurrences,
-      images,
+      samples,
+      media,
     };
 
     return data;
@@ -288,62 +564,162 @@ const Sample = Backbone.Model.extend({
 
   /**
    * Sync statuses:
-   * synchronising, synced, local, server, changed_locally, changed_server, conflict
+   * synchronising, synced, remote, server, changed_remotely, changed_server, conflict
    */
   getSyncStatus() {
     const meta = this.metadata;
     // on server
     if (this.synchronising) {
-      return CONST.SYNCHRONISING;
+      return SYNCHRONISING;
     }
 
-    if (meta.warehouse_id) {
+    if (this.id >= 0) {
       // fully initialized
       if (meta.synced_on) {
-        // changed_locally
+        // changed_remotely
         if (meta.synced_on < meta.updated_on) {
           // changed_server - conflict!
           if (meta.synced_on < meta.server_on) {
-            return CONST.CONFLICT;
+            return CONFLICT;
           }
-          return CONST.CHANGED_LOCALLY;
+          return CHANGED_LOCALLY;
           // changed_server
         } else if (meta.synced_on < meta.server_on) {
-          return CONST.CHANGED_SERVER;
+          return CHANGED_SERVER;
         }
-        return CONST.SYNCED;
+        return SYNCED;
 
         // partially initialized - we know the record exists on
         // server but has not yet been downloaded
       }
-      return CONST.SERVER;
+      return SERVER;
 
       // local only
     }
-    return CONST.LOCAL;
+    return LOCAL;
   },
 
   /**
-   * Detach all the listeners.
+   * Returns child occurrence.
+   * @param index
+   * @returns {*}
    */
-  offAll() {
-    this._events = {};
-    this.occurrences.offAll();
-    for (let i = 0; i < this.occurrences.data.length; i++) {
-      this.occurrences.models[i].offAll();
+  getOccurrence(index = 0) {
+    return this.occurrences.at(index);
+  },
+
+  /**
+   * Returns child sample.
+   * @param index
+   * @returns {*}
+   */
+  getSample(index = 0) {
+    return this.samples.at(index);
+  },
+
+  /**
+   * Returns child media.
+   * @param index
+   * @returns {*}
+   */
+  getMedia(index = 0) {
+    return this.media.at(index);
+  },
+
+  getUserAuth() {
+    if (!this.user || !this.password) {
+      return null;
     }
+
+    const user = typeof this.user === 'function' ? this.user() : this.user;
+    const password = typeof this.password === 'function' ? this.password() : this.password;
+    const basicAuth = btoa(`${user}:${password}`);
+
+    return `Basic  ${basicAuth}`;
+  },
+
+  _parseModels(models, Model) {
+    if (!models) {
+      // init empty samples collection
+      return new Collection([], { model: Model });
+    }
+
+    const that = this;
+
+    const modelsArray = [];
+    _.each(models, (model) => {
+      if (model instanceof Model) {
+        model.setParent(that);
+        modelsArray.push(model);
+      } else {
+        const modelOptions = _.extend(model, { parent: that });
+        const newModel = new Model(model.attributes, modelOptions);
+        modelsArray.push(newModel);
+      }
+    });
+
+    return new Collection(modelsArray, { model: Model });
+  },
+
+  isNew() {
+    return !this.id;
+  },
+
+
+  // Fetch the model from the server, merging the response with the model's
+  // local attributes. Any changed attributes will trigger a "change" event.
+  fetch(options) {
+    const model = this;
+    const promise = new Promise((fulfill, reject) => {
+      options = _.extend({ parse: true }, options);
+      return this.sync('read', this, options)
+        .then((resp) => {
+          // set the returned model's data
+          model.id = resp.id;
+          model.metadata = resp.metadata;
+          if (!model.set(resp.attributes, options)) return false;
+
+          // initialise sub models
+          model.occurrences = model._parseModels(resp.occurrences, model.Occurrence);
+          model.samples = model._parseModels(resp.samples, Sample);
+          model.media = model._parseModels(resp.media, model.Media);
+
+          model.trigger('sync', model, resp, options);
+
+          fulfill(model);
+          return null;
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  },
+
+  _getDefaultMetadata(options) {
+    const metadata = typeof this.metadata === 'function' ?
+      this.metadata() : this.metadata;
+    const today = new Date();
+    const defaults = {
+      survey_id: options.survey_id,
+      input_form: options.input_form,
+
+      created_on: today,
+      updated_on: today,
+
+      synced_on: null, // set when fully initialized only
+      server_on: null, // updated on server
+    };
+
+    return $.extend(true, defaults, metadata, options.metadata);
   },
 });
+
+_.extend(Sample.prototype, syncHelpers);
 
 /**
  * Warehouse attributes and their values.
  */
 Sample.keys = {
-  id: { id: 'id' },
-  survey: { id: 'survey_id' },
-  date: { id: 'date' },
-  comment: { id: 'comment' },
-  image: { id: 'image' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',
@@ -353,10 +729,8 @@ Sample.keys = {
       latlon: 4326, // for Latitude and Longitude in decimal form (WGS84 datum)
     },
   },
-  location_name: { id: 'location_name' },
   form: { id: 'input_form' },
   group: { id: 'group_id' },
-  deleted: { id: 'deleted' },
 };
 
 export { Sample as default };

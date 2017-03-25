@@ -3,7 +3,7 @@ const _ = require('underscore');
 const webpack = require('webpack');
 const pkg = require('./package.json');
 
-var filename = 'morel.js';
+var filename = 'indicia.js';
 
 const banner = `
 ${pkg.name} ${pkg.version}
@@ -25,6 +25,7 @@ const plugins = [
     _: 'underscore',
     Backbone: 'backbone',
     $: 'jquery',
+    LocalForage: 'localforage',
   }),
 
 ];
@@ -33,18 +34,18 @@ if (uglify) {
   plugins.push(new webpack.optimize.UglifyJsPlugin({
     minimize: true,
   }));
-  filename = 'morel.min.js';
+  filename = 'indicia.min.js';
 }
 
 module.exports = {
   context: './src',
   entry: {
-    morel: './main.js',
+    indicia: './main.js',
   },
   output: {
     path: 'dist',
     filename,
-    library: 'Morel',
+    library: 'Indicia',
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },
@@ -67,6 +68,12 @@ module.exports = {
       amd: '_',
       root: '_',
     },
+    localforage: {
+      commonjs: 'localforage',
+      commonjs2: 'localforage',
+      amd: 'localforage',
+      root: 'localforage',
+    },
   },
   resolve: {
     root: [
@@ -83,6 +90,7 @@ module.exports = {
         exclude: /(node_modules|vendor)/,
         loader: 'babel-loader',
       },
+      { test: /\.json/, loader: 'json' },
     ],
   },
   plugins,
