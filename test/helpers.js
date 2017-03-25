@@ -1,9 +1,10 @@
 import Sample from '../src/Sample';
 import Occurrence from '../src/Occurrence';
+import Store from '../src/Store';
 import serverResponses from './server_responses.js';
 import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
 
-function getRandomSample(store, samples = [], occurrences = []) {
+function getRandomSample(store = new Store(), samples = [], occurrences = []) {
   if (!occurrences.length) {
     const occurrence = new Occurrence({
       taxon: 1234,

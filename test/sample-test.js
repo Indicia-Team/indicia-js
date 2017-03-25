@@ -10,8 +10,7 @@ import { SYNCED } from '../src/constants';
 /* eslint-disable no-unused-expressions */
 
 describe('Sample', () => {
-  const store = new Store();
-  const storedCollection = new Collection(null, { store, model: Sample });
+  const storedCollection = new Collection(null, { model: Sample });
 
   before((done) => {
     // clean up in case of trash
@@ -42,7 +41,7 @@ describe('Sample', () => {
   });
 
   it('should be a Backbone model', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
 
     expect(sample).to.be.instanceOf(Backbone.Model);
     expect(sample.cid).to.be.a.string;
@@ -51,8 +50,8 @@ describe('Sample', () => {
 
   it('should return JSON', () => {
     const occurrence = new Occurrence();
-    const sample = new Sample(null, { store });
-    const subSample = new Sample(null, { store });
+    const sample = new Sample();
+    const subSample = new Sample();
     subSample.occurrences.set(occurrence);
 
     let json = sample.toJSON();
@@ -73,7 +72,7 @@ describe('Sample', () => {
   // defaults
 
   it('should have default metadata', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
     expect(sample.metadata).to.be.an('object');
     expect(sample.metadata.created_on).to.be.instanceOf(Date);
     expect(sample.metadata.updated_on).to.be.instanceOf(Date);
@@ -81,13 +80,11 @@ describe('Sample', () => {
 
   it('should overwrite default metadata', () => {
     let sample = new Sample(null, {
-      store,
       survey_id: 1,
     });
     expect(sample.metadata.survey_id).to.be.equal(1);
 
     sample = new Sample(null, {
-      store,
       survey_id: 1,
       metadata: { survey_id: 2, created_on: 'x' },
     });
@@ -96,14 +93,12 @@ describe('Sample', () => {
 
     const NewSample = Sample.extend({ metadata: { survey_id: 3, created_on: 'y' } });
     sample = new NewSample(null, {
-      store,
       survey_id: 1,
     });
     expect(sample.metadata.survey_id).to.be.equal(3);
     expect(sample.metadata.created_on).to.be.equal('y');
 
     sample = new NewSample(null, {
-      store,
       survey_id: 1,
       metadata: { survey_id: 2, created_on: 'x' },
     });
@@ -111,7 +106,6 @@ describe('Sample', () => {
     expect(sample.metadata.created_on).to.be.equal('x');
 
     sample = new NewSample(null, {
-      store,
       survey_id: 1,
       metadata: { survey_id: null, created_on: null },
     });
@@ -120,35 +114,41 @@ describe('Sample', () => {
   });
 
   it('should have default occurrences collection', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
     expect(sample.occurrences).to.be.instanceOf(Backbone.Collection);
     expect(sample.occurrences.model).to.be.equal(Occurrence);
   });
 
   it('should have default samples collection', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
     expect(sample.samples).to.be.instanceOf(Backbone.Collection);
     expect(sample.samples.model).to.be.equal(Sample);
   });
 
   it('should have default media collection', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
     expect(sample.media).to.be.instanceOf(Backbone.Collection);
     expect(sample.media.model).to.be.equal(Media);
+  });
+
+  it('should have default store', () => {
+    const sample = new Sample();
+    expect(sample.store).to.be.an('object');
+    expect(sample.store).to.be.instanceOf(Store);
   });
 
   // validation
 
   it('should have remote and local validators', () => {
-    const sample = new Sample(null, { store });
+    const sample = new Sample();
     expect(sample.validate).to.be.a('function');
     expect(sample.validateRemote).to.be.a('function');
   });
 
 
   it('should validate location, location type, date and occurrences', () => {
-    const sample = new Sample(null, { store });
-    const subSample = new Sample(null, { store });
+    const sample = new Sample();
+    const subSample = new Sample();
     const occurrence = new Occurrence();
 
     delete sample.attributes.location_type;
@@ -178,13 +178,14 @@ describe('Sample', () => {
   describe('Sync', () => {
     it('should throw an error if sync with no store', (done) => {
       const sample = new Sample();
+      delete sample.store;
       sample.save()
         .catch(() => done());
     });
 
     describe('Local', () => {
       it('should save and fetch and update', (done) => {
-        const sample = new Sample(null, { store });
+        const sample = new Sample();
 
         sample.save({ hello: 'world!' })
           .then((model) => {
@@ -195,7 +196,7 @@ describe('Sample', () => {
             expect(model.get('hello')).to.be.equal('world!');
 
             // get direct from storage
-            const sampleStored = new Sample(null, { cid, store });
+            const sampleStored = new Sample(null, { cid });
             sampleStored.fetch().then((modelStored) => {
               expect(sampleStored.get('hello')).to.be.equal('world!');
               expect(modelStored.get('hello')).to.be.equal('world!');
@@ -205,7 +206,7 @@ describe('Sample', () => {
       });
 
       it('should destroy', (done) => {
-        const sample = new Sample(null, { store });
+        const sample = new Sample();
 
         sample.destroy()
           .then((model) => {
@@ -213,7 +214,7 @@ describe('Sample', () => {
             expect(cid).to.be.equal(sample.cid);
 
             // get direct from storage
-            const sampleStored = new Sample(null, { cid, store });
+            const sampleStored = new Sample(null, { cid });
             sampleStored.fetch().catch(() => done());
           });
       });
@@ -225,7 +226,7 @@ describe('Sample', () => {
         const occurrence = new Occurrence(null, {
           media: [media],
         });
-        const sample = getRandomSample(store, null, [occurrence]);
+        const sample = getRandomSample(null, null, [occurrence]);
 
         sample.destroy().then(() => {
           expect(media.destroy.calledOnce).to.be.true;
@@ -235,15 +236,15 @@ describe('Sample', () => {
       });
 
       it('should save parent on destroy', (done) => {
-        const sample = getRandomSample(store);
-        const sample2 = getRandomSample(store);
+        const sample = getRandomSample();
+        const sample2 = getRandomSample();
         sample.addSample(sample2);
 
         // add sample to local storage
         sample.save().then(() => {
           sample.getSample().destroy()
             .then(() => {
-              const newCollection = new Collection(null, { store, model: Sample });
+              const newCollection = new Collection(null, { model: Sample });
               newCollection.fetch().then(() => {
                 expect(newCollection.length).to.be.equal(1);
                 const subsampleFromDB = newCollection.at(0).getSample();
@@ -259,7 +260,7 @@ describe('Sample', () => {
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
         const eventsFired = [];
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         sample.on('request', () => {
           eventsFired.push('request');
@@ -272,7 +273,7 @@ describe('Sample', () => {
         sample.save()
           .then(() => {
             // send an error
-            const newSample = getRandomSample(store);
+            const newSample = getRandomSample();
 
             newSample.on('error', () => {
               newSample.store.sync.restore();
@@ -308,7 +309,7 @@ describe('Sample', () => {
       });
 
       it('should post with remote option', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         generateSampleResponse(server, 'OK', sample);
         const valid = sample.save(null, { remote: true }).then(() => {
@@ -337,15 +338,15 @@ describe('Sample', () => {
           media: [image1, image2],
         });
 
-        const sample = getRandomSample(store, null, [occurrence]);
+        const sample = getRandomSample(null, null, [occurrence]);
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => done());
       });
 
       it('should post with remote option (subsample)', (done) => {
-        const subSample = getRandomSample(store);
-        const sample = getRandomSample(store, [subSample]);
+        const subSample = getRandomSample();
+        const sample = getRandomSample(null, [subSample]);
 
         generateSampleResponse(server, 'OK_SUBSAMPLE', sample);
 
@@ -358,7 +359,7 @@ describe('Sample', () => {
       });
 
       it('should update remotely synced record', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true })
@@ -366,7 +367,7 @@ describe('Sample', () => {
           .then(() => {
             // get new storedCollection without cached samples
             const cid = sample.cid;
-            const newSample = new Sample(null, { cid, store });
+            const newSample = new Sample(null, { cid });
             newSample.fetch()
               .then(() => {
                 expect(newSample.getSyncStatus()).to.be.equal(SYNCED);
@@ -379,7 +380,6 @@ describe('Sample', () => {
         const occurrence = new Occurrence();
         const sample = new Sample(null, {
           occurrences: [occurrence],
-          store,
         });
 
         const valid = sample.save(null, { remote: true });
@@ -387,7 +387,7 @@ describe('Sample', () => {
       });
 
       it('should return error if unsuccessful remote sync', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         generateSampleResponse(server, 'ERR');
 
@@ -403,7 +403,7 @@ describe('Sample', () => {
 
       // todo: we should fix this eventually
       it('should ignore the duplication error', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         generateSampleResponse(server, 'DUPLICATE', sample);
 
@@ -420,7 +420,7 @@ describe('Sample', () => {
       });
 
       it('should set synchronising flag on sample', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => done());
@@ -429,7 +429,7 @@ describe('Sample', () => {
 
 
       it('should not double create the record', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => {
@@ -465,7 +465,7 @@ describe('Sample', () => {
           done();
         });
 
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         sample.save(null, { remote: true }).catch((err) => {
           done();
@@ -476,7 +476,7 @@ describe('Sample', () => {
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
         const eventsFired = [];
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
 
         sample.on('request', () => {
           eventsFired.push('request');
@@ -491,7 +491,7 @@ describe('Sample', () => {
         sample.save(null, { remote: true })
           .then(() => {
             // send an error
-            const newSample = getRandomSample(store);
+            const newSample = getRandomSample();
             generateSampleResponse(server, 'ERR');
 
             newSample.on('error', () => {

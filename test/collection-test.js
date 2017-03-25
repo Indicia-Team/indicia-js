@@ -10,8 +10,7 @@ import { getRandomSample, generateSampleResponse } from './helpers';
 /* eslint-disable no-unused-expressions */
 
 describe('Collection', () => {
-  const store = new Store();
-  const storedCollection = new Collection([], { store, model: Sample });
+  const storedCollection = new Collection([], { model: Sample });
 
   before((done) => {
     // clean up in case of trash
@@ -134,9 +133,9 @@ describe('Collection', () => {
   describe('Sync', () => {
     describe('Local', () => {
       it('should fetch', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
         sample.save({ myattr: 'val' }).then(() => {
-          const collection = new Collection([], { store, model: Sample });
+          const collection = new Collection([], { model: Sample });
 
           collection.fetch()
             .then(() => {
@@ -153,9 +152,9 @@ describe('Collection', () => {
       });
 
       it('should destroy', (done) => {
-        const sample = getRandomSample(store);
+        const sample = getRandomSample();
         sample.save().then(() => {
-          const collection = new Collection([], { store, model: Sample });
+          const collection = new Collection([], { model: Sample });
           collection.fetch().then(() => {
             expect(collection.length).to.be.equal(1);
 
@@ -174,15 +173,15 @@ describe('Collection', () => {
       });
 
       it('should save', (done) => {
-        const sample = getRandomSample(store);
-        const sample2 = getRandomSample(store);
-        const collection = new Collection([], { store, model: Sample });
+        const sample = getRandomSample();
+        const sample2 = getRandomSample();
+        const collection = new Collection([], { model: Sample });
 
         // add and save samples
         collection.add(sample);
         collection.add(sample2);
         collection.save().then(() => {
-          const savedCollection = new Collection([], { store, model: Sample });
+          const savedCollection = new Collection([], { model: Sample });
 
           savedCollection.fetch().then(() => {
             expect(savedCollection.length).to.be.equal(2);
@@ -215,9 +214,9 @@ describe('Collection', () => {
       });
 
       it('should post all', (done) => {
-        const sample = getRandomSample(store);
-        const sample2 = getRandomSample(store);
-        const collection = new Collection([], { store, model: Sample });
+        const sample = getRandomSample();
+        const sample2 = getRandomSample();
+        const collection = new Collection([], { model: Sample });
 
         generateSampleResponse(server, 'OK', (cid) => collection.get(cid));
 
@@ -225,7 +224,7 @@ describe('Collection', () => {
         collection.add(sample);
         collection.add(sample2);
         collection.save(null, { remote: true }).then(() => {
-          const savedCollection = new Collection([], { store, model: Sample });
+          const savedCollection = new Collection([], { model: Sample });
 
           expect(Sample.prototype._create.calledTwice).to.be.true;
 
