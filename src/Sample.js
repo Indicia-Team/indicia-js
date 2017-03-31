@@ -14,6 +14,7 @@ import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
+import Store from './Store';
 import Occurrence from './Occurrence';
 import Collection from './Collection';
 
@@ -32,7 +33,7 @@ const Sample = Backbone.Model.extend({
     this.cid = options.cid || helpers.getNewUUID();
     this.setParent(options.parent || this.parent);
 
-    this.store = options.store || this.store;
+    this.store = options.store || this.store || new Store();
     this.keys = options.keys || this.keys; // warehouse attribute keys
 
     if (options.Media) this.Media = options.Media;

@@ -1,47 +1,51 @@
-# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg?branch=v3.1)](https://travis-ci.org/Indicia-Team/indicia-js)
+# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg?branch=v4)](https://travis-ci.org/Indicia-Team/indicia-js)
 
 Indicia Javascript SDK
 
-Biological record management and communication with Indicia Drupal API (mobile_auth module). 
+Helps to locally store and synchronise data with Indicia warehouse (through Indicia API (v1) Drupal module).
 
 ## Features 
 - Effortless work with biological records (Samples and Occurrences)
-- Offline storage (LocalStorage, IndexedDB and easily added more)
-- Synchronisation with the cloud (Drupal mobile_auth module)
+- Offline storage (SQLite, LocalStorage, IndexedDB and easily added more)
+- Synchronisation with the warehouse
+- Warehouse reporting
 
 ## Requirements
 
-[Backbone](http://backbonejs.org/) - used as IndiciaJS core to structure the data and its management.
-
-[IndexedDBShim](http://nparashuram.com/IndexedDBShim/) - optional, if no IndexedDB 
-is not in use or is fully supported by targeted browsers, or localStorage is enough.
+[Backbone](http://backbonejs.org/) - used to structure the data and its management.
+[jQuery](http://backbonejs.org/) - because why not? :)
+[LocalForage](http://backbonejs.org/) - used to store models for offline usage.
 
 ## Usage
 
 ```javascript
 
-//Sample
+// Sample
 var sample = new Indicia.Sample();
 sample.set('date', '12/2/2012')
 sample.set('location', '12.345, -12.345')
 
-//Occurrence
+// Occurrence
 var occurrence = new Indicia.Occurrence();
 occurrence.set('taxon', 'bee')
 occurrence.set('number', 5);
 
 sample.occurrences.set(occurrence);
 
-//Image
-var image = new Indicia.Image()
+// Image
+var image = new Indicia.Media()
 image.resize(800, 400)
 
-occurrence.images.set(image);
+occurrence.media.set(image);
 
-//Manager
-var manager = new Indicia.Manager()
-manager.set(sample);
-manager.syncAll();
+
+// Save (locally for offline use)
+sample.save();
+
+// Save (remote warehouse)
+sample.api_key = '<YOUR_API_KEY>';
+sample.host_url = '<YOUR_API_HOST_URL>';
+sample.save(null, { remote: true });
 
 ```
 
@@ -49,7 +53,7 @@ manager.syncAll();
 
 ### Step 1: Get the library
 - Install using Bower: `bower install 'Indicia-Team/indicia-js'` or
-- Git clone: `git clone git://github.com/Indicia-Team/indicia-js.git`
+- Git clone: `git clone git://github.com/Indicia-Team/indicia-js`
 
 
 ### Step 2: include JS files
@@ -66,7 +70,7 @@ initialize the library. `IndiciaJS` also supports AMD loaders like RequireJS or 
 
 ```javascript
 require(['path/to/indicia.min.js'], function (Indicia) {
-    //var Manager = new Indicia.Manager();
+    let sample = new Indicia.Sample();
 });
 
 ```
@@ -75,12 +79,17 @@ require(['path/to/indicia.min.js'], function (Indicia) {
 
 ```javascript
 var options = {
-  url: 'http://example.com/mobile/submit',
-  api_key: "SAd123asdasd2132asdAFaaF",
-  survey_id: 2,
+  host_url: "<YOUR_API_HOST_URL>",
+  api_key: "<YOUR_API_KEY>",
+  survey_id: 1,
+  training: true, // optional
+  confidential: true, // optional
+  sensitive: true, // optional
+  release_status: 'R', // optional R-eleased/P-recheck/...
+  record_status: 'C', // optional C-omplete/I-ncomplete/...
 }
 
-var manager = new Indicia.Manager(options);
+var sample = new Indicia.Sample(null, options);
 
 ```
 
@@ -91,80 +100,156 @@ So instead of `occurrence.set(232, 12343)` one can
 `occurrence.set('taxon', 'bee')`, examples:
 
 ```javascript
- //Samples
- Indicia.extend(Indicia.Sample.keys, {
-        name: {
-            id: 574
-        },
-        email: {
-            id: 572
-        }
-    });
+//Samples
+Indicia.Sample.keys = {
+  name: {
+    id: 574
+  },
+  email: {
+    id: 572
+  }
+};
 
+//Occurrences
+Indicia.Occurrence.keys = {
+  certain: {
+    id: 398
+  },
+  taxon: {
+    id: 232,
+    values: {
+      1: 272198,
+      bee: 12343
+    }
+  }
+};
+```
 
-   //Occurrences
-   Indicia.extend(Indicia.Occurrence.keys, {
-        certain: {
-            id: 398
-        },
-        taxon: {
-            id: 232,
-            values: {
-                1: 272198,
-                bee: 12343
-            }
-        }
-   });
+### Indicia functions
+
+It uses Backbone Models and Collections,
+so each Sample, Occurrence or Media has also other [Backbone Model functions](http://backbonejs.org/#Model)
+like set(attr, value), get(attr), validate(options) etc.
+
+```javascript
+// Sample
+
+model.save(attrs, options); // returns Promise [local and remote]
+model.destroy(options); // returns Promise [local]
+model.fetch(options); // returns Promise [local]
+model.getSyncStatus();
+model.toJSON();
+model.validateRemote(attributes);
+model.addSample(model);
+model.getSample(modelID);
+model.addOccurrence(model);
+model.getOccurrence(modelID);
+model.addMedia(model);
+model.getMedia(modelID);
+
+// Occurrence
+
+model.save(attrs, options); // returns Promise [local]
+model.destroy(options); // returns Promise [local]
+model.fetch(options); // returns Promise [local]
+model.getSyncStatus();
+model.toJSON();
+model.validateRemote(attributes);
+model.addMedia(model);
+model.getMedia(modelID);
+
+// Media
+
+model.save(attrs, options); // returns Promise [local]
+model.destroy(options); // returns Promise [local]
+model.getURL();
+model.addThumbnail(); // returns Promise
+model.resize(MAX_WIDTH, MAX_HEIGHT); // returns Promise
+model.toJSON();
+
+// Collection
+
+collection.save(attrs, options); // returns Promise [local and remote]
+collection.destroy(options); // returns Promise [local]
+collection.fetch(options); // returns Promise [local]
 
 ```
 
-### All functions
+## Examples
 
-It uses Backbone Models and Collections, so each Sample and Occurrence has also other Backbone Model functions.
+* Saving to local storage
+```javascript
 
-**Manager:***
+// Create new empty sample
+const sample = new Indicia.Sample();
 
-* get(model, callback, options)
-* getAll(callback, options)
-* has(model, callback, options)
-* remove(model, callback, options)
-* set(model, callback, options)
-* sync(method, model)
-* syncAll(method, collection)
+// Let's add some value
+sample.set('date', '12/10/2017');
 
-***Sample:***
+// Save the sample to local storage, default IndexedDB
+sample
+  .save()
+  .then(() => {
+    console.log('Saved!');
+  });
 
-* addOccurrence(occurrence)
-* destroy()
-* getSyncStatus()
-* set(attr, value)
-* get(attr)
-* save(attrs)
-* toJSON()
-* validate(attributes)
+```
 
-***Occurrence:***
+* Retreiving from local storage
 
-* addImage(image)
-* destroy()
-* set(attr, value)
-* get(attr)
-* save(attrs)
-* setSample(sample)
-* toJSON()
-* validate(attributes)
+```javascript
 
-***Image:***
+const sampleFromStorage = new Indicia.Sample(null, {
+  cid: sample.cid, // needs a saved sample cid
+});
 
-* addThumbnail(callback)
-* destroy()
-* getURL()
-* resize(MAX_WIDTH, MAX_HEIGHT, callback)
-* set(attr, value)
-* get(attr)
-* save(attrs)
-* setOccurrence(occurrence)
-* toJSON()
+// Let's retreive this saved sample
+sampleFromStorage
+  .fetch()
+  .then(() => {
+    console.log('Fetched!');
+    sample.get('date'); // '12/10/2017'
+  });
+
+```
+
+* Destroying from local storage
+
+```javascript
+
+// Let's retreive this saved sample
+const sampleFromStorage = new Indicia.Sample(null, {
+  cid: sample.cid, // needs a saved sample cid
+});
+
+sampleFromStorage
+  .destroy()
+  .then(() => {
+    console.log('Destroyed!');
+  });
+
+```
+
+* Remote sending to the warehouse
+
+```javascript
+
+// Let's retreive this saved sample
+const sampleFromStorage = new Indicia.Sample(null, {
+  cid: sample.cid, // needs a saved sample cid
+  host_url: "<YOUR_API_HOST_URL>",
+  api_key: "<YOUR_API_KEY>",
+});
+
+sampleFromStorage
+  .fetch() // should fetch from storage if saved
+  .save(null, { remote: true })
+  .then(() => {
+    console.log('Saved remotely!');
+    sampleFromStorage.getSyncStatus() === Indicia.SERVER; // true
+  });
+
+```
 
 ## Building
 
@@ -188,7 +273,7 @@ cd indicia-js && npm install
 npm start
 ```
 
-This will update a `indicia.js` and `indicia.min.js`.
+This will update `indicia.js` and `indicia.min.js`.
 
 - Test the code
  
@@ -208,7 +293,6 @@ Have a bug or a feature request? search for existing and closed issues. [Please 
 - <https://github.com/kazlauskis>
 
 
-
 ## Copyright and license
 
-Code and documentation copyright 2016 CEH. Code released under the [GNU GPL v3 license](LICENSE).
+Code and documentation copyright 2017 CEH. Code released under the [GNU GPL v3 license](LICENSE).

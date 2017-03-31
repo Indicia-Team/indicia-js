@@ -58,6 +58,7 @@ const Occurrence = Backbone.Model.extend({
 
   /**
    * Sets parent.
+   * todo: move to private _space
    * @param parent
    */
   setParent(parent) {

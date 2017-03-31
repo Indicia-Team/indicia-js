@@ -3,10 +3,11 @@
  **********************************************************************/
 import Backbone from 'backbone';
 import _ from 'underscore';
+import Store from './Store';
 
 const Collection = Backbone.Collection.extend({
   constructor(attributes = {}, options = {}) {
-    this.store = options.store || this.store;
+    this.store = options.store || this.store || new Store();
 
     if (!options.model && !this.model) {
       console.error('Collection\'s model must be provided');

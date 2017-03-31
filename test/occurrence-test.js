@@ -2,14 +2,11 @@ import Backbone from 'backbone';
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
 import Sample from '../src/Sample';
-import Store from '../src/Store';
 import { getRandomSample } from './helpers';
 
 /* eslint-disable no-unused-expressions */
 
 describe('Occurrence', () => {
-  const store = new Store();
-
   it('should be a Backbone model', () => {
     const occurrence = new Occurrence();
 
@@ -51,13 +48,13 @@ describe('Occurrence', () => {
   });
 
   it('should save parent on destroy', (done) => {
-    const sample = getRandomSample(store);
+    const sample = getRandomSample();
 
     // add sample to local storage
     sample.save().then(() => {
       sample.getOccurrence().destroy()
         .then(() => {
-          const newCollection = new Collection(null, { store, model: Sample });
+          const newCollection = new Collection(null, { model: Sample });
           newCollection.fetch().then(() => {
             expect(newCollection.length).to.be.equal(1);
             const occurrenceFromDB = newCollection.at(0).getOccurrence();
