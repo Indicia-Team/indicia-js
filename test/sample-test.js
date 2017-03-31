@@ -149,25 +149,25 @@ describe('Sample', () => {
   it('should validate location, location type, date and occurrences', () => {
     const sample = new Sample(null, { store });
     const subSample = new Sample(null, { store });
-    const occurrence = new Occurrence();
 
+    // location type
     delete sample.attributes.location_type;
     let allInvalids = sample.validate(null, { remote: true });
     let invalids = allInvalids.sample;
-
     expect(invalids).to.be.an('object');
     expect(invalids.location).to.be.a('string');
     expect(invalids.location_type).to.be.a('string');
 
+    // subsample
     sample.samples.set(subSample);
-
     allInvalids = sample.validate(null, { remote: true });
     invalids = allInvalids.sample;
     expect(invalids.samples).to.be.undefined;
 
+    // occurrence
+    const occurrence = new Occurrence(); // no taxon
     subSample.occurrences.set(occurrence);
     sample.occurrences.set(occurrence);
-
     allInvalids = sample.validate(null, { remote: true });
     expect(allInvalids.samples[subSample.cid].occurrences).to.not.be.empty;
     expect(allInvalids.occurrences).to.not.be.empty;
@@ -503,6 +503,45 @@ describe('Sample', () => {
 
             newSample.save(null, { remote: true }).catch(() => {});
           });
+      });
+
+      define('_getModelData method', () => {
+        it('should have it', () => {
+          const sample = getRandomSample();
+          expect(sample._getModelData).to.be.a('function');
+        });
+
+        it('should should throw if no model passed', (done) => {
+          const sample = getRandomSample();
+
+          try {
+            sample._getModelData();
+          } catch (e) {
+            done();
+          }
+        });
+
+        it('should return a valid JSON string', (done) => {
+          const sample = getRandomSample();
+          const promise = sample._getModelData(sample).then((data) => {
+            expect(data).to.be.a('string');
+            done();
+          });
+          expect(promise).to.be.instanceOf(Promise);
+        });
+
+
+        it('should return a formData with images', (done) => {
+          const sample = getRandomSample();
+          const image = new Media();
+          sample.getOccurrence().addMedia(image);
+          let invalids = sample.validate(null, {remote:true});
+          const promise = sample._getModelData(sample).then((data) => {
+            expect(data).to.be.instanceOf(FormData);
+            done();
+          });
+          expect(promise).to.be.instanceOf(Promise);
+        });
       });
     });
   });

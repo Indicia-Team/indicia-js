@@ -178,15 +178,32 @@ const Sample = Backbone.Model.extend({
       });
     }
 
-    // todo: validateRemote media
+    // media
+    if (this.media.length) {
+      this.media.each((mediaModel) => {
+        const errors = mediaModel.validateRemote();
+        if (errors) {
+          const mediaID = mediaModel.cid;
+          media[mediaID] = errors;
+        }
+      });
+    }
 
-    if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
-      const errors = {
-        sample,
-        samples,
-        occurrences,
-        media,
-      };
+    const errors = {};
+    if (!_.isEmpty(media)) {
+      errors.media = media;
+    }
+    if (!_.isEmpty(occurrences)) {
+      errors.occurrences = occurrences;
+    }
+    if (!_.isEmpty(samples)) {
+      errors.samples = samples;
+    }
+    if (!_.isEmpty(sample)) {
+      errors.sample = sample;
+    }
+
+    if (!_.isEmpty(errors)) {
       return errors;
     }
 
@@ -381,6 +398,10 @@ const Sample = Backbone.Model.extend({
   },
 
   _getModelData(model) {
+    if (!model) {
+      throw new Error('No model passed to _getModelData.');
+    }
+
     const that = this;
 
     const promise = new Promise((fulfill) => {
