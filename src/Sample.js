@@ -485,7 +485,7 @@ const Sample = Backbone.Model.extend({
   _getSubmission() {
     const that = this;
     const keys = $.extend(true, Sample.keys, this.keys); // warehouse keys/values to transform
-    const media = _.clone(this.media.models); // all media within this and child models
+    let media = _.clone(this.media.models); // all media within this and child models
 
     const submission = {
       id: this.id,
@@ -532,12 +532,12 @@ const Sample = Backbone.Model.extend({
     // occurrences
     const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
     submission.occurrences = occurrences;
-    _.extend(media, occurrencesMedia);
+    media = media.concat(occurrencesMedia);
 
     // samples
     const [samples, samplesMedia] = this.samples._getSubmission();
     submission.samples = samples;
-    _.extend(media, samplesMedia);
+    media = media.concat(samplesMedia);
 
     // media - does not return any media-models only JSON data about them
     const [mediaSubmission] = this.media._getSubmission();
