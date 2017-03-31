@@ -505,7 +505,7 @@ describe('Sample', () => {
           });
       });
 
-      define('_getModelData method', () => {
+      describe('_getModelData method', () => {
         it('should have it', () => {
           const sample = getRandomSample();
           expect(sample._getModelData).to.be.a('function');
@@ -523,21 +523,30 @@ describe('Sample', () => {
 
         it('should return a valid JSON string', (done) => {
           const sample = getRandomSample();
-          const promise = sample._getModelData(sample).then((data) => {
-            expect(data).to.be.a('string');
+          const promise = sample._getModelData(sample).then((submission) => {
+            expect(submission).to.be.a('string');
+            expect(JSON.parse(submission)).to.be.an.object;
             done();
           });
           expect(promise).to.be.instanceOf(Promise);
         });
 
-
         it('should return a formData with images', (done) => {
           const sample = getRandomSample();
-          const image = new Media();
+          const image = new Media({ type: 'jpg', data: 'xxxx' });
+          const image2 = new Media({ type: 'jpg', data: 'xxxx' });
+
+          sample.addMedia(image2);
           sample.getOccurrence().addMedia(image);
-          let invalids = sample.validate(null, {remote:true});
+
           const promise = sample._getModelData(sample).then((data) => {
             expect(data).to.be.instanceOf(FormData);
+            expect(data.get(image.cid)).to.exist;
+            expect(data.get(image2.cid)).to.exist;
+
+            const submission = data.get('submission');
+            expect(submission).to.exist;
+            expect(JSON.parse(submission)).to.be.an.object;
             done();
           });
           expect(promise).to.be.instanceOf(Promise);

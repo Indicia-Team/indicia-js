@@ -529,15 +529,17 @@ const Sample = Backbone.Model.extend({
     });
 
     // transform sub models
+    // occurrences
     const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
     submission.occurrences = occurrences;
     _.extend(media, occurrencesMedia);
 
+    // samples
     const [samples, samplesMedia] = this.samples._getSubmission();
     submission.samples = samples;
     _.extend(media, samplesMedia);
 
-    // media does not return any media-models only JSON data about them
+    // media - does not return any media-models only JSON data about them
     const [mediaSubmission] = this.media._getSubmission();
     submission.media = mediaSubmission;
 
