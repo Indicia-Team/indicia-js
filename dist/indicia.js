@@ -1980,7 +1980,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        width: THUMBNAIL_WIDTH || options.width,
 	        height: THUMBNAIL_HEIGHT || options.height
 	      }).then(function (data) {
-	        that.set('thumbnail', data);
+	        that.set('thumbnail', data[0]);
 	        fulfill();
 	      }).catch(reject);
 	    });
