@@ -132,7 +132,7 @@ const Media = Backbone.Model.extend({
         height: THUMBNAIL_HEIGHT || options.height,
       })
         .then((data) => {
-          that.set('thumbnail', data);
+          that.set('thumbnail', data[0]);
           fulfill();
         })
         .catch(reject);
