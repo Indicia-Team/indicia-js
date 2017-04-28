@@ -140,7 +140,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -164,7 +164,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// serve as our export point.
 	var Store = function () {
 	  function Store() {
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    _classCallCheck(this, Store);
 
@@ -406,9 +406,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * COLLECTION MODULE
-	                                                                                                                                                                                                                                                                               **********************************************************************/
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
+	                                                                                                                                                                                                                                                   * COLLECTION MODULE
+	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
 	var _backbone = __webpack_require__(3);
@@ -427,8 +427,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Collection = _backbone2.default.Collection.extend({
 	  constructor: function constructor() {
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    this.store = options.store || this.store || new _Store2.default();
 
@@ -490,7 +490,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param options
 	   */
 	  sync: function sync(method, collection) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	    if (options.remote) {
 	      return this._syncRemote(method, collection, options);
@@ -575,10 +575,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // transform its models
 	    this.models.forEach(function (model) {
-	      var _model$_getSubmission = model._getSubmission(),
-	          _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2),
-	          modelSubmission = _model$_getSubmission2[0],
-	          modelMedia = _model$_getSubmission2[1];
+	      var _model$_getSubmission = model._getSubmission();
+
+	      var _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2);
+
+	      var modelSubmission = _model$_getSubmission2[0];
+	      var modelMedia = _model$_getSubmission2[1];
 
 	      submission.push(modelSubmission);
 	      _underscore2.default.extend(media, modelMedia);
@@ -623,14 +625,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * SAMPLE
-	                                                                                                                                                                                                                                                                               *
-	                                                                                                                                                                                                                                                                               * Refers to the event in which the sightings were observed, in other
-	                                                                                                                                                                                                                                                                               * words it describes the place, date, people, environmental conditions etc.
-	                                                                                                                                                                                                                                                                               * Within a sample, you can have zero or more occurrences which refer to each
-	                                                                                                                                                                                                                                                                               * species sighted as part of the sample.
-	                                                                                                                                                                                                                                                                               **********************************************************************/
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** *********************************************************************
+	                                                                                                                                                                                                                                                   * SAMPLE
+	                                                                                                                                                                                                                                                   *
+	                                                                                                                                                                                                                                                   * Refers to the event in which the sightings were observed, in other
+	                                                                                                                                                                                                                                                   * words it describes the place, date, people, environmental conditions etc.
+	                                                                                                                                                                                                                                                   * Within a sample, you can have zero or more occurrences which refer to each
+	                                                                                                                                                                                                                                                   * species sighted as part of the sample.
+	                                                                                                                                                                                                                                                   **********************************************************************/
 
 
 	var _backbone = __webpack_require__(3);
@@ -684,8 +686,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  password: null, // must be set up for remote sync
 
 	  constructor: function constructor() {
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    this.id = options.id; // remote ID
 	    this.cid = options.cid || _helpers2.default.getNewUUID();
@@ -781,7 +783,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // overwrite if you want to validate before saving locally
 	  validate: function validate(attributes) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (options.remote) {
 	      return this.validateRemote(attributes, options);
@@ -883,7 +885,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param options
 	   */
 	  sync: function sync(method, model) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	    if (options.remote) {
 	      return this._syncRemote(method, model, options);
@@ -1087,40 +1089,63 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var that = this;
 
-	    var promise = new Promise(function (fulfill) {
-	      // get submission model and all the media
-	      var _model$_getSubmission = model._getSubmission(),
-	          _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2),
-	          submission = _model$_getSubmission2[0],
-	          media = _model$_getSubmission2[1];
+	    // get submission model and all the media
 
-	      submission.type = 'samples';
-	      var stringSubmission = JSON.stringify({
-	        data: submission
+	    var _model$_getSubmission = model._getSubmission();
+
+	    var _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2);
+
+	    var submission = _model$_getSubmission2[0];
+	    var media = _model$_getSubmission2[1];
+
+	    submission.type = 'samples';
+
+	    // allow updating the submission data if onSend function is set
+	    if (this.onSend) {
+	      return this.onSend(submission, media).then(function (data) {
+	        var _data = _slicedToArray(data, 2);
+
+	        var newSubmission = _data[0];
+	        var newMedia = _data[1];
+
+	        that._normaliseModelData(newSubmission, newMedia);
 	      });
+	    }
 
-	      // with media send form-data in one request
-	      if (media.length) {
-	        var _ret2 = function () {
-	          var formData = new FormData(); // for submission
-	          formData.append('submission', stringSubmission);
-	          // append media
-	          that._mediaAppend(media, formData).then(function () {
-	            fulfill(formData);
-	          });
+	    return this._normaliseModelData(submission, media);
+	  },
 
-	          return {
-	            v: void 0
-	          };
-	        }();
 
-	        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
-	      }
+	  /**
+	   * Creates a stringified JSON representation of the model or a FormData object.
+	   * If the media is present then it creates a FormData so that the record
+	   * could be submitted in one call.
+	   */
+	  _normaliseModelData: function _normaliseModelData(submission, media) {
+	    var _this2 = this;
 
-	      fulfill(stringSubmission);
+	    // stringify submission
+	    var stringSubmission = JSON.stringify({
+	      data: submission
 	    });
 
-	    return promise;
+	    // with media send form-data in one request
+	    if (media.length) {
+	      var _ret2 = function () {
+	        var formData = new FormData(); // for submission
+	        formData.append('submission', stringSubmission);
+	        // append media
+	        return {
+	          v: _this2._mediaAppend(media, formData).then(function () {
+	            return Promise.resolve(formData);
+	          })
+	        };
+	      }();
+
+	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	    }
+
+	    return Promise.resolve(stringSubmission);
 	  },
 	  _mediaAppend: function _mediaAppend(media, formData) {
 	    var mediaProcesses = [];
@@ -1226,29 +1251,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // transform sub models
 	    // occurrences
 
-	    var _occurrences$_getSubm = this.occurrences._getSubmission(),
-	        _occurrences$_getSubm2 = _slicedToArray(_occurrences$_getSubm, 2),
-	        occurrences = _occurrences$_getSubm2[0],
-	        occurrencesMedia = _occurrences$_getSubm2[1];
+	    var _occurrences$_getSubm = this.occurrences._getSubmission();
+
+	    var _occurrences$_getSubm2 = _slicedToArray(_occurrences$_getSubm, 2);
+
+	    var occurrences = _occurrences$_getSubm2[0];
+	    var occurrencesMedia = _occurrences$_getSubm2[1];
 
 	    submission.occurrences = occurrences;
 	    media = media.concat(occurrencesMedia);
 
 	    // samples
 
-	    var _samples$_getSubmissi = this.samples._getSubmission(),
-	        _samples$_getSubmissi2 = _slicedToArray(_samples$_getSubmissi, 2),
-	        samples = _samples$_getSubmissi2[0],
-	        samplesMedia = _samples$_getSubmissi2[1];
+	    var _samples$_getSubmissi = this.samples._getSubmission();
+
+	    var _samples$_getSubmissi2 = _slicedToArray(_samples$_getSubmissi, 2);
+
+	    var samples = _samples$_getSubmissi2[0];
+	    var samplesMedia = _samples$_getSubmissi2[1];
 
 	    submission.samples = samples;
 	    media = media.concat(samplesMedia);
 
 	    // media - does not return any media-models only JSON data about them
 
-	    var _media$_getSubmission = this.media._getSubmission(),
-	        _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1),
-	        mediaSubmission = _media$_getSubmission2[0];
+	    var _media$_getSubmission = this.media._getSubmission();
+
+	    var _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1);
+
+	    var mediaSubmission = _media$_getSubmission2[0];
 
 	    submission.media = mediaSubmission;
 
@@ -1337,7 +1368,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  getOccurrence: function getOccurrence() {
-	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+	    var index = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
 	    return this.occurrences.at(index);
 	  },
@@ -1349,7 +1380,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  getSample: function getSample() {
-	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+	    var index = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
 	    return this.samples.at(index);
 	  },
@@ -1361,7 +1392,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  getMedia: function getMedia() {
-	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+	    var index = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
 	    return this.media.at(index);
 	  },
@@ -1406,12 +1437,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Fetch the model from the server, merging the response with the model's
 	  // local attributes. Any changed attributes will trigger a "change" event.
 	  fetch: function fetch(options) {
-	    var _this2 = this;
+	    var _this3 = this;
 
 	    var model = this;
 	    var promise = new Promise(function (fulfill, reject) {
 	      options = _underscore2.default.extend({ parse: true }, options);
-	      return _this2.sync('read', _this2, options).then(function (resp) {
+	      return _this3.sync('read', _this3, options).then(function (resp) {
 	        // set the returned model's data
 	        model.id = resp.id;
 	        model.metadata = resp.metadata;
@@ -1506,7 +1537,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	/** *********************************************************************
 	 * HELPER FUNCTIONS
@@ -1657,7 +1688,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _underscore = __webpack_require__(1);
 
@@ -1758,7 +1789,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {Promise}
 	   */
 	  destroy: function destroy() {
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var model = this;
 	    var collection = this.collection; // keep reference for triggering
@@ -1818,7 +1849,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /** *********************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * IMAGE
@@ -1848,8 +1879,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Media = _backbone2.default.Model.extend({
 	  constructor: function constructor() {
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var attrs = attributes;
 	    if (typeof attributes === 'string') {
@@ -1888,7 +1919,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param options
 	   */
 	  sync: function sync(method, model) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	    if (options.remote) {
 	      return this._syncRemote(method, model, options);
@@ -1939,9 +1970,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var that = this;
 	    var promise = new Promise(function (fulfill, reject) {
 	      Media.resize(_this.getURL(), _this.get('type'), MAX_WIDTH, MAX_HEIGHT).then(function (args) {
-	        var _args = _slicedToArray(args, 2),
-	            image = _args[0],
-	            data = _args[1];
+	        var _args = _slicedToArray(args, 2);
+
+	        var image = _args[0];
+	        var data = _args[1];
 
 	        that.set('data', data);
 	        fulfill([image, data]);
@@ -1958,7 +1990,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  addThumbnail: function addThumbnail() {
 	    var _this2 = this;
 
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    var that = this;
 
@@ -1967,8 +1999,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var re = /^data:/i;
 	      if (re.test(_this2.getURL())) {
 	        Media.resize(_this2.getURL(), _this2.get('type'), THUMBNAIL_WIDTH || options.width, THUMBNAIL_WIDTH || options.width).then(function (args) {
-	          var _args2 = _slicedToArray(args, 2),
-	              data = _args2[1];
+	          var _args2 = _slicedToArray(args, 2);
+
+	          var data = _args2[1];
 
 	          that.set('thumbnail', data);
 	          fulfill();
@@ -1991,7 +2024,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // overwrite if you want to validate before saving remotely
 	  validate: function validate(attributes) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (options.remote) {
 	      return this.validateRemote(attributes, options);
@@ -2058,7 +2091,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {number}
 	   */
 	  getDataURI: function getDataURI(file) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var promise = new Promise(function (fulfill, reject) {
 	      // file paths
@@ -2069,9 +2102,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
 	          Media.resize(file, fileType, options.width, options.height).then(function (args) {
-	            var _args3 = _slicedToArray(args, 2),
-	                image = _args3[0],
-	                dataURI = _args3[1];
+	            var _args3 = _slicedToArray(args, 2);
+
+	            var image = _args3[0];
+	            var dataURI = _args3[1];
 
 	            fulfill([dataURI, fileType, image.width, image.height]);
 	          });
@@ -2094,9 +2128,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (options.width || options.height) {
 	          // resize
 	          Media.resize(event.target.result, file.type, options.width, options.height).then(function (args) {
-	            var _args4 = _slicedToArray(args, 2),
-	                image = _args4[0],
-	                dataURI = _args4[1];
+	            var _args4 = _slicedToArray(args, 2);
+
+	            var image = _args4[0];
+	            var dataURI = _args4[1];
 
 	            fulfill([dataURI, file.type, image.width, image.height]);
 	          });
@@ -2221,8 +2256,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  constructor: function constructor() {
 	    var _this = this;
 
-	    var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var attributes = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    var that = this;
 	    var attrs = attributes;
@@ -2303,7 +2338,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  getMedia: function getMedia() {
-	    var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+	    var index = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
 	    return this.media.at(index);
 	  },
@@ -2311,7 +2346,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // overwrite if you want to validate before saving remotely
 	  validate: function validate(attributes) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	    if (options.remote) {
 	      return this.validateRemote(attributes, options);
@@ -2451,9 +2486,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // media does not return any media-models only JSON data about them
 	    // media files will be attached separately
 
-	    var _media$_getSubmission = this.media._getSubmission(),
-	        _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1),
-	        mediaSubmission = _media$_getSubmission2[0];
+	    var _media$_getSubmission = this.media._getSubmission();
+
+	    var _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1);
+
+	    var mediaSubmission = _media$_getSubmission2[0];
 
 	    submission.media = mediaSubmission;
 
@@ -2468,7 +2505,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @param options
 	   */
 	  sync: function sync(method, model) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
 	    if (options.remote) {
 	      return this._syncRemote(method, model, options);
@@ -2541,7 +2578,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Report = function () {
 	  function Report() {
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	    _classCallCheck(this, Report);
 
