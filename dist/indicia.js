@@ -724,7 +724,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // initialise sub models
 	    this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
-	    this.samples = this._parseModels(options.samples, Sample);
+	    this.samples = this._parseModels(options.samples, this.constructor);
 	    this.media = this._parseModels(options.media, this.Media);
 
 	    this.initialize.apply(this, arguments); // eslint-disable-line
