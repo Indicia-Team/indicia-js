@@ -413,7 +413,7 @@ const Sample = Backbone.Model.extend({
     if (this.onSend) {
       return this.onSend(submission, media).then((data) => {
         const [newSubmission, newMedia] = data;
-        that._normaliseModelData(newSubmission, newMedia);
+        return that._normaliseModelData(newSubmission, newMedia);
       });
     }
 

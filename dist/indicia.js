@@ -1108,7 +1108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var newSubmission = _data[0];
 	        var newMedia = _data[1];
 
-	        that._normaliseModelData(newSubmission, newMedia);
+	        return that._normaliseModelData(newSubmission, newMedia);
 	      });
 	    }
 
