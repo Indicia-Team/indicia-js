@@ -442,6 +442,26 @@ describe('Sample', () => {
         });
       });
 
+      it('should call onSend with the submission model if exists', (done) => {
+        const sample = getRandomSample();
+
+        let called = false;
+        sample.onSend = (submission, media) => {
+          called = true;
+          expect(submission).to.be.an.object;
+          expect(media).to.be.an.object;
+
+          return Promise.resolve([submission, media]);
+        };
+
+        generateSampleResponse(server, 'OK', sample);
+
+        sample.save(null, { remote: true }).then(() => {
+          expect(called).to.be.true;
+          done();
+        });
+      });
+
       // todo: should update
 
 

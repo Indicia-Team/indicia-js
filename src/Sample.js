@@ -405,30 +405,42 @@ const Sample = Backbone.Model.extend({
 
     const that = this;
 
-    const promise = new Promise((fulfill) => {
-      // get submission model and all the media
-      const [submission, media] = model._getSubmission();
-      submission.type = 'samples';
-      const stringSubmission = JSON.stringify({
-        data: submission,
+    // get submission model and all the media
+    const [submission, media] = model._getSubmission();
+    submission.type = 'samples';
+
+    // allow updating the submission data if onSend function is set
+    if (this.onSend) {
+      return this.onSend(submission, media).then((data) => {
+        const [newSubmission, newMedia] = data;
+        that._normaliseModelData(newSubmission, newMedia);
       });
+    }
 
-      // with media send form-data in one request
-      if (media.length) {
-        const formData = new FormData(); // for submission
-        formData.append('submission', stringSubmission);
-        // append media
-        that._mediaAppend(media, formData).then(() => {
-          fulfill(formData);
-        });
+    return this._normaliseModelData(submission, media);
+  },
 
-        return;
-      }
-
-      fulfill(stringSubmission);
+  /**
+   * Creates a stringified JSON representation of the model or a FormData object.
+   * If the media is present then it creates a FormData so that the record
+   * could be submitted in one call.
+   */
+  _normaliseModelData(submission, media) {
+    // stringify submission
+    const stringSubmission = JSON.stringify({
+      data: submission,
     });
 
-    return promise;
+    // with media send form-data in one request
+    if (media.length) {
+      const formData = new FormData(); // for submission
+      formData.append('submission', stringSubmission);
+      // append media
+      return this._mediaAppend(media, formData)
+        .then(() => Promise.resolve(formData));
+    }
+
+    return Promise.resolve(stringSubmission);
   },
 
   _mediaAppend(media, formData) {
