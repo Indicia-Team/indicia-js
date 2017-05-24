@@ -1,7 +1,7 @@
 require('dotenv').config();
 var merge = require('webpack-merge');
 var _ = require('underscore');
-var karmaConfig = require('./karma.conf.js');
+var karmaConfig = require('./_karma.conf.js');
 var commonConfig = karmaConfig({ set(c) { return c; } });
 
 // Browsers to run on Sauce Labs platforms

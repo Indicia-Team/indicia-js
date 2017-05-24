@@ -100,16 +100,36 @@ const Occurrence = Backbone.Model.extend({
 
   validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
+    const media = {};
 
-    const errors = {};
+    const occurrence = {};
 
     // location
     if (!attrs.taxon) {
-      errors.taxon = 'can\'t be blank';
+      occurrence.taxon = 'can\'t be blank';
+    }
+
+    // media
+    if (this.media.length) {
+      this.media.each((mediaModel) => {
+        const errors = mediaModel.validateRemote();
+        if (errors) {
+          const mediaID = mediaModel.cid;
+          media[mediaID] = errors;
+        }
+      });
+    }
+
+    const errors = {};
+    if (!_.isEmpty(media)) {
+      errors.media = media;
+    }
+    if (!_.isEmpty(occurrence)) {
+      errors.occurrence = occurrence;
     }
 
     if (!_.isEmpty(errors)) {
-      return errors;
+        return errors;
     }
 
     return null;
@@ -142,7 +162,8 @@ const Occurrence = Backbone.Model.extend({
    */
   _getSubmission() {
     const that = this;
-    const keys = $.extend(true, Occurrence.keys, this.keys); // warehouse keys/values to transform
+    const occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
+    const keys = $.extend(true, Occurrence.keys, occKeys); // warehouse keys/values to transform
     const media = _.clone(this.media.models); // all media within this and child models
 
     const submission = {

@@ -64,7 +64,7 @@ const Sample = Backbone.Model.extend({
 
     // initialise sub models
     this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
-    this.samples = this._parseModels(options.samples, Sample);
+    this.samples = this._parseModels(options.samples, this.constructor);
     this.media = this._parseModels(options.media, this.Media);
 
     this.initialize.apply(this, arguments); // eslint-disable-line
@@ -179,15 +179,32 @@ const Sample = Backbone.Model.extend({
       });
     }
 
-    // todo: validateRemote media
+    // media
+    if (this.media.length) {
+      this.media.each((mediaModel) => {
+        const errors = mediaModel.validateRemote();
+        if (errors) {
+          const mediaID = mediaModel.cid;
+          media[mediaID] = errors;
+        }
+      });
+    }
 
-    if (!_.isEmpty(sample) || !_.isEmpty(occurrences)) {
-      const errors = {
-        sample,
-        samples,
-        occurrences,
-        media,
-      };
+    const errors = {};
+    if (!_.isEmpty(media)) {
+      errors.media = media;
+    }
+    if (!_.isEmpty(occurrences)) {
+      errors.occurrences = occurrences;
+    }
+    if (!_.isEmpty(samples)) {
+      errors.samples = samples;
+    }
+    if (!_.isEmpty(sample)) {
+      errors.sample = sample;
+    }
+
+    if (!_.isEmpty(errors)) {
       return errors;
     }
 
@@ -382,32 +399,48 @@ const Sample = Backbone.Model.extend({
   },
 
   _getModelData(model) {
+    if (!model) {
+      throw new Error('No model passed to _getModelData.');
+    }
+
     const that = this;
 
-    const promise = new Promise((fulfill) => {
-      // get submission model and all the media
-      const [submission, media] = model._getSubmission();
-      submission.type = 'samples';
-      const stringSubmission = JSON.stringify({
-        data: submission,
+    // get submission model and all the media
+    const [submission, media] = model._getSubmission();
+    submission.type = 'samples';
+
+    // allow updating the submission data if onSend function is set
+    if (this.onSend) {
+      return this.onSend(submission, media).then((data) => {
+        const [newSubmission, newMedia] = data;
+        return that._normaliseModelData(newSubmission, newMedia);
       });
+    }
 
-      // with media send form-data in one request
-      if (media.length) {
-        const formData = new FormData(); // for submission
-        formData.append('submission', stringSubmission);
-        // append media
-        that._mediaAppend(media, formData).then(() => {
-          fulfill(formData);
-        });
+    return this._normaliseModelData(submission, media);
+  },
 
-        return;
-      }
-
-      fulfill(stringSubmission);
+  /**
+   * Creates a stringified JSON representation of the model or a FormData object.
+   * If the media is present then it creates a FormData so that the record
+   * could be submitted in one call.
+   */
+  _normaliseModelData(submission, media) {
+    // stringify submission
+    const stringSubmission = JSON.stringify({
+      data: submission,
     });
 
-    return promise;
+    // with media send form-data in one request
+    if (media.length) {
+      const formData = new FormData(); // for submission
+      formData.append('submission', stringSubmission);
+      // append media
+      return this._mediaAppend(media, formData)
+        .then(() => Promise.resolve(formData));
+    }
+
+    return Promise.resolve(stringSubmission);
   },
 
   _mediaAppend(media, formData) {
@@ -464,8 +497,9 @@ const Sample = Backbone.Model.extend({
    */
   _getSubmission() {
     const that = this;
-    const keys = $.extend(true, Sample.keys, this.keys); // warehouse keys/values to transform
-    const media = _.clone(this.media.models); // all media within this and child models
+    const sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
+    const keys = $.extend(true, Sample.keys, sampleKeys); // warehouse keys/values to transform
+    let media = _.clone(this.media.models); // all media within this and child models
 
     const submission = {
       id: this.id,
@@ -509,15 +543,17 @@ const Sample = Backbone.Model.extend({
     });
 
     // transform sub models
+    // occurrences
     const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
     submission.occurrences = occurrences;
-    _.extend(media, occurrencesMedia);
+    media = media.concat(occurrencesMedia);
 
+    // samples
     const [samples, samplesMedia] = this.samples._getSubmission();
     submission.samples = samples;
-    _.extend(media, samplesMedia);
+    media = media.concat(samplesMedia);
 
-    // media does not return any media-models only JSON data about them
+    // media - does not return any media-models only JSON data about them
     const [mediaSubmission] = this.media._getSubmission();
     submission.media = mediaSubmission;
 
@@ -720,6 +756,7 @@ _.extend(Sample.prototype, syncHelpers);
  * Warehouse attributes and their values.
  */
 Sample.keys = {
+  date: { id: 'date' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',

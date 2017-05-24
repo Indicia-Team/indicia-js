@@ -1,4 +1,4 @@
-# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg?branch=v4)](https://travis-ci.org/Indicia-Team/indicia-js)
+# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
 
 Indicia Javascript SDK
 

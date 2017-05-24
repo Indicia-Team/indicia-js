@@ -132,13 +132,42 @@ const Media = Backbone.Model.extend({
         height: THUMBNAIL_HEIGHT || options.height,
       })
         .then((data) => {
-          that.set('thumbnail', data);
+          that.set('thumbnail', data[0]);
           fulfill();
         })
         .catch(reject);
     });
 
     return promise;
+  },
+
+  // overwrite if you want to validate before saving remotely
+  validate(attributes, options = {}) {
+    if (options.remote) {
+      return this.validateRemote(attributes, options);
+    }
+    return null;
+  },
+
+  validateRemote(attributes) {
+    const attrs = _.extend({}, this.attributes, attributes);
+
+    const errors = {};
+
+    // type
+    if (!attrs.data) {
+      errors.data = 'can\'t be empty';
+    }
+
+    if (!attrs.type) {
+      errors.type = 'can\'t be empty';
+    }
+
+    if (!_.isEmpty(errors)) {
+      return errors;
+    }
+
+    return null;
   },
 
   toJSON() {
