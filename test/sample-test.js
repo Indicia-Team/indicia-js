@@ -559,14 +559,20 @@ describe('Sample', () => {
           sample.addMedia(image2);
           sample.getOccurrence().addMedia(image);
 
+
           const promise = sample._getModelData(sample).then((data) => {
             expect(data).to.be.instanceOf(FormData);
-            expect(data.get(image.cid)).to.exist;
-            expect(data.get(image2.cid)).to.exist;
 
-            const submission = data.get('submission');
-            expect(submission).to.exist;
-            expect(JSON.parse(submission)).to.be.an.object;
+            // formData.get is not widely supported
+            if (data.get) {
+              expect(data.get(image.cid)).to.exist;
+              expect(data.get(image2.cid)).to.exist;
+
+              const submission = data.get('submission');
+              expect(submission).to.exist;
+              expect(JSON.parse(submission)).to.be.an.object;
+            }
+
             done();
           });
           expect(promise).to.be.instanceOf(Promise);
