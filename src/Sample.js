@@ -756,6 +756,7 @@ _.extend(Sample.prototype, syncHelpers);
  * Warehouse attributes and their values.
  */
 Sample.keys = {
+  date: { id: 'date' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',
