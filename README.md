@@ -2,7 +2,7 @@
 
 Indicia Javascript SDK
 
-Helps to locally store and synchronise data with Indicia warehouse (through Indicia API (v1) Drupal module).
+Helps to locally store and synchronise data with Indicia warehouse (through [Indicia API Drupal module](https://github.com/Indicia-Team/drupal-7-module-indicia-api)).
 
 ## Features 
 - Effortless work with biological records (Samples and Occurrences)
