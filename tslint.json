@@ -1,0 +1,7 @@
+{
+  "extends": "tslint-config-airbnb",
+  "rules": {
+    "no-increment-decrement": false, // 13.6
+    "no-var-self": false
+  }
+}

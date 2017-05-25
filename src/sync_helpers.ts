@@ -1,18 +1,21 @@
 import _ from 'underscore';
 
 const helpers = {
-  save(key, val, options) {
+  save(key: string|{ key: string}, val: any, options: any): Promise<any>|boolean {
     const model = this;
 
     // Handle both `"key", value` and `{key: value}` -style arguments.
-    let attrs;
+    let attrs: any;
     if (key == null || typeof key === 'object') {
       attrs = key;
+      // tslint:disable-next-line
       options = val;
     } else {
-      (attrs = {})[key] = val;
+      attrs || (attrs = {});
+      attrs[key] = val;
     }
 
+    // tslint:disable-next-line
     options = _.extend({ validate: true, parse: true }, options);
     const wait = options.wait;
 
@@ -52,7 +55,7 @@ const helpers = {
       } else {
         // model save
         model.sync(method, model, options)
-          .then((resp) => {
+          .then((resp: any) => {
             if (options.remote) {
               // update the model and occurrences with new remote IDs
               model._remoteCreateParse(model, resp.data);
@@ -77,7 +80,7 @@ const helpers = {
             model.trigger('sync', model, resp, options);
             fulfill(model);
           })
-          .catch((err) => {
+          .catch((err: any) => {
             model.trigger('error', err);
             reject(err);
           });
@@ -95,7 +98,7 @@ const helpers = {
    * @param options
    * @returns {Promise}
    */
-  destroy(options = {}) {
+  destroy(options: any = {}) {
     const model = this;
     const collection = this.collection; // keep reference for triggering
 
