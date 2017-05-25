@@ -17,7 +17,7 @@ const Collection = Backbone.Collection.extend({
     Backbone.Collection.prototype.constructor.apply(this, arguments);
   },
 
-  comparator(a) {
+  comparator(a: Backbone.Model) { //todo set Sample
     return a.metadata.created_on;
   },
 
@@ -30,7 +30,7 @@ const Collection = Backbone.Collection.extend({
    * @param models
    * @param options
    */
-  save(collection, options) {
+  save(collection: Backbone.Collection, options: any) {
     return this.sync('create', collection || this, options);
   },
 

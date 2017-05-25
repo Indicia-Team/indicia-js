@@ -40,7 +40,7 @@ if (uglify) {
 module.exports = {
   context: './src',
   entry: {
-    indicia: './main.js',
+    indicia: './main.ts',
   },
   output: {
     path: 'dist',
@@ -86,12 +86,22 @@ module.exports = {
   module: {
     loaders: [
       {
-        // test: /^\.js$/,
-        exclude: /(node_modules|vendor)/,
-        loader: 'babel-loader',
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
       },
       { test: /\.json/, loader: 'json' },
     ],
+    rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: [ 'babel-loader', 'ts-loader' ],
+      }
+    ],
+    resolve: {
+      extensions: [".tsx", ".ts", ".js"]
+    }
   },
   plugins,
 };
