@@ -4,7 +4,7 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox', 'Safari'],
+    browsers: ['Chrome'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 
@@ -18,14 +18,16 @@ module.exports = function exports(config) {
       { pattern: 'node_modules/backbone/backbone.js', watched: false },
       { pattern: 'node_modules/localforage/dist/localforage.js', watched: false },
 
-      { pattern: 'tests.webpack.js', watched: false },
+      { pattern: 'test/report-test.ts', watched: false },
       { pattern: 'test/images/*.jpg', watched: false, included: false, served: true, nocache: false },
     ],
 
     preprocessors: {
-      'tests.webpack.js': ['webpack'],
+      'test/report-test.ts': ['webpack'],
     },
-
+    mime: {
+      'text/x-typescript': ['ts','tsx']
+    },
     webpack: require('../webpack.config.js'),
 
     webpackServer: {

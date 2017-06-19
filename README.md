@@ -253,7 +253,7 @@ sampleFromStorage
 
 ## Building
 
-To compile IndiciaJS by yourself make sure that you have  [Node.js](http://nodejs.org/) and [Grunt.js](https://github.com/cowboy/grunt)
+To compile IndiciaJS by yourself make sure that you have  [Node.js](http://nodejs.org/)
 
 - Get a copy of the source by running:
 

@@ -83,18 +83,30 @@ module.exports = {
   },
   module: {
     loaders: [
-      // {
-      //   test: /^\.js$/,
-      //   loaders: ['babel-loader', 'ts-loader'],
-      //   exclude: /node_modules/,
-      // },
       {
         test: /\.tsx?$/,
-        loaders: ['babel-loader', 'ts-loader'],
+        loaders: ['ts-loader'],
         exclude: /node_modules/,
       },
       { test: /\.json/, loader: 'json' },
     ],
   },
+  // resolve: {
+  //   root: [
+  //     path.resolve('./src'),
+  //   ],
+  //   extensions: ['', '.ts'],
+  // },
+
+  // module: {
+  //   loaders: [
+  //     {
+  //       // test: /^\.js$/,
+  //       exclude: /(node_modules|vendor)/,
+  //       loader: 'babel-loader',
+  //     },
+  //     { test: /\.json/, loader: 'json' },
+  //   ],
+  // },
   plugins,
 };
