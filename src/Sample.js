@@ -495,7 +495,7 @@ const Sample = Backbone.Model.extend({
    *
    * @returns {*}
    */
-  _getSubmission() {
+  _getSubmission(options = {}) {
     const that = this;
     const sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = $.extend(true, Sample.keys, sampleKeys); // warehouse keys/values to transform
@@ -542,19 +542,27 @@ const Sample = Backbone.Model.extend({
       }
     });
 
+    const sampleOptions = _.extend({}, options);
+    this.metadata.training && (sampleOptions.training = this.metadata.training);
+    this.metadata.release_status && (sampleOptions.release_status = this.metadata.release_status);
+    this.metadata.record_status && (sampleOptions.record_status = this.metadata.record_status);
+    this.metadata.sensitive && (sampleOptions.sensitive = this.metadata.sensitive);
+    this.metadata.confidential && (sampleOptions.confidential = this.metadata.confidential);
+    this.metadata.sensitivity_precision && (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
+
     // transform sub models
     // occurrences
-    const [occurrences, occurrencesMedia] = this.occurrences._getSubmission();
+    const [occurrences, occurrencesMedia] = this.occurrences._getSubmission(sampleOptions);
     submission.occurrences = occurrences;
     media = media.concat(occurrencesMedia);
 
     // samples
-    const [samples, samplesMedia] = this.samples._getSubmission();
+    const [samples, samplesMedia] = this.samples._getSubmission(sampleOptions);
     submission.samples = samples;
     media = media.concat(samplesMedia);
 
     // media - does not return any media-models only JSON data about them
-    const [mediaSubmission] = this.media._getSubmission();
+    const [mediaSubmission] = this.media._getSubmission(sampleOptions);
     submission.media = mediaSubmission;
 
     return [submission, media];

@@ -160,7 +160,7 @@ const Occurrence = Backbone.Model.extend({
    *
    * @returns {*}
    */
-  _getSubmission() {
+  _getSubmission(options = {}) {
     const that = this;
     const occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = $.extend(true, Occurrence.keys, occKeys); // warehouse keys/values to transform
@@ -173,28 +173,28 @@ const Occurrence = Backbone.Model.extend({
       media: [],
     };
 
-    if (this.metadata.training) {
-      submission.training = this.metadata.training;
+    if (this.metadata.training || options.training) {
+      submission.training = this.metadata.training || options.training;
     }
 
-    if (this.metadata.release_status) {
-      submission.release_status = this.metadata.release_status;
+    if (this.metadata.release_status || options.release_status) {
+      submission.release_status = this.metadata.release_status || options.release_status;
     }
 
-    if (this.metadata.record_status) {
-      submission.record_status = this.metadata.record_status;
+    if (this.metadata.record_status || options.record_status) {
+      submission.record_status = this.metadata.record_status || options.record_status;
     }
 
-    if (this.metadata.sensitive) {
-      submission.sensitive = this.metadata.sensitive;
+    if (this.metadata.sensitive || options.sensitive) {
+      submission.sensitive = this.metadata.sensitive || options.sensitive;
     }
 
-    if (this.metadata.confidential) {
-      submission.confidential = this.metadata.confidential;
+    if (this.metadata.confidential || options.confidential) {
+      submission.confidential = this.metadata.confidential || options.confidential;
     }
 
-    if (this.metadata.sensitivity_precision) {
-      submission.sensitivity_precision = this.metadata.sensitivity_precision;
+    if (this.metadata.sensitivity_precision || options.sensitivity_precision) {
+      submission.sensitivity_precision = this.metadata.sensitivity_precision || options.sensitivity_precision;
     }
 
     // transform attributes

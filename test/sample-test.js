@@ -320,6 +320,42 @@ describe('Sample', () => {
         expect(valid).to.be.instanceOf(Promise);
       });
 
+      it('should pass on child models flags', (done) => {
+        const sample = getRandomSample();
+        const subSample = getRandomSample();
+
+        sample.addSample(subSample);
+        sample.metadata.training = true;
+        sample.metadata.release_status = true;
+        sample.metadata.record_status = true;
+        sample.metadata.sensitive = true;
+        sample.metadata.confidential = true;
+        sample.metadata.sensitivity_precision = true;
+
+        const spy = sinon.spy(sample, '_normaliseModelData');
+        generateSampleResponse(server, 'OK', sample);
+
+        sample.save(null, { remote: true }).then(() => {
+          const occArgs = spy.args[0][0].occurrences[0];
+          expect(occArgs.training).to.equal(true);
+          expect(occArgs.release_status).to.equal(true);
+          expect(occArgs.record_status).to.equal(true);
+          expect(occArgs.sensitive).to.equal(true);
+          expect(occArgs.confidential).to.equal(true);
+          expect(occArgs.sensitivity_precision).to.equal(true);
+
+          const smpOccArgs = spy.args[0][0].samples[0].occurrences[0];
+          expect(smpOccArgs.training).to.equal(true);
+          expect(smpOccArgs.release_status).to.equal(true);
+          expect(smpOccArgs.record_status).to.equal(true);
+          expect(smpOccArgs.sensitive).to.equal(true);
+          expect(smpOccArgs.confidential).to.equal(true);
+          expect(smpOccArgs.sensitivity_precision).to.equal(true);
+
+          spy.restore();
+          done();
+        });
+      });
 
       it('should send both dataURI and absolute pathed images', (done) => {
         const image1 = new Media({

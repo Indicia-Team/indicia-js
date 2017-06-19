@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.1.0
+ * indicia 4.2.0
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.1.0"), // replaced by build
+	  VERSION: ("4.2.0"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -569,13 +569,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *
 	   * @returns {*}
 	   */
-	  _getSubmission: function _getSubmission() {
+	  _getSubmission: function _getSubmission(options) {
 	    var submission = [];
 	    var media = [];
 
 	    // transform its models
 	    this.models.forEach(function (model) {
-	      var _model$_getSubmission = model._getSubmission(),
+	      var _model$_getSubmission = model._getSubmission(options),
 	          _model$_getSubmission2 = _slicedToArray(_model$_getSubmission, 2),
 	          modelSubmission = _model$_getSubmission2[0],
 	          modelMedia = _model$_getSubmission2[1];
@@ -1198,6 +1198,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  _getSubmission: function _getSubmission() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
 	    var that = this;
 	    var sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
 	    var keys = _jquery2.default.extend(true, Sample.keys, sampleKeys); // warehouse keys/values to transform
@@ -1244,10 +1246,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    });
 
+	    var sampleOptions = _underscore2.default.extend({}, options);
+	    this.metadata.training && (sampleOptions.training = this.metadata.training);
+	    this.metadata.release_status && (sampleOptions.release_status = this.metadata.release_status);
+	    this.metadata.record_status && (sampleOptions.record_status = this.metadata.record_status);
+	    this.metadata.sensitive && (sampleOptions.sensitive = this.metadata.sensitive);
+	    this.metadata.confidential && (sampleOptions.confidential = this.metadata.confidential);
+	    this.metadata.sensitivity_precision && (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
+
 	    // transform sub models
 	    // occurrences
 
-	    var _occurrences$_getSubm = this.occurrences._getSubmission(),
+	    var _occurrences$_getSubm = this.occurrences._getSubmission(sampleOptions),
 	        _occurrences$_getSubm2 = _slicedToArray(_occurrences$_getSubm, 2),
 	        occurrences = _occurrences$_getSubm2[0],
 	        occurrencesMedia = _occurrences$_getSubm2[1];
@@ -1257,7 +1267,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // samples
 
-	    var _samples$_getSubmissi = this.samples._getSubmission(),
+	    var _samples$_getSubmissi = this.samples._getSubmission(sampleOptions),
 	        _samples$_getSubmissi2 = _slicedToArray(_samples$_getSubmissi, 2),
 	        samples = _samples$_getSubmissi2[0],
 	        samplesMedia = _samples$_getSubmissi2[1];
@@ -1267,7 +1277,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // media - does not return any media-models only JSON data about them
 
-	    var _media$_getSubmission = this.media._getSubmission(),
+	    var _media$_getSubmission = this.media._getSubmission(sampleOptions),
 	        _media$_getSubmission2 = _slicedToArray(_media$_getSubmission, 1),
 	        mediaSubmission = _media$_getSubmission2[0];
 
@@ -1475,6 +1485,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Warehouse attributes and their values.
 	 */
 	Sample.keys = {
+	  date: { id: 'date' },
 	  location: { id: 'entered_sref' },
 	  location_type: {
 	    id: 'entered_sref_system',
@@ -2401,6 +2412,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @returns {*}
 	   */
 	  _getSubmission: function _getSubmission() {
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
 	    var that = this;
 	    var occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
 	    var keys = _jquery2.default.extend(true, Occurrence.keys, occKeys); // warehouse keys/values to transform
@@ -2413,28 +2426,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	      media: []
 	    };
 
-	    if (this.metadata.training) {
-	      submission.training = this.metadata.training;
+	    if (this.metadata.training || options.training) {
+	      submission.training = this.metadata.training || options.training;
 	    }
 
-	    if (this.metadata.release_status) {
-	      submission.release_status = this.metadata.release_status;
+	    if (this.metadata.release_status || options.release_status) {
+	      submission.release_status = this.metadata.release_status || options.release_status;
 	    }
 
-	    if (this.metadata.record_status) {
-	      submission.record_status = this.metadata.record_status;
+	    if (this.metadata.record_status || options.record_status) {
+	      submission.record_status = this.metadata.record_status || options.record_status;
 	    }
 
-	    if (this.metadata.sensitive) {
-	      submission.sensitive = this.metadata.sensitive;
+	    if (this.metadata.sensitive || options.sensitive) {
+	      submission.sensitive = this.metadata.sensitive || options.sensitive;
 	    }
 
-	    if (this.metadata.confidential) {
-	      submission.confidential = this.metadata.confidential;
+	    if (this.metadata.confidential || options.confidential) {
+	      submission.confidential = this.metadata.confidential || options.confidential;
 	    }
 
-	    if (this.metadata.sensitivity_precision) {
-	      submission.sensitivity_precision = this.metadata.sensitivity_precision;
+	    if (this.metadata.sensitivity_precision || options.sensitivity_precision) {
+	      submission.sensitivity_precision = this.metadata.sensitivity_precision || options.sensitivity_precision;
 	    }
 
 	    // transform attributes
