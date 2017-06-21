@@ -153,7 +153,7 @@ describe('Sample', () => {
     // location type
     delete sample.attributes.location_type;
     let allInvalids = sample.validate(null, { remote: true });
-    let invalids = allInvalids.sample;
+    let invalids = allInvalids.attributes;
     expect(invalids).to.be.an('object');
     expect(invalids.location).to.be.a('string');
     expect(invalids.location_type).to.be.a('string');
@@ -161,7 +161,7 @@ describe('Sample', () => {
     // subsample
     sample.samples.set(subSample);
     allInvalids = sample.validate(null, { remote: true });
-    invalids = allInvalids.sample;
+    invalids = allInvalids.attributes;
     expect(invalids.samples).to.be.undefined;
 
     // occurrence

@@ -127,34 +127,34 @@ const Sample = Backbone.Model.extend({
   validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
 
-    const sample = {};
+    const modelErrors = {};
     const samples = {};
     const occurrences = {};
     const media = {};
 
     // location
     if (!attrs.location) {
-      sample.location = 'can\'t be blank';
+      modelErrors.location = 'can\'t be blank';
     }
 
     // location type
     if (!attrs.location_type) {
-      sample.location_type = 'can\'t be blank';
+      modelErrors.location_type = 'can\'t be blank';
     }
 
     // date
     if (!attrs.date) {
-      sample.date = 'can\'t be blank';
+      modelErrors.date = 'can\'t be blank';
     } else {
       const date = new Date(attrs.date);
       if (date === 'Invalid Date' || date > new Date()) {
-        sample.date = (new Date(date) > new Date()) ? 'future date' : 'invalid';
+        modelErrors.date = (new Date(date) > new Date()) ? 'future date' : 'invalid';
       }
     }
 
     // check if has any indirect occurrences
     if (!this.samples.length && !this.occurrences.length) {
-      sample.occurrences = 'no occurrences';
+      modelErrors.occurrences = 'no occurrences';
     }
 
     // samples
@@ -200,8 +200,8 @@ const Sample = Backbone.Model.extend({
     if (!_.isEmpty(samples)) {
       errors.samples = samples;
     }
-    if (!_.isEmpty(sample)) {
-      errors.sample = sample;
+    if (!_.isEmpty(modelErrors)) {
+      errors.attributes = modelErrors;
     }
 
     if (!_.isEmpty(errors)) {

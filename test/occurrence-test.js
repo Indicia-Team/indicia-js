@@ -38,8 +38,8 @@ describe('Occurrence', () => {
     let invalids = occurrence.validate(null, { remote: true });
 
     expect(invalids).to.be.an('object');
-    expect(invalids.occurrence).to.be.an('object');
-    expect(invalids.occurrence.taxon).to.be.a('string');
+    expect(invalids.attributes).to.be.an('object');
+    expect(invalids.attributes.taxon).to.be.a('string');
 
     occurrence.set('taxon', 1234);
 
