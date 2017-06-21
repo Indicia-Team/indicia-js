@@ -791,34 +791,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	  validateRemote: function validateRemote(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
 
-	    var sample = {};
+	    var modelErrors = {};
 	    var samples = {};
 	    var occurrences = {};
 	    var media = {};
 
 	    // location
 	    if (!attrs.location) {
-	      sample.location = 'can\'t be blank';
+	      modelErrors.location = 'can\'t be blank';
 	    }
 
 	    // location type
 	    if (!attrs.location_type) {
-	      sample.location_type = 'can\'t be blank';
+	      modelErrors.location_type = 'can\'t be blank';
 	    }
 
 	    // date
 	    if (!attrs.date) {
-	      sample.date = 'can\'t be blank';
+	      modelErrors.date = 'can\'t be blank';
 	    } else {
 	      var date = new Date(attrs.date);
 	      if (date === 'Invalid Date' || date > new Date()) {
-	        sample.date = new Date(date) > new Date() ? 'future date' : 'invalid';
+	        modelErrors.date = new Date(date) > new Date() ? 'future date' : 'invalid';
 	      }
 	    }
 
 	    // check if has any indirect occurrences
 	    if (!this.samples.length && !this.occurrences.length) {
-	      sample.occurrences = 'no occurrences';
+	      modelErrors.occurrences = 'no occurrences';
 	    }
 
 	    // samples
@@ -864,8 +864,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!_underscore2.default.isEmpty(samples)) {
 	      errors.samples = samples;
 	    }
-	    if (!_underscore2.default.isEmpty(sample)) {
-	      errors.sample = sample;
+	    if (!_underscore2.default.isEmpty(modelErrors)) {
+	      errors.attributes = modelErrors;
 	    }
 
 	    if (!_underscore2.default.isEmpty(errors)) {
@@ -2032,16 +2032,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  validateRemote: function validateRemote(attributes) {
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
-
 	    var errors = {};
 
 	    // type
 	    if (!attrs.data) {
-	      errors.data = 'can\'t be empty';
+	      errors.attributes || (errors.attributes = {});
+	      errors.attributes.data = 'can\'t be empty';
 	    }
 
 	    if (!attrs.type) {
-	      errors.type = 'can\'t be empty';
+	      errors.attributes || (errors.attributes = {});
+	      errors.attributes.type = 'can\'t be empty';
 	    }
 
 	    if (!_underscore2.default.isEmpty(errors)) {
@@ -2354,11 +2355,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var attrs = _underscore2.default.extend({}, this.attributes, attributes);
 	    var media = {};
 
-	    var occurrence = {};
+	    var modelErrors = {};
 
 	    // location
 	    if (!attrs.taxon) {
-	      occurrence.taxon = 'can\'t be blank';
+	      modelErrors.taxon = 'can\'t be blank';
 	    }
 
 	    // media
@@ -2376,8 +2377,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!_underscore2.default.isEmpty(media)) {
 	      errors.media = media;
 	    }
-	    if (!_underscore2.default.isEmpty(occurrence)) {
-	      errors.occurrence = occurrence;
+	    if (!_underscore2.default.isEmpty(modelErrors)) {
+	      errors.attributes = modelErrors;
 	    }
 
 	    if (!_underscore2.default.isEmpty(errors)) {

@@ -61,10 +61,10 @@ describe('Media', () => {
   it('should validate location, location type, date and occurrences', () => {
     const media = new Media();
 
-    let invalids = media.validate(null, { remote: true });
+    const invalids = media.validate(null, { remote: true });
 
     expect(invalids).to.be.an('object');
-    expect(invalids.type).to.be.a('string');
+    expect(invalids.attributes.type).to.be.a('string');
   });
 
   it('should save parent on media save', (done) => {

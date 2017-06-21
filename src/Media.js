@@ -151,16 +151,17 @@ const Media = Backbone.Model.extend({
 
   validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
-
-    const errors = {};
+    const errors = { };
 
     // type
     if (!attrs.data) {
-      errors.data = 'can\'t be empty';
+      errors.attributes || (errors.attributes = {});
+      errors.attributes.data = 'can\'t be empty';
     }
 
     if (!attrs.type) {
-      errors.type = 'can\'t be empty';
+      errors.attributes || (errors.attributes = {});
+      errors.attributes.type = 'can\'t be empty';
     }
 
     if (!_.isEmpty(errors)) {

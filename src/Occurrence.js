@@ -102,11 +102,11 @@ const Occurrence = Backbone.Model.extend({
     const attrs = _.extend({}, this.attributes, attributes);
     const media = {};
 
-    const occurrence = {};
+    const modelErrors = {};
 
     // location
     if (!attrs.taxon) {
-      occurrence.taxon = 'can\'t be blank';
+      modelErrors.taxon = 'can\'t be blank';
     }
 
     // media
@@ -124,8 +124,8 @@ const Occurrence = Backbone.Model.extend({
     if (!_.isEmpty(media)) {
       errors.media = media;
     }
-    if (!_.isEmpty(occurrence)) {
-      errors.occurrence = occurrence;
+    if (!_.isEmpty(modelErrors)) {
+      errors.attributes = modelErrors;
     }
 
     if (!_.isEmpty(errors)) {
