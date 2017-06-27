@@ -347,11 +347,11 @@ const Sample = Backbone.Model.extend({
           );
           error = new Error(message);
         }
-        model.trigger('error', error);
+        model.trigger('error:remote', error);
         reject(error);
       });
 
-      model.trigger('request', model, xhr, options);
+      model.trigger('request:remote', model, xhr, options);
     });
 
     return promise;
