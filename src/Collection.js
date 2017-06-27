@@ -54,7 +54,7 @@ const Collection = Backbone.Collection.extend({
       const method = options.reset ? 'reset' : 'set';
 
       collection[method](resp, options);
-      collection.trigger('sync', collection, resp, options);
+      try { collection.trigger('sync', collection, resp, options); } catch (e) { /* continue on listener error */ }
     });
   },
 
@@ -73,7 +73,7 @@ const Collection = Backbone.Collection.extend({
       return Promise.reject(new Error('Trying to locally sync a collection without a store'));
     }
 
-    this.trigger('request', collection, null, options);
+    try { this.trigger('request', collection, null, options); } catch (e) { /* continue on listener error */ }
     return this.store.sync(method, collection, options);
   },
 

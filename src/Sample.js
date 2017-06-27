@@ -227,7 +227,7 @@ const Sample = Backbone.Model.extend({
       return Promise.reject(new Error('Trying to locally sync a model without a store'));
     }
 
-    this.trigger('request', model, null, options);
+    try { this.trigger('request', model, null, options); } catch (e) { /* continue on listener error */ }
     return this.store.sync(method, model, options);
   },
 
@@ -347,11 +347,11 @@ const Sample = Backbone.Model.extend({
           );
           error = new Error(message);
         }
-        model.trigger('error:remote', error);
+        try { model.trigger('error:remote', error); } catch (e) { /* continue on listener error */ }
         reject(error);
       });
 
-      model.trigger('request:remote', model, xhr, options);
+      try { model.trigger('request:remote', model, xhr, options); } catch (e) { /* continue on listener error */ }
     });
 
     return promise;
@@ -548,7 +548,8 @@ const Sample = Backbone.Model.extend({
     this.metadata.record_status && (sampleOptions.record_status = this.metadata.record_status);
     this.metadata.sensitive && (sampleOptions.sensitive = this.metadata.sensitive);
     this.metadata.confidential && (sampleOptions.confidential = this.metadata.confidential);
-    this.metadata.sensitivity_precision && (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
+    this.metadata.sensitivity_precision &&
+    (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
 
     // transform sub models
     // occurrences
@@ -728,7 +729,7 @@ const Sample = Backbone.Model.extend({
           model.samples = model._parseModels(resp.samples, Sample);
           model.media = model._parseModels(resp.media, model.Media);
 
-          model.trigger('sync', model, resp, options);
+          try { model.trigger('sync', model, resp, options); } catch (e) { /* continue on listener error */ }
 
           fulfill(model);
           return null;
