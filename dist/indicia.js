@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.1
+ * indicia 4.2.2
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.1"), // replaced by build
+	  VERSION: ("4.2.2"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -478,7 +478,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var method = options.reset ? 'reset' : 'set';
 
 	      collection[method](resp, options);
-	      collection.trigger('sync', collection, resp, options);
+	      try {
+	        collection.trigger('sync', collection, resp, options);
+	      } catch (e) {/* continue on listener error */}
 	    });
 	  },
 
@@ -500,7 +502,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return Promise.reject(new Error('Trying to locally sync a collection without a store'));
 	    }
 
-	    this.trigger('request', collection, null, options);
+	    try {
+	      this.trigger('request', collection, null, options);
+	    } catch (e) {/* continue on listener error */}
 	    return this.store.sync(method, collection, options);
 	  },
 
@@ -893,7 +897,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return Promise.reject(new Error('Trying to locally sync a model without a store'));
 	    }
 
-	    this.trigger('request', model, null, options);
+	    try {
+	      this.trigger('request', model, null, options);
+	    } catch (e) {/* continue on listener error */}
 	    return this.store.sync(method, model, options);
 	  },
 
@@ -1019,11 +1025,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }, '');
 	          error = new Error(message);
 	        }
-	        model.trigger('error:remote', error);
+	        try {
+	          model.trigger('error:remote', error);
+	        } catch (e) {/* continue on listener error */}
 	        reject(error);
 	      });
 
-	      model.trigger('request:remote', model, xhr, options);
+	      try {
+	        model.trigger('request:remote', model, xhr, options);
+	      } catch (e) {/* continue on listener error */}
 	    });
 
 	    return promise;
@@ -1453,7 +1463,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        model.samples = model._parseModels(resp.samples, Sample);
 	        model.media = model._parseModels(resp.media, model.Media);
 
-	        model.trigger('sync', model, resp, options);
+	        try {
+	          model.trigger('sync', model, resp, options);
+	        } catch (e) {/* continue on listener error */}
 
 	        fulfill(model);
 	        return null;
@@ -1740,10 +1752,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return model.parent.save(key, val, options).then(function () {
 	        // Ensure attributes are restored during synchronous saves.
 	        model.attributes = attributes;
-	        model.trigger('sync', model, null, options);
+	        try {
+	          model.trigger('sync', model, null, options);
+	        } catch (e) {/* continue on listener error */}
 	        return model;
 	      }).catch(function (err) {
-	        model.trigger('error', err);
+	        try {
+	          model.trigger('error', err);
+	        } catch (e) {/* continue on listener error */}
 	        return Promise.reject(err);
 	      });
 	    }
@@ -1765,15 +1781,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        // save model's changes locally
 	        return model.save().then(function () {
-	          model.trigger('sync:remote', model, resp, options);
+	          try {
+	            model.trigger('sync:remote', model, resp, options);
+	          } catch (e) {/* continue on listener error */}
 	          return model;
 	        });
 	      }
 
-	      model.trigger('sync', model, resp, options);
+	      try {
+	        model.trigger('sync', model, resp, options);
+	      } catch (e) {/* continue on listener error */}
 	      return model;
 	    }).catch(function (err) {
-	      model.trigger('error', err);
+	      try {
+	        model.trigger('error', err);
+	      } catch (e) {/* continue on listener error */}
 	      return Promise.reject(err);
 	    });
 	  },
@@ -1794,16 +1816,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	      function finalise() {
 	        // removes from all collections etc
 	        model.stopListening();
-	        model.trigger('destroy', model, collection, options);
+	        try {
+	          model.trigger('destroy', model, collection, options);
+	        } catch (e) {/* continue on listener error */}
 
 	        if (!options.noSave) {
 	          // parent save the changes permanently
 	          model.parent.save(null, options).then(function () {
-	            model.trigger('sync', model, null, options);
+	            try {
+	              model.trigger('sync', model, null, options);
+	            } catch (e) {/* continue on listener error */}
 	            fulfill(model);
 	          });
 	        } else {
-	          model.trigger('sync', model, null, options);
+	          try {
+	            model.trigger('sync', model, null, options);
+	          } catch (e) {/* continue on listener error */}
 	          fulfill(model);
 	        }
 	      }
@@ -1820,8 +1848,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        model.sync('delete', model, options).then(function () {
 	          // removes from all collections etc
 	          model.stopListening();
-	          model.trigger('destroy', model, collection, options);
-	          model.trigger('sync', model, null, options);
+	          try {
+	            model.trigger('destroy', model, collection, options);
+	          } catch (e) {/* continue on listener error */}
+	          try {
+	            model.trigger('sync', model, null, options);
+	          } catch (e) {/* continue on listener error */}
 
 	          fulfill(model);
 	        }).catch(reject);
