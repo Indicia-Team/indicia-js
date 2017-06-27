@@ -4,7 +4,7 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox', 'Safari'],
+    browsers: ['Chrome', 'Firefox'],
 
     frameworks: ['mocha', 'chai', 'sinon'],
 

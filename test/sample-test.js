@@ -235,6 +235,35 @@ describe('Sample', () => {
         });
       });
 
+
+      it('should fire model sync events', (done) => {
+        const events = ['request', 'sync', 'error'];
+        const eventsFired = [];
+        const sample = getRandomSample();
+
+        sample.on('request', () => {
+          eventsFired.push('request');
+        });
+
+        sample.on('sync', () => {
+          eventsFired.push('sync');
+        });
+
+        sample.save().then(() => {
+          // send an error
+          delete sample.store;
+
+          sample.on('error', () => {
+            eventsFired.push('error');
+            if (eventsFired.length === 3) {
+              done();
+            }
+          });
+
+          sample.save(null, { remote: true }).catch(() => {});
+        });
+      });
+
       it('should save parent on destroy', (done) => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
@@ -463,7 +492,6 @@ describe('Sample', () => {
         expect(sample.synchronising).to.be.true;
       });
 
-
       it('should not double create the record', (done) => {
         const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
@@ -500,7 +528,6 @@ describe('Sample', () => {
 
       // todo: should update
 
-
       it('should timeout', (done) => {
         server.respondImmediately = false;
         const clock = sinon.useFakeTimers();
@@ -530,16 +557,16 @@ describe('Sample', () => {
       });
 
       it('should fire model sync events', (done) => {
-        const events = ['request', 'sync', 'error'];
+        const events = ['request:remote', 'sync:remote', 'error:remote'];
         const eventsFired = [];
         const sample = getRandomSample();
 
-        sample.on('request', () => {
-          eventsFired.push('request');
+        sample.on('request:remote', () => {
+          eventsFired.push('request:remote');
         });
 
-        sample.on('sync', () => {
-          eventsFired.push('sync');
+        sample.on('sync:remote', () => {
+          eventsFired.push('sync:remote');
         });
 
         generateSampleResponse(server, 'OK', sample);
@@ -550,9 +577,9 @@ describe('Sample', () => {
             const newSample = getRandomSample();
             generateSampleResponse(server, 'ERR');
 
-            newSample.on('error', () => {
-              eventsFired.push('error');
-              if (events.length === 3) {
+            newSample.on('error:remote', () => {
+              eventsFired.push('error:remote');
+              if (eventsFired.length === 3) {
                 done();
               }
             });

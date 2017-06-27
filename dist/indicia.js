@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.0
+ * indicia 4.2.1
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.0"), // replaced by build
+	  VERSION: ("4.2.1"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -1019,11 +1019,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }, '');
 	          error = new Error(message);
 	        }
-	        model.trigger('error', error);
+	        model.trigger('error:remote', error);
 	        reject(error);
 	      });
 
-	      model.trigger('request', model, xhr, options);
+	      model.trigger('request:remote', model, xhr, options);
 	    });
 
 	    return promise;
@@ -1722,65 +1722,60 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return false;
 	    }
 
-	    var promise = new Promise(function (fulfill, reject) {
-	      // After a successful server-side save, the client is (optionally)
-	      // updated with the server-side state.
-	      var attributes = model.attributes;
+	    // After a successful server-side save, the client is (optionally)
+	    // updated with the server-side state.
+	    var attributes = model.attributes;
 
-	      // Set temporary attributes if `{wait: true}` to properly find new ids.
-	      if (attrs && wait) model.attributes = _underscore2.default.extend({}, attributes, attrs);
+	    // Set temporary attributes if `{wait: true}` to properly find new ids.
+	    if (attrs && wait) model.attributes = _underscore2.default.extend({}, attributes, attrs);
 
-	      var method = 'create';
-	      if (!model.isNew() && options.remote) {
-	        method = options.patch ? 'patch' : 'update';
-	      }
-	      if (method === 'patch' && !options.attrs) options.attrs = attrs;
+	    var method = 'create';
+	    if (!model.isNew() && options.remote) {
+	      method = options.patch ? 'patch' : 'update';
+	    }
+	    if (method === 'patch' && !options.attrs) options.attrs = attrs;
 
-	      if (model.parent && !options.remote) {
-	        // parent save
-	        model.parent.save(key, val, options).then(function () {
-	          // Ensure attributes are restored during synchronous saves.
-	          model.attributes = attributes;
-	          model.trigger('sync', model, null, options);
-	          fulfill(model);
-	        }).catch(reject);
-	      } else {
-	        // model save
-	        model.sync(method, model, options).then(function (resp) {
-	          if (options.remote) {
-	            // update the model and occurrences with new remote IDs
-	            model._remoteCreateParse(model, resp.data);
+	    // parent save
+	    if (model.parent && !options.remote) {
+	      return model.parent.save(key, val, options).then(function () {
+	        // Ensure attributes are restored during synchronous saves.
+	        model.attributes = attributes;
+	        model.trigger('sync', model, null, options);
+	        return model;
+	      }).catch(function (err) {
+	        model.trigger('error', err);
+	        return Promise.reject(err);
+	      });
+	    }
 
-	            // update metadata
-	            var timeNow = new Date();
-	            model.metadata.server_on = timeNow;
-	            model.metadata.updated_on = timeNow;
-	            model.metadata.synced_on = timeNow;
+	    // model save
+	    return model.sync(method, model, options).then(function (resp) {
+	      if (options.remote) {
+	        // update the model and occurrences with new remote IDs
+	        model._remoteCreateParse(model, resp.data);
 
-	            // Ensure attributes are restored during synchronous saves.
-	            model.attributes = attributes;
+	        // update metadata
+	        var timeNow = new Date();
+	        model.metadata.server_on = timeNow;
+	        model.metadata.updated_on = timeNow;
+	        model.metadata.synced_on = timeNow;
 
-	            // save model's changes locally
-	            model.save().then(function () {
-	              model.trigger('sync', model, resp, options);
-	              fulfill(model);
-	            });
-	            return;
-	          }
+	        // Ensure attributes are restored during synchronous saves.
+	        model.attributes = attributes;
 
-	          model.trigger('sync', model, resp, options);
-	          fulfill(model);
-	        }).catch(function (err) {
-	          model.trigger('error', err);
-	          reject(err);
+	        // save model's changes locally
+	        return model.save().then(function () {
+	          model.trigger('sync:remote', model, resp, options);
+	          return model;
 	        });
 	      }
 
-	      // Restore attributes.
-	      model.attributes = attributes;
+	      model.trigger('sync', model, resp, options);
+	      return model;
+	    }).catch(function (err) {
+	      model.trigger('error', err);
+	      return Promise.reject(err);
 	    });
-
-	    return promise;
 	  },
 
 

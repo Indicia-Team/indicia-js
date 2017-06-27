@@ -1,6 +1,6 @@
 {
   "name": "indicia",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "homepage": "https://github.com/Indicia-Team/indicia-js",
   "main": "dist/indicia.js"
 }

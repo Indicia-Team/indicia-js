@@ -25,69 +25,66 @@ const helpers = {
       return false;
     }
 
-    const promise = new Promise((fulfill, reject) => {
-      // After a successful server-side save, the client is (optionally)
-      // updated with the server-side state.
-      const attributes = model.attributes;
+    // After a successful server-side save, the client is (optionally)
+    // updated with the server-side state.
+    const attributes = model.attributes;
 
-      // Set temporary attributes if `{wait: true}` to properly find new ids.
-      if (attrs && wait) model.attributes = _.extend({}, attributes, attrs);
+    // Set temporary attributes if `{wait: true}` to properly find new ids.
+    if (attrs && wait) model.attributes = _.extend({}, attributes, attrs);
 
-      let method = 'create';
-      if (!model.isNew() && options.remote) {
-        method = options.patch ? 'patch' : 'update';
-      }
-      if (method === 'patch' && !options.attrs) options.attrs = attrs;
+    let method = 'create';
+    if (!model.isNew() && options.remote) {
+      method = options.patch ? 'patch' : 'update';
+    }
+    if (method === 'patch' && !options.attrs) options.attrs = attrs;
 
-      if (model.parent && !options.remote) {
-        // parent save
-        model.parent.save(key, val, options)
-          .then(() => {
-            // Ensure attributes are restored during synchronous saves.
-            model.attributes = attributes;
-            model.trigger('sync', model, null, options);
-            fulfill(model);
-          })
-          .catch(reject);
-      } else {
-        // model save
-        model.sync(method, model, options)
-          .then((resp) => {
-            if (options.remote) {
-              // update the model and occurrences with new remote IDs
-              model._remoteCreateParse(model, resp.data);
 
-              // update metadata
-              const timeNow = new Date();
-              model.metadata.server_on = timeNow;
-              model.metadata.updated_on = timeNow;
-              model.metadata.synced_on = timeNow;
+    // parent save
+    if (model.parent && !options.remote) {
+      return model.parent.save(key, val, options)
+        .then(() => {
+          // Ensure attributes are restored during synchronous saves.
+          model.attributes = attributes;
+          model.trigger('sync', model, null, options);
+          return model;
+        })
+        .catch((err) => {
+          model.trigger('error', err);
+          return Promise.reject(err);
+        });
+    }
 
-              // Ensure attributes are restored during synchronous saves.
-              model.attributes = attributes;
 
-              // save model's changes locally
-              model.save().then(() => {
-                model.trigger('sync', model, resp, options);
-                fulfill(model);
-              });
-              return;
-            }
+    // model save
+    return model.sync(method, model, options)
+      .then((resp) => {
+        if (options.remote) {
+          // update the model and occurrences with new remote IDs
+          model._remoteCreateParse(model, resp.data);
 
-            model.trigger('sync', model, resp, options);
-            fulfill(model);
-          })
-          .catch((err) => {
-            model.trigger('error', err);
-            reject(err);
+          // update metadata
+          const timeNow = new Date();
+          model.metadata.server_on = timeNow;
+          model.metadata.updated_on = timeNow;
+          model.metadata.synced_on = timeNow;
+
+          // Ensure attributes are restored during synchronous saves.
+          model.attributes = attributes;
+
+          // save model's changes locally
+          return model.save().then(() => {
+            model.trigger('sync:remote', model, resp, options);
+            return model;
           });
-      }
+        }
 
-      // Restore attributes.
-      model.attributes = attributes;
-    });
-
-    return promise;
+        model.trigger('sync', model, resp, options);
+        return model;
+      })
+      .catch((err) => {
+        model.trigger('error', err);
+        return Promise.reject(err);
+      });
   },
 
   /**
