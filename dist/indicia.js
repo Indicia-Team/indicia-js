@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.2
+ * indicia 4.2.3
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -62,7 +62,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.2"), // replaced by build
+	  VERSION: ("4.2.3"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -124,15 +124,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Indicia;
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(_) {'use strict';
 
@@ -230,23 +230,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this._callWhenReady(function () {
 	        // save collection
 	        if (model instanceof _backbone2.default.Collection) {
-	          var _ret = function () {
-	            if (!model.models.length) {
-	              return {
-	                v: Promise.resolve()
-	              };
-	            }
+	          if (!model.models.length) {
+	            return Promise.resolve();
+	          }
 
-	            var toWait = [];
-	            _.each(model.models, function (collectionModel) {
-	              if (collectionModel.store) toWait.push(collectionModel.save(null, options));
-	            });
-	            return {
-	              v: Promise.all(toWait)
-	            };
-	          }();
-
-	          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	          var toWait = [];
+	          _.each(model.models, function (collectionModel) {
+	            if (collectionModel.store) toWait.push(collectionModel.save(null, options));
+	          });
+	          return Promise.all(toWait);
 	        }
 
 	        // early return if no id or cid
@@ -313,25 +305,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this._callWhenReady(function () {
 	        // collection destroy
 	        if (model instanceof _backbone2.default.Collection) {
-	          var _ret2 = function () {
-	            if (!model.models.length) {
-	              return {
-	                v: Promise.resolve()
-	              };
-	            }
+	          if (!model.models.length) {
+	            return Promise.resolve();
+	          }
 
-	            var toWait = [];
-	            // need to clone:
-	            // http://stackoverflow.com/questions/10858935/cleanest-way-to-destroy-every-model-in-a-collection-in-backbone
-	            _.each(_.clone(model.models), function (collectionModel) {
-	              if (collectionModel.store) toWait.push(collectionModel.destroy());
-	            });
-	            return {
-	              v: Promise.all(toWait)
-	            };
-	          }();
-
-	          if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	          var toWait = [];
+	          // need to clone:
+	          // http://stackoverflow.com/questions/10858935/cleanest-way-to-destroy-every-model-in-a-collection-in-backbone
+	          _.each(_.clone(model.models), function (collectionModel) {
+	            if (collectionModel.store) toWait.push(collectionModel.destroy());
+	          });
+	          return Promise.all(toWait);
 	        }
 
 	        // early return if no id or cid
@@ -381,21 +365,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Store;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_4__;
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -404,11 +388,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * COLLECTION MODULE
-	                                                                                                                                                                                                                                                                               **********************************************************************/
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * COLLECTION MODULE
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          **********************************************************************/
 
 
 	var _backbone = __webpack_require__(3);
@@ -517,53 +499,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	    collection.synchronising = true;
 
 	    // model.trigger('request', model, xhr, options);
+	    switch (method) {
+	      case 'create':
+	        if (!collection.models.length) {
+	          return Promise.resolve();
+	        }
+	        var toWait = [];
+	        _underscore2.default.each(collection.models, function (model) {
+	          if (model.store) toWait.push(model.save(null, options));
+	        });
+	        return Promise.all(toWait);
 
-	    var _ret = function () {
-	      switch (method) {
-	        case 'create':
-	          if (!collection.models.length) {
-	            return {
-	              v: Promise.resolve()
-	            };
-	          }
-	          var toWait = [];
-	          _underscore2.default.each(collection.models, function (model) {
-	            if (model.store) toWait.push(model.save(null, options));
-	          });
-	          return {
-	            v: Promise.all(toWait)
-	          };
+	      case 'update':
+	        // todo
+	        collection.synchronising = false;
+	        return Promise.reject(new Error('Updating the model is not possible yet.'));
 
-	        case 'update':
-	          // todo
-	          collection.synchronising = false;
-	          return {
-	            v: Promise.reject(new Error('Updating the model is not possible yet.'))
-	          };
+	      case 'read':
+	        // todo
+	        collection.synchronising = false;
+	        return Promise.reject(new Error('Reading the model is not possible yet.'));
 
-	        case 'read':
-	          // todo
-	          collection.synchronising = false;
-	          return {
-	            v: Promise.reject(new Error('Reading the model is not possible yet.'))
-	          };
+	      case 'delete':
+	        // todo
+	        collection.synchronising = false;
+	        return Promise.reject(new Error('Deleting the model is not possible yet.'));
 
-	        case 'delete':
-	          // todo
-	          collection.synchronising = false;
-	          return {
-	            v: Promise.reject(new Error('Deleting the model is not possible yet.'))
-	          };
-
-	        default:
-	          collection.synchronising = false;
-	          return {
-	            v: Promise.reject(new Error('No such remote sync option: ' + method))
-	          };
-	      }
-	    }();
-
-	    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	      default:
+	        collection.synchronising = false;
+	        return Promise.reject(new Error('No such remote sync option: ' + method));
+	    }
 	  },
 
 
@@ -614,9 +579,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Collection;
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -625,16 +590,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = undefined;
 
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** *********************************************************************
-	                                                                                                                                                                                                                                                                               * SAMPLE
-	                                                                                                                                                                                                                                                                               *
-	                                                                                                                                                                                                                                                                               * Refers to the event in which the sightings were observed, in other
-	                                                                                                                                                                                                                                                                               * words it describes the place, date, people, environmental conditions etc.
-	                                                                                                                                                                                                                                                                               * Within a sample, you can have zero or more occurrences which refer to each
-	                                                                                                                                                                                                                                                                               * species sighted as part of the sample.
-	                                                                                                                                                                                                                                                                               **********************************************************************/
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /** *********************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * SAMPLE
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          *
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * Refers to the event in which the sightings were observed, in other
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * words it describes the place, date, people, environmental conditions etc.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * Within a sample, you can have zero or more occurrences which refer to each
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * species sighted as part of the sample.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          **********************************************************************/
 
 
 	var _backbone = __webpack_require__(3);
@@ -989,33 +952,27 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      xhr.fail(function (jqXHR, textStatus, errorThrown) {
 	        if (errorThrown === 'Conflict') {
-	          var _ret = function () {
-	            // duplicate occurred - this fixes only occurrence duplicates!
-	            // todo: remove once this is sorted
-	            var responseData = {
-	              data: {
-	                id: null,
-	                external_key: null,
-	                occurrences: []
-	              }
-	            };
+	          // duplicate occurred - this fixes only occurrence duplicates!
+	          // todo: remove once this is sorted
+	          var responseData = {
+	            data: {
+	              id: null,
+	              external_key: null,
+	              occurrences: []
+	            }
+	          };
 
-	            jqXHR.responseJSON.errors.forEach(function (error) {
-	              responseData.data.id = error.sample_id;
-	              responseData.data.external_key = error.sample_external_key;
-	              responseData.data.occurrences.push({
-	                id: error.id,
-	                external_key: error.external_key
-	              });
+	          jqXHR.responseJSON.errors.forEach(function (error) {
+	            responseData.data.id = error.sample_id;
+	            responseData.data.external_key = error.sample_external_key;
+	            responseData.data.occurrences.push({
+	              id: error.id,
+	              external_key: error.external_key
 	            });
+	          });
 
-	            fulfill(responseData);
-	            return {
-	              v: void 0
-	            };
-	          }();
-
-	          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	          fulfill(responseData);
+	          return;
 	        }
 
 	        var error = new Error(errorThrown);
@@ -1127,8 +1084,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * could be submitted in one call.
 	   */
 	  _normaliseModelData: function _normaliseModelData(submission, media) {
-	    var _this2 = this;
-
 	    // stringify submission
 	    var stringSubmission = JSON.stringify({
 	      data: submission
@@ -1136,18 +1091,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // with media send form-data in one request
 	    if (media.length) {
-	      var _ret2 = function () {
-	        var formData = new FormData(); // for submission
-	        formData.append('submission', stringSubmission);
-	        // append media
-	        return {
-	          v: _this2._mediaAppend(media, formData).then(function () {
-	            return Promise.resolve(formData);
-	          })
-	        };
-	      }();
-
-	      if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+	      var formData = new FormData(); // for submission
+	      formData.append('submission', stringSubmission);
+	      // append media
+	      return this._mediaAppend(media, formData).then(function () {
+	        return Promise.resolve(formData);
+	      });
 	    }
 
 	    return Promise.resolve(stringSubmission);
@@ -1178,18 +1127,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        if (!_helpers2.default.isDataURL(url)) {
-	          (function () {
-	            // load image
-	            var xhr = new XMLHttpRequest();
-	            xhr.open('GET', url, true);
-	            xhr.responseType = 'blob';
-	            xhr.onload = function () {
-	              onSuccess(null, null, null, xhr.response);
-	            };
-	            // todo check error case
+	          // load image
+	          var xhr = new XMLHttpRequest();
+	          xhr.open('GET', url, true);
+	          xhr.responseType = 'blob';
+	          xhr.onload = function () {
+	            onSuccess(null, null, null, xhr.response);
+	          };
+	          // todo check error case
 
-	            xhr.send();
-	          })();
+	          xhr.send();
 	        } else {
 	          onSuccess(null, null, url);
 	        }
@@ -1447,12 +1394,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Fetch the model from the server, merging the response with the model's
 	  // local attributes. Any changed attributes will trigger a "change" event.
 	  fetch: function fetch(options) {
-	    var _this3 = this;
+	    var _this2 = this;
 
 	    var model = this;
 	    var promise = new Promise(function (fulfill, reject) {
 	      options = _underscore2.default.extend({ parse: true }, options);
-	      return _this3.sync('read', _this3, options).then(function (resp) {
+	      return _this2.sync('read', _this2, options).then(function (resp) {
 	        // set the returned model's data
 	        model.id = resp.id;
 	        model.metadata = resp.metadata;
@@ -1485,7 +1432,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      updated_on: today,
 
 	      synced_on: null, // set when fully initialized only
-	      server_on: null };
+	      server_on: null // updated on server
+	    };
 
 	    return _jquery2.default.extend(true, defaults, metadata, options.metadata);
 	  }
@@ -1498,13 +1446,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	Sample.keys = {
 	  date: { id: 'date' },
+	  sample_method_id: { id: 'sample_method_id' },
 	  location: { id: 'entered_sref' },
 	  location_type: {
 	    id: 'entered_sref_system',
 	    values: {
 	      british: 'OSGB', // for British National Grid
 	      irish: 'OSIE', // for Irish Grid
-	      latlon: 4326 }
+	      latlon: 4326 // for Latitude and Longitude in decimal form (WGS84 datum)
+	    }
 	  },
 	  form: { id: 'input_form' },
 	  group: { id: 'group_id' }
@@ -1512,15 +1462,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Sample;
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -1540,9 +1490,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    CHANGED_SERVER = exports.CHANGED_SERVER = 5,
 	    CONFLICT = exports.CONFLICT = -1;
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -1691,9 +1641,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  formatDate: formatDate
 	};
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1866,9 +1816,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = helpers;
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1876,8 +1826,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	exports.default = undefined;
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /** *********************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          * IMAGE
@@ -2123,24 +2071,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var promise = new Promise(function (fulfill, reject) {
 	      // file paths
 	      if (typeof file === 'string') {
-	        var _ret = function () {
-	          // get extension
-	          var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
-	          if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
+	        // get extension
+	        var fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
+	        if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-	          Media.resize(file, fileType, options.width, options.height).then(function (args) {
-	            var _args3 = _slicedToArray(args, 2),
-	                image = _args3[0],
-	                dataURI = _args3[1];
+	        Media.resize(file, fileType, options.width, options.height).then(function (args) {
+	          var _args3 = _slicedToArray(args, 2),
+	              image = _args3[0],
+	              dataURI = _args3[1];
 
-	            fulfill([dataURI, fileType, image.width, image.height]);
-	          });
-	          return {
-	            v: void 0
-	          };
-	        }();
-
-	        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	          fulfill([dataURI, fileType, image.width, image.height]);
+	        });
+	        return;
 	      }
 
 	      // file inputs
@@ -2161,15 +2103,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            fulfill([dataURI, file.type, image.width, image.height]);
 	          });
 	        } else {
-	          (function () {
-	            var image = new window.Image(); // native one
+	          var image = new window.Image(); // native one
 
-	            image.onload = function () {
-	              var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
-	              fulfill([event.target.result, type, image.width, image.height]);
-	            };
-	            image.src = event.target.result;
-	          })();
+	          image.onload = function () {
+	            var type = file.type.replace(/.*\/([a-z]+)$/i, '$1');
+	            fulfill([event.target.result, type, image.width, image.height]);
+	          };
+	          image.src = event.target.result;
 	        }
 	      };
 	      reader.readAsDataURL(file);
@@ -2229,9 +2169,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Media;
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2305,21 +2245,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.metadata = this._getDefaultMetadata(options);
 
 	    if (options.media) {
-	      (function () {
-	        var mediaArray = [];
-	        _underscore2.default.each(options.media, function (media) {
-	          if (media instanceof _this.Media) {
-	            media.setParent(that);
-	            mediaArray.push(media);
-	          } else {
-	            var modelOptions = _underscore2.default.extend(media, { parent: that });
-	            mediaArray.push(new _this.Media(media.attributes, modelOptions));
-	          }
-	        });
-	        _this.media = new _Collection2.default(mediaArray, {
-	          model: _this.Media
-	        });
-	      })();
+	      var mediaArray = [];
+	      _underscore2.default.each(options.media, function (media) {
+	        if (media instanceof _this.Media) {
+	          media.setParent(that);
+	          mediaArray.push(media);
+	        } else {
+	          var modelOptions = _underscore2.default.extend(media, { parent: that });
+	          mediaArray.push(new _this.Media(media.attributes, modelOptions));
+	        }
+	      });
+	      this.media = new _Collection2.default(mediaArray, {
+	        model: this.Media
+	      });
 	    } else {
 	      this.media = new _Collection2.default([], {
 	        model: this.Media
@@ -2561,7 +2499,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      updated_on: today,
 
 	      synced_on: null, // set when fully initialized only
-	      server_on: null };
+	      server_on: null // updated on server
+	    };
 
 	    return _jquery2.default.extend(true, defaults, metadata, options.metadata);
 	  }
@@ -2580,9 +2519,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Occurrence;
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2672,7 +2611,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	exports.default = Report;
 
-/***/ }
+/***/ })
 /******/ ])
 });
 ;

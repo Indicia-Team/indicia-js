@@ -766,6 +766,7 @@ _.extend(Sample.prototype, syncHelpers);
  */
 Sample.keys = {
   date: { id: 'date' },
+  sample_method_id: { id: 'sample_method_id' },
   location: { id: 'entered_sref' },
   location_type: {
     id: 'entered_sref_system',
