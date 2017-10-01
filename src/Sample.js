@@ -773,6 +773,7 @@ Sample.keys = {
     values: {
       british: 'OSGB', // for British National Grid
       irish: 'OSIE', // for Irish Grid
+      channel: 'utm30ed50', // for Channel Islands Grid
       latlon: 4326, // for Latitude and Longitude in decimal form (WGS84 datum)
     },
   },
