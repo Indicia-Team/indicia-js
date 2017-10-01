@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.3
+ * indicia 4.2.4
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.3"), // replaced by build
+	  VERSION: ("4.2.4"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -1453,6 +1453,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    values: {
 	      british: 'OSGB', // for British National Grid
 	      irish: 'OSIE', // for Irish Grid
+	      channel: 'utm30ed50', // for Channel Islands Grid
 	      latlon: 4326 // for Latitude and Longitude in decimal form (WGS84 datum)
 	    }
 	  },
