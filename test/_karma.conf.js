@@ -4,8 +4,13 @@ module.exports = function exports(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox'],
+    browsers: ['ChromeCustom'],
 
+    customLaunchers: {
+      ChromeCustom: {
+        base: 'ChromiumHeadless',
+      },
+    },
     frameworks: ['mocha', 'chai', 'sinon'],
 
     files: [
@@ -48,17 +53,6 @@ module.exports = function exports(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
-
-    plugins: [
-      require('karma-webpack'),
-      require('karma-sinon'),
-      require('karma-mocha'),
-      require('karma-mocha-reporter'),
-      require('karma-chai'),
-      require('karma-chrome-launcher'),
-      require('karma-safari-launcher'),
-      require('karma-firefox-launcher'),
-    ],
+    singleRun: false
   });
 };
