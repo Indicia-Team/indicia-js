@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.4
+ * indicia 4.2.5
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.4"), // replaced by build
+	  VERSION: ("4.2.5"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -550,7 +550,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          modelMedia = _model$_getSubmission2[1];
 
 	      submission.push(modelSubmission);
-	      _underscore2.default.extend(media, modelMedia);
+	      media = media.concat(modelMedia);
 	    });
 
 	    return [submission, media];

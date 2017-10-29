@@ -126,13 +126,13 @@ const Collection = Backbone.Collection.extend({
    */
   _getSubmission(options) {
     const submission = [];
-    const media = [];
+    let media = [];
 
     // transform its models
     this.models.forEach((model) => {
       const [modelSubmission, modelMedia] = model._getSubmission(options);
       submission.push(modelSubmission);
-      _.extend(media, modelMedia);
+      media = media.concat(modelMedia);
     });
 
     return [submission, media];
