@@ -2,6 +2,7 @@ import Backbone from 'backbone';
 import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
 import Sample from '../src/Sample';
+import Media from '../src/Media';
 import Store from '../src/Store';
 import helpers from '../src/helpers';
 import { SYNCED } from '../src/constants';
@@ -12,23 +13,26 @@ import { getRandomSample, generateSampleResponse } from './helpers';
 describe('Collection', () => {
   const storedCollection = new Collection([], { model: Sample });
 
-  before((done) => {
+  before(done => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
-  beforeEach((done) => {
+  beforeEach(done => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
-  after((done) => {
+  after(done => {
     // clean up afterwards
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
@@ -37,7 +41,7 @@ describe('Collection', () => {
     expect(storedCollection).to.be.instanceOf(Backbone.Collection);
   });
 
-  it('should set, get and has', (done) => {
+  it('should set, get and has', done => {
     const sample = new Sample();
     const key = Date.now().toString();
     const value = Math.random();
@@ -59,6 +63,22 @@ describe('Collection', () => {
     done();
   });
 
+  describe('_getSubmission', () => {
+    it('should return media', () => {
+      const collection = new Collection();
+      const sample = new Sample(null, { metadata: {} });
+      sample.media.add(new Media());
+      collection.add(sample);
+
+      const sample2 = new Sample(null, { metadata: {} });
+      sample2.media.add(new Media());
+      collection.add(sample2);
+
+      const [submission, media] = collection._getSubmission();
+      expect(media.length).to.be.equal(2);
+    });
+  });
+
   it('should remove', () => {
     const sample = new Sample();
 
@@ -71,19 +91,20 @@ describe('Collection', () => {
     expect(contains).to.be.false;
   });
 
-  it('should size', (done) => {
-    storedCollection.size()
-      .then((size) => {
+  it('should size', done => {
+    storedCollection
+      .size()
+      .then(size => {
         expect(size).to.be.equal(0);
         storedCollection.set({ cid: helpers.getNewUUID() });
         return storedCollection.size();
       })
-      .then((newSize) => {
+      .then(newSize => {
         expect(newSize).to.be.equal(1);
         return storedCollection.destroy();
       })
       .then(() => storedCollection.size())
-      .then((finalSize) => {
+      .then(finalSize => {
         expect(finalSize).to.be.equal(0);
         done();
       });
@@ -111,7 +132,7 @@ describe('Collection', () => {
     expect(storedCollection.size()).to.be.instanceOf(Promise);
   });
 
-  it('should pass error object to on database error', (done) => {
+  it('should pass error object to on database error', done => {
     // on WebSQL+LocalForage this does not generate an error
     if (window.navigator.userAgent.search('Safari')) {
       done();
@@ -120,11 +141,10 @@ describe('Collection', () => {
 
     const item = {
       cid: helpers.getNewUUID(),
-      corruptedAttribute: () => {
-      },
+      corruptedAttribute: () => {},
     };
 
-    storedCollection.set(item).catch((setErr) => {
+    storedCollection.set(item).catch(setErr => {
       expect(setErr).to.be.not.null;
       done();
     });
@@ -132,33 +152,34 @@ describe('Collection', () => {
 
   describe('Sync', () => {
     describe('Local', () => {
-      it('should fetch', (done) => {
+      it('should fetch', done => {
         const sample = getRandomSample();
         sample.save({ myattr: 'val' }).then(() => {
           const collection = new Collection([], { model: Sample });
 
-          collection.fetch()
-            .then(() => {
-              expect(collection.length).to.be.equal(1);
+          collection.fetch().then(() => {
+            expect(collection.length).to.be.equal(1);
 
-              const model = collection.get(sample);
+            const model = collection.get(sample);
 
-              expect(model).to.exist;
-              expect(model.get('myattr')).to.be.equal(sample.get('myattr'));
+            expect(model).to.exist;
+            expect(model.get('myattr')).to.be.equal(sample.get('myattr'));
 
-              done();
-            });
+            done();
+          });
         });
       });
 
-      it('should destroy', (done) => {
+      it('should destroy', done => {
         const sample = getRandomSample();
         sample.save().then(() => {
           const collection = new Collection([], { model: Sample });
           collection.fetch().then(() => {
             expect(collection.length).to.be.equal(1);
 
-            collection.destroy().then(() => collection.fetch())
+            collection
+              .destroy()
+              .then(() => collection.fetch())
               .then(() => {
                 expect(collection.length).to.be.equal(0);
 
@@ -172,7 +193,7 @@ describe('Collection', () => {
         });
       });
 
-      it('should save', (done) => {
+      it('should save', done => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const collection = new Collection([], { model: Sample });
@@ -213,12 +234,12 @@ describe('Collection', () => {
         Sample.prototype._create.restore();
       });
 
-      it('should post all', (done) => {
+      it('should post all', done => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const collection = new Collection([], { model: Sample });
 
-        generateSampleResponse(server, 'OK', (cid) => collection.get(cid));
+        generateSampleResponse(server, 'OK', cid => collection.get(cid));
 
         // add and save samples
         collection.add(sample);
@@ -229,7 +250,7 @@ describe('Collection', () => {
           expect(Sample.prototype._create.calledTwice).to.be.true;
 
           savedCollection.fetch().then(() => {
-            savedCollection.forEach((model) => {
+            savedCollection.forEach(model => {
               expect(model.getSyncStatus()).to.be.equal(SYNCED);
             });
             expect(savedCollection.length).to.be.equal(2);
