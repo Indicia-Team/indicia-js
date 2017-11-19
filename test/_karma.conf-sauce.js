@@ -83,14 +83,6 @@ module.exports =  function(config) {
     // Browsers to launch, commented out to prevent karma from starting
     // too many concurrent browsers and timing sauce out.
     browsers: _.keys(sauceBrowsers),
-
-    plugins: [
-      require('karma-webpack'),
-      require('karma-sinon'),
-      require('karma-mocha'),
-      require('karma-chai'),
-      require('karma-sauce-launcher'),
-    ],
   }));
 };
 
