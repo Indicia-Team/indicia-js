@@ -24,8 +24,12 @@
   ],
   "main": "dist/indicia.js",
   "scripts": {
-    "start": "webpack && webpack --uglify",
-    "test": "karma start test/_karma.conf.js"
+    "build": "webpack && webpack --uglify",
+    "test": "karma start test/_karma.conf.js",
+    "test:watch": "karma start test/_karma.conf.js --no-single-run",
+    "preversion": "npm test",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
   },
   "devDependencies": {
     "babel-core": "^6.14.0",
