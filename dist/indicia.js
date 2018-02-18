@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.5
+ * indicia 4.2.6
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.5"), // replaced by build
+	  VERSION: ("4.2.6"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -1458,7 +1458,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  },
 	  form: { id: 'input_form' },
-	  group: { id: 'group_id' }
+	  group: { id: 'group_id' },
+	  comment: { id: 'comment' }
 	};
 
 	exports.default = Sample;
@@ -2515,7 +2516,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	Occurrence.keys = {
 	  taxon: {
 	    id: 'taxa_taxon_list_id'
-	  }
+	  },
+	  comment: { id: 'comment' }
 	};
 
 	exports.default = Occurrence;

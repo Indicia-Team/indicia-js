@@ -292,6 +292,7 @@ Occurrence.keys = {
   taxon: {
     id: 'taxa_taxon_list_id',
   },
+  comment: { id: 'comment' },
 };
 
 export { Occurrence as default };

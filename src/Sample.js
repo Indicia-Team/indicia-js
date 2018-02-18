@@ -779,6 +779,7 @@ Sample.keys = {
   },
   form: { id: 'input_form' },
   group: { id: 'group_id' },
+  comment: { id: 'comment' },
 };
 
 export { Sample as default };

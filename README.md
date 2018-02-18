@@ -270,7 +270,7 @@ cd indicia-js && npm install
 - Build the library: 
 
 ```bash
-npm start
+npm run build
 ```
 
 This will update `indicia.js` and `indicia.min.js`.
