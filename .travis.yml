@@ -9,7 +9,7 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - npm start # check the full build
+  - npm run build # check the full build
   - karma start test/_karma.conf-sauce.js
 notifications:
   email: false

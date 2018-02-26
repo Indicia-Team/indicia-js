@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({silent: true});
 var merge = require('webpack-merge');
 var _ = require('underscore');
 var karmaConfig = require('./_karma.conf.js');
