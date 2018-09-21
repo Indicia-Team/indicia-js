@@ -27,8 +27,9 @@ sample.set('location', '12.345, -12.345')
 
 // Occurrence
 var occurrence = new Indicia.Occurrence();
-occurrence.set('taxon', 'bee')
+occurrence.set('taxon', 'bee');
 occurrence.set('number', 5);
+occurrence.set('colour', ['red', 'green']);
 
 sample.occurrences.set(occurrence);
 
@@ -120,6 +121,15 @@ Indicia.Occurrence.keys = {
     values: {
       1: 272198,
       bee: 12343
+    }
+  },
+  colour: {
+    id: 251,
+    values: {
+      red: 114,
+      green: 115,
+      blue: 116,
+      black: 117
     }
   }
 };

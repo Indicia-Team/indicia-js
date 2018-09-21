@@ -532,7 +532,12 @@ const Sample = Backbone.Model.extend({
           // get a value from a function
           value = keys[attr].values(value, submission, that);
         } else {
-          value = keys[attr].values[value];
+          if (_.isArray(value)) {
+            // the attribute has multiple values
+            value = _.map(value, (v) => {return keys[attr].values[v]} );
+          } else {
+            value = keys[attr].values[value];
+          }
         }
       }
 
