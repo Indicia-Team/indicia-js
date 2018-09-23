@@ -1192,15 +1192,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (typeof keys[attr].values === 'function') {
 	          // get a value from a function
 	          value = keys[attr].values(value, submission, that);
+	        } else if (_underscore2.default.isArray(value)) {
+	          // the attribute has multiple values
+	          value = value.map(function (v) {
+	            return keys[attr].values[v];
+	          });
 	        } else {
-	          if (_underscore2.default.isArray(value)) {
-	            // the attribute has multiple values
-	            value = _underscore2.default.map(value, function (v) {
-	              return keys[attr].values[v];
-	            });
-	          } else {
-	            value = keys[attr].values[value];
-	          }
+	          value = keys[attr].values[value];
 	        }
 	      }
 
@@ -2446,15 +2444,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (typeof keys[attr].values === 'function') {
 	          // get a value from a function
 	          value = keys[attr].values(value, submission, that);
+	        } else if (_underscore2.default.isArray(value)) {
+	          // the attribute has multiple values
+	          value = value.map(function (v) {
+	            return keys[attr].values[v];
+	          });
 	        } else {
-	          if (_underscore2.default.isArray(value)) {
-	            // the attribute has multiple values
-	            value = _underscore2.default.map(value, function (v) {
-	              return keys[attr].values[v];
-	            });
-	          } else {
-	            value = keys[attr].values[value];
-	          }
+	          value = keys[attr].values[value];
 	        }
 	      }
 
