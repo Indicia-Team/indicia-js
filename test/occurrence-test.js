@@ -66,4 +66,59 @@ describe('Occurrence', () => {
         });
     });
   });
+
+  describe('_getSubmission', () => {
+    it('should return attribute values', () => {
+      const occurrence = new Occurrence({
+        size: 'huge',
+        number: 1234,
+      });
+      const submission = occurrence._getSubmission();
+
+      expect(submission[0].fields.size).to.be.equal('huge');
+      expect(submission[0].fields.number).to.be.equal(1234);
+    });
+
+    it('should return translate attribute keys and values if keys mapping is provided', () => {
+      const keys = {
+        size: {
+          id: 'butterfly_size',
+          values: {
+            huge: 1,
+          },
+        },
+      };
+      const occurrence = new Occurrence(
+        {
+          size: 'huge',
+        },
+        { keys }
+      );
+      const submission = occurrence._getSubmission();
+
+      expect(submission[0].fields.butterfly_size).to.be.equal(1);
+    });
+
+    it('should support attribute value arrays', () => {
+      const keys = {
+        colour: {
+          id: 'butterfly_colour',
+          values: {
+            red: 1,
+            green: 2,
+            black: 3,
+          },
+        },
+      };
+      const occurrence = new Occurrence(
+        {
+          colour: ['red', 'green'],
+        },
+        { keys }
+      );
+      const submission = occurrence._getSubmission();
+
+      expect(submission[0].fields.butterfly_colour).to.be.eql([1, 2]);
+    });
+  });
 });
