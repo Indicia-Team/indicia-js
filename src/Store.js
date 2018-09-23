@@ -40,7 +40,8 @@ class Store {
 
         // init
         that.localForage = DB.createInstance(dbConfig);
-        that.localForage.setDriver(drivers)
+        that.localForage
+          .setDriver(drivers)
           .then(() => {
             resolve(that.localForage);
           })
@@ -104,8 +105,7 @@ class Store {
       }
 
       const key = model.cid;
-      return this.localForage.setItem(key, model.toJSON())
-        .then(() => Promise.resolve()); // don't return anything to update the model
+      return this.localForage.setItem(key, model.toJSON()).then(() => Promise.resolve()); // don't return anything to update the model
     });
   }
 
@@ -120,14 +120,15 @@ class Store {
   }
 
   find(model) {
-    return this._callWhenReady(() => {  // eslint-disable-line
-      return this.localForage.getItem(model.cid).then((data) => {
+    return this._callWhenReady(() =>
+      // eslint-disable-line
+      this.localForage.getItem(model.cid).then((data) => {
         if (!data) {
           return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
         }
         return data;
-      });
-    });
+      })
+    );
   }
 
   // Only used by `Backbone.Collection#sync`.
@@ -135,9 +136,11 @@ class Store {
     return this._callWhenReady(() => {
       // build up samples
       const models = [];
-      return this.localForage.iterate((value) => {
-        models.push(value);
-      }).then(() => Promise.resolve(models));
+      return this.localForage
+        .iterate((value) => {
+          models.push(value);
+        })
+        .then(() => Promise.resolve(models));
     });
   }
 
@@ -164,8 +167,7 @@ class Store {
       }
 
       const key = model.cid;
-      return this.localForage.removeItem(key)
-        .then(() => Promise.resolve(model.toJSON()));
+      return this.localForage.removeItem(key).then(() => Promise.resolve(model.toJSON()));
     });
   }
 
@@ -176,4 +178,3 @@ class Store {
 }
 
 export default Store;
-

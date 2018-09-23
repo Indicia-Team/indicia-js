@@ -106,7 +106,7 @@ const Occurrence = Backbone.Model.extend({
 
     // location
     if (!attrs.taxon) {
-      modelErrors.taxon = 'can\'t be blank';
+      modelErrors.taxon = "can't be blank";
     }
 
     // media
@@ -129,7 +129,7 @@ const Occurrence = Backbone.Model.extend({
     }
 
     if (!_.isEmpty(errors)) {
-        return errors;
+      return errors;
     }
 
     return null;
@@ -152,7 +152,6 @@ const Occurrence = Backbone.Model.extend({
     };
     return data;
   },
-
 
   /**
    * Returns an object with attributes and their values
@@ -194,7 +193,8 @@ const Occurrence = Backbone.Model.extend({
     }
 
     if (this.metadata.sensitivity_precision || options.sensitivity_precision) {
-      submission.sensitivity_precision = this.metadata.sensitivity_precision || options.sensitivity_precision;
+      submission.sensitivity_precision =
+        this.metadata.sensitivity_precision || options.sensitivity_precision;
     }
 
     // transform attributes
@@ -219,19 +219,18 @@ const Occurrence = Backbone.Model.extend({
           // get a value from a function
           value = keys[attr].values(value, submission, that);
         } else if (_.isArray(value)) {
-            // the attribute has multiple values
+          // the attribute has multiple values
           value = value.map(v => keys[attr].values[v]);
-          } else {
-            value = keys[attr].values[value];
-          }
+        } else {
+          value = keys[attr].values[value];
         }
+      }
 
       // don't need to send null or undefined
       if (value) {
         submission.fields[warehouseAttr] = value;
       }
     });
-
 
     // transform sub models
     // media does not return any media-models only JSON data about them
@@ -256,7 +255,6 @@ const Occurrence = Backbone.Model.extend({
     return Promise.reject(new Error('Local sync is not possible yet.'));
   },
 
-
   /**
    * Syncs the record to the remote server.
    * Returns on success: model, response, options
@@ -266,8 +264,7 @@ const Occurrence = Backbone.Model.extend({
   },
 
   _getDefaultMetadata(options) {
-    const metadata = typeof this.metadata === 'function' ?
-      this.metadata() : this.metadata;
+    const metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
 
     options.metadata = options.metadata || {};
 

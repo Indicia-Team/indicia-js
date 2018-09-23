@@ -151,17 +151,17 @@ const Media = Backbone.Model.extend({
 
   validateRemote(attributes) {
     const attrs = _.extend({}, this.attributes, attributes);
-    const errors = { };
+    const errors = {};
 
     // type
     if (!attrs.data) {
       errors.attributes || (errors.attributes = {});
-      errors.attributes.data = 'can\'t be empty';
+      errors.attributes.data = "can't be empty";
     }
 
     if (!attrs.type) {
       errors.attributes || (errors.attributes = {});
-      errors.attributes.type = 'can\'t be empty';
+      errors.attributes.type = "can't be empty";
     }
 
     if (!_.isEmpty(errors)) {
@@ -217,11 +217,10 @@ _.extend(Media, {
         let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
         if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-        Media.resize(file, fileType, options.width, options.height)
-          .then((args) => {
-            const [image, dataURI] = args;
-            fulfill([dataURI, fileType, image.width, image.height]);
-          });
+        Media.resize(file, fileType, options.width, options.height).then((args) => {
+          const [image, dataURI] = args;
+          fulfill([dataURI, fileType, image.width, image.height]);
+        });
         return;
       }
 
@@ -235,11 +234,10 @@ _.extend(Media, {
       reader.onload = function (event) {
         if (options.width || options.height) {
           // resize
-          Media.resize(event.target.result, file.type, options.width, options.height)
-            .then((args) => {
-              const [image, dataURI] = args;
-              fulfill([dataURI, file.type, image.width, image.height]);
-            });
+          Media.resize(event.target.result, file.type, options.width, options.height).then((args) => {
+            const [image, dataURI] = args;
+            fulfill([dataURI, file.type, image.width, image.height]);
+          });
         } else {
           const image = new window.Image(); // native one
 

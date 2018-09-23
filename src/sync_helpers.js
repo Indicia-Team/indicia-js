@@ -38,25 +38,33 @@ const helpers = {
     }
     if (method === 'patch' && !options.attrs) options.attrs = attrs;
 
-
     // parent save
     if (model.parent && !options.remote) {
-      return model.parent.save(key, val, options)
+      return model.parent
+        .save(key, val, options)
         .then(() => {
           // Ensure attributes are restored during synchronous saves.
           model.attributes = attributes;
-          try { model.trigger('sync', model, null, options); } catch (e) { /* continue on listener error */ }
+          try {
+            model.trigger('sync', model, null, options);
+          } catch (e) {
+            /* continue on listener error */
+          }
           return model;
         })
         .catch((err) => {
-          try { model.trigger('error', err); } catch (e) { /* continue on listener error */ }
+          try {
+            model.trigger('error', err);
+          } catch (e) {
+            /* continue on listener error */
+          }
           return Promise.reject(err);
         });
     }
 
-
     // model save
-    return model.sync(method, model, options)
+    return model
+      .sync(method, model, options)
       .then((resp) => {
         if (options.remote) {
           // update the model and occurrences with new remote IDs
@@ -73,16 +81,28 @@ const helpers = {
 
           // save model's changes locally
           return model.save().then(() => {
-            try { model.trigger('sync:remote', model, resp, options); } catch (e) { /* continue on listener error */ }
+            try {
+              model.trigger('sync:remote', model, resp, options);
+            } catch (e) {
+              /* continue on listener error */
+            }
             return model;
           });
         }
 
-        try { model.trigger('sync', model, resp, options); } catch (e) { /* continue on listener error */ }
+        try {
+          model.trigger('sync', model, resp, options);
+        } catch (e) {
+          /* continue on listener error */
+        }
         return model;
       })
       .catch((err) => {
-        try { model.trigger('error', err); } catch (e) { /* continue on listener error */ }
+        try {
+          model.trigger('error', err);
+        } catch (e) {
+          /* continue on listener error */
+        }
         return Promise.reject(err);
       });
   },
@@ -100,16 +120,28 @@ const helpers = {
       function finalise() {
         // removes from all collections etc
         model.stopListening();
-        try { model.trigger('destroy', model, collection, options); } catch (e) { /* continue on listener error */ }
+        try {
+          model.trigger('destroy', model, collection, options);
+        } catch (e) {
+          /* continue on listener error */
+        }
 
         if (!options.noSave) {
           // parent save the changes permanently
           model.parent.save(null, options).then(() => {
-            try { model.trigger('sync', model, null, options); } catch (e) { /* continue on listener error */ }
+            try {
+              model.trigger('sync', model, null, options);
+            } catch (e) {
+              /* continue on listener error */
+            }
             fulfill(model);
           });
         } else {
-          try { model.trigger('sync', model, null, options); } catch (e) { /* continue on listener error */ }
+          try {
+            model.trigger('sync', model, null, options);
+          } catch (e) {
+            /* continue on listener error */
+          }
           fulfill(model);
         }
       }
@@ -117,19 +149,27 @@ const helpers = {
       if (model.parent) {
         if (options.remote) {
           // destroy remotely
-          model.sync('delete', model, options)
-            .then(finalise);
+          model.sync('delete', model, options).then(finalise);
         } else {
           finalise();
         }
       } else {
         // destroy locally/remotely
-        model.sync('delete', model, options)
+        model
+          .sync('delete', model, options)
           .then(() => {
             // removes from all collections etc
             model.stopListening();
-            try { model.trigger('destroy', model, collection, options); } catch (e) { /* continue on listener error */ }
-            try { model.trigger('sync', model, null, options); } catch (e) { /* continue on listener error */ }
+            try {
+              model.trigger('destroy', model, collection, options);
+            } catch (e) {
+              /* continue on listener error */
+            }
+            try {
+              model.trigger('sync', model, null, options);
+            } catch (e) {
+              /* continue on listener error */
+            }
 
             fulfill(model);
           })

@@ -2,7 +2,6 @@ import $ from 'jquery';
 import { API_BASE, API_VER, API_REPORTS_PATH } from './constants';
 
 class Report {
-
   constructor(options = {}) {
     this.host_url = options.host_url || this.host_url;
     this.user = options.user || this.user;
@@ -17,8 +16,7 @@ class Report {
   run(params) {
     const that = this;
     const promise = new Promise((fulfill, reject) => {
-      const url = this.host_url + API_BASE + API_VER + API_REPORTS_PATH +
-        this.report;
+      const url = this.host_url + API_BASE + API_VER + API_REPORTS_PATH + this.report;
 
       params = $.extend(params || that.params, { api_key: that.api_key });
       $.get({
@@ -58,7 +56,6 @@ class Report {
 
     return `Basic  ${basicAuth}`;
   }
-
 }
 
 export default Report;

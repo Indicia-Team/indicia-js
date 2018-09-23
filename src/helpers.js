@@ -5,14 +5,13 @@
 /**
  * Generate UUID.
  */
-const getNewUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+const getNewUUID = () =>
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
 
     return v.toString(16);
   });
-};
 
 /**
  * Converts DataURI object to a Blob.
@@ -54,11 +53,9 @@ const isPlainObject = (obj) => {
     const class2type = {};
     const types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
     for (let i = 0; i < types.length; i++) {
-      class2type['[object ' + types[i] + ']'] = types[i].toLowerCase();
+      class2type[`[object ${types[i]}]`] = types[i].toLowerCase();
     }
-    return obj == null ?
-      String(obj) :
-    class2type[toString.call(obj)] || 'object';
+    return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
   }
 
   function isWindow(obj) {
@@ -73,7 +70,11 @@ const isPlainObject = (obj) => {
   }
 
   // Not own constructor property must be Object
-  if (obj.constructor && !hasOwn.call(obj, 'constructor') && !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')) {
+  if (
+    obj.constructor &&
+    !hasOwn.call(obj, 'constructor') &&
+    !hasOwn.call(obj.constructor.prototype, 'isPrototypeOf')
+  ) {
     return false;
   }
 
@@ -133,8 +134,8 @@ const formatDate = (dateToFormat) => {
   }
 
   now = date || now;
-  day = (`0${now.getDate()}`).slice(-2);
-  month = (`0${(now.getMonth() + 1)}`).slice(-2);
+  day = `0${now.getDate()}`.slice(-2);
+  month = `0${now.getMonth() + 1}`.slice(-2);
 
   return `${day}/${month}/${now.getFullYear()}`;
 };

@@ -29,7 +29,7 @@ function getRandomSample(store = new Store(), samples = [], occurrences = []) {
 }
 
 function generateSampleResponse(server, type, data) {
-  const SAMPLE_POST_URL = 'x' + API_BASE + API_VER + API_SAMPLES_PATH;
+  const SAMPLE_POST_URL = `x${API_BASE}${API_VER}${API_SAMPLES_PATH}`;
 
   switch (type) {
     case 'OK':
@@ -46,11 +46,11 @@ function generateSampleResponse(server, type, data) {
           model = data(submission.data.external_key);
         }
 
-        req.respond.apply(req, serverResponses(type, {
-              cid: model.cid,
-              occurrence_cid: model.getOccurrence().cid,
-            },
-          )
+        req.respond(
+          ...serverResponses(type, {
+            cid: model.cid,
+            occurrence_cid: model.getOccurrence().cid,
+          })
         );
       });
       break;
@@ -63,7 +63,7 @@ function generateSampleResponse(server, type, data) {
           cid: data.cid,
           subsample_cid: data.getSample().cid,
           occurrence_cid: data.getSample().getOccurrence().cid,
-        }),
+        })
       );
       break;
 
@@ -72,26 +72,17 @@ function generateSampleResponse(server, type, data) {
         'POST',
         SAMPLE_POST_URL,
         serverResponses(type, {
-            occurrence_cid: data.getOccurrence().cid,
-            cid: data.cid,
-          },
-        ),
+          occurrence_cid: data.getOccurrence().cid,
+          cid: data.cid,
+        })
       );
       break;
 
     case 'ERR':
-      server.respondWith(
-        'POST',
-        SAMPLE_POST_URL,
-        serverResponses(type),
-      );
+      server.respondWith('POST', SAMPLE_POST_URL, serverResponses(type));
       break;
     default:
-
   }
 }
 
-export {
-  getRandomSample,
-  generateSampleResponse,
-};
+export { getRandomSample, generateSampleResponse };

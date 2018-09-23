@@ -9,8 +9,18 @@
 import Backbone from 'backbone';
 import $ from 'jquery';
 import _ from 'underscore';
-import { SYNCHRONISING, CONFLICT, CHANGED_LOCALLY, CHANGED_SERVER, SYNCED,
-  SERVER, LOCAL, API_BASE, API_VER, API_SAMPLES_PATH } from './constants';
+import {
+  SYNCHRONISING,
+  CONFLICT,
+  CHANGED_LOCALLY,
+  CHANGED_SERVER,
+  SYNCED,
+  SERVER,
+  LOCAL,
+  API_BASE,
+  API_VER,
+  API_SAMPLES_PATH,
+} from './constants';
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
@@ -116,7 +126,7 @@ const Sample = Backbone.Model.extend({
     this.media.add(media);
   },
 
-// overwrite if you want to validate before saving locally
+  // overwrite if you want to validate before saving locally
   validate(attributes, options = {}) {
     if (options.remote) {
       return this.validateRemote(attributes, options);
@@ -134,21 +144,21 @@ const Sample = Backbone.Model.extend({
 
     // location
     if (!attrs.location) {
-      modelErrors.location = 'can\'t be blank';
+      modelErrors.location = "can't be blank";
     }
 
     // location type
     if (!attrs.location_type) {
-      modelErrors.location_type = 'can\'t be blank';
+      modelErrors.location_type = "can't be blank";
     }
 
     // date
     if (!attrs.date) {
-      modelErrors.date = 'can\'t be blank';
+      modelErrors.date = "can't be blank";
     } else {
       const date = new Date(attrs.date);
       if (date === 'Invalid Date' || date > new Date()) {
-        modelErrors.date = (new Date(date) > new Date()) ? 'future date' : 'invalid';
+        modelErrors.date = new Date(date) > new Date() ? 'future date' : 'invalid';
       }
     }
 
@@ -211,7 +221,6 @@ const Sample = Backbone.Model.extend({
     return null;
   },
 
-
   /**
    * Synchronises the model.
    * @param method
@@ -227,10 +236,13 @@ const Sample = Backbone.Model.extend({
       return Promise.reject(new Error('Trying to locally sync a model without a store'));
     }
 
-    try { this.trigger('request', model, null, options); } catch (e) { /* continue on listener error */ }
+    try {
+      this.trigger('request', model, null, options);
+    } catch (e) {
+      /* continue on listener error */
+    }
     return this.store.sync(method, model, options);
   },
-
 
   /**
    * Syncs the record to the remote server.
@@ -287,8 +299,7 @@ const Sample = Backbone.Model.extend({
     const that = this;
 
     // async call to get the form data
-    return that._getModelData(model)
-      .then(data => that._ajaxModel(data, model, options));
+    return that._getModelData(model).then(data => that._ajaxModel(data, model, options));
   },
 
   _ajaxModel(data, model, options) {
@@ -299,7 +310,7 @@ const Sample = Backbone.Model.extend({
       timeout = typeof timeout === 'function' ? timeout() : timeout;
 
       const url = that.host_url + API_BASE + API_VER + API_SAMPLES_PATH;
-      const xhr = options.xhr = Backbone.ajax({
+      const xhr = (options.xhr = Backbone.ajax({
         url,
         type: 'POST',
         data,
@@ -310,7 +321,7 @@ const Sample = Backbone.Model.extend({
         processData: false,
         contentType: false,
         timeout,
-      });
+      }));
 
       xhr.done(responseData => fulfill(responseData));
 
@@ -347,11 +358,19 @@ const Sample = Backbone.Model.extend({
           );
           error = new Error(message);
         }
-        try { model.trigger('error:remote', error); } catch (e) { /* continue on listener error */ }
+        try {
+          model.trigger('error:remote', error);
+        } catch (e) {
+          /* continue on listener error */
+        }
         reject(error);
       });
 
-      try { model.trigger('request:remote', model, xhr, options); } catch (e) { /* continue on listener error */ }
+      try {
+        model.trigger('request:remote', model, xhr, options);
+      } catch (e) {
+        /* continue on listener error */
+      }
     });
 
     return promise;
@@ -374,7 +393,6 @@ const Sample = Backbone.Model.extend({
 
     this._setNewRemoteID(model, remoteIDs);
   },
-
 
   /**
    * Sets new server IDs to the models.
@@ -436,8 +454,7 @@ const Sample = Backbone.Model.extend({
       const formData = new FormData(); // for submission
       formData.append('submission', stringSubmission);
       // append media
-      return this._mediaAppend(media, formData)
-        .then(() => Promise.resolve(formData));
+      return this._mediaAppend(media, formData).then(() => Promise.resolve(formData));
     }
 
     return Promise.resolve(stringSubmission);
@@ -532,12 +549,12 @@ const Sample = Backbone.Model.extend({
           // get a value from a function
           value = keys[attr].values(value, submission, that);
         } else if (_.isArray(value)) {
-            // the attribute has multiple values
+          // the attribute has multiple values
           value = value.map(v => keys[attr].values[v]);
-          } else {
-            value = keys[attr].values[value];
-          }
+        } else {
+          value = keys[attr].values[value];
         }
+      }
 
       // don't need to send null or undefined
       if (value) {
@@ -552,7 +569,7 @@ const Sample = Backbone.Model.extend({
     this.metadata.sensitive && (sampleOptions.sensitive = this.metadata.sensitive);
     this.metadata.confidential && (sampleOptions.confidential = this.metadata.confidential);
     this.metadata.sensitivity_precision &&
-    (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
+      (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
 
     // transform sub models
     // occurrences
@@ -713,7 +730,6 @@ const Sample = Backbone.Model.extend({
     return !this.id;
   },
 
-
   // Fetch the model from the server, merging the response with the model's
   // local attributes. Any changed attributes will trigger a "change" event.
   fetch(options) {
@@ -732,7 +748,11 @@ const Sample = Backbone.Model.extend({
           model.samples = model._parseModels(resp.samples, Sample);
           model.media = model._parseModels(resp.media, model.Media);
 
-          try { model.trigger('sync', model, resp, options); } catch (e) { /* continue on listener error */ }
+          try {
+            model.trigger('sync', model, resp, options);
+          } catch (e) {
+            /* continue on listener error */
+          }
 
           fulfill(model);
           return null;
@@ -744,8 +764,7 @@ const Sample = Backbone.Model.extend({
   },
 
   _getDefaultMetadata(options) {
-    const metadata = typeof this.metadata === 'function' ?
-      this.metadata() : this.metadata;
+    const metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
     const today = new Date();
     const defaults = {
       survey_id: options.survey_id,

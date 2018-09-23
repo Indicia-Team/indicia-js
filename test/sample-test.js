@@ -14,28 +14,32 @@ describe('Sample', () => {
 
   before((done) => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   beforeEach((done) => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   after((done) => {
     // clean up afterwards
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   afterEach((done) => {
     // clean up afterwards
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
@@ -45,7 +49,7 @@ describe('Sample', () => {
 
     expect(sample).to.be.instanceOf(Backbone.Model);
     expect(sample.cid).to.be.a.string;
-    expect(sample.attributes).to.be.an.object
+    expect(sample.attributes).to.be.an.object;
   });
 
   it('should return JSON', () => {
@@ -145,7 +149,6 @@ describe('Sample', () => {
     expect(sample.validateRemote).to.be.a('function');
   });
 
-
   it('should validate location, location type, date and occurrences', () => {
     const sample = new Sample();
     const subSample = new Sample();
@@ -179,44 +182,41 @@ describe('Sample', () => {
     it('should throw an error if sync with no store', (done) => {
       const sample = new Sample();
       delete sample.store;
-      sample.save()
-        .catch(() => done());
+      sample.save().catch(() => done());
     });
 
     describe('Local', () => {
       it('should save and fetch and update', (done) => {
         const sample = new Sample();
 
-        sample.save({ hello: 'world!' })
-          .then((model) => {
-            const cid = model.cid;
+        sample.save({ hello: 'world!' }).then((model) => {
+          const cid = model.cid;
 
-            expect(model).to.exist;
-            expect(cid).to.exist;
-            expect(model.get('hello')).to.be.equal('world!');
+          expect(model).to.exist;
+          expect(cid).to.exist;
+          expect(model.get('hello')).to.be.equal('world!');
 
-            // get direct from storage
-            const sampleStored = new Sample(null, { cid });
-            sampleStored.fetch().then((modelStored) => {
-              expect(sampleStored.get('hello')).to.be.equal('world!');
-              expect(modelStored.get('hello')).to.be.equal('world!');
-              done();
-            });
+          // get direct from storage
+          const sampleStored = new Sample(null, { cid });
+          sampleStored.fetch().then((modelStored) => {
+            expect(sampleStored.get('hello')).to.be.equal('world!');
+            expect(modelStored.get('hello')).to.be.equal('world!');
+            done();
           });
+        });
       });
 
       it('should destroy', (done) => {
         const sample = new Sample();
 
-        sample.destroy()
-          .then((model) => {
-            const cid = model.cid;
-            expect(cid).to.be.equal(sample.cid);
+        sample.destroy().then((model) => {
+          const cid = model.cid;
+          expect(cid).to.be.equal(sample.cid);
 
-            // get direct from storage
-            const sampleStored = new Sample(null, { cid });
-            sampleStored.fetch().catch(() => done());
-          });
+          // get direct from storage
+          const sampleStored = new Sample(null, { cid });
+          sampleStored.fetch().catch(() => done());
+        });
       });
 
       it('should destroy submodels on sample destroy', (done) => {
@@ -234,7 +234,6 @@ describe('Sample', () => {
           done();
         });
       });
-
 
       it('should fire model sync events', (done) => {
         const events = ['request', 'sync', 'error'];
@@ -271,7 +270,9 @@ describe('Sample', () => {
 
         // add sample to local storage
         sample.save().then(() => {
-          sample.getSample().destroy()
+          sample
+            .getSample()
+            .destroy()
             .then(() => {
               const newCollection = new Collection(null, { model: Sample });
               newCollection.fetch().then(() => {
@@ -299,25 +300,23 @@ describe('Sample', () => {
           eventsFired.push('sync');
         });
 
-        sample.save()
-          .then(() => {
-            // send an error
-            const newSample = getRandomSample();
+        sample.save().then(() => {
+          // send an error
+          const newSample = getRandomSample();
 
-            newSample.on('error', () => {
-              newSample.store.sync.restore();
+          newSample.on('error', () => {
+            newSample.store.sync.restore();
 
-              eventsFired.push('error');
-              if (events.length === 3) {
-                done();
-              }
-            });
-
-            sinon.stub(newSample.store, 'sync')
-              .returns(Promise.reject('Some problem'));
-
-            newSample.save().catch(() => {});
+            eventsFired.push('error');
+            if (events.length === 3) {
+              done();
+            }
           });
+
+          sinon.stub(newSample.store, 'sync').returns(Promise.reject('Some problem'));
+
+          newSample.save().catch(() => {});
+        });
       });
     });
 
@@ -393,15 +392,19 @@ describe('Sample', () => {
         });
 
         const image2 = new Media({
-          data: 'data:media/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
+          data:
+            'data:media/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAolBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAFBQUFBQUEBAQEBAQEBAQICAQEBAQEBwQHBwcHBwcHBwcHBwMHCgMGBgYKCgoGBgYJCQYJCQkJCQkICwgICAgICwgICwgICwgICwgICwgLDQtGnG0lAAAANnRSTlMAAQIDBAUGDQ4PEBEUFRobHB4gIiMkJigsLjAyMzk6PEFCRUZISUtMUFBRVFdZW1xcXV5fYGEIq40aAAAAj0lEQVQYGZ3B2RZCUAAF0CNEAyql0iiNaDCc//+1ZK2L7kMP7Y3fjL6Gb8oiIYvARItyIPMH+bTQ8Jl6HQzOTHQI6osuSlrMOQSLd1SW3ENweEVlxhBCj1kXHxtuUYu4Q2mY0UbNLnhynXXKEA01YeWoo7Eio8stmKDFzJkZkISkD4lDxiokU3IEmeKN8ac3/toPTnqnlzkAAAAASUVORK5CYII=',
           type: 'png',
         });
 
-        const occurrence = new Occurrence({
-          taxon: 1234,
-        }, {
-          media: [image1, image2],
-        });
+        const occurrence = new Occurrence(
+          {
+            taxon: 1234,
+          },
+          {
+            media: [image1, image2],
+          }
+        );
 
         const sample = getRandomSample(null, null, [occurrence]);
         generateSampleResponse(server, 'OK', sample);
@@ -427,17 +430,17 @@ describe('Sample', () => {
         const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
-        sample.save(null, { remote: true })
+        sample
+          .save(null, { remote: true })
           .then(() => sample.save())
           .then(() => {
             // get new storedCollection without cached samples
             const cid = sample.cid;
             const newSample = new Sample(null, { cid });
-            newSample.fetch()
-              .then(() => {
-                expect(newSample.getSyncStatus()).to.be.equal(SYNCED);
-                done();
-              });
+            newSample.fetch().then(() => {
+              expect(newSample.getSyncStatus()).to.be.equal(SYNCED);
+              done();
+            });
           });
       });
 
@@ -456,12 +459,11 @@ describe('Sample', () => {
 
         generateSampleResponse(server, 'ERR');
 
-        const valid = sample.save(null, { remote: true })
-          .catch((err) => {
-            expect(sample._syncRemote.calledOnce).to.be.true;
-            expect(err.message).to.not.be.null;
-            done();
-          });
+        const valid = sample.save(null, { remote: true }).catch((err) => {
+          expect(sample._syncRemote.calledOnce).to.be.true;
+          expect(err.message).to.not.be.null;
+          done();
+        });
 
         expect(valid).to.be.instanceOf(Promise);
       });
@@ -475,13 +477,12 @@ describe('Sample', () => {
         expect(sample.id).to.be.undefined;
         expect(sample.getOccurrence().id).to.be.undefined;
 
-        sample.save(null, { remote: true })
-          .then(() => {
-            expect(sample.id).to.be.a('number');
-            expect(sample.getOccurrence().id).to.be.a('number');
-            expect(sample._syncRemote.calledOnce).to.be.true;
-            done();
-          });
+        sample.save(null, { remote: true }).then(() => {
+          expect(sample.id).to.be.a('number');
+          expect(sample.getOccurrence().id).to.be.a('number');
+          expect(sample._syncRemote.calledOnce).to.be.true;
+          done();
+        });
       });
 
       it('should set synchronising flag on sample', (done) => {
@@ -497,12 +498,11 @@ describe('Sample', () => {
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => {
-          sample.save(null, { remote: true })
-            .catch(() => {
-              expect(sample._syncRemote.calledTwice).to.be.true;
-              expect(sample._create.calledOnce).to.be.true;
-              done();
-            });
+          sample.save(null, { remote: true }).catch(() => {
+            expect(sample._syncRemote.calledTwice).to.be.true;
+            expect(sample._create.calledOnce).to.be.true;
+            done();
+          });
         });
       });
 
@@ -571,21 +571,20 @@ describe('Sample', () => {
 
         generateSampleResponse(server, 'OK', sample);
 
-        sample.save(null, { remote: true })
-          .then(() => {
-            // send an error
-            const newSample = getRandomSample();
-            generateSampleResponse(server, 'ERR');
+        sample.save(null, { remote: true }).then(() => {
+          // send an error
+          const newSample = getRandomSample();
+          generateSampleResponse(server, 'ERR');
 
-            newSample.on('error:remote', () => {
-              eventsFired.push('error:remote');
-              if (eventsFired.length === 3) {
-                done();
-              }
-            });
-
-            newSample.save(null, { remote: true }).catch(() => {});
+          newSample.on('error:remote', () => {
+            eventsFired.push('error:remote');
+            if (eventsFired.length === 3) {
+              done();
+            }
           });
+
+          newSample.save(null, { remote: true }).catch(() => {});
+        });
       });
 
       describe('_getModelData method', () => {
@@ -621,7 +620,6 @@ describe('Sample', () => {
 
           sample.addMedia(image2);
           sample.getOccurrence().addMedia(image);
-
 
           const promise = sample._getModelData(sample).then((data) => {
             expect(data).to.be.instanceOf(FormData);

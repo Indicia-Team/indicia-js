@@ -14,28 +14,32 @@ describe('Media', () => {
 
   before((done) => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   beforeEach((done) => {
     // clean up in case of trash
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   after((done) => {
     // clean up afterwards
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
 
   afterEach((done) => {
     // clean up afterwards
-    storedCollection.fetch()
+    storedCollection
+      .fetch()
       .then(() => storedCollection.destroy())
       .then(() => done());
   });
@@ -48,7 +52,6 @@ describe('Media', () => {
     expect(media.attributes).to.be.an.object;
     expect(Object.keys(media.attributes).length).to.be.equal(0);
   });
-
 
   // validation
 
@@ -129,7 +132,6 @@ describe('Media', () => {
         done();
       });
     });
-
 
     it('should accept file input', (done) => {
       const xhr = new XMLHttpRequest();

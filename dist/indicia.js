@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.2.7
+ * indicia 4.3.0
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.2.7"), // replaced by build
+	  VERSION: ("4.3.0"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -270,13 +270,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this2 = this;
 
 	      return this._callWhenReady(function () {
-	        // eslint-disable-line
-	        return _this2.localForage.getItem(model.cid).then(function (data) {
-	          if (!data) {
-	            return Promise.reject('LocalForage entry with ' + model.cid + ' as key not found');
-	          }
-	          return data;
-	        });
+	        return (
+	          // eslint-disable-line
+	          _this2.localForage.getItem(model.cid).then(function (data) {
+	            if (!data) {
+	              return Promise.reject('LocalForage entry with ' + model.cid + ' as key not found');
+	            }
+	            return data;
+	          })
+	        );
 	      });
 	    }
 
@@ -415,7 +417,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.store = options.store || this.store || new _Store2.default();
 
 	    if (!options.model && !this.model) {
-	      console.error('Collection\'s model must be provided');
+	      console.error("Collection's model must be provided");
 	      return;
 	    }
 
@@ -462,7 +464,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      collection[method](resp, options);
 	      try {
 	        collection.trigger('sync', collection, resp, options);
-	      } catch (e) {/* continue on listener error */}
+	      } catch (e) {
+	        /* continue on listener error */
+	      }
 	    });
 	  },
 
@@ -486,7 +490,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    try {
 	      this.trigger('request', collection, null, options);
-	    } catch (e) {/* continue on listener error */}
+	    } catch (e) {
+	      /* continue on listener error */
+	    }
 	    return this.store.sync(method, collection, options);
 	  },
 
@@ -765,17 +771,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // location
 	    if (!attrs.location) {
-	      modelErrors.location = 'can\'t be blank';
+	      modelErrors.location = "can't be blank";
 	    }
 
 	    // location type
 	    if (!attrs.location_type) {
-	      modelErrors.location_type = 'can\'t be blank';
+	      modelErrors.location_type = "can't be blank";
 	    }
 
 	    // date
 	    if (!attrs.date) {
-	      modelErrors.date = 'can\'t be blank';
+	      modelErrors.date = "can't be blank";
 	    } else {
 	      var date = new Date(attrs.date);
 	      if (date === 'Invalid Date' || date > new Date()) {
@@ -862,7 +868,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    try {
 	      this.trigger('request', model, null, options);
-	    } catch (e) {/* continue on listener error */}
+	    } catch (e) {
+	      /* continue on listener error */
+	    }
 	    return this.store.sync(method, model, options);
 	  },
 
@@ -984,13 +992,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        try {
 	          model.trigger('error:remote', error);
-	        } catch (e) {/* continue on listener error */}
+	        } catch (e) {
+	          /* continue on listener error */
+	        }
 	        reject(error);
 	      });
 
 	      try {
 	        model.trigger('request:remote', model, xhr, options);
-	      } catch (e) {/* continue on listener error */}
+	      } catch (e) {
+	        /* continue on listener error */
+	      }
 	    });
 
 	    return promise;
@@ -1417,7 +1429,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        try {
 	          model.trigger('sync', model, resp, options);
-	        } catch (e) {/* continue on listener error */}
+	        } catch (e) {
+	          /* continue on listener error */
+	        }
 
 	        fulfill(model);
 	        return null;
@@ -1711,12 +1725,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        model.attributes = attributes;
 	        try {
 	          model.trigger('sync', model, null, options);
-	        } catch (e) {/* continue on listener error */}
+	        } catch (e) {
+	          /* continue on listener error */
+	        }
 	        return model;
 	      }).catch(function (err) {
 	        try {
 	          model.trigger('error', err);
-	        } catch (e) {/* continue on listener error */}
+	        } catch (e) {
+	          /* continue on listener error */
+	        }
 	        return Promise.reject(err);
 	      });
 	    }
@@ -1740,19 +1758,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return model.save().then(function () {
 	          try {
 	            model.trigger('sync:remote', model, resp, options);
-	          } catch (e) {/* continue on listener error */}
+	          } catch (e) {
+	            /* continue on listener error */
+	          }
 	          return model;
 	        });
 	      }
 
 	      try {
 	        model.trigger('sync', model, resp, options);
-	      } catch (e) {/* continue on listener error */}
+	      } catch (e) {
+	        /* continue on listener error */
+	      }
 	      return model;
 	    }).catch(function (err) {
 	      try {
 	        model.trigger('error', err);
-	      } catch (e) {/* continue on listener error */}
+	      } catch (e) {
+	        /* continue on listener error */
+	      }
 	      return Promise.reject(err);
 	    });
 	  },
@@ -1775,20 +1799,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        model.stopListening();
 	        try {
 	          model.trigger('destroy', model, collection, options);
-	        } catch (e) {/* continue on listener error */}
+	        } catch (e) {
+	          /* continue on listener error */
+	        }
 
 	        if (!options.noSave) {
 	          // parent save the changes permanently
 	          model.parent.save(null, options).then(function () {
 	            try {
 	              model.trigger('sync', model, null, options);
-	            } catch (e) {/* continue on listener error */}
+	            } catch (e) {
+	              /* continue on listener error */
+	            }
 	            fulfill(model);
 	          });
 	        } else {
 	          try {
 	            model.trigger('sync', model, null, options);
-	          } catch (e) {/* continue on listener error */}
+	          } catch (e) {
+	            /* continue on listener error */
+	          }
 	          fulfill(model);
 	        }
 	      }
@@ -1807,10 +1837,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          model.stopListening();
 	          try {
 	            model.trigger('destroy', model, collection, options);
-	          } catch (e) {/* continue on listener error */}
+	          } catch (e) {
+	            /* continue on listener error */
+	          }
 	          try {
 	            model.trigger('sync', model, null, options);
-	          } catch (e) {/* continue on listener error */}
+	          } catch (e) {
+	            /* continue on listener error */
+	          }
 
 	          fulfill(model);
 	        }).catch(reject);
@@ -2019,12 +2053,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // type
 	    if (!attrs.data) {
 	      errors.attributes || (errors.attributes = {});
-	      errors.attributes.data = 'can\'t be empty';
+	      errors.attributes.data = "can't be empty";
 	    }
 
 	    if (!attrs.type) {
 	      errors.attributes || (errors.attributes = {});
-	      errors.attributes.type = 'can\'t be empty';
+	      errors.attributes.type = "can't be empty";
 	    }
 
 	    if (!_underscore2.default.isEmpty(errors)) {
@@ -2331,7 +2365,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // location
 	    if (!attrs.taxon) {
-	      modelErrors.taxon = 'can\'t be blank';
+	      modelErrors.taxon = "can't be blank";
 	    }
 
 	    // media

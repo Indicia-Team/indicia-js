@@ -52,7 +52,9 @@ describe('Occurrence', () => {
 
     // add sample to local storage
     sample.save().then(() => {
-      sample.getOccurrence().destroy()
+      sample
+        .getOccurrence()
+        .destroy()
         .then(() => {
           const newCollection = new Collection(null, { model: Sample });
           newCollection.fetch().then(() => {

@@ -13,7 +13,7 @@ import { getRandomSample, generateSampleResponse } from './helpers';
 describe('Collection', () => {
   const storedCollection = new Collection([], { model: Sample });
 
-  before(done => {
+  before((done) => {
     // clean up in case of trash
     storedCollection
       .fetch()
@@ -21,7 +21,7 @@ describe('Collection', () => {
       .then(() => done());
   });
 
-  beforeEach(done => {
+  beforeEach((done) => {
     // clean up in case of trash
     storedCollection
       .fetch()
@@ -29,7 +29,7 @@ describe('Collection', () => {
       .then(() => done());
   });
 
-  after(done => {
+  after((done) => {
     // clean up afterwards
     storedCollection
       .fetch()
@@ -41,7 +41,7 @@ describe('Collection', () => {
     expect(storedCollection).to.be.instanceOf(Backbone.Collection);
   });
 
-  it('should set, get and has', done => {
+  it('should set, get and has', (done) => {
     const sample = new Sample();
     const key = Date.now().toString();
     const value = Math.random();
@@ -91,20 +91,20 @@ describe('Collection', () => {
     expect(contains).to.be.false;
   });
 
-  it('should size', done => {
+  it('should size', (done) => {
     storedCollection
       .size()
-      .then(size => {
+      .then((size) => {
         expect(size).to.be.equal(0);
         storedCollection.set({ cid: helpers.getNewUUID() });
         return storedCollection.size();
       })
-      .then(newSize => {
+      .then((newSize) => {
         expect(newSize).to.be.equal(1);
         return storedCollection.destroy();
       })
       .then(() => storedCollection.size())
-      .then(finalSize => {
+      .then((finalSize) => {
         expect(finalSize).to.be.equal(0);
         done();
       });
@@ -132,7 +132,7 @@ describe('Collection', () => {
     expect(storedCollection.size()).to.be.instanceOf(Promise);
   });
 
-  it('should pass error object to on database error', done => {
+  it('should pass error object to on database error', (done) => {
     // on WebSQL+LocalForage this does not generate an error
     if (window.navigator.userAgent.search('Safari')) {
       done();
@@ -144,7 +144,7 @@ describe('Collection', () => {
       corruptedAttribute: () => {},
     };
 
-    storedCollection.set(item).catch(setErr => {
+    storedCollection.set(item).catch((setErr) => {
       expect(setErr).to.be.not.null;
       done();
     });
@@ -152,7 +152,7 @@ describe('Collection', () => {
 
   describe('Sync', () => {
     describe('Local', () => {
-      it('should fetch', done => {
+      it('should fetch', (done) => {
         const sample = getRandomSample();
         sample.save({ myattr: 'val' }).then(() => {
           const collection = new Collection([], { model: Sample });
@@ -170,7 +170,7 @@ describe('Collection', () => {
         });
       });
 
-      it('should destroy', done => {
+      it('should destroy', (done) => {
         const sample = getRandomSample();
         sample.save().then(() => {
           const collection = new Collection([], { model: Sample });
@@ -193,7 +193,7 @@ describe('Collection', () => {
         });
       });
 
-      it('should save', done => {
+      it('should save', (done) => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const collection = new Collection([], { model: Sample });
@@ -234,7 +234,7 @@ describe('Collection', () => {
         Sample.prototype._create.restore();
       });
 
-      it('should post all', done => {
+      it('should post all', (done) => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         const collection = new Collection([], { model: Sample });
@@ -250,7 +250,7 @@ describe('Collection', () => {
           expect(Sample.prototype._create.calledTwice).to.be.true;
 
           savedCollection.fetch().then(() => {
-            savedCollection.forEach(model => {
+            savedCollection.forEach((model) => {
               expect(model.getSyncStatus()).to.be.equal(SYNCED);
             });
             expect(savedCollection.length).to.be.equal(2);

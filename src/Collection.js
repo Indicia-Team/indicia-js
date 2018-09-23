@@ -10,7 +10,7 @@ const Collection = Backbone.Collection.extend({
     this.store = options.store || this.store || new Store();
 
     if (!options.model && !this.model) {
-      console.error('Collection\'s model must be provided');
+      console.error("Collection's model must be provided");
       return;
     }
 
@@ -54,7 +54,11 @@ const Collection = Backbone.Collection.extend({
       const method = options.reset ? 'reset' : 'set';
 
       collection[method](resp, options);
-      try { collection.trigger('sync', collection, resp, options); } catch (e) { /* continue on listener error */ }
+      try {
+        collection.trigger('sync', collection, resp, options);
+      } catch (e) {
+        /* continue on listener error */
+      }
     });
   },
 
@@ -73,10 +77,13 @@ const Collection = Backbone.Collection.extend({
       return Promise.reject(new Error('Trying to locally sync a collection without a store'));
     }
 
-    try { this.trigger('request', collection, null, options); } catch (e) { /* continue on listener error */ }
+    try {
+      this.trigger('request', collection, null, options);
+    } catch (e) {
+      /* continue on listener error */
+    }
     return this.store.sync(method, collection, options);
   },
-
 
   /**
    * Syncs the collection to the remote server.
