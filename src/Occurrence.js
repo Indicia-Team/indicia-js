@@ -218,15 +218,13 @@ const Occurrence = Backbone.Model.extend({
         if (typeof keys[attr].values === 'function') {
           // get a value from a function
           value = keys[attr].values(value, submission, that);
-        } else {
-          if (_.isArray(value)) {
+        } else if (_.isArray(value)) {
             // the attribute has multiple values
-            value = _.map(value, (v) => {return keys[attr].values[v]} );
+          value = value.map(v => keys[attr].values[v]);
           } else {
             value = keys[attr].values[value];
           }
         }
-      }
 
       // don't need to send null or undefined
       if (value) {
