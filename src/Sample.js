@@ -516,7 +516,7 @@ const Sample = Backbone.Model.extend({
     const that = this;
     const sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = $.extend(true, Sample.keys, sampleKeys); // warehouse keys/values to transform
-    let media = _.clone(this.media.models); // all media within this and child models
+    let media = [...this.media.models]; // all media within this and child models
 
     const submission = {
       id: this.id,

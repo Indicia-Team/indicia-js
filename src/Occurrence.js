@@ -163,7 +163,7 @@ const Occurrence = Backbone.Model.extend({
     const that = this;
     const occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = $.extend(true, Occurrence.keys, occKeys); // warehouse keys/values to transform
-    const media = _.clone(this.media.models); // all media within this and child models
+    const media = [...this.media.models]; // all media within this and child models
 
     const submission = {
       id: this.id,
