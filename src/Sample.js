@@ -254,38 +254,38 @@ const Sample = Backbone.Model.extend({
       return Promise.reject(new Error('A "url" property or function must be specified'));
     }
 
-    model.synchronising = true;
+    model.remote.synchronising = true;
 
     // model.trigger('request', model, xhr, options);
     switch (method) {
       case 'create':
         return this._create(model, options)
           .then((val) => {
-            model.synchronising = false;
+            model.remote.synchronising = false;
             return val;
           })
           .catch((err) => {
-            model.synchronising = false;
+            model.remote.synchronising = false;
             return Promise.reject(err);
           });
 
       case 'update':
         // todo
-        model.synchronising = false;
+        model.remote.synchronising = false;
         return Promise.reject(new Error('Updating the model is not possible yet.'));
 
       case 'read':
         // todo
-        model.synchronising = false;
+        model.remote.synchronising = false;
         return Promise.reject(new Error('Reading the model is not possible yet.'));
 
       case 'delete':
         // todo
-        model.synchronising = false;
+        model.remote.synchronising = false;
         return Promise.reject(new Error('Deleting the model is not possible yet.'));
 
       default:
-        model.synchronising = false;
+        model.remote.synchronising = false;
         return Promise.reject(new Error(`No such remote sync option: ${method}`));
     }
   },
@@ -634,7 +634,7 @@ const Sample = Backbone.Model.extend({
   getSyncStatus() {
     const meta = this.metadata;
     // on server
-    if (this.synchronising) {
+    if (this.remote.synchronising) {
       return SYNCHRONISING;
     }
 

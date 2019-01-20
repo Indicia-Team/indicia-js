@@ -490,7 +490,7 @@ describe('Sample', () => {
         generateSampleResponse(server, 'OK', sample);
 
         sample.save(null, { remote: true }).then(() => done());
-        expect(sample.synchronising).to.be.true;
+        expect(sample.remote.synchronising).to.be.true;
       });
 
       it('should not double create the record', (done) => {

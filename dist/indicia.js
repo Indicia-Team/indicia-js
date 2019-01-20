@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.3.1
+ * indicia 4.4.0
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.3.1"), // replaced by build
+	  VERSION: ("4.4.0"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -887,36 +887,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return Promise.reject(new Error('A "url" property or function must be specified'));
 	    }
 
-	    model.synchronising = true;
+	    model.remote.synchronising = true;
 
 	    // model.trigger('request', model, xhr, options);
 	    switch (method) {
 	      case 'create':
 	        return this._create(model, options).then(function (val) {
-	          model.synchronising = false;
+	          model.remote.synchronising = false;
 	          return val;
 	        }).catch(function (err) {
-	          model.synchronising = false;
+	          model.remote.synchronising = false;
 	          return Promise.reject(err);
 	        });
 
 	      case 'update':
 	        // todo
-	        model.synchronising = false;
+	        model.remote.synchronising = false;
 	        return Promise.reject(new Error('Updating the model is not possible yet.'));
 
 	      case 'read':
 	        // todo
-	        model.synchronising = false;
+	        model.remote.synchronising = false;
 	        return Promise.reject(new Error('Reading the model is not possible yet.'));
 
 	      case 'delete':
 	        // todo
-	        model.synchronising = false;
+	        model.remote.synchronising = false;
 	        return Promise.reject(new Error('Deleting the model is not possible yet.'));
 
 	      default:
-	        model.synchronising = false;
+	        model.remote.synchronising = false;
 	        return Promise.reject(new Error('No such remote sync option: ' + method));
 	    }
 	  },
@@ -1307,7 +1307,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  getSyncStatus: function getSyncStatus() {
 	    var meta = this.metadata;
 	    // on server
-	    if (this.synchronising) {
+	    if (this.remote.synchronising) {
 	      return _constants.SYNCHRONISING;
 	    }
 
