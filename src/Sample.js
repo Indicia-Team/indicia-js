@@ -72,6 +72,8 @@ const Sample = Backbone.Model.extend({
     // metadata
     this.metadata = this._getDefaultMetadata(options);
 
+    this.remote = {}; // for synchronisation state
+
     // initialise sub models
     this.occurrences = this._parseModels(options.occurrences, this.Occurrence);
     this.samples = this._parseModels(options.samples, this.constructor);
