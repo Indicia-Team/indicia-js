@@ -1,6 +1,6 @@
 /*!
  * 
- * indicia 4.4.1
+ * indicia 4.4.2
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author Karolis Kazlauskis
@@ -109,7 +109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Indicia = {
 	  /* global LIB_VERSION */
-	  VERSION: ("4.4.1"), // replaced by build
+	  VERSION: ("4.4.2"), // replaced by build
 
 	  Store: _Store2.default,
 	  Collection: _Collection2.default,
@@ -963,7 +963,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 
 	      xhr.fail(function (jqXHR, textStatus, errorThrown) {
-	        if (errorThrown === 'Conflict') {
+	        if (jqXHR.status === 409) {
 	          // duplicate occurred - this fixes only occurrence duplicates!
 	          // todo: remove once this is sorted
 	          var responseData = {

@@ -328,7 +328,7 @@ const Sample = Backbone.Model.extend({
       xhr.done(responseData => fulfill(responseData));
 
       xhr.fail((jqXHR, textStatus, errorThrown) => {
-        if (errorThrown === 'Conflict') {
+        if (jqXHR.status === 409) {
           // duplicate occurred - this fixes only occurrence duplicates!
           // todo: remove once this is sorted
           const responseData = {
