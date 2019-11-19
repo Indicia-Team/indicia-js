@@ -1,6 +1,4 @@
-import _ from 'underscore';
 import Store from './Store';
-import Collection from './Collection';
 import Sample from './Sample';
 import Occurrence from './Occurrence';
 import Media from './Media';
@@ -12,14 +10,13 @@ const Indicia = {
   VERSION: LIB_VERSION, // replaced by build
 
   Store,
-  Collection,
 
   Sample,
   Occurrence,
   Media,
   Report,
-};
 
-_.extend(Indicia, CONST);
+  ...CONST,
+};
 
 export { Indicia as default };

@@ -5,13 +5,15 @@
 /**
  * Generate UUID.
  */
+/* eslint-disable no-bitwise */
 const getNewUUID = () =>
-  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
 
     return v.toString(16);
   });
+/* eslint-enable no-bitwise */
 
 /**
  * Converts DataURI object to a Blob.
@@ -37,25 +39,32 @@ const dataURItoBlob = (dataURI, fileType) => {
 // data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
 // The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
 // Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
-const isDataURL = (string) => {
+const isDataURL = string => {
   if (!string) {
     return false;
   }
   const normalized = string.toString(); // numbers
 
+  /* eslint-disable no-useless-escape, max-len */
   const regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
   return !!normalized.match(regex);
 };
+/* eslint-enable no-useless-escape, max-len  */
 
 // From jQuery 1.4.4 .
-const isPlainObject = (obj) => {
+/* eslint-disable */
+const isPlainObject = obj => {
   function type(obj) {
     const class2type = {};
-    const types = 'Boolean Number String Function Array Date RegExp Object'.split(' ');
+    const types = 'Boolean Number String Function Array Date RegExp Object'.split(
+      ' '
+    );
     for (let i = 0; i < types.length; i++) {
       class2type[`[object ${types[i]}]`] = types[i].toLowerCase();
     }
-    return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
+    return obj == null
+      ? String(obj)
+      : class2type[toString.call(obj)] || 'object';
   }
 
   function isWindow(obj) {
@@ -89,19 +98,20 @@ const isPlainObject = (obj) => {
 };
 
 // checks if the object has any elements.
-const isEmptyObject = (obj) => {
+const isEmptyObject = obj => {
   for (const key in obj) {
     return false;
   }
   return true;
 };
+/* eslint-enable */
 
 /**
  * Formats the date to Indicia Warehouse format.
  * @param date String or Date object
  * @returns String formatted date
  */
-const formatDate = (dateToFormat) => {
+const formatDate = dateToFormat => {
   let date = dateToFormat;
   let now = new Date();
   let day = 0;

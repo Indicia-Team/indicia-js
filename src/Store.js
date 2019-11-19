@@ -1,5 +1,6 @@
 import Backbone from 'backbone';
 import LocalForage from 'localforage';
+import _ from 'underscore';
 
 /*!
  Inspired by localForage Backbone Adapter
@@ -15,7 +16,7 @@ class Store {
     this.localForage = null;
     this.ready = new Promise((resolve, reject) => {
       // check custom drivers (eg. SQLite)
-      const customDriversPromise = new Promise((_resolve) => {
+      const customDriversPromise = new Promise(_resolve => {
         if (options.driverOrder && typeof options.driverOrder[0] === 'object') {
           LocalForage.defineDriver(options.driverOrder[0]).then(_resolve);
         } else {
@@ -34,7 +35,11 @@ class Store {
           dbConfig.version = options.version;
         }
 
-        const driverOrder = options.driverOrder || ['indexeddb', 'websql', 'localstorage'];
+        const driverOrder = options.driverOrder || [
+          'indexeddb',
+          'websql',
+          'localstorage',
+        ];
         const drivers = Store._getDriverOrder(driverOrder);
         const DB = options.LocalForage || LocalForage;
 
@@ -51,7 +56,7 @@ class Store {
   }
 
   static _getDriverOrder(driverOrder) {
-    return driverOrder.map((driver) => {
+    return driverOrder.map(driver => {
       switch (driver) {
         case 'indexeddb':
           return LocalForage.INDEXEDDB;
@@ -72,7 +77,9 @@ class Store {
   sync(method, model, options) {
     switch (method) {
       case 'read':
-        return model.cid ? this.find(model, options) : this.findAll(model, options);
+        return model.cid
+          ? this.find(model, options)
+          : this.findAll(model, options);
       case 'create':
         return this.create(model, options);
       case 'update':
@@ -80,7 +87,9 @@ class Store {
       case 'delete':
         return this.destroy(model, options);
       default:
-        return Promise.reject(new Error(`Local Sync method not found ${method}`));
+        return Promise.reject(
+          new Error(`Local Sync method not found ${method}`)
+        );
     }
   }
 
@@ -93,8 +102,10 @@ class Store {
         }
 
         const toWait = [];
-        _.each(model.models, (collectionModel) => {
-          if (collectionModel.store) toWait.push(collectionModel.save(null, options));
+        _.each(model.models, collectionModel => {
+          if (collectionModel.store) {
+            toWait.push(collectionModel.save(null, options));
+          }
         });
         return Promise.all(toWait);
       }
@@ -105,7 +116,9 @@ class Store {
       }
 
       const key = model.cid;
-      return this.localForage.setItem(key, model.toJSON()).then(() => Promise.resolve()); // don't return anything to update the model
+      return this.localForage
+        .setItem(key, model.toJSON())
+        .then(() => Promise.resolve()); // don't return anything to update the model
     });
   }
 
@@ -122,9 +135,11 @@ class Store {
   find(model) {
     return this._callWhenReady(() =>
       // eslint-disable-line
-      this.localForage.getItem(model.cid).then((data) => {
+      this.localForage.getItem(model.cid).then(data => {
         if (!data) {
-          return Promise.reject(`LocalForage entry with ${model.cid} as key not found`);
+          return Promise.reject(
+            `LocalForage entry with ${model.cid} as key not found`
+          );
         }
         return data;
       })
@@ -137,7 +152,7 @@ class Store {
       // build up samples
       const models = [];
       return this.localForage
-        .iterate((value) => {
+        .iterate(value => {
           models.push(value);
         })
         .then(() => Promise.resolve(models));
@@ -155,7 +170,7 @@ class Store {
         const toWait = [];
         // need to clone:
         // http://stackoverflow.com/questions/10858935/cleanest-way-to-destroy-every-model-in-a-collection-in-backbone
-        _.each(_.clone(model.models), (collectionModel) => {
+        _.each(_.clone(model.models), collectionModel => {
           if (collectionModel.store) toWait.push(collectionModel.destroy());
         });
         return Promise.all(toWait);
@@ -167,7 +182,9 @@ class Store {
       }
 
       const key = model.cid;
-      return this.localForage.removeItem(key).then(() => Promise.resolve(model.toJSON()));
+      return this.localForage
+        .removeItem(key)
+        .then(() => Promise.resolve(model.toJSON()));
     });
   }
 

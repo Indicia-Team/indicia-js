@@ -179,9 +179,12 @@ model.toJSON();
 
 // Collection
 
-collection.save(attrs, options); // returns Promise [local and remote]
-collection.destroy(options); // returns Promise [local]
+collection.save(options); // returns Promise [local and remote]
 collection.fetch(options); // returns Promise [local]
+collection.add(options); // returns Promise [local]
+//add
+//filter
+//this.metadata
 
 ```
 

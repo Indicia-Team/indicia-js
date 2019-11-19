@@ -33,7 +33,7 @@ function generateSampleResponse(server, type, data) {
 
   switch (type) {
     case 'OK':
-      server.respondWith((req) => {
+      server.respondWith(req => {
         let model = data;
         if (typeof data === 'function') {
           let submission;

@@ -1,8 +1,6 @@
 /** *********************************************************************
  * IMAGE
  **********************************************************************/
-import Backbone from 'backbone';
-import _ from 'underscore';
 
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
@@ -91,7 +89,7 @@ const Media = Backbone.Model.extend({
     const that = this;
     const promise = new Promise((fulfill, reject) => {
       Media.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT)
-        .then((args) => {
+        .then(args => {
           const [image, data] = args;
           that.set('data', data);
           fulfill([image, data]);
@@ -118,7 +116,7 @@ const Media = Backbone.Model.extend({
           THUMBNAIL_WIDTH || options.width,
           THUMBNAIL_WIDTH || options.width
         )
-          .then((args) => {
+          .then(args => {
             const [, data] = args;
             that.set('thumbnail', data);
             fulfill();
@@ -131,7 +129,7 @@ const Media = Backbone.Model.extend({
         width: THUMBNAIL_WIDTH || options.width,
         height: THUMBNAIL_HEIGHT || options.height,
       })
-        .then((data) => {
+        .then(data => {
           that.set('thumbnail', data[0]);
           fulfill();
         })
@@ -217,10 +215,12 @@ _.extend(Media, {
         let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
         if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-        Media.resize(file, fileType, options.width, options.height).then((args) => {
-          const [image, dataURI] = args;
-          fulfill([dataURI, fileType, image.width, image.height]);
-        });
+        Media.resize(file, fileType, options.width, options.height).then(
+          args => {
+            const [image, dataURI] = args;
+            fulfill([dataURI, fileType, image.width, image.height]);
+          }
+        );
         return;
       }
 
@@ -231,10 +231,15 @@ _.extend(Media, {
       }
 
       const reader = new FileReader();
-      reader.onload = function (event) {
+      reader.onload = function(event) {
         if (options.width || options.height) {
           // resize
-          Media.resize(event.target.result, file.type, options.width, options.height).then((args) => {
+          Media.resize(
+            event.target.result,
+            file.type,
+            options.width,
+            options.height
+          ).then(args => {
             const [image, dataURI] = args;
             fulfill([dataURI, file.type, image.width, image.height]);
           });
@@ -262,7 +267,7 @@ _.extend(Media, {
    * @param MAX_HEIGHT
    */
   resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
-    const promise = new Promise((fulfill) => {
+    const promise = new Promise(fulfill => {
       const image = new window.Image(); // native one
 
       image.onload = () => {

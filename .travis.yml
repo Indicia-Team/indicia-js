@@ -6,6 +6,7 @@ before_install:
 
 script:
   - npm run build # check the full build
+  - npm run test:eslint
   - karma start test/_karma.conf-sauce.js
 notifications:
   email: false

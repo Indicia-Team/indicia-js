@@ -41,10 +41,9 @@ const rollupBuilds = [
       isProduction &&
         license({ banner: { commentStyle: 'ignored', content: banner } }),
       resolve(),
-      isProduction &&
-        replace({
-          LIB_VERSION: JSON.stringify(pkg.version),
-        }),
+      replace({
+        LIB_VERSION: JSON.stringify(pkg.version),
+      }),
       babel({
         exclude: 'node_modules/**',
         babelrc: false,
@@ -58,6 +57,11 @@ const rollupBuilds = [
               },
             },
           ],
+        ],
+        runtimeHelpers: true,
+        plugins: [
+          '@babel/plugin-transform-runtime',
+          '@babel/plugin-proposal-class-properties',
         ],
       }),
       commonjs(),

@@ -13,38 +13,13 @@ describe('Media', function tests() {
 
   const store = new Store();
   const storedCollection = new Collection(null, { store, model: Sample });
+  const cleanUp = () =>
+    storedCollection.fetch().then(() => storedCollection.destroy());
 
-  before((done) => {
-    // clean up in case of trash
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  beforeEach((done) => {
-    // clean up in case of trash
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  after((done) => {
-    // clean up afterwards
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  afterEach((done) => {
-    // clean up afterwards
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
+  before(cleanUp);
+  beforeEach(cleanUp);
+  after(cleanUp);
+  afterEach(cleanUp);
 
   it('should be a Backbone model', () => {
     const media = new Media();
@@ -72,7 +47,7 @@ describe('Media', function tests() {
     expect(invalids.attributes.type).to.be.a('string');
   });
 
-  it('should save parent on media save', (done) => {
+  it('should save parent on media save', done => {
     const media = new Media();
     const sample = getRandomSample(store);
     sample.getOccurrence().addMedia(media);
@@ -97,7 +72,7 @@ describe('Media', function tests() {
     expect(promise).to.be.an.instanceof(Promise);
   });
 
-  it('should save parent on destroy', (done) => {
+  it('should save parent on destroy', done => {
     const media = new Media();
     const occurrence = new Occurrence(null, {
       media: [media],
@@ -124,10 +99,10 @@ describe('Media', function tests() {
   });
 
   describe('getDataURI', () => {
-    it('should accept media path', (done) => {
+    it('should accept media path', done => {
       const file = '/base/test/images/image.jpg';
-      Media.getDataURI(file).then((args) => {
-        const [dataURI, type, width, height] = args;
+      Media.getDataURI(file).then(args => {
+        const [, type, width, height] = args;
         expect(type).to.be.equal('jpeg');
         expect(width).to.be.equal(960);
         expect(height).to.be.equal(710);
@@ -135,15 +110,15 @@ describe('Media', function tests() {
       });
     });
 
-    it('should accept file input', (done) => {
+    it('should accept file input', done => {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', '/base/test/images/image.jpg', true);
       xhr.responseType = 'blob';
-      xhr.onload = function () {
+      xhr.onload = function() {
         if (this.status === 200) {
           const file = this.response; // blob
-          Media.getDataURI(file).then((args) => {
-            const [dataURI, type, width, height] = args;
+          Media.getDataURI(file).then(args => {
+            const [, type, width, height] = args;
             expect(type).to.be.equal('jpeg');
             expect(width).to.be.equal(960);
             expect(height).to.be.equal(710);

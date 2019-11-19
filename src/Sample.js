@@ -26,7 +26,6 @@ import syncHelpers from './sync_helpers';
 import Media from './Media';
 import Store from './Store';
 import Occurrence from './Occurrence';
-import Collection from './Collection';
 
 const Sample = Backbone.Model.extend({
   Media,
@@ -160,7 +159,8 @@ const Sample = Backbone.Model.extend({
     } else {
       const date = new Date(attrs.date);
       if (date === 'Invalid Date' || date > new Date()) {
-        modelErrors.date = new Date(date) > new Date() ? 'future date' : 'invalid';
+        modelErrors.date =
+          new Date(date) > new Date() ? 'future date' : 'invalid';
       }
     }
 
@@ -171,7 +171,7 @@ const Sample = Backbone.Model.extend({
 
     // samples
     if (this.samples.length) {
-      this.samples.each((model) => {
+      this.samples.each(model => {
         const errors = model.validateRemote();
         if (errors) {
           const sampleID = model.cid;
@@ -182,7 +182,7 @@ const Sample = Backbone.Model.extend({
 
     // occurrences
     if (this.occurrences.length) {
-      this.occurrences.each((occurrence) => {
+      this.occurrences.each(occurrence => {
         const errors = occurrence.validateRemote();
         if (errors) {
           const occurrenceID = occurrence.cid;
@@ -193,7 +193,7 @@ const Sample = Backbone.Model.extend({
 
     // media
     if (this.media.length) {
-      this.media.each((mediaModel) => {
+      this.media.each(mediaModel => {
         const errors = mediaModel.validateRemote();
         if (errors) {
           const mediaID = mediaModel.cid;
@@ -235,7 +235,9 @@ const Sample = Backbone.Model.extend({
     }
 
     if (!this.store) {
-      return Promise.reject(new Error('Trying to locally sync a model without a store'));
+      return Promise.reject(
+        new Error('Trying to locally sync a model without a store')
+      );
     }
 
     try {
@@ -253,7 +255,9 @@ const Sample = Backbone.Model.extend({
   _syncRemote(method, model, options) {
     // Ensure that we have a URL.
     if (!this.host_url) {
-      return Promise.reject(new Error('A "url" property or function must be specified'));
+      return Promise.reject(
+        new Error('A "url" property or function must be specified')
+      );
     }
 
     model.remote.synchronising = true;
@@ -262,11 +266,11 @@ const Sample = Backbone.Model.extend({
     switch (method) {
       case 'create':
         return this._create(model, options)
-          .then((val) => {
+          .then(val => {
             model.remote.synchronising = false;
             return val;
           })
-          .catch((err) => {
+          .catch(err => {
             model.remote.synchronising = false;
             return Promise.reject(err);
           });
@@ -274,21 +278,29 @@ const Sample = Backbone.Model.extend({
       case 'update':
         // todo
         model.remote.synchronising = false;
-        return Promise.reject(new Error('Updating the model is not possible yet.'));
+        return Promise.reject(
+          new Error('Updating the model is not possible yet.')
+        );
 
       case 'read':
         // todo
         model.remote.synchronising = false;
-        return Promise.reject(new Error('Reading the model is not possible yet.'));
+        return Promise.reject(
+          new Error('Reading the model is not possible yet.')
+        );
 
       case 'delete':
         // todo
         model.remote.synchronising = false;
-        return Promise.reject(new Error('Deleting the model is not possible yet.'));
+        return Promise.reject(
+          new Error('Deleting the model is not possible yet.')
+        );
 
       default:
         model.remote.synchronising = false;
-        return Promise.reject(new Error(`No such remote sync option: ${method}`));
+        return Promise.reject(
+          new Error(`No such remote sync option: ${method}`)
+        );
     }
   },
 
@@ -301,7 +313,9 @@ const Sample = Backbone.Model.extend({
     const that = this;
 
     // async call to get the form data
-    return that._getModelData(model).then(data => that._ajaxModel(data, model, options));
+    return that
+      ._getModelData(model)
+      .then(data => that._ajaxModel(data, model, options));
   },
 
   _ajaxModel(data, model, options) {
@@ -339,7 +353,7 @@ const Sample = Backbone.Model.extend({
             },
           };
 
-          jqXHR.responseJSON.errors.forEach((error) => {
+          jqXHR.responseJSON.errors.forEach(error => {
             responseData.data.id = error.sample_id;
             responseData.data.external_key = error.sample_external_key;
             responseData.data.occurrences.push({
@@ -385,8 +399,12 @@ const Sample = Backbone.Model.extend({
     // recursively extracts ids from collection of response models
     function getIDs(data) {
       remoteIDs[data.external_key] = data.id;
-      if (data.samples) data.samples.forEach(subModel => getIDs(subModel));
-      if (data.occurrences) data.occurrences.forEach(subModel => getIDs(subModel));
+      if (data.samples) {
+        data.samples.forEach(subModel => getIDs(subModel));
+      }
+      if (data.occurrences) {
+        data.occurrences.forEach(subModel => getIDs(subModel));
+      }
       // Images don't store external_keys yet.
       // if (data.media) data.media.forEach(subModel => getIDs(subModel));
     }
@@ -408,13 +426,19 @@ const Sample = Backbone.Model.extend({
 
     // do that for all submodels
     if (model.samples) {
-      model.samples.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+      model.samples.forEach(subModel =>
+        this._setNewRemoteID(subModel, remoteIDs)
+      );
     }
     if (model.occurrences) {
-      model.occurrences.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+      model.occurrences.forEach(subModel =>
+        this._setNewRemoteID(subModel, remoteIDs)
+      );
     }
     if (model.media) {
-      model.media.forEach(subModel => this._setNewRemoteID(subModel, remoteIDs));
+      model.media.forEach(subModel =>
+        this._setNewRemoteID(subModel, remoteIDs)
+      );
     }
   },
 
@@ -431,7 +455,7 @@ const Sample = Backbone.Model.extend({
 
     // allow updating the submission data if onSend function is set
     if (this.onSend) {
-      return this.onSend(submission, media).then((data) => {
+      return this.onSend(submission, media).then(data => {
         const [newSubmission, newMedia] = data;
         return that._normaliseModelData(newSubmission, newMedia);
       });
@@ -456,7 +480,9 @@ const Sample = Backbone.Model.extend({
       const formData = new FormData(); // for submission
       formData.append('submission', stringSubmission);
       // append media
-      return this._mediaAppend(media, formData).then(() => Promise.resolve(formData));
+      return this._mediaAppend(media, formData).then(() =>
+        Promise.resolve(formData)
+      );
     }
 
     return Promise.resolve(stringSubmission);
@@ -464,8 +490,8 @@ const Sample = Backbone.Model.extend({
 
   _mediaAppend(media, formData) {
     const mediaProcesses = [];
-    media.forEach((mediaModel) => {
-      const imagePromise = new Promise((_fulfill) => {
+    media.forEach(mediaModel => {
+      const imagePromise = new Promise(_fulfill => {
         const url = mediaModel.getURL();
         const type = mediaModel.get('type');
         const name = mediaModel.cid;
@@ -516,7 +542,8 @@ const Sample = Backbone.Model.extend({
    */
   _getSubmission(options = {}) {
     const that = this;
-    const sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
+    const sampleKeys =
+      typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = $.extend(true, Sample.keys, sampleKeys); // warehouse keys/values to transform
     let media = [...this.media.models]; // all media within this and child models
 
@@ -530,7 +557,7 @@ const Sample = Backbone.Model.extend({
     };
 
     // transform attributes
-    Object.keys(this.attributes).forEach((attr) => {
+    Object.keys(this.attributes).forEach(attr => {
       // no need to send attributes with no values
       let value = that.attributes[attr];
       if (!value) return;
@@ -566,26 +593,49 @@ const Sample = Backbone.Model.extend({
 
     const sampleOptions = _.extend({}, options);
     this.metadata.training && (sampleOptions.training = this.metadata.training);
-    this.metadata.release_status && (sampleOptions.release_status = this.metadata.release_status);
-    this.metadata.record_status && (sampleOptions.record_status = this.metadata.record_status);
-    this.metadata.sensitive && (sampleOptions.sensitive = this.metadata.sensitive);
-    this.metadata.confidential && (sampleOptions.confidential = this.metadata.confidential);
+    this.metadata.release_status &&
+      (sampleOptions.release_status = this.metadata.release_status);
+    this.metadata.record_status &&
+      (sampleOptions.record_status = this.metadata.record_status);
+    this.metadata.sensitive &&
+      (sampleOptions.sensitive = this.metadata.sensitive);
+    this.metadata.confidential &&
+      (sampleOptions.confidential = this.metadata.confidential);
     this.metadata.sensitivity_precision &&
       (sampleOptions.sensitivity_precision = this.metadata.sensitivity_precision);
 
     // transform sub models
     // occurrences
-    const [occurrences, occurrencesMedia] = this.occurrences._getSubmission(sampleOptions);
+    const occurrences = [];
+    let occurrencesMedia = [];
+    this.occurrences.forEach(model => {
+      const [modelSubmission, modelMedia] = model._getSubmission(sampleOptions);
+      occurrences.push(modelSubmission);
+      occurrencesMedia = occurrencesMedia.concat(modelMedia);
+    });
+
     submission.occurrences = occurrences;
     media = media.concat(occurrencesMedia);
 
     // samples
-    const [samples, samplesMedia] = this.samples._getSubmission(sampleOptions);
+    const samples = [];
+    let samplesMedia = [];
+    this.samples.forEach(model => {
+      const [modelSubmission, modelMedia] = model._getSubmission(sampleOptions);
+      samples.push(modelSubmission);
+      samplesMedia = samplesMedia.concat(modelMedia);
+    });
+
     submission.samples = samples;
     media = media.concat(samplesMedia);
 
     // media - does not return any media-models only JSON data about them
-    const [mediaSubmission] = this.media._getSubmission(sampleOptions);
+    let mediaSubmission = [];
+    this.media.forEach(model => {
+      const [, modelMedia] = model._getSubmission(sampleOptions);
+      mediaSubmission = mediaSubmission.concat(modelMedia);
+    });
+
     submission.media = mediaSubmission;
 
     return [submission, media];
@@ -699,7 +749,8 @@ const Sample = Backbone.Model.extend({
     }
 
     const user = typeof this.user === 'function' ? this.user() : this.user;
-    const password = typeof this.password === 'function' ? this.password() : this.password;
+    const password =
+      typeof this.password === 'function' ? this.password() : this.password;
     const basicAuth = btoa(`${user}:${password}`);
 
     return `Basic  ${basicAuth}`;
@@ -714,7 +765,7 @@ const Sample = Backbone.Model.extend({
     const that = this;
 
     const modelsArray = [];
-    _.each(models, (model) => {
+    _.each(models, model => {
       if (model instanceof Model) {
         model.setParent(that);
         modelsArray.push(model);
@@ -739,14 +790,17 @@ const Sample = Backbone.Model.extend({
     const promise = new Promise((fulfill, reject) => {
       options = _.extend({ parse: true }, options);
       return this.sync('read', this, options)
-        .then((resp) => {
+        .then(resp => {
           // set the returned model's data
           model.id = resp.id;
           model.metadata = resp.metadata;
           if (!model.set(resp.attributes, options)) return false;
 
           // initialise sub models
-          model.occurrences = model._parseModels(resp.occurrences, model.Occurrence);
+          model.occurrences = model._parseModels(
+            resp.occurrences,
+            model.Occurrence
+          );
           model.samples = model._parseModels(resp.samples, Sample);
           model.media = model._parseModels(resp.media, model.Media);
 
@@ -766,7 +820,8 @@ const Sample = Backbone.Model.extend({
   },
 
   _getDefaultMetadata(options) {
-    const metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
+    const metadata =
+      typeof this.metadata === 'function' ? this.metadata() : this.metadata;
     const today = new Date();
     const defaults = {
       survey_id: options.survey_id,

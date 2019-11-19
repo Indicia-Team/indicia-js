@@ -16,7 +16,8 @@ class Report {
   run(params) {
     const that = this;
     const promise = new Promise((fulfill, reject) => {
-      const url = this.host_url + API_BASE + API_VER + API_REPORTS_PATH + this.report;
+      const url =
+        this.host_url + API_BASE + API_VER + API_REPORTS_PATH + this.report;
 
       params = $.extend(params || that.params, { api_key: that.api_key });
       $.get({
@@ -51,7 +52,8 @@ class Report {
     }
 
     const user = typeof this.user === 'function' ? this.user() : this.user;
-    const password = typeof this.password === 'function' ? this.password() : this.password;
+    const password =
+      typeof this.password === 'function' ? this.password() : this.password;
     const basicAuth = btoa(`${user}:${password}`);
 
     return `Basic  ${basicAuth}`;

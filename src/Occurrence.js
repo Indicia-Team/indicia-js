@@ -1,60 +1,45 @@
 /** *********************************************************************
  * OCCURRENCE
  **********************************************************************/
-import Backbone from 'backbone';
-import _ from 'underscore';
-import $ from 'jquery';
 import helpers from './helpers';
 import syncHelpers from './sync_helpers';
 import Media from './Media';
-import Collection from './Collection';
 
-const Occurrence = Backbone.Model.extend({
-  Media,
+class Occurrence {
+  /**
+   * Warehouse attributes and their values.
+   */
+  static keys = {
+    taxon: {
+      id: 'taxa_taxon_list_id',
+    },
+    comment: { id: 'comment' },
+  };
+
+  Media = Media;
+  keys = Occurrence.keys;
 
   constructor(attributes = {}, options = {}) {
-    const that = this;
-    let attrs = attributes;
-
+  
     this.id = options.id; // remote ID
     this.cid = options.cid || helpers.getNewUUID();
-    this.setParent(options.parent || this.parent);
 
-    this.keys = options.keys || this.keys; // warehouse attribute keys
+    this.setParent(options.parent);
 
-    if (options.Media) this.Media = options.Media;
-
-    this.attributes = {};
-    if (options.collection) this.collection = options.collection;
-    if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
-    this.set(attrs, options);
-    this.changed = {};
+    this.attributes = { ...attributes };
 
     this.metadata = this._getDefaultMetadata(options);
 
-    if (options.media) {
-      const mediaArray = [];
-      _.each(options.media, (media) => {
-        if (media instanceof this.Media) {
-          media.setParent(that);
-          mediaArray.push(media);
-        } else {
-          const modelOptions = _.extend(media, { parent: that });
-          mediaArray.push(new this.Media(media.attributes, modelOptions));
-        }
-      });
-      this.media = new Collection(mediaArray, {
-        model: this.Media,
-      });
-    } else {
-      this.media = new Collection([], {
-        model: this.Media,
-      });
-    }
-
-    this.initialize.apply(this, arguments); // eslint-disable-line
-  },
+    this.media = [...options.media].map(media => {
+      if (media instanceof this.Media) {
+        media.setParent(this);
+        return media;
+      } else {
+        const modelOptions = { ...media, ...{ parent: that } };
+        return new this.Media(media.attributes, modelOptions);
+      }
+    });
+  }
 
   /**
    * Sets parent.
@@ -69,7 +54,7 @@ const Occurrence = Backbone.Model.extend({
     this.parent.on('destroy', () => {
       that.destroy({ noSave: true });
     });
-  },
+  }
 
   /**
    * Adds an media to occurrence and sets the medias's parent to this.
@@ -79,7 +64,7 @@ const Occurrence = Backbone.Model.extend({
     if (!mediaObj) return;
     mediaObj.setParent(this);
     this.media.add(mediaObj);
-  },
+  }
 
   /**
    * Returns child media.
@@ -88,7 +73,7 @@ const Occurrence = Backbone.Model.extend({
    */
   getMedia(index = 0) {
     return this.media.at(index);
-  },
+  }
 
   // overwrite if you want to validate before saving remotely
   validate(attributes, options = {}) {
@@ -96,10 +81,10 @@ const Occurrence = Backbone.Model.extend({
       return this.validateRemote(attributes, options);
     }
     return null;
-  },
+  }
 
-  validateRemote(attributes) {
-    const attrs = _.extend({}, this.attributes, attributes);
+  validateRemote() {
+    const attrs = { ...{}, ...this.attributes };
     const media = {};
 
     const modelErrors = {};
@@ -111,7 +96,7 @@ const Occurrence = Backbone.Model.extend({
 
     // media
     if (this.media.length) {
-      this.media.each((mediaModel) => {
+      this.media.each(mediaModel => {
         const errors = mediaModel.validateRemote();
         if (errors) {
           const mediaID = mediaModel.cid;
@@ -121,19 +106,19 @@ const Occurrence = Backbone.Model.extend({
     }
 
     const errors = {};
-    if (!_.isEmpty(media)) {
+    if (Object.keys(media).length) {
       errors.media = media;
     }
-    if (!_.isEmpty(modelErrors)) {
+    if (Object.keys(modelErrors).length) {
       errors.attributes = modelErrors;
     }
 
-    if (!_.isEmpty(errors)) {
+    if (Object.keys(herrors).length) {
       return errors;
     }
 
     return null;
-  },
+  }
 
   toJSON() {
     let media;
@@ -141,7 +126,7 @@ const Occurrence = Backbone.Model.extend({
       media = [];
       console.warn('toJSON media missing');
     } else {
-      media = this.media.toJSON();
+      media = this.media.map(m => m.toJSON());
     }
     const data = {
       id: this.id,
@@ -151,7 +136,7 @@ const Occurrence = Backbone.Model.extend({
       media,
     };
     return data;
-  },
+  }
 
   /**
    * Returns an object with attributes and their values
@@ -162,7 +147,7 @@ const Occurrence = Backbone.Model.extend({
   _getSubmission(options = {}) {
     const that = this;
     const occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
-    const keys = $.extend(true, Occurrence.keys, occKeys); // warehouse keys/values to transform
+    const keys = { ...Occurrence.keys, ...occKeys }; // warehouse keys/values to transform
     const media = [...this.media.models]; // all media within this and child models
 
     const submission = {
@@ -177,11 +162,13 @@ const Occurrence = Backbone.Model.extend({
     }
 
     if (this.metadata.release_status || options.release_status) {
-      submission.release_status = this.metadata.release_status || options.release_status;
+      submission.release_status =
+        this.metadata.release_status || options.release_status;
     }
 
     if (this.metadata.record_status || options.record_status) {
-      submission.record_status = this.metadata.record_status || options.record_status;
+      submission.record_status =
+        this.metadata.record_status || options.record_status;
     }
 
     if (this.metadata.sensitive || options.sensitive) {
@@ -189,7 +176,8 @@ const Occurrence = Backbone.Model.extend({
     }
 
     if (this.metadata.confidential || options.confidential) {
-      submission.confidential = this.metadata.confidential || options.confidential;
+      submission.confidential =
+        this.metadata.confidential || options.confidential;
     }
 
     if (this.metadata.sensitivity_precision || options.sensitivity_precision) {
@@ -198,7 +186,7 @@ const Occurrence = Backbone.Model.extend({
     }
 
     // transform attributes
-    Object.keys(this.attributes).forEach((attr) => {
+    Object.keys(this.attributes).forEach(attr => {
       // no need to send attributes with no values
       let value = that.attributes[attr];
       if (!value) return;
@@ -218,7 +206,7 @@ const Occurrence = Backbone.Model.extend({
         if (typeof keys[attr].values === 'function') {
           // get a value from a function
           value = keys[attr].values(value, submission, that);
-        } else if (_.isArray(value)) {
+        } else if (value instanceof Array) {
           // the attribute has multiple values
           value = value.map(v => keys[attr].values[v]);
         } else {
@@ -235,36 +223,20 @@ const Occurrence = Backbone.Model.extend({
     // transform sub models
     // media does not return any media-models only JSON data about them
     // media files will be attached separately
-    const [mediaSubmission] = this.media._getSubmission();
+    // media - does not return any media-models only JSON data about them
+    let mediaSubmission = [];
+    this.media.forEach(model => {
+      const [, modelMedia] = model._getSubmission();
+      mediaSubmission = mediaSubmission.concat(modelMedia);
+    });
     submission.media = mediaSubmission;
 
     return [submission, media];
-  },
-
-  /**
-   * Synchronises the model.
-   * @param method
-   * @param model
-   * @param options
-   */
-  sync(method, model, options = {}) {
-    if (options.remote) {
-      return this._syncRemote(method, model, options);
-    }
-
-    return Promise.reject(new Error('Local sync is not possible yet.'));
-  },
-
-  /**
-   * Syncs the record to the remote server.
-   * Returns on success: model, response, options
-   */
-  _syncRemote() {
-    return Promise.reject(new Error('Remote sync is not possible yet.'));
-  },
+  }
 
   _getDefaultMetadata(options) {
-    const metadata = typeof this.metadata === 'function' ? this.metadata() : this.metadata;
+    const metadata =
+      typeof this.metadata === 'function' ? this.metadata() : this.metadata;
 
     options.metadata = options.metadata || {};
 
@@ -279,20 +251,10 @@ const Occurrence = Backbone.Model.extend({
       server_on: null, // updated on server
     };
 
-    return $.extend(true, defaults, metadata, options.metadata);
-  },
-});
+    return { ...defaults, ...metadata, ...options.metadata };
+  }
+}
 
-_.extend(Occurrence.prototype, syncHelpers);
-
-/**
- * Warehouse attributes and their values.
- */
-Occurrence.keys = {
-  taxon: {
-    id: 'taxa_taxon_list_id',
-  },
-  comment: { id: 'comment' },
-};
+// Occurrence.prototype = { ...Occurrence.prototype, ...syncHelpers };
 
 export { Occurrence as default };

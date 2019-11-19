@@ -13,38 +13,13 @@ describe('Sample', function tests() {
   this.timeout(10000);
 
   const storedCollection = new Collection(null, { model: Sample });
+  const cleanUp = () =>
+    storedCollection.fetch().then(() => storedCollection.destroy());
 
-  before((done) => {
-    // clean up in case of trash
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  beforeEach((done) => {
-    // clean up in case of trash
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  after((done) => {
-    // clean up afterwards
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
-
-  afterEach((done) => {
-    // clean up afterwards
-    storedCollection
-      .fetch()
-      .then(() => storedCollection.destroy())
-      .then(() => done());
-  });
+  before(cleanUp);
+  beforeEach(cleanUp);
+  after(cleanUp);
+  afterEach(cleanUp);
 
   it('should be a Backbone model', () => {
     const sample = new Sample();
@@ -97,7 +72,9 @@ describe('Sample', function tests() {
     expect(sample.metadata.survey_id).to.be.equal(2);
     expect(sample.metadata.created_on).to.be.equal('x');
 
-    const NewSample = Sample.extend({ metadata: { survey_id: 3, created_on: 'y' } });
+    const NewSample = Sample.extend({
+      metadata: { survey_id: 3, created_on: 'y' },
+    });
     sample = new NewSample(null, {
       survey_id: 1,
     });
@@ -181,17 +158,17 @@ describe('Sample', function tests() {
   // synchronisation
 
   describe('Sync', () => {
-    it('should throw an error if sync with no store', (done) => {
+    it('should throw an error if sync with no store', done => {
       const sample = new Sample();
       delete sample.store;
       sample.save().catch(() => done());
     });
 
     describe('Local', () => {
-      it('should save and fetch and update', (done) => {
+      it('should save and fetch and update', done => {
         const sample = new Sample();
 
-        sample.save({ hello: 'world!' }).then((model) => {
+        sample.save({ hello: 'world!' }).then(model => {
           const cid = model.cid;
 
           expect(model).to.exist;
@@ -200,7 +177,7 @@ describe('Sample', function tests() {
 
           // get direct from storage
           const sampleStored = new Sample(null, { cid });
-          sampleStored.fetch().then((modelStored) => {
+          sampleStored.fetch().then(modelStored => {
             expect(sampleStored.get('hello')).to.be.equal('world!');
             expect(modelStored.get('hello')).to.be.equal('world!');
             done();
@@ -208,10 +185,10 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should destroy', (done) => {
+      it('should destroy', done => {
         const sample = new Sample();
 
-        sample.destroy().then((model) => {
+        sample.destroy().then(model => {
           const cid = model.cid;
           expect(cid).to.be.equal(sample.cid);
 
@@ -221,7 +198,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should destroy submodels on sample destroy', (done) => {
+      it('should destroy submodels on sample destroy', done => {
         const media = new Media();
         sinon.spy(media, 'destroy');
 
@@ -237,8 +214,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should fire model sync events', (done) => {
-        const events = ['request', 'sync', 'error'];
+      it('should fire model sync events', done => {
         const eventsFired = [];
         const sample = getRandomSample();
 
@@ -265,7 +241,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should save parent on destroy', (done) => {
+      it('should save parent on destroy', done => {
         const sample = getRandomSample();
         const sample2 = getRandomSample();
         sample.addSample(sample2);
@@ -289,7 +265,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should fire model sync events', (done) => {
+      it('should fire model sync events', done => {
         const events = ['request', 'sync', 'error'];
         const eventsFired = [];
         const sample = getRandomSample();
@@ -315,7 +291,9 @@ describe('Sample', function tests() {
             }
           });
 
-          sinon.stub(newSample.store, 'sync').returns(Promise.reject('Some problem'));
+          sinon
+            .stub(newSample.store, 'sync')
+            .returns(Promise.reject('Some problem'));
 
           newSample.save().catch(() => {});
         });
@@ -338,7 +316,7 @@ describe('Sample', function tests() {
         Sample.prototype._create.restore();
       });
 
-      it('should post with remote option', (done) => {
+      it('should post with remote option', done => {
         const sample = getRandomSample();
 
         generateSampleResponse(server, 'OK', sample);
@@ -350,7 +328,7 @@ describe('Sample', function tests() {
         expect(valid).to.be.instanceOf(Promise);
       });
 
-      it('should pass on child models flags', (done) => {
+      it('should pass on child models flags', done => {
         const sample = getRandomSample();
         const subSample = getRandomSample();
 
@@ -387,9 +365,10 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should send both dataURI and absolute pathed images', (done) => {
+      it('should send both dataURI and absolute pathed images', done => {
         const image1 = new Media({
-          data: 'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
+          data:
+            'https://wiki.ceh.ac.uk/download/attachments/119117334/ceh%20logo.png',
           type: 'png',
         });
 
@@ -414,7 +393,7 @@ describe('Sample', function tests() {
         sample.save(null, { remote: true }).then(() => done());
       });
 
-      it('should post with remote option (subsample)', (done) => {
+      it('should post with remote option (subsample)', done => {
         const subSample = getRandomSample();
         const sample = getRandomSample(null, [subSample]);
 
@@ -428,7 +407,7 @@ describe('Sample', function tests() {
         expect(valid).to.be.instanceOf(Promise);
       });
 
-      it('should update remotely synced record', (done) => {
+      it('should update remotely synced record', done => {
         const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
@@ -456,12 +435,12 @@ describe('Sample', function tests() {
         expect(valid).to.be.false;
       });
 
-      it('should return error if unsuccessful remote sync', (done) => {
+      it('should return error if unsuccessful remote sync', done => {
         const sample = getRandomSample();
 
         generateSampleResponse(server, 'ERR');
 
-        const valid = sample.save(null, { remote: true }).catch((err) => {
+        const valid = sample.save(null, { remote: true }).catch(err => {
           expect(sample._syncRemote.calledOnce).to.be.true;
           expect(err.message).to.not.be.null;
           done();
@@ -471,7 +450,7 @@ describe('Sample', function tests() {
       });
 
       // todo: we should fix this eventually
-      it('should ignore the duplication error', (done) => {
+      it('should ignore the duplication error', done => {
         const sample = getRandomSample();
 
         generateSampleResponse(server, 'DUPLICATE', sample);
@@ -487,7 +466,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should set synchronising flag on sample', (done) => {
+      it('should set synchronising flag on sample', done => {
         const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
@@ -495,7 +474,7 @@ describe('Sample', function tests() {
         expect(sample.remote.synchronising).to.be.true;
       });
 
-      it('should not double create the record', (done) => {
+      it('should not double create the record', done => {
         const sample = getRandomSample();
         generateSampleResponse(server, 'OK', sample);
 
@@ -508,7 +487,7 @@ describe('Sample', function tests() {
         });
       });
 
-      it('should call onSend with the submission model if exists', (done) => {
+      it('should call onSend with the submission model if exists', done => {
         const sample = getRandomSample();
 
         let called = false;
@@ -530,7 +509,7 @@ describe('Sample', function tests() {
 
       // todo: should update
 
-      it('should timeout', (done) => {
+      it('should timeout', done => {
         server.respondImmediately = false;
         const clock = sinon.useFakeTimers();
         const errorCallback = sinon.spy();
@@ -552,14 +531,13 @@ describe('Sample', function tests() {
 
         const sample = getRandomSample();
 
-        sample.save(null, { remote: true }).catch((err) => {
+        sample.save(null, { remote: true }).catch(() => {
           done();
         });
         clock.tick(29000);
       });
 
-      it('should fire model sync events', (done) => {
-        const events = ['request:remote', 'sync:remote', 'error:remote'];
+      it('should fire model sync events', done => {
         const eventsFired = [];
         const sample = getRandomSample();
 
@@ -595,7 +573,7 @@ describe('Sample', function tests() {
           expect(sample._getModelData).to.be.a('function');
         });
 
-        it('should should throw if no model passed', (done) => {
+        it('should should throw if no model passed', done => {
           const sample = getRandomSample();
 
           try {
@@ -605,9 +583,9 @@ describe('Sample', function tests() {
           }
         });
 
-        it('should return a valid JSON string', (done) => {
+        it('should return a valid JSON string', done => {
           const sample = getRandomSample();
-          const promise = sample._getModelData(sample).then((submission) => {
+          const promise = sample._getModelData(sample).then(submission => {
             expect(submission).to.be.a('string');
             expect(JSON.parse(submission)).to.be.an.object;
             done();
@@ -615,7 +593,7 @@ describe('Sample', function tests() {
           expect(promise).to.be.instanceOf(Promise);
         });
 
-        it('should return a formData with images', (done) => {
+        it('should return a formData with images', done => {
           const sample = getRandomSample();
           const image = new Media({ type: 'jpg', data: 'xxxx' });
           const image2 = new Media({ type: 'jpg', data: 'xxxx' });
@@ -623,7 +601,7 @@ describe('Sample', function tests() {
           sample.addMedia(image2);
           sample.getOccurrence().addMedia(image);
 
-          const promise = sample._getModelData(sample).then((data) => {
+          const promise = sample._getModelData(sample).then(data => {
             expect(data).to.be.instanceOf(FormData);
 
             // formData.get is not widely supported

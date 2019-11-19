@@ -5,7 +5,8 @@ const config = {
 
   // start these browsers
   // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-  browsers: ['ChromeCustom'],
+  browsers: ['ChromiumHeadless'],
+  // browsers: ['Chromium'],
 
   customLaunchers: {
     ChromeCustom: {
@@ -32,11 +33,12 @@ const config = {
       nocache: false,
     },
 
-    { pattern: 'src/*.js', included: false },
-    { pattern: 'test/*test.js', type: 'module' },
+    { pattern: 'src/*.js', watched: false },
+    { pattern: 'test/*occurrence-test.js', watched: false },
   ],
 
   preprocessors: {
+    'src/*.js': ['rollup'],
     'test/*test.js': ['rollup'],
   },
 
@@ -55,7 +57,7 @@ const config = {
   browserNoActivityTimeout: 60000,
 
   // enable / disable watching file and executing tests whenever any file changes
-  autoWatch: true,
+  // autoWatch: true,
 
   // available reporters: https://npmjs.org/browse/keyword/karma-reporter
   reporters: ['mocha'],

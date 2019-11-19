@@ -52,7 +52,7 @@ const helpers = {
           }
           return model;
         })
-        .catch((err) => {
+        .catch(err => {
           try {
             model.trigger('error', err);
           } catch (e) {
@@ -65,7 +65,7 @@ const helpers = {
     // model save
     return model
       .sync(method, model, options)
-      .then((resp) => {
+      .then(resp => {
         if (options.remote) {
           // update the model and occurrences with new remote IDs
           model._remoteCreateParse(model, resp.data);
@@ -97,7 +97,7 @@ const helpers = {
         }
         return model;
       })
-      .catch((err) => {
+      .catch(err => {
         try {
           model.trigger('error', err);
         } catch (e) {
