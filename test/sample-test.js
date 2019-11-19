@@ -9,7 +9,9 @@ import { SYNCED } from '../src/constants';
 
 /* eslint-disable no-unused-expressions */
 
-describe('Sample', () => {
+describe('Sample', function tests() {
+  this.timeout(10000);
+
   const storedCollection = new Collection(null, { model: Sample });
 
   before((done) => {

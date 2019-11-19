@@ -8,7 +8,9 @@ import { getRandomSample } from './helpers';
 
 /* eslint-disable no-unused-expressions */
 
-describe('Media', () => {
+describe('Media', function tests() {
+  this.timeout(10000);
+
   const store = new Store();
   const storedCollection = new Collection(null, { store, model: Sample });
 

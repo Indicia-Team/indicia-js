@@ -3,14 +3,15 @@ import Occurrence from '../src/Occurrence';
 import Collection from '../src/Collection';
 import Sample from '../src/Sample';
 import Media from '../src/Media';
-import Store from '../src/Store';
 import helpers from '../src/helpers';
 import { SYNCED } from '../src/constants';
 import { getRandomSample, generateSampleResponse } from './helpers';
 
 /* eslint-disable no-unused-expressions */
 
-describe('Collection', () => {
+describe('Collection', function tests() {
+  this.timeout(10000);
+
   const storedCollection = new Collection([], { model: Sample });
 
   before((done) => {

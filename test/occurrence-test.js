@@ -6,7 +6,9 @@ import { getRandomSample } from './helpers';
 
 /* eslint-disable no-unused-expressions */
 
-describe('Occurrence', () => {
+describe('Occurrence', function tests() {
+  this.timeout(10000);
+
   it('should be a Backbone model', () => {
     const occurrence = new Occurrence();
 

@@ -1,88 +1,89 @@
-require('dotenv').config({silent: true});
-var merge = require('webpack-merge');
-var _ = require('underscore');
-var karmaConfig = require('./_karma.conf.js');
-var commonConfig = karmaConfig({ set(c) { return c; } });
+/**
+ * Config copied with mods from backbone karma sauce config
+ */
+require('dotenv').config({ silent: true }); // eslint-disable-line
+const _ = require('underscore');
+const karmaConfig = require('./_karma.conf.js');
 
-// Browsers to run on Sauce Labs platforms
-var sauceBrowsers = _.reduce([
-  ['firefox', '48'],
-  ['firefox', '45'],
-  ['firefox', '44'],
-  ['firefox', '43'],
-  ['firefox', '42'],
-  ['firefox', '41'],
+const commonConfig = karmaConfig({
+  set(c) {
+    return c;
+  },
+});
 
-  ['chrome', '53'],
-  ['chrome', '40'],
-  ['chrome', '39'],
-  ['chrome', '30'],
+process.env.NODE_ENV = 'test';
+process.env.SAUCE_LABS = true;
 
-  ['MicrosoftEdge', '14.14393', 'Windows 10'],
-  ['internet explorer', '11', 'Windows 10'],
-  ['internet explorer', '10', 'Windows 8'],
+const sauceBrowsers = [
+  /**  Browser environment */
+  ['chrome', 'latest', 'linux'], // latest
+  ['chrome', '38', 'linux'], // bottom support
 
-  ['android', '5.1'],
-  ['android', '5'],
-  ['android', '4.4'],
-  // ['android', '4.3'],
-  // ['android', '4.1'],
-
-  // ['safari', '9'],
-  // ['safari', '8.0', 'OS X 10.10'],
-
-], function (memo, platform) {
-  // internet explorer -> ie
-  var label = platform[0].split(' ');
+  /**  Mobile environment */
+  ['android', '8'], // latest
+  ['android', '6'],
+  ['android', '5.1'], // bottom support
+  ['Safari', '12.2', 'iOS', 'iPhone 6'], // latest
+  ['Safari', '11.1', 'iOS', 'iPhone 6'],
+  ['Safari', '10.3', 'iOS', 'iPhone 6'], // bottom support
+].reduce((memo, platform) => {
+  let label = platform[0].split(' ');
   if (label.length > 1) {
     label = _.invoke(label, 'charAt', 0);
   }
-  label = (label.join('') + '_v' + platform[1]).replace(' ', '_').toUpperCase();
-  memo[label] = _.pick({
-    'base': 'SauceLabs',
-    'browserName': platform[0],
-    'version': platform[1],
-    'platform': platform[2],
-  }, Boolean);
+  label = `${label.join('')}_v${platform[1]}`.replace(' ', '_').toUpperCase();
+  // eslint-disable-next-line
+  memo[label] = _.pick(
+    {
+      base: 'SauceLabs',
+      browserName: platform[0],
+      version: platform[1],
+      platform: platform[2],
+      device: platform[3],
+    },
+    Boolean
+  );
   return memo;
 }, {});
 
-var BUILD = 'LOCAL #' + new Date().getTime();
-if (process.env.TRAVIS_BUILD_NUMBER ) {
-  BUILD = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
-}
+module.exports = function exports(config) {
+  // Use ENV vars on Travis and sauce.json locally to get credentials
+  if (!process.env.SAUCE_USERNAME || !process.env.SAUCE_ACCESS_KEY) {
+    console.log(
+      'SAUCE_USERNAME and SAUCE_ACCESS_KEY env variables are required.'
+    );
+    process.exit(1);
+  }
 
-module.exports =  function(config) {
-  delete commonConfig.browsers; // remove Chrome and Safari
+  return config.set({
+    ...commonConfig,
+    ...{
+      // Continuous Integration mode
+      // if true, Karma captures browsers, runs the tests and exits
+      singleRun: true,
 
-  config.set(merge(commonConfig, {
-    // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: false,
+      // Number of sauce tests to start in parallel
+      concurrency: 5,
 
-    // Continuous Integration mode
-    // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+      // test results reporter to use
+      reporters: ['dots', 'saucelabs'],
+      logLevel: config.LOG_WARN,
+      sauceLabs: {
+        build: `TRAVIS #${process.env.TRAVIS_BUILD_NUMBER} (${process.env.TRAVIS_BUILD_ID})`,
+        startConnect: false,
+        tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
+      },
+      urlRoot: '/__karma__/',
 
-    // Number of sauce tests to start in parallel
-    concurrency: 9,
+      proxies: {
+        '/': 'http://localhost:4445',
+      },
+      captureTimeout: 120000,
+      customLaunchers: sauceBrowsers,
 
-    // test results reporter to use
-    reporters: ['dots', 'saucelabs'],
-    port: 9876,
-    colors: true,
-    logLevel: config.LOG_WARN,
-    sauceLabs: {
-      build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
-      startConnect: false,
-      tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
+      // Browsers to launch, commented out to prevent karma from starting
+      // too many concurrent browsers and timing sauce out.
+      browsers: Object.keys(sauceBrowsers),
     },
-
-    captureTimeout: 120000,
-    customLaunchers: sauceBrowsers,
-
-    // Browsers to launch, commented out to prevent karma from starting
-    // too many concurrent browsers and timing sauce out.
-    browsers: _.keys(sauceBrowsers),
-  }));
+  });
 };
-
