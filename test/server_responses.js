@@ -1,18 +1,16 @@
 const responses = {
   DUPLICATE(data) {
-    const resp = {
-      errors: [
-        {
-          id: Math.random(),
-          external_key: data.occurrence_cid,
-          sample_id: Math.random(),
-          sample_external_key: data.cid,
-          title: 'Occurrence already exists.',
-        },
-      ],
-    };
+    const errors = [
+      {
+        id: Math.random(),
+        external_key: data.occurrence_cid,
+        sample_id: Math.random(),
+        sample_external_key: data.cid,
+        title: 'Occurrence already exists.',
+      },
+    ];
 
-    return [409, resp];
+    return { status: 409, errors };
   },
 
   // model -> type
@@ -73,6 +71,6 @@ export default function(functionName, data) {
   if (!func) {
     throw new Error('No such return function');
   }
-  const [code, resp] = func(data);
-  return [code, { 'Content-Type': 'application/json' }, JSON.stringify(resp)];
+
+  return func(data);
 }

@@ -1,11 +1,23 @@
 /** *********************************************************************
  * OCCURRENCE
- **********************************************************************/
-import helpers from './helpers';
-import syncHelpers from './sync_helpers';
-import Media from './Media';
+ ********************************************************************* */
+import { getNewUUID } from './helpers';
+import DefaultMedia from './Media';
 
-class Occurrence {
+function defaultMetadata() {
+  const today = new Date();
+  return {
+    training: null,
+
+    created_on: today,
+    updated_on: today,
+
+    synced_on: null, // set when fully initialized only
+    server_on: null, // updated on server
+  };
+}
+
+export default class Occurrence {
   /**
    * Warehouse attributes and their values.
    */
@@ -16,108 +28,28 @@ class Occurrence {
     comment: { id: 'comment' },
   };
 
-  Media = Media;
+  cid = getNewUUID();
+
+  id = null;
+
+  attrs = {};
+
+  metadata = defaultMetadata();
+
+  media = [];
+
   keys = Occurrence.keys;
 
-  constructor(attributes = {}, options = {}) {
-  
+  constructor(options = {}) {
     this.id = options.id; // remote ID
-    this.cid = options.cid || helpers.getNewUUID();
+    this.cid = options.cid || this.cid;
 
-    this.setParent(options.parent);
-
-    this.attributes = { ...attributes };
-
-    this.metadata = this._getDefaultMetadata(options);
-
-    this.media = [...options.media].map(media => {
-      if (media instanceof this.Media) {
-        media.setParent(this);
-        return media;
-      } else {
-        const modelOptions = { ...media, ...{ parent: that } };
-        return new this.Media(media.attributes, modelOptions);
-      }
-    });
-  }
-
-  /**
-   * Sets parent.
-   * todo: move to private _space
-   * @param parent
-   */
-  setParent(parent) {
-    if (!parent) return;
-
-    const that = this;
-    this.parent = parent;
-    this.parent.on('destroy', () => {
-      that.destroy({ noSave: true });
-    });
-  }
-
-  /**
-   * Adds an media to occurrence and sets the medias's parent to this.
-   * @param media
-   */
-  addMedia(mediaObj) {
-    if (!mediaObj) return;
-    mediaObj.setParent(this);
-    this.media.add(mediaObj);
-  }
-
-  /**
-   * Returns child media.
-   * @param index
-   * @returns {*}
-   */
-  getMedia(index = 0) {
-    return this.media.at(index);
-  }
-
-  // overwrite if you want to validate before saving remotely
-  validate(attributes, options = {}) {
-    if (options.remote) {
-      return this.validateRemote(attributes, options);
-    }
-    return null;
-  }
-
-  validateRemote() {
-    const attrs = { ...{}, ...this.attributes };
-    const media = {};
-
-    const modelErrors = {};
-
-    // location
-    if (!attrs.taxon) {
-      modelErrors.taxon = "can't be blank";
-    }
-
-    // media
-    if (this.media.length) {
-      this.media.each(mediaModel => {
-        const errors = mediaModel.validateRemote();
-        if (errors) {
-          const mediaID = mediaModel.cid;
-          media[mediaID] = errors;
-        }
-      });
-    }
-
-    const errors = {};
-    if (Object.keys(media).length) {
-      errors.media = media;
-    }
-    if (Object.keys(modelErrors).length) {
-      errors.attributes = modelErrors;
-    }
-
-    if (Object.keys(herrors).length) {
-      return errors;
-    }
-
-    return null;
+    this.attrs = {
+      ...this.attrs,
+      ...options.attrs,
+      ...options.attributes, // backwards compatible
+    };
+    this.metadata = { ...this.metadata, ...options.metadata };
   }
 
   toJSON() {
@@ -132,23 +64,28 @@ class Occurrence {
       id: this.id,
       cid: this.cid,
       metadata: this.metadata,
-      attributes: this.attributes,
+      attrs: this.attrs,
       media,
     };
     return data;
   }
 
+  static fromJSON(json, Media = DefaultMedia) {
+    const { media, ...options } = json;
+    const occurrence = new this(options);
+    media.forEach(m => occurrence.media.push(Media.fromJSON(m)));
+    return occurrence;
+  }
+
   /**
    * Returns an object with attributes and their values
    * mapped for warehouse submission.
-   *
-   * @returns {*}
    */
-  _getSubmission(options = {}) {
+  getSubmission(options = {}) {
     const that = this;
     const occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
     const keys = { ...Occurrence.keys, ...occKeys }; // warehouse keys/values to transform
-    const media = [...this.media.models]; // all media within this and child models
+    const media = [...this.media]; // all media within this and child models
 
     const submission = {
       id: this.id,
@@ -186,9 +123,9 @@ class Occurrence {
     }
 
     // transform attributes
-    Object.keys(this.attributes).forEach(attr => {
+    Object.keys(this.attrs).forEach(attr => {
       // no need to send attributes with no values
-      let value = that.attributes[attr];
+      let value = that.attrs[attr];
       if (!value) return;
 
       if (!keys[attr]) {
@@ -223,38 +160,13 @@ class Occurrence {
     // transform sub models
     // media does not return any media-models only JSON data about them
     // media files will be attached separately
-    // media - does not return any media-models only JSON data about them
-    let mediaSubmission = [];
+    const mediaSubmission = [];
     this.media.forEach(model => {
-      const [, modelMedia] = model._getSubmission();
-      mediaSubmission = mediaSubmission.concat(modelMedia);
+      const [modelSubmission] = model.getSubmission();
+      mediaSubmission.push(modelSubmission);
     });
     submission.media = mediaSubmission;
 
     return [submission, media];
   }
-
-  _getDefaultMetadata(options) {
-    const metadata =
-      typeof this.metadata === 'function' ? this.metadata() : this.metadata;
-
-    options.metadata = options.metadata || {};
-
-    const today = new Date();
-    const defaults = {
-      training: options.training,
-
-      created_on: today,
-      updated_on: today,
-
-      synced_on: null, // set when fully initialized only
-      server_on: null, // updated on server
-    };
-
-    return { ...defaults, ...metadata, ...options.metadata };
-  }
 }
-
-// Occurrence.prototype = { ...Occurrence.prototype, ...syncHelpers };
-
-export { Occurrence as default };

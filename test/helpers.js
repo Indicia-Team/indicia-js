@@ -1,10 +1,7 @@
-import Sample from '../src/Sample';
-import Occurrence from '../src/Occurrence';
-import Store from '../src/Store';
-import serverResponses from './server_responses.js';
-import { API_BASE, API_VER, API_SAMPLES_PATH } from '../src/constants';
+import { Sample, Occurrence } from '../src';
+import serverResponses from './server_responses';
 
-function getRandomSample(store = new Store(), samples = [], occurrences = []) {
+function getRandomSample(samples = [], occurrences = []) {
   if (!occurrences.length) {
     const occurrence = new Occurrence({
       taxon: 1234,
@@ -12,77 +9,64 @@ function getRandomSample(store = new Store(), samples = [], occurrences = []) {
     occurrences.push(occurrence);
   }
 
-  const sample = new Sample(
-    {
-      location: ' 12.12, -0.23',
-    },
-    {
+  class RemoteReadySample extends Sample {
+    remote = {
       api_key: 'x',
       host_url: 'x',
-      store,
-      occurrences,
-      samples,
-    }
-  );
+      timeout: 100,
+    };
 
-  return sample;
+    attrs = { location: ' 12.12, -0.23' };
+
+    samples = samples || [];
+
+    occurrences = occurrences || [];
+  }
+
+  return new RemoteReadySample();
 }
 
-function generateSampleResponse(server, type, data) {
-  const SAMPLE_POST_URL = `x${API_BASE}${API_VER}${API_SAMPLES_PATH}`;
-
+function makeRequestResponse(type, data) {
   switch (type) {
     case 'OK':
-      server.respondWith(req => {
+      return (_, options) => {
         let model = data;
         if (typeof data === 'function') {
           let submission;
-          if (req.requestBody instanceof FormData) {
-            submission = JSON.parse(req.requestBody.get('submission'));
+          if (options.body instanceof FormData) {
+            submission = JSON.parse(options.body.get('submission'));
           } else {
-            submission = JSON.parse(req.requestBody);
+            submission = JSON.parse(options.body);
           }
 
           model = data(submission.data.external_key);
         }
 
-        req.respond(
-          ...serverResponses(type, {
-            cid: model.cid,
-            occurrence_cid: model.getOccurrence().cid,
-          })
-        );
-      });
-      break;
+        return serverResponses(type, {
+          cid: model.cid,
+          occurrence_cid: model.occurrences[0].cid,
+        });
+      };
 
     case 'OK_SUBSAMPLE':
-      server.respondWith(
-        'POST',
-        SAMPLE_POST_URL,
-        serverResponses(type, {
-          cid: data.cid,
-          subsample_cid: data.getSample().cid,
-          occurrence_cid: data.getSample().getOccurrence().cid,
-        })
-      );
-      break;
+      return serverResponses(type, {
+        cid: data.cid,
+        subsample_cid: data.samples[0].cid,
+        occurrence_cid: data.samples[0].occurrences[0].cid,
+      });
 
     case 'DUPLICATE':
-      server.respondWith(
-        'POST',
-        SAMPLE_POST_URL,
-        serverResponses(type, {
-          occurrence_cid: data.getOccurrence().cid,
-          cid: data.cid,
-        })
-      );
-      break;
+      throw serverResponses(type, {
+        occurrence_cid: data.occurrences[0].cid,
+        cid: data.cid,
+      });
 
     case 'ERR':
-      server.respondWith('POST', SAMPLE_POST_URL, serverResponses(type));
-      break;
+      throw serverResponses(type);
     default:
   }
+
+  return null;
 }
 
-export { getRandomSample, generateSampleResponse };
+export { getRandomSample, makeRequestResponse };

@@ -23,7 +23,7 @@ const banner = [
 
 const rollupBuilds = [
   {
-    input: './src/main.js',
+    input: './src/index.js',
     output: {
       file: minify ? 'dist/indicia.min.js' : 'dist/indicia.js',
       format: 'umd',
@@ -61,8 +61,13 @@ const rollupBuilds = [
         runtimeHelpers: true,
         plugins: [
           '@babel/plugin-transform-runtime',
-          '@babel/plugin-proposal-class-properties',
+          ['@babel/plugin-proposal-class-properties', { loose: false }],
         ],
+        env: {
+          test: {
+            plugins: ['rewire'],
+          },
+        },
       }),
       commonjs(),
       isProduction && minify ? terser() : {},

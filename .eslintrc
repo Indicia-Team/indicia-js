@@ -2,7 +2,8 @@
   "env": {
     "browser": true
   },
-  "extends": "airbnb/base",
+  "parser": "babel-eslint",
+  "extends": ["airbnb/base", "prettier"],
   "rules": {
     "no-console": 0,
     "linebreak-style": 0,
@@ -13,10 +14,13 @@
     "space-before-function-paren": 0,
     "arrow-parens": 0,
     "func-names": 0,
-    "no-unused-expressions": [2, {
-      "allowShortCircuit": true, // eg. a || a()
-      "allowTernary": true // eg. a ? b() : c()
-    }]
+    "no-unused-expressions": [
+      2,
+      {
+        "allowShortCircuit": true, // eg. a || a()
+        "allowTernary": true // eg. a ? b() : c()
+      }
+    ]
   },
   "globals": {
     "before": true,
@@ -29,12 +33,5 @@
     "sinon": true,
 
     "parseInt": true
-  },
-  "settings": {
-    "import/resolver": {
-      "webpack": {
-        "config": "webpack.config.js"
-      }
-    }
   }
 }

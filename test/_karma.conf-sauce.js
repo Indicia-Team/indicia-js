@@ -2,7 +2,6 @@
  * Config copied with mods from backbone karma sauce config
  */
 require('dotenv').config({ silent: true }); // eslint-disable-line
-const _ = require('underscore');
 const karmaConfig = require('./_karma.conf.js');
 
 const commonConfig = karmaConfig({
@@ -15,36 +14,25 @@ process.env.NODE_ENV = 'test';
 process.env.SAUCE_LABS = true;
 
 const sauceBrowsers = [
-  /**  Browser environment */
-  ['chrome', 'latest', 'linux'], // latest
-  ['chrome', '38', 'linux'], // bottom support
-
-  /**  Mobile environment */
-  ['android', '8'], // latest
-  ['android', '6'],
-  ['android', '5.1'], // bottom support
-  ['Safari', '12.2', 'iOS', 'iPhone 6'], // latest
-  ['Safari', '11.1', 'iOS', 'iPhone 6'],
-  ['Safari', '10.3', 'iOS', 'iPhone 6'], // bottom support
-].reduce((memo, platform) => {
-  let label = platform[0].split(' ');
-  if (label.length > 1) {
-    label = _.invoke(label, 'charAt', 0);
-  }
-  label = `${label.join('')}_v${platform[1]}`.replace(' ', '_').toUpperCase();
-  // eslint-disable-next-line
-  memo[label] = _.pick(
-    {
-      base: 'SauceLabs',
-      browserName: platform[0],
-      version: platform[1],
-      platform: platform[2],
-      device: platform[3],
+  ['Browser', '8', 'Android', 'Android Emulator'], // latest
+  ['Browser', '6', 'Android', 'Android Emulator'], // bottom
+  ['Safari', '13.0', 'iOS', 'iPhone SE'], // latest
+  ['Safari', '10.3', 'iOS', 'iPhone SE'], // bottom
+].reduce(
+  (browsers, [browserName, version, platform, device]) => ({
+    ...browsers,
+    ...{
+      [`sl_${browserName}_${version}`]: {
+        base: 'SauceLabs',
+        browserName,
+        version,
+        platform,
+        device,
+      },
     },
-    Boolean
-  );
-  return memo;
-}, {});
+  }),
+  {}
+);
 
 module.exports = function exports(config) {
   // Use ENV vars on Travis and sauce.json locally to get credentials

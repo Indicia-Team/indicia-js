@@ -1,18 +1,39 @@
 /** *********************************************************************
  * HELPER FUNCTIONS
- **********************************************************************/
+ ********************************************************************* */
+
+export async function makeRequest(url, options, timeout = 80000) {
+  const timeoutTrigger = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), timeout)
+  );
+
+  const res = await Promise.race([fetch(url, options), timeoutTrigger]);
+  const resJSON = (await res.json()) || {};
+  if (!res.ok) {
+    const error = new Error(res.statusText);
+    error.status = res.status;
+
+    if (!resJSON.errors) {
+      error.errors = resJSON.errors;
+    }
+    throw error;
+  }
+
+  return resJSON;
+}
 
 /**
  * Generate UUID.
  */
 /* eslint-disable no-bitwise */
-const getNewUUID = () =>
-  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+export function getNewUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
 
     return v.toString(16);
   });
+}
 /* eslint-enable no-bitwise */
 
 /**
@@ -22,7 +43,7 @@ const getNewUUID = () =>
  * @param {type} fileType
  * @returns {undefined}
  */
-const dataURItoBlob = (dataURI, fileType) => {
+export function dataURItoBlob(dataURI, fileType) {
   const binary = atob(dataURI.split(',')[1]);
   const array = [];
   for (let i = 0; i < binary.length; i++) {
@@ -31,7 +52,7 @@ const dataURItoBlob = (dataURI, fileType) => {
   return new Blob([new Uint8Array(array)], {
     type: fileType,
   });
-};
+}
 
 // Detecting data URLs
 // https://gist.github.com/bgrins/6194623
@@ -39,7 +60,7 @@ const dataURItoBlob = (dataURI, fileType) => {
 // data URI - MDN https://developer.mozilla.org/en-US/docs/data_URIs
 // The 'data' URL scheme: http://tools.ietf.org/html/rfc2397
 // Valid URL Characters: http://tools.ietf.org/html/rfc2396#section2
-const isDataURL = string => {
+export function isDataURL(string) {
   if (!string) {
     return false;
   }
@@ -48,12 +69,12 @@ const isDataURL = string => {
   /* eslint-disable no-useless-escape, max-len */
   const regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
   return !!normalized.match(regex);
-};
+}
 /* eslint-enable no-useless-escape, max-len  */
 
 // From jQuery 1.4.4 .
 /* eslint-disable */
-const isPlainObject = obj => {
+export function isPlainObject(obj) {
   function type(obj) {
     const class2type = {};
     const types = 'Boolean Number String Function Array Date RegExp Object'.split(
@@ -95,15 +116,15 @@ const isPlainObject = obj => {
   }
 
   return key === undefined || hasOwn.call(obj, key);
-};
+}
 
 // checks if the object has any elements.
-const isEmptyObject = obj => {
+export function isEmptyObject(obj) {
   for (const key in obj) {
     return false;
   }
   return true;
-};
+}
 /* eslint-enable */
 
 /**
@@ -111,7 +132,7 @@ const isEmptyObject = obj => {
  * @param date String or Date object
  * @returns String formatted date
  */
-const formatDate = dateToFormat => {
+export function formatDate(dateToFormat) {
   let date = dateToFormat;
   let now = new Date();
   let day = 0;
@@ -127,7 +148,8 @@ const formatDate = dateToFormat => {
     if (reg.test(date)) {
       return date;
       // dashed
-    } else if (regDash.test(date)) {
+    }
+    if (regDash.test(date)) {
       date = new Date(
         window.parseInt(dateArray[0]),
         window.parseInt(dateArray[1]) - 1,
@@ -148,13 +170,25 @@ const formatDate = dateToFormat => {
   month = `0${now.getMonth() + 1}`.slice(-2);
 
   return `${day}/${month}/${now.getFullYear()}`;
-};
+}
 
-export default {
-  getNewUUID,
-  dataURItoBlob,
-  isDataURL,
-  isPlainObject,
-  isEmptyObject,
-  formatDate,
-};
+export function getBlobFromURL(url, mediaType) {
+  if (isDataURL(url)) {
+    const blob = dataURItoBlob(url, mediaType);
+    return Promise.resolve(blob);
+  }
+
+  return new Promise(resolve => {
+    // load image
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
+    xhr.onload = () => {
+      const blob = xhr.response;
+      resolve(blob);
+    };
+    // todo check error case
+
+    xhr.send();
+  });
+}
