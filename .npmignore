@@ -1,0 +1,8 @@
+src
+test
+.history
+.vscode
+*.log
+.DS_Store
+.*
+rollup*

@@ -5,3 +5,4 @@ node_modules
 /.env
 .history
 .vscode
+.DS_Store
