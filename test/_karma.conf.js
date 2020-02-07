@@ -5,7 +5,8 @@ const config = {
 
   // start these browsers
   // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-  browsers: ['ChromeCustom'],
+  browsers: ['ChromiumHeadless'],
+  // browsers: ['Chromium'],
 
   customLaunchers: {
     ChromeCustom: {
@@ -15,15 +16,6 @@ const config = {
   frameworks: ['mocha', 'chai', 'sinon'],
 
   files: [
-    // load dependencies
-    { pattern: 'node_modules/jquery/dist/jquery.js', watched: false },
-    { pattern: 'node_modules/underscore/underscore.js', watched: false },
-    { pattern: 'node_modules/backbone/backbone.js', watched: false },
-    {
-      pattern: 'node_modules/localforage/dist/localforage.js',
-      watched: false,
-    },
-
     {
       pattern: 'test/images/*.jpg',
       watched: false,
@@ -32,11 +24,12 @@ const config = {
       nocache: false,
     },
 
-    { pattern: 'src/*.js', included: false },
-    { pattern: 'test/*test.js', type: 'module' },
+    { pattern: 'src/*.js', watched: true, },
+    { pattern: 'test/*test.js', watched: false },
   ],
 
   preprocessors: {
+    'src/*.js': ['rollup'],
     'test/*test.js': ['rollup'],
   },
 
@@ -55,7 +48,7 @@ const config = {
   browserNoActivityTimeout: 60000,
 
   // enable / disable watching file and executing tests whenever any file changes
-  autoWatch: true,
+  // autoWatch: true,
 
   // available reporters: https://npmjs.org/browse/keyword/karma-reporter
   reporters: ['mocha'],

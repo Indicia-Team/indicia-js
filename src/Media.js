@@ -1,205 +1,37 @@
 /** *********************************************************************
  * IMAGE
- **********************************************************************/
-import Backbone from 'backbone';
-import _ from 'underscore';
+ ********************************************************************* */
 
-import helpers from './helpers';
-import syncHelpers from './sync_helpers';
+import { getNewUUID } from './helpers';
 
 const THUMBNAIL_WIDTH = 100; // px
 const THUMBNAIL_HEIGHT = 100; // px
 
-const Media = Backbone.Model.extend({
-  constructor(attributes = {}, options = {}) {
-    let attrs = attributes;
-    if (typeof attributes === 'string') {
-      const data = attributes;
-      attrs = { data };
-      return;
-    }
+export default class Media {
+  cid = getNewUUID();
 
+  id = null;
+
+  attrs = {};
+
+  metadata = {
+    created_on: new Date(),
+  };
+
+  keys = {};
+
+  constructor(options = {}) {
     this.id = options.id; // remote ID
-    this.cid = options.cid || helpers.getNewUUID();
-    this.setParent(options.parent || this.parent);
+    this.cid = options.cid || this.cid;
 
-    this.attributes = {};
-    if (options.collection) this.collection = options.collection;
-    if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
-    this.set(attrs, options);
-    this.changed = {};
-
-    if (options.metadata) {
-      this.metadata = options.metadata;
-    } else {
-      this.metadata = {
-        created_on: new Date(),
-      };
-    }
-
-    this.initialize.apply(this, arguments); // eslint-disable-line
-  },
-
-  /**
-   * Synchronises the model.
-   * @param method
-   * @param model
-   * @param options
-   */
-  sync(method, model, options = {}) {
-    if (options.remote) {
-      return this._syncRemote(method, model, options);
-    }
-
-    return Promise.reject(new Error('Local sync is not possible yet.'));
-  },
-
-  /**
-   * Syncs the record to the remote server.
-   * Returns on success: model, response, options
-   */
-  _syncRemote() {
-    return Promise.reject(new Error('Remote sync is not possible yet.'));
-  },
-
-  /**
-   * Returns image's absolute URL or dataURI.
-   */
-  getURL() {
-    return this.get('data');
-  },
-
-  /**
-   * Sets parent.
-   * @param parent
-   */
-  setParent(parent) {
-    if (!parent) return;
-
-    const that = this;
-    this.parent = parent;
-    this.parent.on('destroy', () => {
-      that.destroy({ noSave: true });
-    });
-  },
-
-  /**
-   * Resizes itself.
-   */
-  resize(MAX_WIDTH, MAX_HEIGHT) {
-    const that = this;
-    const promise = new Promise((fulfill, reject) => {
-      Media.resize(this.getURL(), this.get('type'), MAX_WIDTH, MAX_HEIGHT)
-        .then((args) => {
-          const [image, data] = args;
-          that.set('data', data);
-          fulfill([image, data]);
-        })
-        .catch(reject);
-    });
-    return promise;
-  },
-
-  /**
-   * Adds a thumbnail to image model.
-   * @param options
-   */
-  addThumbnail(options = {}) {
-    const that = this;
-
-    const promise = new Promise((fulfill, reject) => {
-      // check if data source is dataURI
-      const re = /^data:/i;
-      if (re.test(this.getURL())) {
-        Media.resize(
-          this.getURL(),
-          this.get('type'),
-          THUMBNAIL_WIDTH || options.width,
-          THUMBNAIL_WIDTH || options.width
-        )
-          .then((args) => {
-            const [, data] = args;
-            that.set('thumbnail', data);
-            fulfill();
-          })
-          .catch(reject);
-        return;
-      }
-
-      Media.getDataURI(this.getURL(), {
-        width: THUMBNAIL_WIDTH || options.width,
-        height: THUMBNAIL_HEIGHT || options.height,
-      })
-        .then((data) => {
-          that.set('thumbnail', data[0]);
-          fulfill();
-        })
-        .catch(reject);
-    });
-
-    return promise;
-  },
-
-  // overwrite if you want to validate before saving remotely
-  validate(attributes, options = {}) {
-    if (options.remote) {
-      return this.validateRemote(attributes, options);
-    }
-    return null;
-  },
-
-  validateRemote(attributes) {
-    const attrs = _.extend({}, this.attributes, attributes);
-    const errors = {};
-
-    // type
-    if (!attrs.data) {
-      errors.attributes || (errors.attributes = {});
-      errors.attributes.data = "can't be empty";
-    }
-
-    if (!attrs.type) {
-      errors.attributes || (errors.attributes = {});
-      errors.attributes.type = "can't be empty";
-    }
-
-    if (!_.isEmpty(errors)) {
-      return errors;
-    }
-
-    return null;
-  },
-
-  toJSON() {
-    const data = {
-      id: this.id,
-      cid: this.cid,
-      metadata: this.metadata,
-      attributes: this.attributes,
+    this.attrs = {
+      ...this.attrs,
+      ...options.attrs,
+      ...options.attributes, // backwards compatible
     };
-    return data;
-  },
+    this.metadata = { ...this.metadata, ...options.metadata };
+  }
 
-  /**
-   * Returns an object with attributes and their values
-   * mapped for warehouse submission.
-   *
-   * @returns {*}
-   */
-  _getSubmission() {
-    const submission = {
-      id: this.id,
-      name: this.cid,
-    };
-
-    return [submission];
-  },
-});
-
-_.extend(Media.prototype, syncHelpers);
-
-_.extend(Media, {
   /**
    * Transforms and resizes an image file into a string.
    * Can accept file image path and a file input file.
@@ -209,7 +41,7 @@ _.extend(Media, {
    * @param onSaveSuccess
    * @returns {number}
    */
-  getDataURI(file, options = {}) {
+  static getDataURI(file, options = {}) {
     const promise = new Promise((fulfill, reject) => {
       // file paths
       if (typeof file === 'string') {
@@ -217,10 +49,12 @@ _.extend(Media, {
         let fileType = file.replace(/.*\.([a-z]+)$/i, '$1');
         if (fileType === 'jpg') fileType = 'jpeg'; // to match media types image/jpeg
 
-        Media.resize(file, fileType, options.width, options.height).then((args) => {
-          const [image, dataURI] = args;
-          fulfill([dataURI, fileType, image.width, image.height]);
-        });
+        Media.resize(file, fileType, options.width, options.height).then(
+          args => {
+            const [image, dataURI] = args;
+            fulfill([dataURI, fileType, image.width, image.height]);
+          }
+        );
         return;
       }
 
@@ -231,10 +65,15 @@ _.extend(Media, {
       }
 
       const reader = new FileReader();
-      reader.onload = function (event) {
+      reader.onload = function(event) {
         if (options.width || options.height) {
           // resize
-          Media.resize(event.target.result, file.type, options.width, options.height).then((args) => {
+          Media.resize(
+            event.target.result,
+            file.type,
+            options.width,
+            options.height
+          ).then(args => {
             const [image, dataURI] = args;
             fulfill([dataURI, file.type, image.width, image.height]);
           });
@@ -252,7 +91,7 @@ _.extend(Media, {
     });
 
     return promise;
-  },
+  }
 
   /**
    * http://stackoverflow.com/questions/2516117/how-to-scale-an-image-in-data-uri-format-in-javascript-real-scaling-not-usin
@@ -261,13 +100,13 @@ _.extend(Media, {
    * @param MAX_WIDTH
    * @param MAX_HEIGHT
    */
-  resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
-    const promise = new Promise((fulfill) => {
+  static resize(data, fileType, MAX_WIDTH, MAX_HEIGHT) {
+    const promise = new Promise(fulfill => {
       const image = new window.Image(); // native one
 
       image.onload = () => {
-        let width = image.width;
-        let height = image.height;
+        let { width } = image;
+        let { height } = image;
         const maxWidth = MAX_WIDTH || width;
         const maxHeight = MAX_HEIGHT || height;
 
@@ -299,7 +138,98 @@ _.extend(Media, {
     });
 
     return promise;
-  },
-});
+  }
 
-export { Media as default };
+  /**
+   * Returns image's absolute URL or dataURI.
+   */
+  getURL() {
+    return this.attrs.data;
+  }
+
+  /**
+   * Resizes itself.
+   */
+  resize(MAX_WIDTH, MAX_HEIGHT) {
+    const that = this;
+    const promise = new Promise((fulfill, reject) => {
+      Media.resize(this.getURL(), this.attrs.type, MAX_WIDTH, MAX_HEIGHT)
+        .then(args => {
+          const [image, data] = args;
+          that.attrs.data = data;
+          fulfill([image, data]);
+        })
+        .catch(reject);
+    });
+    return promise;
+  }
+
+  /**
+   * Adds a thumbnail to image model.
+   * @param options
+   */
+  addThumbnail(options = {}) {
+    const that = this;
+
+    const promise = new Promise((fulfill, reject) => {
+      // check if data source is dataURI
+      const re = /^data:/i;
+      if (re.test(this.getURL())) {
+        Media.resize(
+          this.getURL(),
+          this.attrs.type,
+          THUMBNAIL_WIDTH || options.width,
+          THUMBNAIL_WIDTH || options.width
+        )
+          .then(args => {
+            const [, data] = args;
+            that.attrs.thumbnail = data;
+            fulfill();
+          })
+          .catch(reject);
+        return;
+      }
+
+      Media.getDataURI(this.getURL(), {
+        width: THUMBNAIL_WIDTH || options.width,
+        height: THUMBNAIL_HEIGHT || options.height,
+      })
+        .then(data => {
+          [that.attrs.thumbnail] = data;
+          fulfill();
+        })
+        .catch(reject);
+    });
+
+    return promise;
+  }
+
+  toJSON() {
+    const data = {
+      id: this.id,
+      cid: this.cid,
+      metadata: this.metadata,
+      attrs: this.attrs,
+    };
+    return data;
+  }
+
+  static fromJSON(json) {
+    return new this(json);
+  }
+
+  /**
+   * Returns an object with attributes and their values
+   * mapped for warehouse submission.
+   *
+   * @returns {*}
+   */
+  getSubmission() {
+    const submission = {
+      id: this.id,
+      name: this.cid,
+    };
+
+    return [submission];
+  }
+}
