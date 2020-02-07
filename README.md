@@ -1,4 +1,5 @@
-# IndiciaJS [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
+# IndiciaJS [![version](https://img.shields.io/npm/v/@indicia-js/core/latest.svg)](https://www.npmjs.com/package/@indicia-js/core) [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
+
 
 Indicia Javascript SDK
 
