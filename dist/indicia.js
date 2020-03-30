@@ -1,8 +1,8 @@
 /*!
- * indicia 5.0.0
+ * @indicia-js/core 5.1.0
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
- * Author Karolis Kazlauskis
+ * Author undefined
  * Released under the GNU GPL v3 license.
  * http://www.gnu.org/licenses/gpl.html
  */
@@ -1983,12 +1983,42 @@
           input_form: this.metadata.input_form,
           fields: {},
           media: []
-        }; // transform attributes
+        };
 
-        Object.keys(this.attrs).forEach(function (attr) {
+        function mapValue(attr, value) {
+          var valuesMapping = keys[attr].values;
+
+          if (!valuesMapping) {
+            return value;
+          }
+
+          if (typeof valuesMapping === 'function') {
+            return valuesMapping(value, submission, that);
+          }
+
+          if (valuesMapping instanceof Array) {
+            return valuesMapping.find(function (_ref) {
+              var val = _ref.value;
+              return val === value;
+            }).id;
+          }
+
+          if (value instanceof Array) {
+            return value.map(function (v) {
+              return valuesMapping[v];
+            });
+          }
+
+          return valuesMapping[value];
+        }
+
+        function getValue(attr) {
           // no need to send attributes with no values
           var value = that.attrs[attr];
-          if (!value) return;
+
+          if (!value) {
+            return;
+          }
 
           if (!keys[attr]) {
             if (attr !== 'email') {
@@ -1999,27 +2029,15 @@
             return;
           }
 
-          var warehouseAttr = keys[attr].id || attr; // check if has values to choose from
-
-          if (keys[attr].values) {
-            if (typeof keys[attr].values === 'function') {
-              // get a value from a function
-              value = keys[attr].values(value, submission, that);
-            } else if (value instanceof Array) {
-              // the attribute has multiple values
-              value = value.map(function (v) {
-                return keys[attr].values[v];
-              });
-            } else {
-              value = keys[attr].values[value];
-            }
-          } // don't need to send null or undefined
-
+          var warehouseAttr = keys[attr].id || attr;
+          value = mapValue(attr, value); // don't need to send null or undefined
 
           if (value) {
             submission.fields[warehouseAttr] = value;
           }
-        });
+        }
+
+        Object.keys(this.attrs).forEach(getValue);
 
         var sampleOptions = _objectSpread$2({}, options);
 
@@ -2182,8 +2200,8 @@
   function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
   var Indicia = _objectSpread$3({
-    /* global "5.0.0" */
-    VERSION: "5.0.0",
+    /* global "5.1.0" */
+    VERSION: "5.1.0",
     // replaced by build
     Sample: Sample,
     Occurrence: Occurrence,

@@ -327,6 +327,29 @@ describe('Sample', function tests() {
       expect(submission.fields.butterfly_size).to.be.equal(1);
     });
 
+    it('should support key value arrays', () => {
+      // Given
+      const keys = {
+        size: {
+          id: 'butterfly_size',
+          values: [
+            {
+              value: 'huge',
+              id: 1,
+            },
+          ],
+        },
+      };
+      const smp = new Sample({ attrs: { size: 'huge' } });
+      smp.keys = keys;
+
+      // When
+      const [submission] = smp.getSubmission();
+
+      // Then
+      expect(submission.fields.butterfly_size).to.be.equal(1);
+    });
+
     it('should support attribute value arrays', () => {
       // Given
       const keys = {

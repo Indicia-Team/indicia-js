@@ -100,9 +100,11 @@ So instead of `occurrence.attrs[232] = 12343` one can
 ```javascript
 // Sample.keys
 Occurrence.keys = {
+  // no value mapping
   certain: {
     id: 398,
   },
+  // object
   taxon: {
     id: 232,
     values: {
@@ -110,6 +112,15 @@ Occurrence.keys = {
       bee: 12343,
     },
   },
+  // array
+  weather: {
+    id: 122,
+    values: [
+      { value:'sunny', id: 272398 },
+      { value: 'rainy', id: 132343 },
+    ],
+  },
+  // function
   colour: {
     id: 251,
     values() {
