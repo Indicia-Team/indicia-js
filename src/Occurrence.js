@@ -122,11 +122,33 @@ export default class Occurrence {
         this.metadata.sensitivity_precision || options.sensitivity_precision;
     }
 
-    // transform attributes
-    Object.keys(this.attrs).forEach(attr => {
+    function mapValue(attr, value) {
+      const valuesMapping = keys[attr].values;
+      if (!valuesMapping) {
+        return value;
+      }
+
+      if (typeof valuesMapping === 'function') {
+        return valuesMapping(value, submission, that);
+      }
+
+      if (valuesMapping instanceof Array) {
+        return valuesMapping.find(({ value: val }) => val === value).id;
+      }
+
+      if (value instanceof Array) {
+        return value.map(v => valuesMapping[v]);
+      }
+
+      return valuesMapping[value];
+    }
+
+    function getValue(attr) {
       // no need to send attributes with no values
       let value = that.attrs[attr];
-      if (!value) return;
+      if (!value) {
+        return;
+      }
 
       if (!keys[attr]) {
         if (attr !== 'email') {
@@ -138,24 +160,15 @@ export default class Occurrence {
 
       const warehouseAttr = keys[attr].id || attr;
 
-      // check if has values to choose from
-      if (keys[attr].values) {
-        if (typeof keys[attr].values === 'function') {
-          // get a value from a function
-          value = keys[attr].values(value, submission, that);
-        } else if (value instanceof Array) {
-          // the attribute has multiple values
-          value = value.map(v => keys[attr].values[v]);
-        } else {
-          value = keys[attr].values[value];
-        }
-      }
+      value = mapValue(attr, value);
 
       // don't need to send null or undefined
       if (value) {
         submission.fields[warehouseAttr] = value;
       }
-    });
+    }
+
+    Object.keys(this.attrs).forEach(getValue);
 
     // transform sub models
     // media does not return any media-models only JSON data about them

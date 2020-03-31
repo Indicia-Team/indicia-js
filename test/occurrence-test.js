@@ -66,6 +66,32 @@ describe('Occurrence', function tests() {
       expect(submission[0].fields.butterfly_size).to.be.equal(1);
     });
 
+    it('should support key value arrays', () => {
+      // Given
+      class CustomOccurrence extends Occurrence {
+        keys = {
+          size: {
+            id: 'butterfly_size',
+            values: [
+              {
+                value: 'huge',
+                id: 1,
+              },
+            ],
+          },
+        };
+      }
+      const occurrence = new CustomOccurrence({
+        attrs: { size: 'huge' },
+      });
+
+      // When
+      const [submission] = occurrence.getSubmission();
+
+      // Then
+      expect(submission.fields.butterfly_size).to.be.equal(1);
+    });
+
     it('should support attribute value arrays', () => {
       class CustomOccurrence extends Occurrence {
         keys = {
