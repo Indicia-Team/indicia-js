@@ -379,6 +379,10 @@ export default class Sample {
     let occurrencesMedia = [];
     this.occurrences.forEach(model => {
       const [modelSubmission, modelMedia] = model.getSubmission(sampleOptions);
+      if (!modelSubmission) {
+        return;
+      }
+
       occurrences.push(modelSubmission);
       occurrencesMedia = occurrencesMedia.concat(modelMedia);
     });
@@ -391,6 +395,10 @@ export default class Sample {
     let samplesMedia = [];
     this.samples.forEach(model => {
       const [modelSubmission, modelMedia] = model.getSubmission(sampleOptions);
+      if (!modelSubmission) {
+        return;
+      }
+
       samples.push(modelSubmission);
       samplesMedia = samplesMedia.concat(modelMedia);
     });

@@ -1,5 +1,5 @@
 /*!
- * @indicia-js/core 5.1.1
+ * @indicia-js/core 5.2.0
  * Indicia JavaScript SDK.
  * https://github.com/Indicia-Team/indicia-js
  * Author undefined
@@ -2074,6 +2074,10 @@
               modelSubmission = _model$getSubmission2[0],
               modelMedia = _model$getSubmission2[1];
 
+          if (!modelSubmission) {
+            return;
+          }
+
           occurrences.push(modelSubmission);
           occurrencesMedia = occurrencesMedia.concat(modelMedia);
         });
@@ -2087,6 +2091,10 @@
               _model$getSubmission4 = slicedToArray(_model$getSubmission3, 2),
               modelSubmission = _model$getSubmission4[0],
               modelMedia = _model$getSubmission4[1];
+
+          if (!modelSubmission) {
+            return;
+          }
 
           samples.push(modelSubmission);
           samplesMedia = samplesMedia.concat(modelMedia);
@@ -2217,8 +2225,8 @@
   function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
   var Indicia = _objectSpread$3({
-    /* global "5.1.1" */
-    VERSION: "5.1.1",
+    /* global "5.2.0" */
+    VERSION: "5.2.0",
     // replaced by build
     Sample: Sample,
     Occurrence: Occurrence,

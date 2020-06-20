@@ -407,5 +407,21 @@ describe('Sample', function tests() {
       expect(subSampleOcc.confidential).to.equal(true);
       expect(subSampleOcc.sensitivity_precision).to.equal(true);
     });
+
+    it('should ignore subModels which return null from getSubmission', () => {
+      // Given
+      const sample = getRandomSample();
+      sample.samples.push(getRandomSample());
+
+      sample.samples[0].getSubmission = () => [];
+      sample.occurrences[0].getSubmission = () => [];
+
+      // When
+      const [submission] = sample.getSubmission();
+
+      // Then
+      expect(submission.occurrences.length).to.be.equal(0);
+      expect(submission.samples.length).to.be.equal(0);
+    });
   });
 });
