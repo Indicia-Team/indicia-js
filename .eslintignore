@@ -1,4 +1,1 @@
-test/karma.conf-sauce.js
-test/_eslint.js
-/bower_components/
-/node_modules/
+**/test/karma.conf-sauce.js

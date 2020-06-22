@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import stringify from 'json-stable-stringify';
+import stringify from 'json-stable-stringify'; // eslint-disable-line
 import { Sample, Occurrence, Media } from '../src';
 import { getRandomSample, makeRequestResponse } from './helpers';
 

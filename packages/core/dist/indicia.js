@@ -30,32 +30,49 @@
 
   var defineProperty = _defineProperty;
 
-  function _arrayWithoutHoles(arr) {
-    if (Array.isArray(arr)) {
-      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-        arr2[i] = arr[i];
-      }
+  function _arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
 
-      return arr2;
+    for (var i = 0, arr2 = new Array(len); i < len; i++) {
+      arr2[i] = arr[i];
     }
+
+    return arr2;
+  }
+
+  var arrayLikeToArray = _arrayLikeToArray;
+
+  function _arrayWithoutHoles(arr) {
+    if (Array.isArray(arr)) return arrayLikeToArray(arr);
   }
 
   var arrayWithoutHoles = _arrayWithoutHoles;
 
   function _iterableToArray(iter) {
-    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
   }
 
   var iterableToArray = _iterableToArray;
 
+  function _unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+  }
+
+  var unsupportedIterableToArray = _unsupportedIterableToArray;
+
   function _nonIterableSpread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance");
+    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   var nonIterableSpread = _nonIterableSpread;
 
   function _toConsumableArray(arr) {
-    return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
+    return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
   }
 
   var toConsumableArray = _toConsumableArray;
@@ -196,7 +213,7 @@
       return { __await: arg };
     };
 
-    function AsyncIterator(generator) {
+    function AsyncIterator(generator, PromiseImpl) {
       function invoke(method, arg, resolve, reject) {
         var record = tryCatch(generator[method], generator, arg);
         if (record.type === "throw") {
@@ -207,14 +224,14 @@
           if (value &&
               typeof value === "object" &&
               hasOwn.call(value, "__await")) {
-            return Promise.resolve(value.__await).then(function(value) {
+            return PromiseImpl.resolve(value.__await).then(function(value) {
               invoke("next", value, resolve, reject);
             }, function(err) {
               invoke("throw", err, resolve, reject);
             });
           }
 
-          return Promise.resolve(value).then(function(unwrapped) {
+          return PromiseImpl.resolve(value).then(function(unwrapped) {
             // When a yielded Promise is resolved, its final value becomes
             // the .value of the Promise<{value,done}> result for the
             // current iteration.
@@ -232,7 +249,7 @@
 
       function enqueue(method, arg) {
         function callInvokeWithMethodAndArg() {
-          return new Promise(function(resolve, reject) {
+          return new PromiseImpl(function(resolve, reject) {
             invoke(method, arg, resolve, reject);
           });
         }
@@ -272,9 +289,12 @@
     // Note that simple async functions are implemented on top of
     // AsyncIterator objects; they just return a Promise for the value of
     // the final result produced by the iterator.
-    exports.async = function(innerFn, outerFn, self, tryLocsList) {
+    exports.async = function(innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+      if (PromiseImpl === void 0) PromiseImpl = Promise;
+
       var iter = new AsyncIterator(
-        wrap(innerFn, outerFn, self, tryLocsList)
+        wrap(innerFn, outerFn, self, tryLocsList),
+        PromiseImpl
       );
 
       return exports.isGeneratorFunction(outerFn)
@@ -801,10 +821,7 @@
   var arrayWithHoles = _arrayWithHoles;
 
   function _iterableToArrayLimit(arr, i) {
-    if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-      return;
-    }
-
+    if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
     var _arr = [];
     var _n = true;
     var _d = false;
@@ -833,13 +850,13 @@
   var iterableToArrayLimit = _iterableToArrayLimit;
 
   function _nonIterableRest() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   var nonIterableRest = _nonIterableRest;
 
   function _slicedToArray(arr, i) {
-    return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+    return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
   }
 
   var slicedToArray = _slicedToArray;
@@ -960,6 +977,8 @@
 
   var _typeof_1 = createCommonjsModule(function (module) {
   function _typeof(obj) {
+    "@babel/helpers - typeof";
+
     if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
       module.exports = _typeof = function _typeof(obj) {
         return typeof obj;
@@ -989,9 +1008,7 @@
   /* eslint-disable no-bitwise */
 
   function _makeRequest() {
-    _makeRequest = asyncToGenerator(
-    /*#__PURE__*/
-    regenerator.mark(function _callee(url, options) {
+    _makeRequest = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(url, options) {
       var timeout,
           timeoutTrigger,
           res,
@@ -1131,9 +1148,7 @@
 
   var THUMBNAIL_HEIGHT = 100; // px
 
-  var Media =
-  /*#__PURE__*/
-  function () {
+  var Media = /*#__PURE__*/function () {
     function Media() {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -1154,8 +1169,8 @@
       this.id = options.id; // remote ID
 
       this.cid = options.cid || this.cid;
-      this.attrs = _objectSpread({}, this.attrs, {}, options.attrs, {}, options.attributes);
-      this.metadata = _objectSpread({}, this.metadata, {}, options.metadata);
+      this.attrs = _objectSpread(_objectSpread(_objectSpread({}, this.attrs), options.attrs), options.attributes);
+      this.metadata = _objectSpread(_objectSpread({}, this.metadata), options.metadata);
     }
     /**
      * Transforms and resizes an image file into a string.
@@ -1390,9 +1405,7 @@
     };
   }
 
-  var Occurrence =
-  /*#__PURE__*/
-  function () {
+  var Occurrence = /*#__PURE__*/function () {
     /**
      * Warehouse attributes and their values.
      */
@@ -1416,8 +1429,8 @@
       this.id = options.id; // remote ID
 
       this.cid = options.cid || this.cid;
-      this.attrs = _objectSpread$1({}, this.attrs, {}, options.attrs, {}, options.attributes);
-      this.metadata = _objectSpread$1({}, this.metadata, {}, options.metadata);
+      this.attrs = _objectSpread$1(_objectSpread$1(_objectSpread$1({}, this.attrs), options.attrs), options.attributes);
+      this.metadata = _objectSpread$1(_objectSpread$1({}, this.metadata), options.metadata);
     }
 
     createClass(Occurrence, [{
@@ -1455,7 +1468,7 @@
         var that = this;
         var occKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
 
-        var keys = _objectSpread$1({}, Occurrence.keys, {}, occKeys); // warehouse keys/values to transform
+        var keys = _objectSpread$1(_objectSpread$1({}, Occurrence.keys), occKeys); // warehouse keys/values to transform
 
 
         var media = toConsumableArray(this.media); // all media within this and child models
@@ -1631,9 +1644,7 @@
   }
 
   function _appendModelToFormData() {
-    _appendModelToFormData = asyncToGenerator(
-    /*#__PURE__*/
-    regenerator.mark(function _callee3(mediaModel, formData) {
+    _appendModelToFormData = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee3(mediaModel, formData) {
       var type, extension, mediaType, _type$split, _type$split2, url, blob, name;
 
       return regenerator.wrap(function _callee3$(_context3) {
@@ -1711,9 +1722,7 @@
   }
 
   function _normaliseModelData() {
-    _normaliseModelData = asyncToGenerator(
-    /*#__PURE__*/
-    regenerator.mark(function _callee4(data, media) {
+    _normaliseModelData = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee4(data, media) {
       var dataStr, formData, mediaProcesses;
       return regenerator.wrap(function _callee4$(_context4) {
         while (1) {
@@ -1790,9 +1799,7 @@
     return "Basic  ".concat(basicAuth);
   }
 
-  var Sample =
-  /*#__PURE__*/
-  function () {
+  var Sample = /*#__PURE__*/function () {
     createClass(Sample, null, [{
       key: "fromJSON",
 
@@ -1864,8 +1871,8 @@
       this.id = options.id; // remote ID
 
       this.cid = options.cid || getNewUUID();
-      this.attrs = _objectSpread$2({}, this.attrs, {}, options.attrs, {}, options.attributes);
-      this.metadata = _objectSpread$2({}, this.metadata, {}, options.metadata);
+      this.attrs = _objectSpread$2(_objectSpread$2(_objectSpread$2({}, this.attrs), options.attrs), options.attributes);
+      this.metadata = _objectSpread$2(_objectSpread$2({}, this.metadata), options.metadata);
     }
 
     createClass(Sample, [{
@@ -1918,9 +1925,7 @@
     }, {
       key: "saveRemote",
       value: function () {
-        var _saveRemote = asyncToGenerator(
-        /*#__PURE__*/
-        regenerator.mark(function _callee() {
+        var _saveRemote = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee() {
           var _this$getSubmission, _this$getSubmission2, submission, media, data, resp, timeNow;
 
           return regenerator.wrap(function _callee$(_context) {
@@ -1987,7 +1992,7 @@
         var that = this;
         var sampleKeys = typeof this.keys === 'function' ? this.keys() : this.keys;
 
-        var keys = _objectSpread$2({}, Sample.keys, {}, sampleKeys); // warehouse keys/values to transform
+        var keys = _objectSpread$2(_objectSpread$2({}, Sample.keys), sampleKeys); // warehouse keys/values to transform
 
 
         var media = toConsumableArray(this.media); // all media within this and child models
@@ -2116,9 +2121,7 @@
     }, {
       key: "_createRemote",
       value: function () {
-        var _createRemote2 = asyncToGenerator(
-        /*#__PURE__*/
-        regenerator.mark(function _callee2(data) {
+        var _createRemote2 = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee2(data) {
           var url, options, status, _e$errors, errors, message;
 
           return regenerator.wrap(function _callee2$(_context2) {
