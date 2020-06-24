@@ -104,6 +104,12 @@ function remoteCreateParse(model, responseData) {
 }
 
 function getUserAuth(remote) {
+  const isTesting = !!process;
+  !isTesting &&
+    console.warn(
+      'Using Basic auth is deprecated, please use remote.headers function to pass OAuth2 access_token in the auth header.'
+    );
+
   if (!remote.user || !remote.password) {
     return null;
   }
@@ -144,14 +150,15 @@ export default function add(Sample) {
     keys = Extended.keys;
 
     remote = {
-      host_url: null, // must be set up for remote sync
-      api_key: null, // must be set up for remote sync
-      timeout: 30000, // 30s
-
-      user: null, // must be set up for remote sync
-      password: null, // must be set up for remote sync
-
       synchronising: false,
+      url: null, // must be set up for remote sync
+      headers: {}, // auth and other headers
+      timeout: 60000, // 60s
+
+      host_url: null, // deprecated
+      api_key: null, // deprecated
+      user: null, // deprecated
+      password: null, // deprecated
     };
 
     constructor(options = {}) {
@@ -297,7 +304,9 @@ export default function add(Sample) {
 
     async saveRemote() {
       // Ensure that we have a URL.
-      if (!this.remote.host_url || !this.remote.api_key) {
+      const configIsMissing = !this.remote.url;
+      const oldConfigIsMissing = !this.remote.host_url || !this.remote.api_key;
+      if (configIsMissing && oldConfigIsMissing) {
         return Promise.reject(
           new Error('A "remote" property is not configured.')
         );
@@ -331,14 +340,29 @@ export default function add(Sample) {
     }
 
     async _createRemote(data) {
-      const url = `${this.remote.host_url}api/v1/samples`;
+      let { url } = this.remote;
+
+      if (this.remote.host_url) {
+        // backwards compatible
+        url = `${this.remote.host_url}api/v1/samples`;
+      }
+
+      let headers =
+        typeof this.remote.headers === 'function'
+          ? await this.remote.headers()
+          : this.remote.headers;
+
+      if (!this.remote.headers) {
+        // backwards compatible
+        headers = {
+          authorization: getUserAuth(this.remote),
+          'x-api-key': this.remote.api_key,
+        };
+      }
 
       const options = {
         method: 'POST',
-        headers: {
-          authorization: getUserAuth(this.remote),
-          'x-api-key': this.remote.api_key,
-        },
+        headers,
         body: data,
       };
 

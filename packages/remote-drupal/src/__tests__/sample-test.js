@@ -22,8 +22,7 @@ function getRandomSample(samples = [], occurrences = []) {
 
   class RemoteReadySample extends Sample {
     remote = {
-      api_key: 'x',
-      host_url: 'x',
+      url: 'x',
       timeout: 100,
     };
 
@@ -171,6 +170,51 @@ describe('Sample', function tests() {
       const [, file1] = submission;
       expect(file1).toBeDefined();
       expect(file1[1]).toBeInstanceOf(File);
+    });
+
+    it('should set remote headers and url', async () => {
+      // Given
+      const sample = getRandomSample();
+      sample.remote.url = 'myRemoteURL';
+      sample.remote.headers = {
+        myheader: 1234,
+      };
+
+      _createRemoteStub.restore();
+      let usedUrl;
+      let usedOptions;
+      _sampleDependencies.__Rewire__('makeRequest', (url, options) => {
+        usedUrl = url;
+        usedOptions = options;
+        return makeRequestResponse('DUPLICATE', sample);
+      });
+
+      // When
+      await sample.saveRemote();
+
+      // Then
+      expect(usedUrl).toBe('myRemoteURL');
+      expect(usedOptions.headers.myheader).toBe(1234);
+    });
+
+    it('should set remote headers using async function', async () => {
+      // Given
+      const sample = getRandomSample();
+      sample.remote.headers = async () =>
+        new Promise(r => setTimeout(() => r({ myheader: 1234 }), 2000));
+
+      _createRemoteStub.restore();
+      let usedOptions;
+      _sampleDependencies.__Rewire__('makeRequest', (_, options) => {
+        usedOptions = options;
+        return makeRequestResponse('DUPLICATE', sample);
+      });
+
+      // When
+      await sample.saveRemote();
+
+      // Then
+      expect(usedOptions.headers.myheader).toBe(1234);
     });
   });
 

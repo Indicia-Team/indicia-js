@@ -4,7 +4,7 @@ Drupal 8 indicia-api module data synchronization functions. Helps to synchronize
 
 ## Usage
 
-```javascript
+```js
 import { Sample, Occurrence, Media } from '@indicia-js/core';
 import withRemote from '@indicia-js/remote-drupal';
 
@@ -12,16 +12,19 @@ const SampleWithRemote = withRemote(Sample);
 const OccurrenceWithRemote = withRemote(Occurrence);
 const MediaWithRemote = withRemote(Media);
 
-const sample = new SampleWithRemote({
-  metadata: {
-    survey_id: 1,
-    training: true, // optional
-    confidential: true, // optional
-    sensitive: true, // optional
-    release_status: 'R', // optional R-eleased/P-recheck/...
-    record_status: 'C', // optional C-omplete/I-ncomplete/...
-  },
-});
+const sample = new SampleWithRemote();
+
+sample.metadata = {
+  survey_id: 1,
+  training: true, // optional
+  confidential: true, // optional
+  sensitive: true, // optional
+  release_status: 'R', // optional R-eleased/P-recheck/...
+  record_status: 'C', // optional C-omplete/I-ncomplete/...
+};
+
+sample.remote.url = '<YOUR_API_HOST_URL>';
+sample.remote.headers = {}; // can be an async function
 
 sample.attrs.date = '12/2/2012';
 sample.attrs.location = '12.345, -12.345';
@@ -31,8 +34,6 @@ var occ = new OccurrenceWithRemote();
 sample.occurrences.push(occ);
 
 // Upload to Indicia warehouse
-sample.remote.api_key = '<YOUR_API_KEY>';
-sample.remote.host_url = '<YOUR_API_HOST_URL>';
 await sample.saveRemote();
 ```
 
