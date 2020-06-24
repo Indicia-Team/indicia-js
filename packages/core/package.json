@@ -2,7 +2,7 @@
   "name": "@indicia-js/core",
   "title": "Indicia",
   "description": "Indicia JavaScript SDK.",
-  "version": "5.3.0",
+  "version": "5.4.0",
   "homepage": "https://github.com/Indicia-Team/indicia-js",
   "author": "Karolis Kazlauskis <karolis@flumens.io> (https://flumens.io)",
   "keywords": [
