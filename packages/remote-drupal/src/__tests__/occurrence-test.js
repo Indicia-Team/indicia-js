@@ -1,32 +1,27 @@
-/* eslint no-unused-expressions: 0, max-classes-per-file: 0 */
+/* eslint max-classes-per-file: 0 */
+import { Occurrence as OccOrig } from '@indicia-js/core';
+import withRemote from '../';
 
-import { Occurrence } from '../src';
+const Occurrence = withRemote(OccOrig);
 
 describe('Occurrence', function tests() {
-  this.timeout(10000);
-
-  it('should have default properties', () => {
-    const occurrence = new Occurrence();
-
-    expect(occurrence.cid).to.be.a.string;
-    expect(occurrence.metadata).to.be.an('object');
-    expect(occurrence.attrs).to.be.an('object');
-    expect(occurrence.media).to.be.an('array');
-    expect(Object.keys(occurrence.attrs).length).to.be.equal(0);
+  it('should have static keys property', () => {
+    expect(typeof Occurrence.keys).toBe('object');
   });
 
-  it('should return JSON', () => {
-    const item = Date.now().toString();
-    const value = Math.random();
-    const occurrence = new Occurrence();
-    occurrence.attrs[item] = value;
-    occurrence.metadata[item] = value;
+  it('should have keys property', () => {
+    const occ = new Occurrence();
+    expect(occ.keys).toBe(Occurrence.keys);
+  });
 
-    const json = occurrence.toJSON();
+  it('should pass on the remote id', () => {
+    const occ = new Occurrence({ id: 1 });
+    expect(occ.id).toBe(1);
+  });
 
-    expect(json.cid).to.be.equal(occurrence.cid);
-    expect(json.attrs[item]).to.be.equal(value);
-    expect(json.metadata[item]).to.be.equal(value);
+  it('should extract the remote id when toJSON', () => {
+    const occ = new Occurrence({ id: 1 });
+    expect(occ.toJSON().id).toBe(1);
   });
 
   describe('getSubmission', () => {
@@ -39,11 +34,9 @@ describe('Occurrence', function tests() {
       });
       occurrence.keys = { size: {}, number: {} };
       const submission = occurrence.getSubmission();
-
-      expect(submission[0].fields.size).to.be.equal('huge');
-      expect(submission[0].fields.number).to.be.equal(1234);
+      expect(submission[0].fields.size).toBe('huge');
+      expect(submission[0].fields.number).toBe(1234);
     });
-
     it('should return translate attribute keys and values if keys mapping is provided', () => {
       class CustomOccurrence extends Occurrence {
         keys = {
@@ -55,17 +48,14 @@ describe('Occurrence', function tests() {
           },
         };
       }
-
       const occurrence = new CustomOccurrence({
         attrs: {
           size: 'huge',
         },
       });
       const submission = occurrence.getSubmission();
-
-      expect(submission[0].fields.butterfly_size).to.be.equal(1);
+      expect(submission[0].fields.butterfly_size).toBe(1);
     });
-
     it('should support key value arrays', () => {
       // Given
       class CustomOccurrence extends Occurrence {
@@ -84,14 +74,11 @@ describe('Occurrence', function tests() {
       const occurrence = new CustomOccurrence({
         attrs: { size: 'huge' },
       });
-
       // When
       const [submission] = occurrence.getSubmission();
-
       // Then
-      expect(submission.fields.butterfly_size).to.be.equal(1);
+      expect(submission.fields.butterfly_size).toBe(1);
     });
-
     it('should support attribute value arrays', () => {
       class CustomOccurrence extends Occurrence {
         keys = {
@@ -111,8 +98,7 @@ describe('Occurrence', function tests() {
         },
       });
       const submission = occurrence.getSubmission();
-
-      expect(submission[0].fields.butterfly_colour).to.be.eql([1, 2]);
+      expect(submission[0].fields.butterfly_colour).toEqual([1, 2]);
     });
   });
 });

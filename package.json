@@ -5,8 +5,13 @@
     "postinstall": "lerna bootstrap",
     "build": "lerna run build",
     "test": "lerna run test",
-    "test:eslint": "mocha test/_eslint.js",
-    "test:sauce": "lerna run test:sauce"
+    "test:eslint": "mocha eslint-test.js",
+    "test:watch": "lerna run test:watch"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm run test:eslint && npm run test"
+    }
   },
   "devDependencies": {
     "babel-eslint": "^10.0.3",
@@ -17,6 +22,7 @@
     "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.17.0",
+    "husky": "^4.2.5",
     "lerna": "^3.22.1",
     "mocha": "^7.0.0"
   },

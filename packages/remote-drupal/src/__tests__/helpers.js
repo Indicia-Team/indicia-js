@@ -1,30 +1,4 @@
-import { Sample, Occurrence } from '../src';
 import serverResponses from './server_responses';
-
-function getRandomSample(samples = [], occurrences = []) {
-  if (!occurrences.length) {
-    const occurrence = new Occurrence({
-      taxon: 1234,
-    });
-    occurrences.push(occurrence);
-  }
-
-  class RemoteReadySample extends Sample {
-    remote = {
-      api_key: 'x',
-      host_url: 'x',
-      timeout: 100,
-    };
-
-    attrs = { location: ' 12.12, -0.23' };
-
-    samples = samples || [];
-
-    occurrences = occurrences || [];
-  }
-
-  return new RemoteReadySample();
-}
 
 function makeRequestResponse(type, data) {
   switch (type) {
@@ -69,4 +43,4 @@ function makeRequestResponse(type, data) {
   return null;
 }
 
-export { getRandomSample, makeRequestResponse };
+export default makeRequestResponse;

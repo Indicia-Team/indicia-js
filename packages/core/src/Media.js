@@ -1,7 +1,3 @@
-/** *********************************************************************
- * IMAGE
- ********************************************************************* */
-
 import { getNewUUID } from './helpers';
 
 const THUMBNAIL_WIDTH = 100; // px
@@ -10,18 +6,13 @@ const THUMBNAIL_HEIGHT = 100; // px
 export default class Media {
   cid = getNewUUID();
 
-  id = null;
-
   attrs = {};
 
   metadata = {
     created_on: new Date(),
   };
 
-  keys = {};
-
   constructor(options = {}) {
-    this.id = options.id; // remote ID
     this.cid = options.cid || this.cid;
 
     this.attrs = {
@@ -206,7 +197,6 @@ export default class Media {
 
   toJSON() {
     const data = {
-      id: this.id,
       cid: this.cid,
       metadata: this.metadata,
       attrs: this.attrs,
@@ -216,20 +206,5 @@ export default class Media {
 
   static fromJSON(json) {
     return new this(json);
-  }
-
-  /**
-   * Returns an object with attributes and their values
-   * mapped for warehouse submission.
-   *
-   * @returns {*}
-   */
-  getSubmission() {
-    const submission = {
-      id: this.id,
-      name: this.cid,
-    };
-
-    return [submission];
   }
 }

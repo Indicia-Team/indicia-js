@@ -1,14 +1,6 @@
-# IndiciaJS [![version](https://img.shields.io/npm/v/@indicia-js/core/latest.svg)](https://www.npmjs.com/package/@indicia-js/core) [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
+# @indicia-js/core [![version](https://img.shields.io/npm/v/@indicia-js/core/latest.svg)](https://www.npmjs.com/package/@indicia-js/core) [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
 
-
-Indicia Javascript SDK
-
-A tiny library with no dependencies that helps to manage and synchronize biological records with Indicia warehouse (through [Indicia API Drupal module](https://github.com/Indicia-Team/drupal-8-module-indicia-api)).
-
-## Features
-
-- Manage Indicia records (Sample and Occurrence based)
-- Synchronization with the warehouse
+A tiny library with no dependencies that helps to manage biological records based on Samples and Occurrences.
 
 ## Usage
 
@@ -34,11 +26,6 @@ await image.resize(800, 400);
 await image.addThumbnail();
 
 occ.media.push(image);
-
-// Upload to Indicia warehouse
-sample.remote.api_key = '<YOUR_API_KEY>';
-sample.remote.host_url = '<YOUR_API_HOST_URL>';
-await sample.saveRemote();
 ```
 
 ## Initialization
@@ -55,79 +42,12 @@ You can find them in the root folder of the library.
 
 ```html
 <!-- Add JS library file -->
-<script src="path/to/indicia.min.js"></script>
+<script src="path/to/indicia.js"></script>
 ```
-
-It doesn't matter how and where you load the library. Code is executed only when you
-initialize the library. `IndiciaJS` also supports AMD loaders like RequireJS or CommonJS:
+or 
 
 ```javascript
-import Indicia, { Sample, Occurrence, Media } from 'indicia';
-
-// or
-
-require(['path/to/indicia.min.js'], function(Indicia) {
-  let sample = new Indicia.Sample();
-});
-```
-
-## Configuration
-
-```javascript
-const sample = new Sample({
-  metadata: {
-    survey_id: 1,
-    training: true, // optional
-    confidential: true, // optional
-    sensitive: true, // optional
-    release_status: 'R', // optional R-eleased/P-recheck/...
-    record_status: 'C', // optional C-omplete/I-ncomplete/...
-  },
-});
-
-sample.remote = {
-  host_url: '<YOUR_API_HOST_URL>',
-  api_key: '<YOUR_API_KEY>',
-};
-```
-
-You can set human friendly warehouse attribute names (ids) and values for both Sample and Occurrence
-attributes:
-
-So instead of `occurrence.attrs[232] = 12343` one can
-`occurrence.attrs.taxon = 'bee'`, examples:
-
-```javascript
-// Sample.keys
-Occurrence.keys = {
-  // no value mapping
-  certain: {
-    id: 398,
-  },
-  // object
-  taxon: {
-    id: 232,
-    values: {
-      1: 272198,
-      bee: 12343,
-    },
-  },
-  // array
-  weather: {
-    id: 122,
-    values: [
-      { value:'sunny', id: 272398 },
-      { value: 'rainy', id: 132343 },
-    ],
-  },
-  // function
-  colour: {
-    id: 251,
-    values() {
-      return 'some calculated value';
-    },
-  },
-};
+import { Sample, Occurrence, Media } from 'indicia';
 ```
 
 ### API
@@ -137,25 +57,17 @@ Occurrence.keys = {
 // all models
 static Model.fromJSON() ⇒ Promise
 
-model.cid: Number
-model.id: null | Number
+model.cid: UUID
 model.attrs: Object
 model.metadata: Object
-model.keys: Object | Function
 
 model.toJSON() ⇒ Promise
-model.getSubmission() ⇒ Array
 
 
 // Sample
 sample.occurrences: Array
 sample.samples: Array
 sample.media: Array
-sample.remote: Object
-
-// TODO: sample.fetch(options) ⇒ Promise
-sample.saveRemote() ⇒ Promise
-
 
 // Occurrence
 occurrence.media: Array
@@ -175,7 +87,7 @@ Have a bug or a feature request? search for existing and closed issues. [Please 
 
 **Karolis Kazlauskis**
 
-- <https://github.com/kazlauskis>
+- <https://github.com/flumensio>
 
 ## Copyright and license
 
