@@ -60,5 +60,6 @@
       "src/__tests__/server_responses.js"
     ]
   },
-  "license": "GNU GPL v3"
+  "license": "GNU GPL v3",
+  "gitHead": "bc072ef98da7f065d40d881e700aef7c579ed114"
 }
