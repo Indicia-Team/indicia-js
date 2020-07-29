@@ -199,12 +199,12 @@ export default function add(Sample) {
           return valuesMapping(value, submission, that);
         }
 
-        if (valuesMapping instanceof Array) {
-          return valuesMapping.find(({ value: val }) => val === value).id;
+        if (value instanceof Array) {
+          return value.map(v => mapValue(attr, v));
         }
 
-        if (value instanceof Array) {
-          return value.map(v => valuesMapping[v]);
+        if (valuesMapping instanceof Array) {
+          return valuesMapping.find(({ value: val }) => val === value).id;
         }
 
         return valuesMapping[value];
