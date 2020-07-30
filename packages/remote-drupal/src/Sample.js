@@ -213,7 +213,7 @@ export default function add(Sample) {
       function getValue(attr) {
         // no need to send attributes with no values
         let value = that.attrs[attr];
-        if (!value) {
+        if (value === null || value === undefined) {
           return;
         }
 

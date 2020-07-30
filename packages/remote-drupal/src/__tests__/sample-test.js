@@ -236,6 +236,29 @@ describe('Sample', function tests() {
       expect(submission.fields.sample_method_id).toBe(1234);
     });
 
+    it('should not return anything for empty attribute values', () => {
+      // Given
+      const smp = new Sample({
+        attrs: {
+          comment: 'huge',
+          customAttribute: null,
+          customFalsyAttribute: 0,
+          customFalsyBoolAttribute: false,
+          customFalsyStrAttribute: '',
+        },
+      });
+
+      // When
+      const [submission] = smp.getSubmission();
+
+      // Then
+      expect(submission.fields.comment).toBe('huge');
+      expect(submission.fields.customAttribute).toBeUndefined();
+      expect(submission.fields.customFalsyAttribute).toBe(0);
+      expect(submission.fields.customFalsyBoolAttribute).toBe(false);
+      expect(submission.fields.customFalsyStrAttribute).toBe('');
+    });
+
     it('should return translate attribute keys and values if keys mapping is provided', () => {
       // Given
       const keys = {
