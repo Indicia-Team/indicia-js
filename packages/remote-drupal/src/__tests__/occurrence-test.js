@@ -37,6 +37,30 @@ describe('Occurrence', function tests() {
       expect(submission[0].fields.size).toBe('huge');
       expect(submission[0].fields.number).toBe(1234);
     });
+
+    it('should not return anything for empty attribute values', () => {
+      // Given
+      const occurrence = new Occurrence({
+        attrs: {
+          comment: 'huge',
+          customAttribute: null,
+          customFalsyAttribute: 0,
+          customFalsyBoolAttribute: false,
+          customFalsyStrAttribute: '',
+        },
+      });
+
+      // When
+      const [submission] = occurrence.getSubmission();
+
+      // Then
+      expect(submission.fields.comment).toBe('huge');
+      expect(submission.fields.customAttribute).toBeUndefined();
+      expect(submission.fields.customFalsyAttribute).toBe(0);
+      expect(submission.fields.customFalsyBoolAttribute).toBe(false);
+      expect(submission.fields.customFalsyStrAttribute).toBe('');
+    });
+
     it('should return translate attribute keys and values if keys mapping is provided', () => {
       class CustomOccurrence extends Occurrence {
         keys = {

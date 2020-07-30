@@ -98,12 +98,14 @@ export default function add(Occurrence) {
       function getValue(attr) {
         // no need to send attributes with no values
         let value = that.attrs[attr];
-        if (!value) {
+        if (value === null || value === undefined) {
           return;
         }
 
         if (!keys[attr]) {
-          if (attr !== 'email') {
+          const isTesting = process;
+
+          if (attr !== 'email' && !isTesting) {
             console.warn(`Indicia: no such key: ${attr}`);
           }
           submission.fields[attr] = value;
