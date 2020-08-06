@@ -98,7 +98,10 @@ export default function add(Occurrence) {
       function getValue(attr) {
         // no need to send attributes with no values
         let value = that.attrs[attr];
-        if (value === null || value === undefined) {
+
+        const isEmpty = val => val === null || val === undefined;
+
+        if (isEmpty(value)) {
           return;
         }
 
@@ -116,10 +119,11 @@ export default function add(Occurrence) {
 
         value = mapValue(attr, value);
 
-        // don't need to send null or undefined
-        if (value) {
-          submission.fields[warehouseAttr] = value;
+        if (isEmpty(value)) {
+          return;
         }
+
+        submission.fields[warehouseAttr] = value;
       }
 
       Object.keys(this.attrs).forEach(getValue);
