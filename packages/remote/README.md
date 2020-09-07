@@ -101,7 +101,7 @@ sample.saveRemote() ⇒ Promise
 
 ## Bugs and feature requests
 
-Have a bug or a feature request? search for existing and closed issues. [Please open a new issue](https://github.com/Indicia-Team/indicia-js/issues).
+Have a bug or a feature request? Search for existing and closed issues. [Please open a new issue](https://github.com/Indicia-Team/indicia-js/issues).
 
 ## Creators
 
