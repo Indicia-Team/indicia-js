@@ -27,7 +27,7 @@ function remoteCreateParse(model, responseData) {
   setNewRemoteID(model, responseData);
 }
 
-async function appendModelToFormData(mediaModel, formData) {
+async function appendModelToFormData(mediaModel, media) {
   // can provide both image/jpeg and jpeg
   const { type } = mediaModel.attrs;
   let extension = type;
@@ -42,20 +42,22 @@ async function appendModelToFormData(mediaModel, formData) {
   const blob = await getBlobFromURL(url, mediaType);
 
   const name = mediaModel.cid;
-  formData.append(name, blob, `${name}.${extension}`);
+  media.push([name, blob, `${name}.${extension}`]);
 }
 
-const addModelMediaToFormData = async (model, data) => {
+const addModelMediaToFormData = async (model, media) => {
   if (model.media) {
-    await Promise.all(model.media.map(m => appendModelToFormData(m, data)));
+    await Promise.all(model.media.map(m => appendModelToFormData(m, media)));
   }
   if (model.occurrences) {
     await Promise.all(
-      model.occurrences.map(m => addModelMediaToFormData(m, data))
+      model.occurrences.map(m => addModelMediaToFormData(m, media))
     );
   }
   if (model.samples) {
-    await Promise.all(model.samples.map(m => addModelMediaToFormData(m, data)));
+    await Promise.all(
+      model.samples.map(m => addModelMediaToFormData(m, media))
+    );
   }
 };
 
@@ -302,23 +304,45 @@ export default function add(Sample) {
     }
 
     async _uploadMedia() {
-      const data = new FormData(); // for submission
-      await addModelMediaToFormData(this, data);
+      let warehouseMediaNames = {};
 
-      const { url } = this.remote;
+      const media = []; // for submission
+      await addModelMediaToFormData(this, media);
 
-      const headers =
-        typeof this.remote.headers === 'function'
-          ? await this.remote.headers()
-          : this.remote.headers;
+      const hasPhotos = media.length;
+      if (!hasPhotos) {
+        return warehouseMediaNames;
+      }
 
-      const options = {
-        method: 'POST',
-        headers,
-        body: data,
-      };
+      async function upload(data) {
+        const { url } = this.remote;
 
-      return makeRequest(`${url}/media-queue`, options);
+        const headers =
+          typeof this.remote.headers === 'function'
+            ? await this.remote.headers()
+            : this.remote.headers;
+
+        const options = {
+          method: 'POST',
+          headers,
+          body: data,
+        };
+
+        return makeRequest(`${url}/media-queue`, options);
+      }
+
+      const chunk = 5;
+      for (let index = 0; index < media.length; index += chunk) {
+        const mediaChunkToUpload = media.slice(index, index + chunk);
+        const data = new FormData();
+        mediaChunkToUpload.forEach(m => data.append(...m));
+
+        const ids = await upload(data); // eslint-disable-line
+
+        warehouseMediaNames = { ...warehouseMediaNames, ...ids };
+      }
+
+      return warehouseMediaNames;
     }
   };
 }
