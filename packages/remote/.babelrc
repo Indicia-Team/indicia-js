@@ -1,0 +1,27 @@
+{
+  "exclude": "node_modules/**",
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "modules": false,
+        "useBuiltIns": "usage",
+        "corejs": "3.0.0",
+        "targets": {
+          "android": "5.1",
+          "ios": "10.2"
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-runtime",
+    ["@babel/plugin-proposal-class-properties", { "loose": false }]
+  ],
+  "env": {
+    "test": {
+      "plugins": ["rewire"],
+      "presets": [["@babel/preset-env"]]
+    }
+  }
+}
