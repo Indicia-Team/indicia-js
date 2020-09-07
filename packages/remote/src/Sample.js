@@ -314,7 +314,7 @@ export default function add(Sample) {
         return warehouseMediaNames;
       }
 
-      async function upload(data) {
+      const upload = async data => {
         const { url } = this.remote;
 
         const headers =
@@ -329,7 +329,7 @@ export default function add(Sample) {
         };
 
         return makeRequest(`${url}/media-queue`, options);
-      }
+      };
 
       const chunk = 5;
       for (let index = 0; index < media.length; index += chunk) {
