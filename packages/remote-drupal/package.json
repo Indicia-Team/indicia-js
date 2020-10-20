@@ -2,7 +2,7 @@
   "name": "@indicia-js/remote-drupal",
   "title": "IndiciaRemoteDrupal",
   "description": "Indicia JavaScript SDK.",
-  "version": "5.4.4",
+  "version": "5.6.2",
   "homepage": "https://github.com/Indicia-Team/indicia-js",
   "author": "Karolis Kazlauskis <karolis@flumens.io> (https://flumens.io)",
   "keywords": [
