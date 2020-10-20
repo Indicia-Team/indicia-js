@@ -146,7 +146,7 @@ export default function add(Sample) {
         occurrences: [],
       };
 
-      function mapValue(attr, value) {
+      const mapValue = (attr, value) => {
         const valuesMapping = keys[attr].values;
         if (!valuesMapping) {
           return value;
@@ -165,7 +165,7 @@ export default function add(Sample) {
         }
 
         return valuesMapping[value];
-      }
+      };
 
       const getValue = attr => {
         let value = this.attrs[attr];

@@ -189,7 +189,7 @@ export default function add(Sample) {
         media: [],
       };
 
-      function mapValue(attr, value) {
+      const mapValue = (attr, value) => {
         const valuesMapping = keys[attr].values;
         if (!valuesMapping) {
           return value;
@@ -208,9 +208,9 @@ export default function add(Sample) {
         }
 
         return valuesMapping[value];
-      }
+      };
 
-      function getValue(attr) {
+      const getValue = attr => {
         let value = that.attrs[attr];
 
         const isEmpty = val => val === null || val === undefined;
@@ -237,7 +237,7 @@ export default function add(Sample) {
         }
 
         submission.fields[warehouseAttr] = value;
-      }
+      };
 
       Object.keys(this.attrs).forEach(getValue);
 
