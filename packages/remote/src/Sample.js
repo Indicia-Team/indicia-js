@@ -1,22 +1,27 @@
 import { makeRequest, getBlobFromURL } from './helpers';
 
 function setNewRemoteID(model, responseData) {
+  if (!responseData || !responseData.values) {
+    console.warn("Model didn't receive an id from the server");
+    return;
+  }
+
   model.id = responseData.values.id;
 
   // do that for all submodels
-  if (model.samples) {
+  if (model.samples && responseData.samples) {
     model.samples.forEach((subModel, index) =>
       setNewRemoteID(subModel, responseData.samples[index])
     );
   }
 
-  if (model.occurrences) {
+  if (model.occurrences && responseData.occurrences) {
     model.occurrences.forEach((subModel, index) =>
       setNewRemoteID(subModel, responseData.occurrences[index])
     );
   }
 
-  if (model.media) {
+  if (model.media && responseData.media) {
     model.media.forEach((subModel, index) =>
       setNewRemoteID(subModel, responseData.media[index])
     );
