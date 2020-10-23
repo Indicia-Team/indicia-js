@@ -77,7 +77,7 @@ Occurrence.keys = {
   // function
   colour: {
     id: 251,
-    values() {
+    values(value) {
       return 'some calculated value';
     },
   },
