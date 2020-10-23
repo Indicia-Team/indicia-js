@@ -4,6 +4,7 @@
   "scripts": {
     "postinstall": "lerna bootstrap",
     "build": "lerna run build",
+    "publish": "npm run build && lerna publish",
     "test": "lerna run test",
     "test:eslint": "mocha eslint-test.js",
     "test:watch": "lerna run test:watch"
