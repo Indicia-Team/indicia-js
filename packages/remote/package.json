@@ -2,7 +2,7 @@
   "name": "@indicia-js/remote",
   "title": "Indicia Remote",
   "description": "Indicia JavaScript SDK.",
-  "version": "5.6.5",
+  "version": "5.6.6",
   "homepage": "https://github.com/Indicia-Team/indicia-js",
   "author": "Karolis Kazlauskis <karolis@flumens.io> (https://flumens.io)",
   "keywords": [
