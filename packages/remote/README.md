@@ -78,7 +78,7 @@ Occurrence.keys = {
   colour: {
     id: 251,
     values(value) {
-      return 'some calculated value';
+      return 'ome calculated value here';
     },
   },
 };

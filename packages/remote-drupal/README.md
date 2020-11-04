@@ -96,8 +96,6 @@ model.getSubmission() ⇒ Array
 
 // Sample
 sample.remote: Object
-
-// TODO: sample.fetch(options) ⇒ Promise
 sample.saveRemote() ⇒ Promise
 ```
 
