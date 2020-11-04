@@ -61,7 +61,7 @@ export default function add(Occurrence) {
         submission.sensitivity_precision = this.metadata.sensitivity_precision;
       }
 
-      function mapValue(attr, value) {
+      const mapValue = (attr, value) => {
         const valuesMapping = keys[attr].values;
         if (!valuesMapping) {
           return value;
@@ -80,7 +80,7 @@ export default function add(Occurrence) {
         }
 
         return valuesMapping[value];
-      }
+      };
 
       const getValue = attr => {
         // no need to send attributes with no values
