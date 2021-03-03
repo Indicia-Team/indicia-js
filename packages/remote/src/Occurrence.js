@@ -93,7 +93,7 @@ export default function add(Occurrence) {
         }
 
         if (!keys[attr]) {
-          const isTesting = process;
+          const isTesting = process.env.NODE_ENV === 'test';
 
           if (attr !== 'email' && !isTesting) {
             console.warn(`Indicia: no such key: ${attr}`);

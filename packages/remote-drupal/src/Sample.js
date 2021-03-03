@@ -104,12 +104,6 @@ function remoteCreateParse(model, responseData) {
 }
 
 function getUserAuth(remote) {
-  const isTesting = !!process;
-  !isTesting &&
-    console.warn(
-      'Using Basic auth is deprecated, please use remote.headers function to pass OAuth2 access_token in the auth header.'
-    );
-
   if (!remote.user || !remote.password) {
     return null;
   }
@@ -220,7 +214,7 @@ export default function add(Sample) {
         }
 
         if (!keys[attr]) {
-          const isTesting = process;
+          const isTesting = process.env.NODE_ENV === 'test';
           if (attr !== 'email' && !isTesting) {
             console.warn(`Indicia: no such key: ${attr}`);
           }

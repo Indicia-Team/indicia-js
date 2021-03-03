@@ -1,5 +1,6 @@
 import babel from '@rollup/plugin-babel';
 import resolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
 import pkg from './package.json';
 
 const rollupBuilds = [
@@ -18,7 +19,13 @@ const rollupBuilds = [
       },
     ],
     external: id => !/^(\.|\/)/.test(id),
-    plugins: [resolve(), babel({ babelHelpers: 'runtime' })],
+    plugins: [
+      resolve(),
+      babel({ babelHelpers: 'runtime' }),
+      replace({
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      }),
+    ],
   },
 ];
 
