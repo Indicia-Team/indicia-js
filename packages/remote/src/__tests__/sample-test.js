@@ -260,6 +260,34 @@ describe('Sample', () => {
       expect(submission.values.butterfly_size).toBe(1);
     });
 
+    it("should thow error if key value arrays mapping isn't found", () => {
+      // Given
+      const keys = {
+        size: {
+          id: 'butterfly_size',
+          values: [
+            {
+              value: 'small',
+              id: 1,
+            },
+          ],
+        },
+      };
+      const smp = new Sample({ attrs: { size: 'huge' } });
+      smp.keys = keys;
+
+      // When
+      try {
+        smp.getSubmission();
+        throw new Error('the test is broken');
+      } catch (e) {
+        // Then
+        expect(e.message).toBe(
+          'A "size" attribute "huge" value could not be mapped to a remote database field.'
+        );
+      }
+    });
+
     it('should support attribute value arrays', () => {
       // Given
       const keys = {

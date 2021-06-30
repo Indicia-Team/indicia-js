@@ -72,7 +72,14 @@ export default function add(Occurrence) {
         }
 
         if (valuesMapping instanceof Array) {
-          return valuesMapping.find(({ value: val }) => val === value).id;
+          const mapping = valuesMapping.find(({ value: val }) => val === value);
+          if (!mapping || !mapping.id) {
+            throw new Error(
+              `A "${attr}" attribute "${value}" value could not be mapped to a remote database field.`
+            );
+          }
+
+          return mapping.id;
         }
 
         if (value instanceof Array) {
