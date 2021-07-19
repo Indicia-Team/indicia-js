@@ -9,7 +9,7 @@ export async function makeRequest(url, options, timeout = 80000) {
     const error = new Error(res.statusText);
     error.status = res.status;
 
-    if (!resJSON.errors) {
+    if (resJSON.errors) {
       error.errors = resJSON.errors;
     }
     throw error;
