@@ -9,7 +9,7 @@ export default class Media {
   attrs = {};
 
   metadata = {
-    created_on: new Date(),
+    created_on: new Date().toISOString(),
   };
 
   constructor(options = {}) {
@@ -56,7 +56,7 @@ export default class Media {
       }
 
       const reader = new FileReader();
-      reader.onload = function(event) {
+      reader.onload = function (event) {
         if (options.width || options.height) {
           // resize
           Media.resize(

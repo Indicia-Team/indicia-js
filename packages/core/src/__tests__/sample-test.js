@@ -20,8 +20,9 @@ describe('Sample', function tests() {
 
     // Then
     expect(sample.metadata).toBeInstanceOf(Object);
-    expect(sample.metadata.created_on).toBeInstanceOf(Date);
-    expect(sample.metadata.updated_on).toBeInstanceOf(Date);
+
+    expect(!Number.isNaN(Date.parse(sample.metadata.created_on))).toEqual(true);
+    expect(!Number.isNaN(Date.parse(sample.metadata.updated_on))).toEqual(true);
   });
 
   describe('toJSON', () => {

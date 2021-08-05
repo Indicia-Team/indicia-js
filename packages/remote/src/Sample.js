@@ -277,7 +277,7 @@ export default function add(Sample) {
         remoteCreateParse(this, resp);
 
         // update metadata
-        const timeNow = new Date();
+        const timeNow = new Date().toISOString();
         this.metadata.server_on = timeNow;
         this.metadata.updated_on = timeNow;
         this.metadata.synced_on = timeNow;

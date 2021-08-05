@@ -2,7 +2,7 @@ import { getNewUUID } from './helpers';
 import DefaultMedia from './Media';
 
 function defaultMetadata() {
-  const today = new Date();
+  const today = new Date().toISOString();
   return {
     training: null,
 

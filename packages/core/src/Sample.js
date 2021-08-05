@@ -3,7 +3,7 @@ import DefaultMedia from './Media';
 import DefaultOccurrence from './Occurrence';
 
 function defaultMetadata() {
-  const today = new Date();
+  const today = new Date().toISOString();
   return {
     survey_id: null,
     input_form: null,
@@ -36,7 +36,7 @@ export default class Sample {
   cid = getNewUUID();
 
   attrs = {
-    date: new Date(),
+    date: new Date().toISOString(),
     location_type: 'latlon',
   };
 
