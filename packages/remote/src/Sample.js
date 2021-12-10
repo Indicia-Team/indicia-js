@@ -50,7 +50,7 @@ async function appendModelToFormData(mediaModel, media) {
   media.push([name, blob, `${name}.${extension}`]);
 }
 
-const addModelMediaToFormData = async (model, media) => {
+export const addModelMediaToFormData = async (model, media) => {
   if (model.media) {
     await Promise.all(model.media.map(m => appendModelToFormData(m, media)));
   }

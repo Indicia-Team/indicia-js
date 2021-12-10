@@ -4,18 +4,19 @@ import {
   Media as MediaOrig,
 } from '@indicia-js/core';
 import sinon from 'sinon';
-import _sampleDependencies from '../Sample';
+import _sampleDependencies, { addModelMediaToFormData } from '../Sample';
 import withRemote from '../';
 
 const Sample = withRemote(SmpOrig);
 const Occurrence = withRemote(OccOrig);
 const Media = withRemote(MediaOrig);
 
-function getRandomSample(samples = [], occurrences = []) {
+function getRandomSample(samples = [], occurrences = [], media = []) {
   if (!occurrences.length) {
     const occurrence = new Occurrence({
       taxon: 1234,
     });
+    occurrence.media.push(...media);
     occurrences.push(occurrence);
   }
 
@@ -79,6 +80,30 @@ describe('Sample', () => {
 
     // Then
     expect(smp.remote.synchronising).toBe(false);
+  });
+
+  describe('_getMediaFormData', () => {
+    it('should return ', async () => {
+      // Given
+      const media1 = new Media({
+        attrs: {
+          type: 'gif',
+          data: 'data:image/gif;base64,R0lGODlhEAAQAMQAAORHHOVSKudfOulrSOp3WOyDZu6QdvCchPGolfO0o/XBs/fNwfjZ0frl3/zy7////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAABAALAAAAAAQABAAAAVVICSOZGlCQAosJ6mu7fiyZeKqNKToQGDsM8hBADgUXoGAiqhSvp5QAnQKGIgUhwFUYLCVDFCrKUE1lBavAViFIDlTImbKC5Gm2hB0SlBCBMQiB0UjIQA7',
+        },
+      });
+
+      const sampleNested = getRandomSample(undefined, undefined, [media1]);
+      const sample = getRandomSample([sampleNested], undefined, [media1]);
+
+      const formData = [];
+
+      // When
+      await addModelMediaToFormData(sample, formData);
+
+      // Then
+      expect(formData.length).toBe(2);
+      expect(formData[0][2]).toBe(`${media1.cid}.gif`);
+    });
   });
 
   describe('saveRemote', () => {
