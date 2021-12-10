@@ -7,7 +7,8 @@ describe('Media', function tests() {
     const media = new Media();
 
     expect(typeof media.cid).toBe('string');
-    expect(media.metadata).toBeInstanceOf(Object);
+    expect(typeof media.metadata.created_on).toBe('string');
+    expect(media.metadata.synced_on).toBe(null);
     expect(media.attrs).toBeInstanceOf(Object);
     expect(Object.keys(media.attrs).length).toBe(0);
   });

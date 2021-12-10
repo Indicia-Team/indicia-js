@@ -3,14 +3,20 @@ import { getNewUUID } from './helpers';
 const THUMBNAIL_WIDTH = 100; // px
 const THUMBNAIL_HEIGHT = 100; // px
 
+function defaultMetadata() {
+  const today = new Date().toISOString();
+  return {
+    created_on: today,
+    synced_on: null,
+  };
+}
+
 export default class Media {
   cid = getNewUUID();
 
   attrs = {};
 
-  metadata = {
-    created_on: new Date().toISOString(),
-  };
+  metadata = defaultMetadata();
 
   constructor(options = {}) {
     this.cid = options.cid || this.cid;
