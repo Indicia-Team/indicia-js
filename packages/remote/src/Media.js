@@ -97,11 +97,15 @@ export default function add(Media) {
         throw new Error('No media queued or path attribute.');
       }
 
+      const baseRemoteURL = this.remote.url.replace(
+        '/index.php/services/rest',
+        ''
+      );
       if (this.attrs.queued) {
-        return `${this.remote.url}/upload-queue/${this.attrs.queued}`;
+        return `${baseRemoteURL}/upload-queue/${this.attrs.queued}`;
       }
 
-      return `${this.remote.url}/upload/${this.attrs.path}`;
+      return `${baseRemoteURL}/upload/${this.attrs.path}`;
     }
   };
 }

@@ -100,7 +100,19 @@ describe('Media', function tests() {
       // When
       const URL = media.getRemoteURL();
 
-      // Then this should not execute
+      // Then
+      expect(URL).toBe('http://123/upload-queue/filename');
+    });
+
+    it('should allow use of a REST remote url', () => {
+      // Given
+      const media = new Media({ attrs: { queued: 'filename' } });
+      media.remote.url = 'http://123/index.php/services/rest';
+
+      // When
+      const URL = media.getRemoteURL();
+
+      // Then
       expect(URL).toBe('http://123/upload-queue/filename');
     });
 
