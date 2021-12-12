@@ -1,6 +1,6 @@
 # @indicia-js/remote [![version](https://img.shields.io/npm/v/@indicia-js/remote/latest.svg)](https://www.npmjs.com/package/@indicia-js/remote) [![Build Status](https://travis-ci.org/Indicia-Team/indicia-js.svg)](https://travis-ci.org/Indicia-Team/indicia-js)
 
-Indicia Warehouse REST API data synchronization functions. 
+Indicia Warehouse REST API data synchronization functions.
 
 ## Usage
 
@@ -97,6 +97,11 @@ model.getSubmission() ⇒ Object
 // Sample
 sample.remote: Object
 sample.saveRemote() ⇒ Promise
+
+// Media
+media.remote: Object
+media.upload() ⇒ Promise
+media.getRemoteURL() ⇒ string
 ```
 
 ## Bugs and feature requests
