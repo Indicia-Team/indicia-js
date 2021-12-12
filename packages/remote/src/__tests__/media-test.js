@@ -1,4 +1,3 @@
-/* eslint max-classes-per-file: 0 */
 import { Media as MediaOrig } from '@indicia-js/core';
 import _mediaDependencies from '../Media';
 import withRemote from '../';
