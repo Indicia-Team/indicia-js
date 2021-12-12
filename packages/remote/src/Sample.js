@@ -1,4 +1,4 @@
-import { makeRequest, getBlobFromURL } from './helpers';
+import { makeRequest } from './helpers';
 
 function setNewRemoteID(model, responseData) {
   if (!responseData || !responseData.values) {
@@ -32,38 +32,29 @@ function remoteCreateParse(model, responseData) {
   setNewRemoteID(model, responseData);
 }
 
-async function appendModelToFormData(mediaModel, media) {
-  // can provide both image/jpeg and jpeg
-  const { type } = mediaModel.attrs;
-  let extension = type;
-  let mediaType = type;
-  if (type.match(/image.*/)) {
-    [, extension] = type.split('/');
-  } else {
-    mediaType = `image/${mediaType}`;
-  }
+export const _getMediaFormData = async model => {
+  const formDataArgs = [];
 
-  const url = mediaModel.getURL();
-  const blob = await getBlobFromURL(url, mediaType);
-
-  const name = mediaModel.cid;
-  media.push([name, blob, `${name}.${extension}`]);
-}
-
-export const addModelMediaToFormData = async (model, media) => {
   if (model.media) {
-    await Promise.all(model.media.map(m => appendModelToFormData(m, media)));
+    const getFormData = m => m.getFormData();
+    const formData = await Promise.all(model.media.map(getFormData));
+    formDataArgs.push(...formData);
   }
+
   if (model.occurrences) {
-    await Promise.all(
-      model.occurrences.map(m => addModelMediaToFormData(m, media))
+    const formData = await Promise.all(
+      model.occurrences.map(_getMediaFormData)
     );
+    formDataArgs.push(...formData.flat());
   }
+
   if (model.samples) {
-    await Promise.all(
-      model.samples.map(m => addModelMediaToFormData(m, media))
-    );
+    const formData = await Promise.all(model.samples.map(_getMediaFormData));
+    formDataArgs.push(...formData.flat());
   }
+
+  // console.log(formDataArgs);
+  return formDataArgs;
 };
 
 function handleDuplicates(model, existingId) {
@@ -224,7 +215,8 @@ export default function add(Sample) {
       this.metadata.confidential &&
         (submission.values.confidential = this.metadata.confidential);
       this.metadata.sensitivity_precision &&
-        (submission.values.sensitivity_precision = this.metadata.sensitivity_precision);
+        (submission.values.sensitivity_precision =
+          this.metadata.sensitivity_precision);
 
       this.samples.forEach(model => {
         const modelSubmission = model.getSubmission(warehouseMediaNames);
@@ -317,8 +309,7 @@ export default function add(Sample) {
     async _uploadMedia() {
       let warehouseMediaNames = {};
 
-      const media = []; // for submission
-      await addModelMediaToFormData(this, media);
+      const media = await _getMediaFormData(this);
 
       const hasPhotos = media.length;
       if (!hasPhotos) {

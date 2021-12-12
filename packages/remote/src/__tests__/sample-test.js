@@ -4,7 +4,7 @@ import {
   Media as MediaOrig,
 } from '@indicia-js/core';
 import sinon from 'sinon';
-import _sampleDependencies, { addModelMediaToFormData } from '../Sample';
+import _sampleDependencies, { _getMediaFormData } from '../Sample';
 import withRemote from '../';
 
 const Sample = withRemote(SmpOrig);
@@ -95,14 +95,13 @@ describe('Sample', () => {
       const sampleNested = getRandomSample(undefined, undefined, [media1]);
       const sample = getRandomSample([sampleNested], undefined, [media1]);
 
-      const formData = [];
-
       // When
-      await addModelMediaToFormData(sample, formData);
+      const formData = await _getMediaFormData(sample);
 
       // Then
       expect(formData.length).toBe(2);
       expect(formData[0][2]).toBe(`${media1.cid}.gif`);
+      expect(formData[1][2]).toBe(`${media1.cid}.gif`);
     });
   });
 

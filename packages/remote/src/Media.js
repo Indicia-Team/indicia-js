@@ -1,3 +1,5 @@
+import { getBlobFromURL } from './helpers';
+
 export default function add(Media) {
   return class Extended extends Media {
     id = null;
@@ -29,6 +31,24 @@ export default function add(Media) {
       };
 
       return submission;
+    }
+
+    async getFormData() {
+      // can provide both image/jpeg and jpeg
+      const { type } = this.attrs;
+      let extension = type;
+      let mediaType = type;
+      if (type.match(/image.*/)) {
+        [, extension] = type.split('/');
+      } else {
+        mediaType = `image/${mediaType}`;
+      }
+
+      const url = this.getURL();
+      const blob = await getBlobFromURL(url, mediaType);
+
+      const name = this.cid;
+      return [name, blob, `${name}.${extension}`];
     }
   };
 }
