@@ -66,7 +66,7 @@ export default function add(Media) {
       };
 
       const res = await makeRequest(`${this.remote.url}/media-queue`, options);
-      this.attrs.queued = res[this.cid]?.name;
+      this.attrs.queued = (res[this.cid] || {}).name;
       this.metadata.synced_on = new Date().getTime();
     }
 
