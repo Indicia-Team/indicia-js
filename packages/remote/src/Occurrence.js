@@ -43,22 +43,23 @@ export default function add(Occurrence) {
       };
 
       if (this.metadata.training) {
-        submission.training = this.metadata.training;
+        submission.values.training = this.metadata.training;
       }
       if (this.metadata.release_status) {
-        submission.release_status = this.metadata.release_status;
+        submission.values.release_status = this.metadata.release_status;
       }
       if (this.metadata.record_status) {
-        submission.record_status = this.metadata.record_status;
+        submission.values.record_status = this.metadata.record_status;
       }
       if (this.metadata.sensitive) {
-        submission.sensitive = this.metadata.sensitive;
+        submission.values.sensitive = this.metadata.sensitive;
       }
       if (this.metadata.confidential) {
-        submission.confidential = this.metadata.confidential;
+        submission.values.confidential = this.metadata.confidential;
       }
       if (this.metadata.sensitivity_precision) {
-        submission.sensitivity_precision = this.metadata.sensitivity_precision;
+        submission.values.sensitivity_precision =
+          this.metadata.sensitivity_precision;
       }
 
       const mapValue = (attr, value) => {
