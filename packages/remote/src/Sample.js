@@ -219,6 +219,9 @@ export default function add(Sample) {
           this.metadata.sensitivity_precision);
 
       this.samples.forEach(model => {
+        if (this.metadata.training)
+          model.metadata.training = this.metadata.training;
+
         const modelSubmission = model.getSubmission(warehouseMediaNames);
         if (!modelSubmission) {
           return;
@@ -228,6 +231,9 @@ export default function add(Sample) {
       });
 
       this.occurrences.forEach(model => {
+        if (this.metadata.training)
+          model.metadata.training = this.metadata.training;
+
         const modelSubmission = model.getSubmission(warehouseMediaNames);
         if (!modelSubmission) {
           return;

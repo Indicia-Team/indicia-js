@@ -413,5 +413,22 @@ describe('Sample', () => {
       expect(submission.occurrences.length).toBe(0);
       expect(submission.samples.length).toBe(0);
     });
+
+    it('should attach training flag for sub-models', () => {
+      // Given
+      const sample = getRandomSample();
+      sample.samples.push(getRandomSample());
+
+      sample.metadata.training = 't';
+
+      // When
+      const submission = sample.getSubmission();
+
+      // Then
+      expect(submission.values.training).toBe('t');
+      expect(submission.occurrences[0].values.training).toBe('t');
+      expect(submission.samples[0].values.training).toBe('t');
+      expect(submission.samples[0].occurrences[0].values.training).toBe('t');
+    });
   });
 });
