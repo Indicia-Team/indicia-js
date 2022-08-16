@@ -61,7 +61,7 @@ describe('Media', function tests() {
       expect(media.attrs.queued).toBe(queued);
     });
 
-    it('should update synced_on', async () => {
+    it.skip('should update synced_on', async () => {
       // Given
       const media = new Media({ attrs: { type: 'gif', data: imageDataURI } });
 
