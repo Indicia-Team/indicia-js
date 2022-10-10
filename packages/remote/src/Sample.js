@@ -264,10 +264,11 @@ export default function add(Sample) {
         );
       }
 
+      let submission;
       try {
         this.remote.synchronising = true;
         const warehouseMediaNames = await this._uploadMedia();
-        const submission = this.getSubmission(warehouseMediaNames);
+        submission = this.getSubmission(warehouseMediaNames);
         const resp = await this._createRemote(submission);
         this.remote.synchronising = false;
 
@@ -283,6 +284,7 @@ export default function add(Sample) {
         return this;
       } catch (err) {
         this.remote.synchronising = false;
+        err.payload = submission;
         throw err;
       }
     }
